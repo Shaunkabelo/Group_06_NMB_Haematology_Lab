@@ -4,8 +4,11 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 VisualStudioVersion = 17.14.37502.11 d17.14
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Group_06_NMB_Haematology_Diagnostic_Laboratory", "Group_06_NMB_Haematology_Diagnostic_Laboratory\Group_06_NMB_Haematology_Diagnostic_Laboratory.csproj", "{D72FEF1F-F2EA-4970-9A25-A45A8166F7DD}"
+	ProjectSection(ProjectDependencies) = postProject
+		{6C601958-411A-43EC-A87A-B4399B8C66D5} = {6C601958-411A-43EC-A87A-B4399B8C66D5}
+	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NMB_Class_Library", "NMB_Class_Library\NMB_Class_Library.csproj", "{6C601958-411A-43EC-A87A-B4399B8C66D5}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Group_06_NMB_Haematology_Diagnostic_Lab.Data", "NMB_Class_Library\Group_06_NMB_Haematology_Diagnostic_Lab.Data.csproj", "{6C601958-411A-43EC-A87A-B4399B8C66D5}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
