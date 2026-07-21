@@ -1,0 +1,174 @@
+﻿{
+   "CodeGenerationMode": 4,
+   "ContextClassName": "GRP_04_06_dbContext",
+   "ContextNamespace": null,
+   "FilterSchemas": false,
+   "IncludeConnectionString": false,
+   "IrregularWords": null,
+   "MinimumProductVersion": "2.6.1604",
+   "ModelNamespace": null,
+   "OutputContextPath": null,
+   "OutputPath": "Models",
+   "PluralRules": null,
+   "PreserveCasingWithRegex": true,
+   "ProjectRootNamespace": "Group_06_NMB_Haematology_Diagnostic_Lab.Data",
+   "Schemas": null,
+   "SelectedHandlebarsLanguage": 2,
+   "SelectedToBeGenerated": 2,
+   "SingularRules": null,
+   "T4TemplatePath": null,
+   "Tables": [
+      {
+         "Name": "[dbo].[Admin]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[Allergy]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[Consumable]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[ConsumableTransaction]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[Doctor]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[LabManager]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[LabTechnician]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[LabTechnicianTestType]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[LabTest]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[MedicalCondition]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[Medication]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[Patient]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[PatientAllergy]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[PatientCondition]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[PatientConsent]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[PatientConsentRequest]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[PatientMedication]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[Sample]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[SampleType]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[StockOrder]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[StockOrderItem]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[Supplier]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[TestCategory]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[TestRequest]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[TestRequestTestType]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[TestResult]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[TestResultReviewHistory]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[TestResultVerification]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[TestType]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[TestTypeConsumable]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[User]",
+         "ObjectType": 0
+      }
+   ],
+   "UiHint": null,
+   "UncountableWords": null,
+   "UseAsyncStoredProcedureCalls": true,
+   "UseBoolPropertiesWithoutDefaultSql": false,
+   "UseDatabaseNames": false,
+   "UseDatabaseNamesForRoutines": true,
+   "UseDateOnlyTimeOnly": true,
+   "UseDbContextSplitting": false,
+   "UseDecimalDataAnnotationForSprocResult": true,
+   "UseFluentApiOnly": true,
+   "UseHandleBars": false,
+   "UseHierarchyId": false,
+   "UseInflector": false,
+   "UseInternalAccessModifiersForSprocsAndFunctions": false,
+   "UseLegacyPluralizer": false,
+   "UseManyToManyEntity": false,
+   "UseNoDefaultConstructor": false,
+   "UseNoNavigations": false,
+   "UseNoObjectFilter": false,
+   "UseNodaTime": false,
+   "UseNullableReferences": false,
+   "UsePrefixNavigationNaming": false,
+   "UseSchemaFolders": false,
+   "UseSchemaNamespaces": false,
+   "UseSpatial": false,
+   "UseT4": false,
+   "UseT4Split": false,
+   "UseTypedTvpParameters": true
+}
