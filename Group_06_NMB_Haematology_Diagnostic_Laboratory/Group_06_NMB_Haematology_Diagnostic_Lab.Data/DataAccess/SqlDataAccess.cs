@@ -25,6 +25,13 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.DataAccess
             return await connection.QueryAsync<T>(spName, parameters, commandType: CommandType.StoredProcedure);
         }
 
+
+
+
+
+
+
+
         public async Task SaveData<T>(string spName, T parameters, string connectionId = "conn")
         {
             using IDbConnection connection = new SqlConnection(_config.GetConnectionString(connectionId));
