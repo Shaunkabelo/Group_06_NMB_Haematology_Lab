@@ -7,7 +7,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Folder Include="DataAccess\" />
     <Folder Include="Models\" />
     <Folder Include="Repository\" />
   </ItemGroup>
