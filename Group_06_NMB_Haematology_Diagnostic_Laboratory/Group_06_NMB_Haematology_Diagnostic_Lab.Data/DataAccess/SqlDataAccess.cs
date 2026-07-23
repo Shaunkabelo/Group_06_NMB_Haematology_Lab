@@ -69,6 +69,25 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.DataAccess
                 commandType: CommandType.StoredProcedure);
         }
 
+        // NEW - Four object mapping
+        public async Task<IEnumerable<TReturn>> GetData<TFirst, TSecond, TThird, TFourth, TReturn, P>(
+        string spName,
+        Func<TFirst, TSecond, TThird, TFourth, TReturn> map,
+        P parameters,
+        string splitOn = "Id",
+        string connectionId = "conn")
+        {
+            using IDbConnection connection =
+                new SqlConnection(_config.GetConnectionString(connectionId));
+
+            return await connection.QueryAsync(
+                spName,
+                map,
+                param: parameters,
+                splitOn: splitOn,
+                commandType: CommandType.StoredProcedure);
+        }
+
         // ==========================================================================================
 
 
