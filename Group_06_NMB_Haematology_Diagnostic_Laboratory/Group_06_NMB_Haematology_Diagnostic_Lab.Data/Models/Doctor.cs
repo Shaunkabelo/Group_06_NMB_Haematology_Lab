@@ -18,6 +18,5 @@ public partial class Doctor
     public virtual ICollection<TestRequest> TestRequestDoctor { get; set; } = new List<TestRequest>();
 
     public virtual ICollection<TestRequest> TestRequestReleasedByDoctor { get; set; } = new List<TestRequest>();
-
-    public virtual User User { get; set; }
+    public virtual User User { get; set; } = new User();
 }
