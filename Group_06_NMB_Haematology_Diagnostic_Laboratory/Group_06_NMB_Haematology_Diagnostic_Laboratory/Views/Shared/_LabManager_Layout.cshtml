@@ -1,0 +1,64 @@
+﻿@{
+    var currentAction = ViewContext.RouteData.Values["action"]?.ToString() ?? "";
+    var title = ViewData["Title"]?.ToString() ?? "NMB-HLabSys";
+    string IsActive(string action) => string.Equals(currentAction, action, StringComparison.OrdinalIgnoreCase) ? " active" : "";
+}
+
+<!DOCTYPE html>
+
+<html>
+<head>
+    <meta name="viewport" content="width=device-width" />
+    <title>@ViewBag.Title</title>
+    <base href="@Url.Content("~/")" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="~/css/LabManagerStyle.css" asp-append-version="true" />
+</head>
+<body>
+
+    <aside class="sidebar">
+        <div class="sidebar-brand">
+            <span class="brand-icon">🧬</span> NMB-HLabSys
+        </div>
+        <nav class="nav-menu">
+            <div class="sidebar-section">Overview</div>
+            <a asp-controller="LabManager" asp-action="Dashboard" class="nav-item@(IsActive("Dashboard"))"><span>📊</span> Dashboard</a>
+            <a asp-controller="LabManager" asp-action="ManagerReports" class="nav-item@(IsActive("ManagerReports"))"><span>📄</span> Reports</a>
+            <div class="sidebar-section">Catalogue</div>
+            <a asp-controller="LabManager" asp-action="Categories" class="nav-item@(IsActive("Categories"))"><span>🗂️</span> Categories</a>
+            <a asp-controller="LabManager" asp-action="TestTypes" class="nav-item@(IsActive("TestTypes"))"><span>🔬</span> Test Types</a>
+            <div class="sidebar-section">Inventory</div>
+            <a asp-controller="LabManager" asp-action="Consumables" class="nav-item@(IsActive("Consumables"))"><span>📦</span> Consumables</a>
+            <a asp-controller="LabManager" asp-action="Orders" class="nav-item@(IsActive("Orders"))"><span>🛒</span> Orders</a>
+            <a asp-controller="LabManager" asp-action="Suppliers" class="nav-item@(IsActive("Suppliers"))"><span>🏭</span> Suppliers</a>
+            <div class="sidebar-section">Staff</div>
+            <a asp-controller="LabManager" asp-action="Doctors" class="nav-item@(IsActive("Doctors"))"><span>👨‍⚕️</span> Doctors</a>
+            <a asp-controller="LabManager" asp-action="Technicians" class="nav-item@(IsActive("Technicians"))"><span>🧪</span> Technicians</a>
+            <a asp-controller="LabManager" asp-action="ManageManagers" class="nav-item@(IsActive("ManageManagers"))"><span>👥</span> Manage Managers</a>
+            <div class="sidebar-section">Account</div>
+            <a asp-controller="LabManager" asp-action="Profile" class="nav-item@(IsActive("Profile"))"><span>👤</span> My Profile</a>
+            <div class="sidebar-footer">
+                <div class="user-info">
+                    <strong id="sidebar-user-name">Guest User</strong>
+                    <small id="sidebar-user-role">Lab Manager</small>
+                </div>
+            </div>
+        </nav>
+    </aside>
+
+
+    <main class="main-content">
+
+        <header class="topbar">
+
+            <h2>@title</h2>
+
+        </header>
+
+        @RenderBody()
+
+    </main>
+</body>
+</html>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"></script>

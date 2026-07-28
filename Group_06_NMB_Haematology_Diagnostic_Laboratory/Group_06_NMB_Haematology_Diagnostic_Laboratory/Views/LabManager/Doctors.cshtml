@@ -1,401 +1,54 @@
 ﻿@using Group_06_NMB_Haematology_Diagnostic_Lab.Data.Models
 @model IEnumerable<Doctor>
-
-<style>
-    body {
-        background: #f5f7fa;
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    }
-
-    .table-container {
-        width: 95%;
-        margin: 40px auto;
-        background: #fff;
-        border-radius: 12px;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.08);
-        overflow: hidden;
-    }
-
-    .table-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 20px 25px;
-        border-bottom: 1px solid #eee;
-    }
-
-    .table-header h2 {
-        margin: 0;
-        color: #333;
-        font-size: 24px;
-    }
-
-    table {
-        width: 100%;
-        border-collapse: collapse;
-    }
-
-    thead {
-        background: #0d6efd;
-        color: white;
-    }
-
-    thead th {
-        padding: 15px;
-        text-align: left;
-        font-weight: 600;
-    }
-
-    tbody td {
-        padding: 15px;
-        border-bottom: 1px solid #ececec;
-        color: #444;
-        vertical-align: middle;
-    }
-
-    tbody tr:hover {
-        background: #f8fbff;
-        transition: 0.2s;
-    }
-
-    .status {
-        display: inline-block;
-        padding: 6px 12px;
-        border-radius: 20px;
-        color: white;
-        font-size: 13px;
-        font-weight: 600;
-    }
-
-    .active {
-        background: #198754;
-    }
-
-    .inactive {
-        background: #dc3545;
-    }
-
-    .action-buttons {
-        display: flex;
-        gap: 8px;
-    }
-
-    .btn {
-        border-radius: 6px;
-        font-size: 13px;
-        padding: 6px 12px;
-    }
-
-
-</style>
-
-<div class="table-container">
-
-    <div class="table-header">
-        <h2>Doctors</h2>
-
-        <button class="btn btn-success"
-                data-bs-toggle="offcanvas"
-                data-bs-target="#addDoctorPanel">
-
-            <i class="bi bi-person-plus-fill"></i>
-
-            Add Doctor
-
-        </button>
+@{
+    Layout = "~/Views/Shared/_LabManager_Layout.cshtml";
+}
+<div class="page-body">
+    <div class="section-header">
+        <div><h2>Doctors</h2><small>Manage registered doctors.</small></div>
+        <button class="btn btn-primary" data-bs-toggle="offcanvas" data-bs-target="#addDoctorPanel">Add Doctor</button>
     </div>
-
-    <table>
-        <thead>
-            <tr>
-                <th>Doctor ID</th>
-                <th>Name</th>
-                <th>Surname</th>
-                <th>Email</th>
-                <th>Cellphone</th>
-                <th>HPCSA Number</th>
-                <th>Status</th>
-                <th style="width:220px;">Actions</th>
-            </tr>
-        </thead>
-
-        <tbody>
-
-            @foreach (var doctor in Model)
-            {
-                <tr>
-                    <td>@doctor.DoctorId</td>
-                    <td>@doctor.User.Name</td>
-                    <td>@doctor.User.Surname</td>
-                    <td>@doctor.User.Email</td>
-                    <td>@doctor.User.Cellphone</td>
-                    <td>@doctor.HpcsaNumber</td>
-
-                    <td>
-                        @if (doctor.User.IsActive)
-                        {
-                            <span class="status active">Active</span>
-                        }
-                        else
-                        {
-                            <span class="status inactive">Inactive</span>
-                        }
-                    </td>
-
-                    <td>
-                        <div class="action-buttons">
-                            <a asp-action="Details"
-                               asp-route-id="@doctor.DoctorId"
-                               class="btn btn-info btn-sm text-white">
-                                Details
-                            </a>
-
-                            <a asp-action="EditDoctor"
-                               asp-route-id="@doctor.DoctorId"
-                               class="btn btn-warning btn-sm">
-                                Edit
-                            </a>
-
-                            <a asp-action="DeleteDoctor"
-                               asp-route-id="@doctor.DoctorId"
-                               class="btn btn-danger btn-sm">
-                                Delete
-                            </a>
-                        </div>
-                    </td>
-                </tr>
-            }
-
-        </tbody>
-
-    </table>
-
+    <div class="table-wrap">
+        <table>
+            <thead><tr><th>Name</th><th>Surname</th><th>Email</th><th>Cellphone</th><th>Status</th><th>Actions</th></tr></thead>
+            <tbody>
+                @foreach (var doctor in Model)
+                {
+                    <tr>
+                        
+                        <td>@doctor.User.Name</td>
+                        <td>@doctor.User.Surname</td>
+                        <td>@doctor.User.Email</td>
+                        <td>@doctor.User.Cellphone</td>
+                        
+                        <td>@(doctor.User.IsActive ? "Active" : "Inactive")</td>
+                        <td class="td-actions">
+                            <a asp-action="EditDoctor" asp-route-id="@doctor.DoctorId" class="btn btn-edit btn-sm">Edit</a>
+                            <a asp-action="DeleteDoctor" asp-route-id="@doctor.DoctorId" class="btn btn-delete btn-sm">Delete</a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
 </div>
 
-
-<!-- ===================== ADD DOCTOR PANEL ===================== -->
-<div class="offcanvas offcanvas-end shadow" tabindex="-1" id="addDoctorPanel" aria-labelledby="addDoctorPanelLabel" style="width:600px;">
-
-    <div class="offcanvas-header border-bottom">
-        <div>
-            <h4 class="offcanvas-title mb-1" id="addDoctorPanelLabel">
-                <i class="bi bi-person-plus-fill text-success"></i>
-                Add New Doctor
-            </h4>
-            <small class="text-muted">
-                Complete the doctor's details below.
-            </small>
-        </div>
-
-        <button type="button"
-                class="btn-close"
-                data-bs-dismiss="offcanvas"
-                aria-label="Close">
-        </button>
-    </div>
-
+<div class="offcanvas offcanvas-end" tabindex="-1" id="addDoctorPanel" style="width:600px;">
+    <div class="offcanvas-header"><h4>Add Doctor</h4><button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button></div>
     <div class="offcanvas-body">
-
-        <form asp-action="CreateDoctor"
-              asp-controller="LabManager"
-              method="post">
-
-            <!-- ===================== PERSONAL INFORMATION ===================== -->
-
-            <div class="card border-0 shadow-sm mb-4">
-
-                <div class="card-header bg-primary text-white">
-                    <i class="bi bi-person-fill"></i>
-                    Personal Information
-                </div>
-
-                <div class="card-body">
-
-                    <div class="row">
-
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label fw-semibold">
-                                First Name
-                            </label>
-
-                            <input class="form-control"
-                                   name="User.Name"
-                                   required />
-                        </div>
-
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label fw-semibold">
-                                Surname
-                            </label>
-
-                            <input class="form-control"
-                                   name="User.Surname"
-                                   required />
-                        </div>
-
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">
-                            Email Address
-                        </label>
-
-                        <input type="email"
-                               class="form-control"
-                               name="User.Email"
-                               required />
-                    </div>
-
-                    <div class="row">
-
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label fw-semibold">
-                                Cellphone
-                            </label>
-
-                            <input class="form-control"
-                                   name="User.Cellphone" />
-                        </div>
-
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label fw-semibold">
-                                Date of Birth
-                            </label>
-
-                            <input type="date"
-                                   class="form-control"
-                                   name="User.DateOfBirth" />
-                        </div>
-
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">
-                            SA ID Number
-                        </label>
-
-                        <input class="form-control"
-                               maxlength="13"
-                               name="User.SaIdNumber" />
-                    </div>
-
-                    <div class="mb-2">
-                        <label class="form-label fw-semibold">
-                            Home Address
-                        </label>
-
-                        <textarea rows="3"
-                                  class="form-control"
-                                  name="User.HomeAddress"></textarea>
-                    </div>
-
-                </div>
-
+        <form asp-action="CreateDoctor" asp-controller="LabManager" method="post">
+            <div class="form-group"><label class="form-label">First Name</label><input class="form-control" name="User.Name" required></div>
+            <div class="form-group"><label class="form-label">Surname</label><input class="form-control" name="User.Surname" required></div>
+            <div class="form-group"><label class="form-label">Email</label><input type="email" class="form-control" name="User.Email" required></div>
+            <div class="form-row">
+                <div class="form-group"><label class="form-label">Cellphone</label><input class="form-control" name="User.Cellphone"></div>
+                <div class="form-group"><label class="form-label">Date of Birth</label><input type="date" class="form-control" name="User.DateOfBirth"></div>
             </div>
-
-            <!-- ===================== PROFESSIONAL INFORMATION ===================== -->
-
-            <div class="card border-0 shadow-sm mb-4">
-
-                <div class="card-header bg-success text-white">
-                    <i class="bi bi-hospital-fill"></i>
-                    Professional Information
-                </div>
-
-                <div class="card-body">
-
-                    <div class="mb-3">
-
-                        <label class="form-label fw-semibold">
-                            HPCSA Number
-                        </label>
-
-                        <input class="form-control"
-                               name="HpcsaNumber"
-                               placeholder="Example: MP1234567"
-                               required />
-
-                    </div>
-
-                </div>
-
-            </div>
-
-            <!-- ===================== ACCOUNT STATUS ===================== -->
-
-            <div class="card border-0 shadow-sm mb-4">
-
-                <div class="card-header bg-secondary text-white">
-                    <i class="bi bi-shield-lock-fill"></i>
-                    Account Information
-                </div>
-
-                <div class="card-body">
-
-                    <div class="row">
-
-                        <div class="col-md-4">
-                            <strong>Role</strong><br />
-                            <span class="badge bg-primary">
-                                Doctor
-                            </span>
-                        </div>
-
-                        <div class="col-md-4">
-                            <strong>Status</strong><br />
-                            <span class="badge bg-success">
-                                Active
-                            </span>
-                        </div>
-
-                        <div class="col-md-4">
-                            <strong>Password</strong><br />
-                            <span class="badge bg-warning text-dark">
-                                Temporary
-                            </span>
-                        </div>
-
-                    </div>
-
-                    <hr />
-
-                    <small class="text-muted">
-                        <i class="bi bi-info-circle"></i>
-
-                        The system will automatically generate a temporary
-                        password and require the doctor to change it on
-                        first login.
-                    </small>
-
-                </div>
-
-            </div>
-
-            <!-- ===================== BUTTONS ===================== -->
-
-            <div class="d-grid gap-2">
-
-                <button type="submit"
-                        class="btn btn-success btn-lg">
-
-                    <i class="bi bi-check-circle-fill"></i>
-
-                    Save Doctor
-
-                </button>
-
-                <button type="button"
-                        class="btn btn-outline-secondary"
-                        data-bs-dismiss="offcanvas">
-
-                    Cancel
-
-                </button>
-
-            </div>
-
+            <div class="form-group"><label class="form-label">SA ID</label><input class="form-control" maxlength="13" name="User.SaIdNumber"></div>
+            <div class="form-group"><label class="form-label">Home Address</label><textarea class="form-control" name="User.HomeAddress"></textarea></div>
+            <div class="form-group"><label class="form-label">HPCSA Number</label><input class="form-control" name="HpcsaNumber" required></div>
+            <button type="submit" class="btn btn-primary">Save Doctor</button>
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="offcanvas">Cancel</button>
         </form>
-
     </div>
-
 </div>
