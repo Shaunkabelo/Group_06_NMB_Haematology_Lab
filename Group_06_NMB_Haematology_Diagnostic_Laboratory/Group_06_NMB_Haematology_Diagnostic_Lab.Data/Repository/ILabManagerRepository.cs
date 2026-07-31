@@ -11,5 +11,12 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
     {
         Task<IEnumerable<Doctor>> GetDoctors();
         Task CreateDoctor(Doctor doctor);
+
+
+        Task<Doctor> GetDoctorById(int doctorId);
+
+        Task UpdateDoctor(Doctor doctor);
+
+        Task DeleteDoctor(int doctorId);
     }
 }

@@ -1,54 +1,281 @@
 ﻿@using Group_06_NMB_Haematology_Diagnostic_Lab.Data.Models
 @model IEnumerable<Doctor>
+
 @{
     Layout = "~/Views/Shared/_LabManager_Layout.cshtml";
 }
+
 <div class="page-body">
+
     <div class="section-header">
-        <div><h2>Doctors</h2><small>Manage registered doctors.</small></div>
-        <button class="btn btn-primary" data-bs-toggle="offcanvas" data-bs-target="#addDoctorPanel">Add Doctor</button>
+        <div>
+            <h2>Doctors</h2>
+            <small>Manage registered doctors.</small>
+        </div>
+
+        <button class="btn btn-primary"
+                onclick="openCreateDoctor()"
+                data-bs-toggle="offcanvas"
+                data-bs-target="#doctorPanel">
+            Add Doctor
+        </button>
     </div>
+
     <div class="table-wrap">
         <table>
-            <thead><tr><th>Name</th><th>Surname</th><th>Email</th><th>Cellphone</th><th>Status</th><th>Actions</th></tr></thead>
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Surname</th>
+                    <th>Email</th>
+                    <th>Cellphone</th>
+                    <th>SA ID</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+
             <tbody>
+
                 @foreach (var doctor in Model)
                 {
                     <tr>
-                        
+
                         <td>@doctor.User.Name</td>
                         <td>@doctor.User.Surname</td>
                         <td>@doctor.User.Email</td>
                         <td>@doctor.User.Cellphone</td>
-                        
-                        <td>@(doctor.User.IsActive ? "Active" : "Inactive")</td>
-                        <td class="td-actions">
-                            <a asp-action="EditDoctor" asp-route-id="@doctor.DoctorId" class="btn btn-edit btn-sm">Edit</a>
-                            <a asp-action="DeleteDoctor" asp-route-id="@doctor.DoctorId" class="btn btn-delete btn-sm">Delete</a>
+                        <td>@doctor.User.SaIdNumber</td>
+
+                        <td>
+                            @(doctor.User.IsActive ? "Active" : "Inactive")
                         </td>
+
+                        <td class="td-actions">
+
+                            <button type="button"
+                                    class="btn btn-edit btn-sm"
+                                    data-bs-toggle="offcanvas"
+                                    data-bs-target="#doctorPanel"
+                                    onclick="openEditDoctor(this)"
+                                    data-id="@doctor.DoctorId"
+                                    data-name="@doctor.User.Name"
+                                    data-surname="@doctor.User.Surname"
+                                    data-email="@doctor.User.Email"
+                                    data-cellphone="@doctor.User.Cellphone"
+                                    data-dob="@doctor.User.DateOfBirth?.ToString("yyyy-MM-dd")"
+                                    data-said="@doctor.User.SaIdNumber"
+                                    data-address="@doctor.User.HomeAddress"
+                                    data-hpcsa="@doctor.HpcsaNumber">
+
+                                Edit
+
+                            </button>
+
+                            <form asp-action="DeleteDoctor"
+                                  asp-controller="LabManager"
+                                  method="post"
+                                  style="display:inline;">
+
+                                <input type="hidden"
+                                       name="id"
+                                       value="@doctor.DoctorId" />
+
+                                <button type="submit"
+                                        class="btn btn-delete btn-sm"
+                                        onclick="return confirm('Are you sure you want to deactivate this doctor?');">
+
+                                    Delete
+
+                                </button>
+
+                            </form>
+
+                        </td>
+
                     </tr>
                 }
+
             </tbody>
         </table>
     </div>
+
 </div>
 
-<div class="offcanvas offcanvas-end" tabindex="-1" id="addDoctorPanel" style="width:600px;">
-    <div class="offcanvas-header"><h4>Add Doctor</h4><button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button></div>
-    <div class="offcanvas-body">
-        <form asp-action="CreateDoctor" asp-controller="LabManager" method="post">
-            <div class="form-group"><label class="form-label">First Name</label><input class="form-control" name="User.Name" required></div>
-            <div class="form-group"><label class="form-label">Surname</label><input class="form-control" name="User.Surname" required></div>
-            <div class="form-group"><label class="form-label">Email</label><input type="email" class="form-control" name="User.Email" required></div>
-            <div class="form-row">
-                <div class="form-group"><label class="form-label">Cellphone</label><input class="form-control" name="User.Cellphone"></div>
-                <div class="form-group"><label class="form-label">Date of Birth</label><input type="date" class="form-control" name="User.DateOfBirth"></div>
-            </div>
-            <div class="form-group"><label class="form-label">SA ID</label><input class="form-control" maxlength="13" name="User.SaIdNumber"></div>
-            <div class="form-group"><label class="form-label">Home Address</label><textarea class="form-control" name="User.HomeAddress"></textarea></div>
-            <div class="form-group"><label class="form-label">HPCSA Number</label><input class="form-control" name="HpcsaNumber" required></div>
-            <button type="submit" class="btn btn-primary">Save Doctor</button>
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="offcanvas">Cancel</button>
-        </form>
+<!-- ========================================================= -->
+<!-- ADD / EDIT DOCTOR PANEL -->
+<!-- ========================================================= -->
+
+<div class="offcanvas offcanvas-end"
+     tabindex="-1"
+     id="doctorPanel"
+     style="width:600px;">
+
+    <div class="offcanvas-header">
+
+        <h4 id="doctorPanelTitle">
+            Add Doctor
+        </h4>
+
+        <button type="button"
+                class="btn-close"
+                data-bs-dismiss="offcanvas"></button>
+
     </div>
+
+    <div class="offcanvas-body">
+
+        <form id="doctorForm"
+              asp-controller="LabManager"
+              asp-action="CreateDoctor"
+              method="post">
+
+            <input type="hidden"
+                   id="DoctorId"
+                   name="DoctorId" />
+
+            <div class="form-group">
+                <label class="form-label">First Name</label>
+                <input id="Name"
+                       class="form-control"
+                       name="User.Name"
+                       required />
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Surname</label>
+                <input id="Surname"
+                       class="form-control"
+                       name="User.Surname"
+                       required />
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Email</label>
+                <input id="Email"
+                       type="email"
+                       class="form-control"
+                       name="User.Email"
+                       required />
+            </div>
+
+            <div class="form-row">
+
+                <div class="form-group">
+                    <label class="form-label">Cellphone</label>
+
+                    <input id="Cellphone"
+                           class="form-control"
+                           name="User.Cellphone" />
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Date of Birth</label>
+
+                    <input id="DateOfBirth"
+                           type="date"
+                           class="form-control"
+                           name="User.DateOfBirth" />
+                </div>
+
+            </div>
+
+            <div class="form-group">
+
+                <label class="form-label">SA ID</label>
+
+                <input id="SaIdNumber"
+                       class="form-control"
+                       maxlength="13"
+                       name="User.SaIdNumber" />
+
+            </div>
+
+            <div class="form-group">
+
+                <label class="form-label">Home Address</label>
+
+                <textarea id="HomeAddress"
+                          class="form-control"
+                          name="User.HomeAddress"></textarea>
+
+            </div>
+
+            <div class="form-group">
+
+                <label class="form-label">HPCSA Number</label>
+
+                <input id="HpcsaNumber"
+                       class="form-control"
+                       name="HpcsaNumber"
+                       required />
+
+            </div>
+
+            <button id="doctorSubmitButton"
+                    type="submit"
+                    class="btn btn-primary">
+
+                Save Doctor
+
+            </button>
+
+            <button type="button"
+                    class="btn btn-secondary"
+                    data-bs-dismiss="offcanvas">
+
+                Cancel
+
+            </button>
+
+        </form>
+
+    </div>
+
 </div>
+
+<script>
+
+    function openCreateDoctor() {
+
+        document.getElementById("doctorPanelTitle").innerText = "Add Doctor";
+
+        document.getElementById("doctorSubmitButton").innerText = "Save Doctor";
+
+        document.getElementById("doctorForm").action = "/LabManager/CreateDoctor";
+
+        document.getElementById("doctorForm").reset();
+
+        document.getElementById("DoctorId").value = "";
+    }
+
+
+    function openEditDoctor(button) {
+
+        document.getElementById("doctorPanelTitle").innerText = "Edit Doctor";
+
+        document.getElementById("doctorSubmitButton").innerText = "Update Doctor";
+
+        document.getElementById("doctorForm").action = "/LabManager/EditDoctor";
+
+        document.getElementById("DoctorId").value = button.dataset.id;
+
+        document.getElementById("Name").value = button.dataset.name;
+
+        document.getElementById("Surname").value = button.dataset.surname;
+
+        document.getElementById("Email").value = button.dataset.email;
+
+        document.getElementById("Cellphone").value = button.dataset.cellphone;
+
+        document.getElementById("DateOfBirth").value = button.dataset.dob;
+
+        document.getElementById("SaIdNumber").value = button.dataset.said;
+
+        document.getElementById("HomeAddress").value = button.dataset.address;
+
+        document.getElementById("HpcsaNumber").value = button.dataset.hpcsa;
+
+    }
+
+</script>

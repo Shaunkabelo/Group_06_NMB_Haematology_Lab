@@ -48,6 +48,39 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
             return RedirectToAction(nameof(Doctors));
         }
 
+        [HttpGet]
+        public async Task<IActionResult> EditDoctor(int id)
+        {
+            var doctor = await _repository.GetDoctorById(id);
+
+            if (doctor == null)
+            {
+                return NotFound();
+            }
+
+            return View(doctor);
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> EditDoctor(Doctor doctor)
+        {
+            if (!ModelState.IsValid)
+            {
+                return View(doctor);
+            }
+
+            await _repository.UpdateDoctor(doctor);
+
+            return RedirectToAction(nameof(Doctors));
+        }
+        [HttpPost]
+        public async Task<IActionResult> DeleteDoctor(int id)
+        {
+            await _repository.DeleteDoctor(id);
+
+            return RedirectToAction(nameof(Doctors));
+        }
+
         public IActionResult Technicians()
         {
             return View();

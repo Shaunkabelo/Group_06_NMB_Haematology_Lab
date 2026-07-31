@@ -62,5 +62,56 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
                 });
         }
 
+        public async Task<Doctor?> GetDoctorById(int doctorId)
+        {
+            var doctor = await _db.GetData<Doctor, User, Doctor, dynamic>(
+                "sp_Doctor_GetById",
+                (doctor, user) =>
+                {
+                    doctor.User = user;
+                    return doctor;
+                },
+                new
+                {
+                    DoctorID = doctorId
+                },
+                splitOn: "UserID"
+            );
+
+            return doctor.FirstOrDefault();
+        }
+
+        public async Task UpdateDoctor(Doctor doctor)
+        {
+            await _db.SaveData(
+                "sp_Doctor_Update",
+                new
+                {
+                    doctor.DoctorId,
+
+                    doctor.User.Name,
+                    doctor.User.Surname,
+                    doctor.User.Email,
+                    doctor.User.Cellphone,
+                    doctor.User.HomeAddress,
+
+                    SA_ID_Number = doctor.User.SaIdNumber,
+
+                    doctor.User.DateOfBirth,
+
+                    HPCSA_Number = doctor.HpcsaNumber
+                });
+        }
+
+        public async Task DeleteDoctor(int doctorId)
+        {
+            await _db.SaveData(
+                "sp_Doctor_Delete",
+                new
+                {
+                    DoctorID = doctorId
+                });
+        }
+
     }
 }

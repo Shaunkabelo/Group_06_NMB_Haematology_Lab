@@ -1,5 +1,6 @@
 using Group_06_NMB_Haematology_Diagnostic_Lab.Data.DataAccess;
 using Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository;
+Dapper.DefaultTypeMap.MatchNamesWithUnderscores = true;
 
 var builder = WebApplication.CreateBuilder(args);
 
