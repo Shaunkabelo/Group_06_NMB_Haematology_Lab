@@ -1,0 +1,353 @@
+﻿@{
+    ViewData["Title"] = "Test Request Management";
+    Layout = "~/Views/Shared/_LayoutDoctor.cshtml";
+}
+
+<div class="page-body">
+    <div class="section-header">
+        <div class="section-title">Test Request Management</div>
+        <div class="section-sub">Create and track laboratory test requests</div>
+    </div>
+
+    <div class="card" style="margin-bottom: 20px;">
+        <div class="card-body" style="display: grid; grid-template-columns: 1fr auto; gap: 16px; align-items: center;">
+            <div style="display: grid; grid-template-columns: 1fr minmax(140px, 1fr) minmax(140px, 1fr); gap: 12px; align-items: center;">
+                <input id="requests-search" class="form-control" type="search" placeholder="Search requests..." aria-label="Search requests" />
+                <select id="requests-filter-status" class="form-control">
+                    <option value="">All statuses</option>
+                    <option>Submitted</option>
+                    <option>Samples Received</option>
+                    <option>In progress</option>
+                    <option>Completed</option>
+                    <option>Released by doctor</option>
+                    <option>Cancelled</option>
+                </select>
+                <select id="requests-filter-urgency" class="form-control">
+                    <option value="">All urgencies</option>
+                    <option>Routine</option>
+                    <option>Urgent</option>
+                    <option>STAT</option>
+                </select>
+            </div>
+            <a class="btn btn-primary" href="/Doctor/CreateRequest">+ New Test Request</a>
+        </div>
+    </div>
+
+    <div id="technician-cancel-alerts"></div>
+
+    <div class="card" style="margin-bottom: 20px;">
+        <div class="card-header"><span class="card-title">Progress Status Guide</span></div>
+        <div class="card-body">
+            <div class="status-guide">
+                <div><span class="badge blue">Submitted</span><span>Doctor has submitted the test request.</span></div>
+                <div><span class="badge amber">Samples Received</span><span>Lab technician has marked the samples as received.</span></div>
+                <div><span class="badge blue">In progress</span><span>At least one test type has been selected by a lab technician.</span></div>
+                <div><span class="badge green">Completed</span><span>All tests have been completed and results captured.</span></div>
+                <div><span class="badge green">Released by doctor</span><span>Doctor has made the results available to the patient.</span></div>
+                <div><span class="badge red">Cancelled</span><span>The cancellation reason is captured and kept with the request.</span></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Request ID</th>
+                        <th>Patient</th>
+                        <th>Date</th>
+                        <th>Urgency</th>
+                        <th>Status</th>
+                        <th>Tests</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="requests-tbody"></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<style>
+    .status-guide {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(220px, 1fr));
+        gap: 12px 18px;
+    }
+
+        .status-guide > div {
+            display: grid;
+            grid-template-columns: minmax(140px, auto) 1fr;
+            gap: 10px;
+            align-items: start;
+            color: #4A5563;
+            font-size: 13px;
+        }
+
+    .technician-cancel-alert {
+        border: 1px solid rgba(255, 71, 87, 0.22);
+        background: #FFF2F3;
+        color: #7A1E28;
+        border-radius: 10px;
+        margin-bottom: 16px;
+        padding: 14px 16px;
+        font-size: 14px;
+    }
+
+    .cancel-reason-note {
+        display: block;
+        color: #7A8CA0;
+        font-size: 12px;
+        margin-top: 4px;
+    }
+
+    @@media (max-width: 720px) {
+        .status-guide {
+            grid-template-columns: 1fr;
+        }
+
+            .status-guide > div {
+                grid-template-columns: 1fr;
+            }
+    }
+</style>
+
+<div class="modal-overlay" id="modal-cancel-request">
+    <div class="modal modal-md">
+        <div class="modal-header">
+            <span class="modal-title">Cancel Test Request</span>
+            <button class="modal-close" type="button" onclick="closeCancelRequestModal()">×</button>
+        </div>
+        <div class="modal-body">
+            <p id="cancel-request-summary" style="margin-bottom: 14px; color: #4A5563;"></p>
+            <div class="form-group">
+                <label class="form-label" for="cancel-request-reason">Reason for cancellation</label>
+                <textarea id="cancel-request-reason" class="form-control" rows="5" placeholder="Enter the reason for cancelling this test request..." required></textarea>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" type="button" onclick="closeCancelRequestModal()">Keep Request</button>
+            <button class="btn btn-danger" type="button" onclick="submitCancelRequest()">Cancel Request</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const requestStorageKey = 'doctorRequests';
+    let pendingCancelRequestId = null;
+
+    const defaultRequests = [
+        {
+            id: 'REQ-2026-0182',
+            patientName: 'Anele Mbeki',
+            createdAt: '2026-04-10T09:12:00',
+            urgency: 'Routine',
+            status: 'Submitted',
+            tests: ['Full Blood Count', 'Coagulation Profile']
+        },
+        {
+            id: 'REQ-2026-0181',
+            patientName: 'Johan Smit',
+            createdAt: '2026-04-09T11:35:00',
+            urgency: 'Urgent',
+            status: 'In progress',
+            tests: ['Differential Count']
+        },
+        {
+            id: 'REQ-2026-0179',
+            patientName: 'Priya Naidoo',
+            createdAt: '2026-04-08T14:20:00',
+            urgency: 'Routine',
+            status: 'Completed',
+            tests: ['Peripheral Blood Film']
+        }
+    ];
+
+    function getStoredRequests() {
+        try {
+            const stored = localStorage.getItem(requestStorageKey);
+            if (!stored) return null;
+            return JSON.parse(stored);
+        } catch {
+            return null;
+        }
+    }
+
+    function saveStoredRequests(requests) {
+        localStorage.setItem(requestStorageKey, JSON.stringify(requests));
+    }
+
+    function ensureInitialRequests() {
+        const stored = getStoredRequests();
+        if (!stored || !Array.isArray(stored) || stored.length === 0) {
+            saveStoredRequests(defaultRequests);
+            return defaultRequests;
+        }
+        return stored;
+    }
+
+    function normalizeStatus(status) {
+        const value = String(status || '').toLowerCase();
+        if (value === 'released') return 'Released by doctor';
+        if (value === 'samples received') return 'Samples Received';
+        if (value === 'in progress') return 'In progress';
+        if (value === 'released by doctor') return 'Released by doctor';
+        if (value === 'submitted') return 'Submitted';
+        if (value === 'completed') return 'Completed';
+        if (value === 'cancelled') return 'Cancelled';
+        return status || 'Unknown';
+    }
+
+    function canDoctorCancel(status) {
+        const value = normalizeStatus(status).toLowerCase();
+        return value === 'submitted' || value === 'samples received';
+    }
+
+    function isTechnicianCancelled(request) {
+        const cancelledBy = String(request.cancelledBy || request.cancelledByRole || '').toLowerCase();
+        return normalizeStatus(request.status).toLowerCase() === 'cancelled' && (cancelledBy.includes('technician') || cancelledBy.includes('lab'));
+    }
+
+    function getBadgeClass(value, type) {
+        if (type === 'urgency') {
+            switch ((value || '').toLowerCase()) {
+                case 'urgent': return 'badge amber';
+                case 'stat': return 'badge red';
+                default: return 'badge blue';
+            }
+        }
+
+        switch ((value || '').toLowerCase()) {
+            case 'completed':
+            case 'released':
+            case 'released by doctor': return 'badge green';
+            case 'in progress': return 'badge blue';
+            case 'submitted': return 'badge blue';
+            case 'samples received': return 'badge amber';
+            case 'cancelled': return 'badge red';
+            default: return 'badge gray';
+        }
+    }
+
+    function renderTechnicianCancellationAlerts(requests) {
+        const host = document.getElementById('technician-cancel-alerts');
+        const alerts = requests.filter(isTechnicianCancelled);
+        if (alerts.length === 0) {
+            host.innerHTML = '';
+            return;
+        }
+
+        host.innerHTML = alerts.map(request => `
+            <div class="technician-cancel-alert">
+                <strong>${request.id}</strong> was cancelled by a lab technician.
+                <span class="cancel-reason-note">Reason: ${request.cancellationReason || 'No reason captured.'}</span>
+            </div>
+        `).join('');
+    }
+
+    function renderRequests() {
+        const allRequests = ensureInitialRequests();
+        const search = (document.getElementById('requests-search')?.value || '').toLowerCase().trim();
+        const statusFilter = (document.getElementById('requests-filter-status')?.value || '').toLowerCase();
+        const urgencyFilter = (document.getElementById('requests-filter-urgency')?.value || '').toLowerCase();
+
+        const requests = allRequests.filter(request => {
+            const displayStatus = normalizeStatus(request.status);
+            const matchesSearch = !search || [request.id, request.patientName, displayStatus, request.urgency, request.cancellationReason, ...(Array.isArray(request.tests) ? request.tests : [])]
+                .some(value => String(value || '').toLowerCase().includes(search));
+            const matchesStatus = !statusFilter || displayStatus.toLowerCase() === statusFilter;
+            const matchesUrgency = !urgencyFilter || String(request.urgency || '').toLowerCase() === urgencyFilter;
+            return matchesSearch && matchesStatus && matchesUrgency;
+        });
+
+        renderTechnicianCancellationAlerts(allRequests);
+
+        const tbody = document.getElementById('requests-tbody');
+        tbody.innerHTML = '';
+
+        if (requests.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding: 20px;">No requests found.</td></tr>';
+            return;
+        }
+
+        requests.slice().reverse().forEach(request => {
+            const displayStatus = normalizeStatus(request.status);
+            const canCancel = canDoctorCancel(request.status);
+            const cancelButton = canCancel ? ` <button type="button" class="btn btn-sm btn-danger" onclick="openCancelRequestModal('${request.id}')">Cancel</button>` : '';
+            const cancellationNote = displayStatus === 'Cancelled'
+                ? `<span class="cancel-reason-note">Reason: ${request.cancellationReason || 'No reason captured.'}${isTechnicianCancelled(request) ? ' Cancelled by lab technician.' : ''}</span>`
+                : '';
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${request.id}</td>
+                <td>${request.patientName}</td>
+                <td>${request.createdAt ? new Date(request.createdAt).toLocaleDateString() : 'N/A'}</td>
+                <td><span class="${getBadgeClass(request.urgency, 'urgency')}">${request.urgency || 'Routine'}</span></td>
+                <td><span class="${getBadgeClass(displayStatus, 'status')}">${displayStatus}</span>${cancellationNote}</td>
+                <td>${Array.isArray(request.tests) ? request.tests.length + ' test(s)' : '0 test(s)'}</td>
+                <td>
+                    <a class="btn btn-sm btn-primary" href="/Doctor/RequestDetails?id=${request.id}">View</a>${cancelButton}
+                </td>
+            `;
+            tbody.appendChild(row);
+        });
+    }
+
+    function openCancelRequestModal(requestId) {
+        const request = (getStoredRequests() || []).find(item => item.id === requestId);
+        if (!request) return;
+
+        pendingCancelRequestId = requestId;
+        document.getElementById('cancel-request-summary').textContent = `${request.id} for ${request.patientName}`;
+        document.getElementById('cancel-request-reason').value = '';
+        document.getElementById('cancel-request-reason').classList.remove('field-error');
+        openModal('modal-cancel-request');
+        document.getElementById('cancel-request-reason').focus();
+    }
+
+    function closeCancelRequestModal() {
+        pendingCancelRequestId = null;
+        closeModal('modal-cancel-request');
+        document.getElementById('cancel-request-reason').value = '';
+        document.getElementById('cancel-request-reason').classList.remove('field-error');
+    }
+
+    function submitCancelRequest() {
+        const reasonInput = document.getElementById('cancel-request-reason');
+        const reason = reasonInput.value.trim();
+        if (!reason) {
+            reasonInput.focus();
+            reasonInput.classList.add('field-error');
+            toast('Cancellation reason is required.', 'error');
+            return;
+        }
+        reasonInput.classList.remove('field-error');
+
+        const requests = getStoredRequests() || [];
+        const updated = requests.map(request => {
+            if (request.id === pendingCancelRequestId) {
+                return {
+                    ...request,
+                    status: 'Cancelled',
+                    cancellationReason: reason,
+                    cancelledAt: new Date().toISOString(),
+                    cancelledBy: 'Doctor'
+                };
+            }
+            return request;
+        });
+        saveStoredRequests(updated);
+        closeCancelRequestModal();
+        renderRequests();
+        toast('Test request cancelled.', 'warning');
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        ensureInitialRequests();
+        renderRequests();
+        document.getElementById('requests-search')?.addEventListener('input', renderRequests);
+        document.getElementById('requests-filter-status')?.addEventListener('change', renderRequests);
+        document.getElementById('requests-filter-urgency')?.addEventListener('change', renderRequests);
+    });
+</script>

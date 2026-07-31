@@ -1,0 +1,114 @@
+﻿@{
+    ViewData["Title"] = "Doctor Account";
+    Layout = "~/Views/Shared/_LayoutDoctor.cshtml";
+}
+
+
+<div class="page-body">
+    <div class="section-header">
+        <div class="section-title">Doctor Profile</div>
+        <div class="section-sub">View your personal information and manage your password.</div>
+    </div>
+
+    <section class="card account-panel profile-panel">
+        <div class="card-header">
+            <span class="card-title">Personal Information</span>
+        </div>
+        <div class="card-body">
+            <div class="profile-summary">
+                <div class="profile-avatar" aria-hidden="true">DR</div>
+                <div>
+                    <h2 id="doctor-profile-name">Dr. Odwa Sithonga</h2>
+                    <p id="doctor-profile-role">Doctor</p>
+                </div>
+            </div>
+
+            <div class="profile-info-grid">
+                <div class="profile-info-item">
+                    <span>Full Name</span>
+                    <strong id="doctor-info-name">Dr. Odwa Sithonga</strong>
+                </div>
+                <div class="profile-info-item">
+                    <span>E-mail Address</span>
+                    <strong id="doctor-info-email">doctor@nmbhlab.co.za</strong>
+                </div>
+                <div class="profile-info-item">
+                    <span>Role</span>
+                    <strong id="doctor-info-role">Doctor</strong>
+                </div>
+                <div class="profile-info-item">
+                    <span>Department</span>
+                    <strong>Haematology</strong>
+                </div>
+                <div class="profile-info-item">
+                    <span>Practice Number</span>
+                    <strong>MP-HAEM-0427</strong>
+                </div>
+                <div class="profile-info-item">
+                    <span>Access Level</span>
+                    <strong>Doctor subsystem only</strong>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="card account-panel">
+        <div class="card-header">
+            <span class="card-title">Change Password</span>
+        </div>
+        <div class="card-body">
+            <form class="account-form" onsubmit="changeLoggedInDoctorPassword(event)">
+                <div id="account-password-message" class="auth-message" hidden></div>
+
+                <div class="form-group">
+                    <label class="form-label" for="doctor-current-password">Current Password</label>
+                    <div class="password-field">
+                        <input class="form-control" id="doctor-current-password" type="password" autocomplete="current-password" required>
+                        <button class="btn btn-secondary" type="button" onclick="togglePassword('doctor-current-password', this)">Show</button>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label" for="doctor-account-new-password">New Password</label>
+                        <div class="password-field">
+                            <input class="form-control" id="doctor-account-new-password" type="password" autocomplete="new-password" required>
+                            <button class="btn btn-secondary" type="button" onclick="togglePassword('doctor-account-new-password', this)">Show</button>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="doctor-account-confirm-password">Confirm Password</label>
+                        <div class="password-field">
+                            <input class="form-control" id="doctor-account-confirm-password" type="password" autocomplete="new-password" required>
+                            <button class="btn btn-secondary" type="button" onclick="togglePassword('doctor-account-confirm-password', this)">Show</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="login-hint">
+                    Password rules: minimum 8 characters, 1 uppercase letter, 1 number, and 1 special character.
+                </div>
+
+                <div class="btn-row">
+                    <button class="btn btn-primary" type="submit">Update Password</button>
+                    <button class="btn btn-secondary" type="reset" onclick="clearInlineMessage('account-password-message')">Clear</button>
+                </div>
+            </form>
+        </div>
+    </section>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const name = sessionStorage.getItem('nmb_user_name') || 'Dr. Odwa Sithonga';
+        const email = sessionStorage.getItem('nmb_user_email') || 'doctor@nmbhlab.co.za';
+        const role = sessionStorage.getItem('nmb_user_role') || 'Doctor';
+
+        document.getElementById('doctor-profile-name').innerText = name;
+        document.getElementById('doctor-profile-role').innerText = role;
+        document.getElementById('doctor-info-name').innerText = name;
+        document.getElementById('doctor-info-email').innerText = email;
+        document.getElementById('doctor-info-role').innerText = role;
+    });
+</script>

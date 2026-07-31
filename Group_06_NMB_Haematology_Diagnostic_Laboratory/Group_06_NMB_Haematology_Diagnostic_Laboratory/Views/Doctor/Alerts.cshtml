@@ -1,0 +1,377 @@
+﻿@{
+    ViewData["Title"] = "Doctor Alerts";
+    Layout = "~/Views/Shared/_LayoutDoctor.cshtml";
+}
+
+<div class="page-body doctor-alerts-page">
+    <div class="section-header">
+        <div class="section-title alert-page-title">Abnormal Results Alerts</div>
+        <div class="section-sub">Review and acknowledge abnormal test results</div>
+    </div>
+
+    <section class="alerts-filter-panel">
+        <div class="alerts-filter-controls">
+            <div class="alerts-date-field">
+                <span class="date-icon">From</span>
+                <input id="alerts-start-date" class="alerts-date-input" type="date" aria-label="Alert start date">
+            </div>
+            <div class="alerts-date-field">
+                <span class="date-icon">To</span>
+                <input id="alerts-end-date" class="alerts-date-input" type="date" aria-label="Alert end date">
+            </div>
+            <label class="alerts-check">
+                <input id="alerts-show-acknowledged" type="checkbox" checked>
+                <span>Show acknowledged alerts</span>
+            </label>
+            <button class="btn btn-primary" type="button" onclick="renderAlerts()">Apply</button>
+        </div>
+        <div id="alerts-range-note" class="alerts-range-note">Showing alerts from last 5 days</div>
+    </section>
+
+    <section class="alerts-priority-grid">
+        <div class="priority-tile critical">
+            <div>Critical Priority</div>
+            <strong id="alerts-critical-count">0</strong>
+        </div>
+        <div class="priority-tile high">
+            <div>High Priority</div>
+            <strong id="alerts-high-count">0</strong>
+        </div>
+        <div class="priority-tile medium">
+            <div>Medium Priority</div>
+            <strong id="alerts-medium-count">0</strong>
+        </div>
+        <div class="priority-tile low">
+            <div>Low Priority</div>
+            <strong id="alerts-low-count">0</strong>
+        </div>
+    </section>
+
+    <section id="alerts-empty-panel" class="alerts-empty-panel" hidden>
+        <div class="alerts-empty-icon">!</div>
+        <div id="alerts-empty-text" class="alerts-empty-text">No abnormal results were found for the selected period.</div>
+    </section>
+
+    <section id="alerts-table-panel" class="alerts-table-panel">
+        <div class="table-wrap">
+            <table class="alerts-table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Request</th>
+                        <th>Patient</th>
+                        <th>Test</th>
+                        <th>Flag</th>
+                    </tr>
+                </thead>
+                <tbody id="alerts-tbody"></tbody>
+            </table>
+        </div>
+    </section>
+</div>
+
+<script>
+    const alertRequestsKey = 'doctorRequests';
+    const alertResultsKey = 'doctorResults';
+
+    function addDays(date, days) {
+        const next = new Date(date);
+        next.setDate(next.getDate() + days);
+        return next;
+    }
+
+    function toDateInputValue(date) {
+        return date.toISOString().split('T')[0];
+    }
+
+    function atLocalMidday(date) {
+        const next = new Date(date);
+        next.setHours(12, 0, 0, 0);
+        return next;
+    }
+
+    function getSeedRequests() {
+        const today = atLocalMidday(new Date());
+        return [
+            {
+                id: 'REQ-2026-0188',
+                patientName: 'Thando Jacobs',
+                createdAt: addDays(today, -1).toISOString(),
+                urgency: 'STAT',
+                status: 'Completed',
+                tests: ['Full Blood Count']
+            },
+            {
+                id: 'REQ-2026-0187',
+                patientName: 'Priya Naidoo',
+                createdAt: addDays(today, -3).toISOString(),
+                urgency: 'Urgent',
+                status: 'Completed',
+                tests: ['Haemoglobin']
+            },
+            {
+                id: 'REQ-2026-0172',
+                patientName: 'Anele Mbeki',
+                createdAt: addDays(today, -12).toISOString(),
+                urgency: 'Routine',
+                status: 'Released',
+                tests: ['INR']
+            },
+            {
+                id: 'REQ-2026-0186',
+                patientName: 'Johan Smit',
+                createdAt: addDays(today, -4).toISOString(),
+                urgency: 'Urgent',
+                status: 'Completed',
+                tests: ['White Cell Count']
+            },
+            {
+                id: 'REQ-2026-0185',
+                patientName: 'Lindiwe Maseko',
+                createdAt: addDays(today, -5).toISOString(),
+                urgency: 'Routine',
+                status: 'Completed',
+                tests: ['Coagulation Profile']
+            },
+            {
+                id: 'REQ-2026-0184',
+                patientName: 'Sipho Dlamini',
+                createdAt: addDays(today, -2).toISOString(),
+                urgency: 'STAT',
+                status: 'Completed',
+                tests: ['Neutrophil Count']
+            }
+        ];
+    }
+
+    function getSeedResults() {
+        const today = atLocalMidday(new Date());
+        return [
+            {
+                requestId: 'REQ-2026-0188',
+                testName: 'Full Blood Count',
+                summary: 'Platelets 42 x10^9/L - critical low',
+                result: '42 x10^9/L',
+                normalRange: '150 - 450 x10^9/L',
+                flag: 'Critical low',
+                priority: 'critical',
+                abnormal: true,
+                acknowledged: false,
+                verified: true,
+                created: addDays(today, -1).toISOString()
+            },
+            {
+                requestId: 'REQ-2026-0187',
+                testName: 'Haemoglobin',
+                summary: 'Haemoglobin 8.4 g/dL - below minimum',
+                result: '8.4 g/dL',
+                normalRange: '12.0 - 16.0 g/dL',
+                flag: 'Below min',
+                priority: 'high',
+                abnormal: true,
+                acknowledged: false,
+                verified: true,
+                created: addDays(today, -3).toISOString()
+            },
+            {
+                requestId: 'REQ-2026-0172',
+                testName: 'INR',
+                summary: 'INR 3.4 - borderline high',
+                result: '3.4',
+                normalRange: '0.8 - 1.2',
+                flag: 'Borderline',
+                priority: 'medium',
+                abnormal: true,
+                acknowledged: true,
+                verified: true,
+                created: addDays(today, -12).toISOString()
+            },
+            {
+                requestId: 'REQ-2026-0186',
+                testName: 'White Cell Count',
+                summary: 'White cell count 18.7 x10^9/L - high',
+                result: '18.7 x10^9/L',
+                normalRange: '4.0 - 11.0 x10^9/L',
+                flag: 'Above max',
+                priority: 'high',
+                abnormal: true,
+                acknowledged: false,
+                verified: true,
+                created: addDays(today, -4).toISOString()
+            },
+            {
+                requestId: 'REQ-2026-0185',
+                testName: 'Coagulation Profile',
+                summary: 'PT 16.2 sec - prolonged',
+                result: '16.2 sec',
+                normalRange: '11.0 - 13.5 sec',
+                flag: 'Prolonged',
+                priority: 'low',
+                abnormal: true,
+                acknowledged: false,
+                verified: true,
+                created: addDays(today, -5).toISOString()
+            },
+            {
+                requestId: 'REQ-2026-0184',
+                testName: 'Neutrophil Count',
+                summary: 'Neutrophils 0.7 x10^9/L - critical low',
+                result: '0.7 x10^9/L',
+                normalRange: '2.0 - 7.5 x10^9/L',
+                flag: 'Critical low',
+                priority: 'critical',
+                abnormal: true,
+                acknowledged: false,
+                verified: true,
+                created: addDays(today, -2).toISOString()
+            }
+        ];
+    }
+
+    function readStorage(key) {
+        try {
+            const value = localStorage.getItem(key);
+            return value ? JSON.parse(value) : [];
+        } catch {
+            return [];
+        }
+    }
+
+    function mergeBy(items, additions, keySelector) {
+        const existingKeys = new Set(items.map(keySelector));
+        const missing = additions.filter(item => !existingKeys.has(keySelector(item)));
+        return [...items, ...missing];
+    }
+
+    function ensureAlertData() {
+        const requests = mergeBy(readStorage(alertRequestsKey), getSeedRequests(), item => item.id);
+        const results = mergeBy(readStorage(alertResultsKey), getSeedResults(), item => `${item.requestId}|${item.testName}|${item.created}`);
+        localStorage.setItem(alertRequestsKey, JSON.stringify(requests));
+        localStorage.setItem(alertResultsKey, JSON.stringify(results));
+        return { requests, results };
+    }
+
+    function getSelectedDateRange() {
+        let start = document.getElementById('alerts-start-date').value;
+        let end = document.getElementById('alerts-end-date').value;
+
+        if (!start || !end) {
+            const today = atLocalMidday(new Date());
+            start = start || toDateInputValue(addDays(today, -5));
+            end = end || toDateInputValue(today);
+        }
+
+        if (start > end) {
+            [start, end] = [end, start];
+            document.getElementById('alerts-start-date').value = start;
+            document.getElementById('alerts-end-date').value = end;
+        }
+
+        return { start, end };
+    }
+
+    function getPriorityBadgeClass(priority) {
+        switch ((priority || '').toLowerCase()) {
+            case 'critical':
+            case 'high':
+                return 'red';
+            case 'medium':
+                return 'amber';
+            default:
+                return 'blue';
+        }
+    }
+
+    function updatePriorityCounts(alerts) {
+        const counts = alerts.reduce((total, alert) => {
+            const priority = (alert.priority || 'low').toLowerCase();
+            total[priority] = (total[priority] || 0) + 1;
+            return total;
+        }, {});
+
+        document.getElementById('alerts-critical-count').innerText = counts.critical || 0;
+        document.getElementById('alerts-high-count').innerText = counts.high || 0;
+        document.getElementById('alerts-medium-count').innerText = counts.medium || 0;
+        document.getElementById('alerts-low-count').innerText = counts.low || 0;
+    }
+
+    function renderAlerts() {
+        const { requests, results } = ensureAlertData();
+        const { start, end } = getSelectedDateRange();
+        const showAcknowledged = document.getElementById('alerts-show-acknowledged').checked;
+        const requestMap = new Map(requests.map(request => [request.id, request]));
+
+        const alerts = results
+            .filter(result => result.abnormal)
+            .filter(result => showAcknowledged || !result.acknowledged)
+            .filter(result => {
+                const resultDate = toDateInputValue(new Date(result.created));
+                return resultDate >= start && resultDate <= end;
+            })
+            .map(result => ({ ...result, request: requestMap.get(result.requestId) }))
+            .filter(alert => alert.request)
+            .sort((a, b) => new Date(b.created) - new Date(a.created));
+
+        updatePriorityCounts(alerts);
+
+        const defaultStart = toDateInputValue(addDays(atLocalMidday(new Date()), -5));
+        const defaultEnd = toDateInputValue(atLocalMidday(new Date()));
+        document.getElementById('alerts-range-note').innerText = start === defaultStart && end === defaultEnd
+            ? 'Showing alerts from last 5 days'
+            : `Showing alerts from ${start} to ${end}`;
+
+        const tablePanel = document.getElementById('alerts-table-panel');
+        const emptyPanel = document.getElementById('alerts-empty-panel');
+        const tbody = document.getElementById('alerts-tbody');
+
+        if (alerts.length === 0) {
+            tablePanel.hidden = true;
+            emptyPanel.hidden = false;
+            document.getElementById('alerts-empty-text').innerText = 'No abnormal results were found for the selected period.';
+            tbody.innerHTML = '';
+            return;
+        }
+
+        tablePanel.hidden = false;
+        emptyPanel.hidden = true;
+        tbody.innerHTML = alerts.map(alert => {
+            const url = `/Doctor/RequestDetails?id=${encodeURIComponent(alert.requestId)}`;
+            const date = new Date(alert.created).toLocaleDateString();
+            return `
+                <tr class="alert-row" tabindex="0" data-url="${url}" aria-label="Open ${alert.requestId} result details">
+                    <td data-label="Date">${date}</td>
+                    <td data-label="Request">${alert.requestId}</td>
+                    <td data-label="Patient">${alert.request.patientName}</td>
+                    <td data-label="Test">${alert.testName}</td>
+                    <td data-label="Flag"><span class="badge ${getPriorityBadgeClass(alert.priority)}">${alert.flag}</span></td>
+                </tr>
+            `;
+        }).join('');
+    }
+
+    function handleAlertSelection(event) {
+        const row = event.target.closest('.alert-row');
+        if (!row) return;
+        window.location.href = row.dataset.url;
+    }
+
+    function handleAlertKeydown(event) {
+        if (event.key !== 'Enter' && event.key !== ' ') return;
+        const row = event.target.closest('.alert-row');
+        if (!row) return;
+        event.preventDefault();
+        window.location.href = row.dataset.url;
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const today = atLocalMidday(new Date());
+        document.getElementById('alerts-start-date').value = toDateInputValue(addDays(today, -5));
+        document.getElementById('alerts-end-date').value = toDateInputValue(today);
+        document.getElementById('alerts-tbody').addEventListener('click', handleAlertSelection);
+        document.getElementById('alerts-tbody').addEventListener('keydown', handleAlertKeydown);
+        document.getElementById('alerts-show-acknowledged').addEventListener('change', renderAlerts);
+        document.getElementById('alerts-start-date').addEventListener('change', renderAlerts);
+        document.getElementById('alerts-end-date').addEventListener('change', renderAlerts);
+        renderAlerts();
+    });
+</script>

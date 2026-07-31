@@ -1,0 +1,483 @@
+﻿@{
+    ViewData["Title"] = "Results";
+    Layout = "~/Views/Shared/_LayoutDoctor.cshtml";
+}
+
+<div class="page-body">
+    <div class="section-header">
+        <div class="section-title">Review and Release Results</div>
+        <div class="section-sub">Manage result cards, send patient emails, and release completed reports.</div>
+    </div>
+
+    <div class="card" style="margin-bottom: 18px;">
+        <div class="card-body" style="padding: 16px 24px; display: grid; grid-template-columns: 1fr auto; gap: 16px; align-items: center;">
+            <div>
+                <div class="form-label">Search</div>
+                <input id="results-search" class="form-control" type="search" placeholder="Search by patient, test type, or request ID..." oninput="renderResultCards()" />
+            </div>
+            <div class="btn-row" style="justify-self: end; gap: 10px;">
+                <button class="btn btn-secondary" type="button" onclick="renderResultCards(true)">Refresh</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="results-list"></div>
+</div>
+
+<div class="modal-overlay" id="modal-release">
+    <div class="modal modal-md">
+        <div class="modal-header">
+            <span class="modal-title">Release Results to Patient</span>
+            <button class="modal-close" onclick="closeModal('modal-release')">×</button>
+        </div>
+        <div class="modal-body">
+            <p style="margin-bottom: 14px; color: #4A5563;">Add a note for the patient regarding these results:</p>
+            <div class="form-group">
+                <label class="form-label"><input type="radio" name="release-option" id="release-option-1" value="normal" checked /> Results are normal - patient can view online</label>
+            </div>
+            <div class="form-group">
+                <label class="form-label"><input type="radio" name="release-option" id="release-option-2" value="appointment" /> Request appointment to discuss results</label>
+            </div>
+            <div class="form-group">
+                <textarea id="release-note" class="form-control" rows="4" placeholder="Or enter custom note..."></textarea>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" type="button" onclick="closeModal('modal-release')">Cancel</button>
+            <button class="btn btn-primary" type="button" onclick="submitReleaseResult()">Release & Email Patient</button>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="modal-email">
+    <div class="modal modal-md">
+        <div class="modal-header">
+            <span class="modal-title">Email Results to Patient</span>
+            <button class="modal-close" onclick="closeModal('modal-email')">×</button>
+        </div>
+        <div class="modal-body">
+            <p style="margin-bottom: 14px; color: #4A5563;">Compose a message to send with the PDF report:</p>
+            <div class="form-group">
+                <textarea id="email-message" class="form-control" rows="6" placeholder="Dear patient, please find your test results attached..."></textarea>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" type="button" onclick="closeModal('modal-email')">Cancel</button>
+            <button class="btn btn-primary" type="button" onclick="submitEmailResult()">Send Email with PDF</button>
+        </div>
+    </div>
+</div>
+
+<style>
+    .result-card {
+        background: #FFFFFF;
+        border-radius: 12px;
+        box-shadow: 0 10px 28px rgba(15, 30, 60, 0.08);
+        margin-bottom: 12px;
+        overflow: hidden;
+    }
+
+    .result-card-header {
+        padding: 16px 18px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+    }
+
+        .result-card-header h2 {
+            margin: 0;
+            font-size: 17px;
+            font-weight: 700;
+        }
+
+    .result-card-summary {
+        min-width: 0;
+    }
+
+        .result-card-summary h2 {
+            overflow-wrap: anywhere;
+        }
+
+    .result-meta {
+        color: #7A8CA0;
+        font-size: 13px;
+        line-height: 1.6;
+    }
+
+    .result-card:not(.expanded) .result-meta {
+        display: none;
+    }
+
+    .result-card:not(.expanded) .result-warning,
+    .result-card:not(.expanded) .result-card-body,
+    .result-card:not(.expanded) .result-actions {
+        display: none;
+    }
+
+    .result-status {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+    }
+
+        .result-status .badge {
+            padding: 6px 10px;
+        }
+
+    .result-warning {
+        margin: 0 24px 18px;
+        padding: 14px 18px;
+        border-radius: 12px;
+        background: #FFF4E6;
+        color: #7A4E05;
+        border: 1px solid rgba(245, 166, 35, 0.24);
+        font-size: 14px;
+    }
+
+    .result-card-body {
+        padding: 0 24px 22px;
+    }
+
+    .result-item {
+        background: #FAFAFB;
+        border-radius: 14px;
+        padding: 18px 20px;
+        margin-bottom: 16px;
+    }
+
+        .result-item:last-child {
+            margin-bottom: 0;
+        }
+
+    .result-item-title {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 12px;
+    }
+
+        .result-item-title strong {
+            font-size: 16px;
+            font-weight: 700;
+        }
+
+    .result-item-details {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(140px, 1fr));
+        gap: 18px;
+        margin-bottom: 16px;
+    }
+
+    .result-item-detail {
+        font-size: 12px;
+        color: #4A5563;
+    }
+
+        .result-item-detail strong {
+            display: block;
+            margin-bottom: 6px;
+            color: #1A2A3A;
+        }
+
+    .result-note {
+        color: #4A5563;
+        font-size: 13px;
+        line-height: 1.6;
+    }
+
+    .result-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin: 14px 24px 20px;
+    }
+
+        .result-actions .btn {
+            min-width: 130px;
+        }
+
+        .result-actions .btn-primary {
+            background: #1D5BFF;
+        }
+
+        .result-actions .btn-secondary {
+            border-color: #E3E8F0;
+            color: #516174;
+        }
+
+    .result-card-details[hidden] {
+        display: none;
+    }
+
+    .result-toggle {
+        min-width: 94px;
+    }
+
+    @@media (max-width: 640px) {
+        .result-card-header {
+            align-items: flex-start;
+            flex-direction: column;
+        }
+
+        .result-status {
+            justify-content: flex-start;
+            width: 100%;
+        }
+
+        .result-toggle {
+            width: 100%;
+        }
+    }
+</style>
+
+<script>
+    const requestsStorageKey = 'doctorRequests';
+    const expandedResultCards = new Set();
+    let currentActionRequestId = null;
+
+    const lookupTests = {
+        'Full Blood Count': {
+            performedBy: 'Lab Tech - James Wilson',
+            result: '12.9 g/dL',
+            normalRange: '13.0 - 17.0 g/dL',
+            verifiedBy: 'Dr. Michael Chen',
+            notes: 'Review red cell mass and correlate with patient hydration.',
+            abnormal: true
+        },
+        'Coagulation Profile': {
+            performedBy: 'Lab Tech - Sarah Patel',
+            result: 'PT 14.0 sec',
+            normalRange: '11.0 - 13.5 sec',
+            verifiedBy: 'Dr. Michael Chen',
+            notes: 'Slight prolongation is within clinical tolerance.',
+            abnormal: true
+        },
+        'Peripheral Blood Film': {
+            performedBy: 'Lab Tech - James Wilson',
+            result: 'Normal morphology',
+            normalRange: 'Normal',
+            verifiedBy: 'Dr. Michael Chen',
+            notes: 'No significant abnormalities detected.',
+            abnormal: false
+        },
+        'Differential Count': {
+            performedBy: 'Lab Tech - Sarah Patel',
+            result: 'Neutrophils 60%',
+            normalRange: '40 - 70%',
+            verifiedBy: 'Dr. Michael Chen',
+            notes: 'Differential count within normal limits.',
+            abnormal: false
+        },
+        'Basic Metabolic Panel': {
+            performedBy: 'Lab Tech - James Wilson',
+            result: 'All electrolytes within range',
+            normalRange: 'Refer lab-specific ranges',
+            verifiedBy: 'Dr. Michael Chen',
+            notes: 'Metabolic panel indicates stable renal function.',
+            abnormal: false
+        },
+        'Liver Function Test': {
+            performedBy: 'Lab Tech - Sarah Patel',
+            result: 'ALT 28 U/L',
+            normalRange: '7 - 56 U/L',
+            verifiedBy: 'Dr. Michael Chen',
+            notes: 'Liver enzymes are within normal limits.',
+            abnormal: false
+        }
+    };
+
+    const defaultRequests = [
+        {
+            id: 'REQ-2026-0182',
+            patientName: 'Anele Mbeki',
+            tests: ['Full Blood Count', 'Coagulation Profile'],
+            status: 'Submitted',
+            createdAt: '2026-05-12T09:12:00',
+            released: false
+        },
+        {
+            id: 'REQ-2026-0179',
+            patientName: 'Priya Naidoo',
+            tests: ['Peripheral Blood Film'],
+            status: 'Released by doctor',
+            createdAt: '2026-05-09T11:40:00',
+            released: true
+        }
+    ];
+
+    function getStoredRequests() {
+        try {
+            return JSON.parse(localStorage.getItem(requestsStorageKey) || 'null');
+        } catch {
+            return null;
+        }
+    }
+
+    function saveStoredRequests(items) {
+        localStorage.setItem(requestsStorageKey, JSON.stringify(items));
+    }
+
+    function ensureStoredRequests() {
+        const stored = getStoredRequests();
+        if (!stored || !Array.isArray(stored) || stored.length === 0) {
+            saveStoredRequests(defaultRequests);
+            return [...defaultRequests];
+        }
+        return stored;
+    }
+
+    function getTestDetails(testName) {
+        return lookupTests[testName] || {
+            performedBy: 'Lab Tech - Unknown',
+            result: 'Pending review',
+            normalRange: 'Refer lab range',
+            verifiedBy: 'Pending verification',
+            notes: 'Result available once technician captures the sample.',
+            abnormal: false
+        };
+    }
+
+    function normalizeStatus(status) {
+        const value = String(status || '').toLowerCase();
+        if (value === 'released') return 'Released by doctor';
+        if (value === 'samples received') return 'Samples Received';
+        if (value === 'in progress') return 'In progress';
+        if (value === 'released by doctor') return 'Released by doctor';
+        if (value === 'submitted') return 'Submitted';
+        if (value === 'completed') return 'Completed';
+        if (value === 'cancelled') return 'Cancelled';
+        return status || 'Unknown';
+    }
+
+    function renderResultCards(forceRefresh = false) {
+        if (forceRefresh) {
+            saveStoredRequests(ensureStoredRequests());
+        }
+        const searchTerm = document.getElementById('results-search').value.toLowerCase().trim();
+        const list = document.getElementById('results-list');
+        const requests = ensureStoredRequests();
+        const filtered = requests.filter(item => {
+            if (!searchTerm) return true;
+            const searchFields = [item.patientName, item.id, item.status, ...(Array.isArray(item.tests) ? item.tests.map(t => typeof t === 'string' ? t : t.testName) : [])];
+            return searchFields.some(value => String(value).toLowerCase().includes(searchTerm));
+        });
+
+        if (filtered.length === 0) {
+            list.innerHTML = '<div class="card"><div class="card-body">No results found matching your search.</div></div>';
+            return;
+        }
+
+        list.innerHTML = filtered.map(item => {
+            const tests = Array.isArray(item.tests) ? item.tests : [];
+            const testsHtml = tests.map(test => {
+                const isString = typeof test === 'string';
+                const testName = isString ? test : test.testName;
+                const data = isString ? getTestDetails(testName) : test;
+                return `
+                    <div class="result-item">
+                        <div class="result-item-title"><strong>${testName}</strong><span class="badge ${data.abnormal ? 'red' : 'green'}">${data.abnormal ? 'Abnormal' : 'Normal'}</span></div>
+                        <div class="result-item-details">
+                            <div class="result-item-detail"><strong>Performed by</strong>${data.performedBy}</div>
+                            <div class="result-item-detail"><strong>Result</strong>${data.result}</div>
+                            <div class="result-item-detail"><strong>Normal Range</strong>${data.normalRange}</div>
+                            <div class="result-item-detail"><strong>Verified</strong>${data.verifiedBy}</div>
+                        </div>
+                        <div class="result-note">${data.notes}</div>
+                    </div>
+                `;
+            }).join('');
+
+            const hasAbnormal = tests.some(test => {
+                if (typeof test === 'string') return getTestDetails(test).abnormal;
+                return test.abnormal;
+            });
+            const displayStatus = normalizeStatus(item.status);
+            const isReleased = item.released || displayStatus === 'Released by doctor';
+            const badgeClass = isReleased ? 'green' : hasAbnormal ? 'amber' : 'blue';
+            const badgeLabel = displayStatus || (isReleased ? 'Released by doctor' : 'Pending release');
+            const isExpanded = expandedResultCards.has(item.id);
+
+            const actionButton = isReleased
+                ? `<button class="btn btn-secondary" disabled>Released by doctor</button>`
+                : `<button class="btn btn-primary" type="button" onclick="openReleaseModal('${item.id}')">Release Results</button>`;
+
+            const emailButton = `<button class="btn btn-secondary" type="button" onclick="openEmailModal('${item.id}')">Email</button>`;
+            const pdfButton = `<button class="btn btn-secondary" type="button" onclick="toast('Download PDF generated for ${item.patientName}.')">PDF</button>`;
+            const toggleButton = `<button class="btn btn-secondary result-toggle" type="button" aria-expanded="${isExpanded}" onclick="toggleResultCard('${item.id}')">${isExpanded ? 'Minimize' : 'Expand'}</button>`;
+
+            return `
+                <div class="result-card ${isExpanded ? 'expanded' : ''}">
+                    <div class="result-card-header">
+                        <div class="result-card-summary">
+                            <h2>${item.patientName} - ${item.id}</h2>
+                            <div class="result-meta">${item.createdAt ? item.createdAt.split('T')[0] : 'Unknown date'} · ${tests.length} test(s)</div>
+                        </div>
+                        <div class="result-status">
+                            <span class="badge ${badgeClass}">${badgeLabel}</span>
+                            ${toggleButton}
+                        </div>
+                    </div>
+                    ${hasAbnormal ? '<div class="result-warning">Contains abnormal results</div>' : ''}
+                    <div class="result-card-body">${testsHtml}</div>
+                    <div class="result-actions">
+                        ${pdfButton}
+                        ${emailButton}
+                        ${actionButton}
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    function toggleResultCard(requestId) {
+        if (expandedResultCards.has(requestId)) {
+            expandedResultCards.delete(requestId);
+        } else {
+            expandedResultCards.add(requestId);
+        }
+        renderResultCards();
+    }
+
+    function openReleaseModal(requestId) {
+        currentActionRequestId = requestId;
+        document.getElementById('release-option-1').checked = true;
+        document.getElementById('release-note').value = '';
+        openModal('modal-release');
+    }
+
+    function openEmailModal(requestId) {
+        currentActionRequestId = requestId;
+        const item = ensureStoredRequests().find(r => r.id === requestId);
+        const message = `Dear ${item?.patientName || 'patient'}, please find your test results attached. If you have any questions, reply to this email.`;
+        document.getElementById('email-message').value = message;
+        openModal('modal-email');
+    }
+
+    function submitReleaseResult() {
+        const requests = ensureStoredRequests();
+        const item = requests.find(r => r.id === currentActionRequestId);
+        if (!item) return;
+        item.status = 'Released by doctor';
+        item.released = true;
+        saveStoredRequests(requests);
+        closeModal('modal-release');
+        renderResultCards();
+        toast(`Results released for ${item.patientName}.`);
+    }
+
+    function submitEmailResult() {
+        const item = ensureStoredRequests().find(r => r.id === currentActionRequestId);
+        if (!item) return;
+        closeModal('modal-email');
+        toast(`Email sent to ${item.patientName}.`);
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        ensureStoredRequests();
+        renderResultCards();
+    });
+</script>

@@ -1,0 +1,264 @@
+﻿@{
+    ViewData["Title"] = "Create Test Request";
+    Layout = "~/Views/Shared/_LayoutDoctor.cshtml";
+}
+
+<div class="page-body">
+    <div class="section-header">
+        <div class="section-title">Create Test Request</div>
+        <div class="section-sub">Select a patient by ID number, review their medical details, and assign samples for each requested test.</div>
+    </div>
+
+    <section class="grid-2">
+        <div class="card">
+            <div class="card-header"><span class="card-title">Request Details</span></div>
+            <div class="card-body">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Patient (ID Number)</label>
+                        <select id="patient-select" class="form-control" onchange="loadPatientDetails()">
+                            <option value="">-- Select Patient --</option>
+                            <option value="8001015009087">8001015009087 - Mpho Thabo</option>
+                            <option value="9203301234086">9203301234086 - Nandi Louw</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Urgency</label>
+                        <select class="form-control" id="urgency-select">
+                            <option>Routine</option>
+                            <option>Urgent</option>
+                            <option>STAT</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div id="patient-info-panel" class="patient-info-panel" style="display:none;">
+                    <div class="info-section">
+                        <h4>Patient Medical Information</h4>
+                        <div class="info-grid">
+                            <div class="info-item">
+                                <label>Name</label>
+                                <span id="patient-name"></span>
+                            </div>
+                            <div class="info-item">
+                                <label>Cellphone</label>
+                                <span id="patient-cellphone"></span>
+                            </div>
+                            <div class="info-item">
+                                <label>Email</label>
+                                <span id="patient-email"></span>
+                            </div>
+                        </div>
+                        <div class="info-section-box">
+                            <label class="section-label">Known Medical Conditions</label>
+                            <div id="patient-conditions" class="info-text"></div>
+                        </div>
+                        <div class="info-section-box">
+                            <label class="section-label">Allergies</label>
+                            <div id="patient-allergies" class="info-text"></div>
+                        </div>
+                        <div class="info-section-box">
+                            <label class="section-label">Current Medications</label>
+                            <div id="patient-medication" class="info-text"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Clinical Notes</label>
+                    <textarea id="clinical-notes" class="form-control" placeholder="Enter relevant clinical context"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Requested Test Types</label>
+                    <div class="checkbox-list" id="test-types" onchange="updateRequestSummary()">
+                        <label class="checkbox-item"><input type="checkbox" value="Full Blood Count"> Full Blood Count</label>
+                        <label class="checkbox-item"><input type="checkbox" value="Coagulation Profile"> Coagulation Profile</label>
+                        <label class="checkbox-item"><input type="checkbox" value="Peripheral Blood Film"> Peripheral Blood Film</label>
+                        <label class="checkbox-item"><input type="checkbox" value="Differential Count"> Differential Count</label>
+                        <label class="checkbox-item"><input type="checkbox" value="Basic Metabolic Panel"> Basic Metabolic Panel</label>
+                        <label class="checkbox-item"><input type="checkbox" value="Liver Function Test"> Liver Function Test</label>
+                    </div>
+                    <small class="form-hint">Each selected test type receives its own sample and barcode. Check multiple tests to create them together.</small>
+                </div>
+
+                <div class="form-row">
+                    <button class="btn btn-secondary" type="button" onclick="window.location.href='/Doctor/Requests'">Back to Requests</button>
+                    <button class="btn btn-primary" type="button" onclick="submitRequest()">Submit Request</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header"><span class="card-title">Selected Tests & Samples</span></div>
+            <div class="card-body sample-summary-card">
+                <div class="summary-help">For every selected test, assign the vial barcode from the sample tube you used.</div>
+                <div id="selected-tests-list" class="selected-tests-list">
+                    <div class="summary-empty">No tests selected. Choose one or more requested test types to build the sample list.</div>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+
+<script>
+    const sampleInfoMap = {
+        'Full Blood Count': { vial: 'Red', color: '#E74C3C', sampleType: 'Blood' },
+        'Coagulation Profile': { vial: 'Blue', color: '#3498DB', sampleType: 'Plasma' },
+        'Peripheral Blood Film': { vial: 'Purple', color: '#9B59B6', sampleType: 'Blood smear' },
+        'Differential Count': { vial: 'Purple', color: '#9B59B6', sampleType: 'Blood smear' },
+        'Basic Metabolic Panel': { vial: 'Gold', color: '#D68910', sampleType: 'Serum' },
+        'Liver Function Test': { vial: 'Gold', color: '#D68910', sampleType: 'Serum' }
+    };
+
+    const sampleBarcodes = {};
+
+    function loadPatientDetails() {
+        const patientId = document.getElementById('patient-select').value;
+        const panel = document.getElementById('patient-info-panel');
+
+        if (!patientId) {
+            panel.style.display = 'none';
+            return;
+        }
+
+        fetch(`/Doctor/GetPatientBySouthAfricanId?id=${encodeURIComponent(patientId)}`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Patient not found');
+                }
+                return response.json();
+            })
+            .then(data => {
+                document.getElementById('patient-name').textContent = `${data.firstName} ${data.lastName}`;
+                document.getElementById('patient-cellphone').textContent = data.cellphone || 'N/A';
+                document.getElementById('patient-email').textContent = data.email || 'N/A';
+                document.getElementById('patient-conditions').textContent = data.knownMedicalConditions || 'None recorded';
+                document.getElementById('patient-allergies').textContent = data.allergies || 'None recorded';
+                document.getElementById('patient-medication').textContent = data.medication || 'None recorded';
+                panel.style.display = 'block';
+            })
+            .catch(() => {
+                alert('Unable to load patient information. Please confirm the ID number.');
+                panel.style.display = 'none';
+            });
+    }
+
+    function getSelectedTests() {
+        return Array.from(document.querySelectorAll('#test-types input[type="checkbox"]:checked')).map(input => input.value);
+    }
+
+    function updateRequestSummary() {
+        const selected = getSelectedTests();
+        const list = document.getElementById('selected-tests-list');
+        list.innerHTML = '';
+
+        if (selected.length === 0) {
+            list.innerHTML = '<div class="summary-empty">No tests selected. Check one or more test types to build the sample list.</div>';
+            return;
+        }
+
+        selected.forEach(testType => {
+            if (!sampleBarcodes[testType]) {
+                sampleBarcodes[testType] = '';
+            }
+            const info = sampleInfoMap[testType] || { vial: 'Red', color: '#E74C3C', sampleType: 'Blood' };
+            const row = document.createElement('div');
+            row.className = 'sample-summary-row';
+            row.innerHTML = `
+                <div class="sample-summary-meta">
+                    <div>
+                        <div class="sample-summary-label">${testType}</div>
+                        <small>${info.sampleType} sample • ${info.vial} cap</small>
+                    </div>
+                    <span class="vial-chip" style="background:${info.color};">${info.vial}</span>
+                </div>
+                <div class="sample-summary-barcode">
+                    <label class="section-label">Barcode</label>
+                    <input type="text" class="form-control" value="${sampleBarcodes[testType]}" oninput="updateSampleBarcode('${testType}', this.value)" placeholder="Enter vial barcode">
+                </div>
+            `;
+            list.appendChild(row);
+        });
+    }
+
+    function updateSampleBarcode(testType, value) {
+        sampleBarcodes[testType] = value;
+    }
+
+    function getPatientName() {
+        const select = document.getElementById('patient-select');
+        const selected = select.selectedOptions[0];
+        return selected?.textContent.split(' - ')[1] || '';
+    }
+
+    function newRequestId() {
+        return `REQ-${new Date().getFullYear()}-${Date.now()}`;
+    }
+
+    function getStoredRequests() {
+        const saved = localStorage.getItem('doctorRequests');
+        return saved ? JSON.parse(saved) : [];
+    }
+
+    function saveRequest(request) {
+        const requests = getStoredRequests();
+        requests.push(request);
+        localStorage.setItem('doctorRequests', JSON.stringify(requests));
+    }
+
+    function submitRequest() {
+        const patientId = document.getElementById('patient-select').value;
+        const selectedTests = getSelectedTests();
+        const urgency = document.getElementById('urgency-select').value;
+        const clinicalNotes = document.getElementById('clinical-notes').value.trim();
+        const patientName = getPatientName();
+
+        if (!patientId) {
+            alert('Please select a patient by ID before submitting the request.');
+            return;
+        }
+        if (selectedTests.length === 0) {
+            alert('Please select at least one test type.');
+            return;
+        }
+
+        const missingBarcode = selectedTests.find(test => !String(sampleBarcodes[test] || '').trim());
+        if (missingBarcode) {
+            alert(`Please enter the vial barcode for ${missingBarcode}.`);
+            return;
+        }
+
+        const requestItems = selectedTests.map(testType => {
+            const info = sampleInfoMap[testType] || { vial: 'Red', sampleType: 'Blood' };
+            return {
+                testType,
+                sampleType: info.sampleType,
+                vial: info.vial,
+                sampleBarcode: sampleBarcodes[testType].trim(),
+                status: 'Submitted'
+            };
+        });
+
+        const request = {
+            id: newRequestId(),
+            patientId,
+            patientName,
+            tests: selectedTests,
+            items: requestItems,
+            sampleBarcodes: Object.fromEntries(requestItems.map(item => [item.testType, item.sampleBarcode])),
+            urgency,
+            clinicalNotes,
+            status: 'Submitted',
+            createdAt: new Date().toISOString()
+        };
+
+        saveRequest(request);
+        toast('Request submitted and added to the request table.');
+        window.location.href = '/Doctor/Requests';
+    }
+
+    function toast(msg) {
+        alert(msg);
+    }
+</script>
