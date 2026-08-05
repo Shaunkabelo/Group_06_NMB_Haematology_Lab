@@ -1,0 +1,280 @@
+﻿@using Group_06_NMB_Haematology_Diagnostic_Lab.Data.Models
+@model IEnumerable<LabTechnician>
+
+@{
+    Layout = "~/Views/Shared/_LabManager_Layout.cshtml";
+}
+
+<div class="page-body">
+
+    <div class="section-header">
+        <div>
+            <h2>Technicians</h2>
+            <small>Manage registered laboratory technicians.</small>
+        </div>
+
+        <button class="btn btn-primary"
+                onclick="openCreateTechnician()"
+                data-bs-toggle="offcanvas"
+                data-bs-target="#technicianPanel">
+            Add Technician
+        </button>
+    </div>
+
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Surname</th>
+                    <th>Email</th>
+                    <th>Cellphone</th>
+                    <th>SA ID</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+
+            <tbody>
+
+                @foreach (var technician in Model)
+                {
+                    <tr>
+
+                        <td>@technician.User.Name</td>
+                        <td>@technician.User.Surname</td>
+                        <td>@technician.User.Email</td>
+                        <td>@technician.User.Cellphone</td>
+                        <td>@technician.User.SaIdNumber</td>
+
+                        <td>
+                            @(technician.User.IsActive ? "Active" : "Inactive")
+                        </td>
+
+                        <td class="td-actions">
+
+                            <button type="button"
+                                    class="btn btn-edit btn-sm"
+                                    data-bs-toggle="offcanvas"
+                                    data-bs-target="#technicianPanel"
+                                    onclick="openEditTechnician(this)"
+                                    data-id="@technician.LabTechnicianId"
+                                    data-name="@technician.User.Name"
+                                    data-surname="@technician.User.Surname"
+                                    data-email="@technician.User.Email"
+                                    data-cellphone="@technician.User.Cellphone"
+                                    data-dob="@technician.User.DateOfBirth?.ToString("yyyy-MM-dd")"
+                                    data-said="@technician.User.SaIdNumber"
+                                    data-address="@technician.User.HomeAddress"
+                                    data-employee="@technician.EmployeeNumber">
+
+                                Edit
+
+                            </button>
+
+                            <form asp-action="DeleteTechnician"
+                                  asp-controller="LabManager"
+                                  method="post"
+                                  style="display:inline;">
+
+                                <input type="hidden"
+                                       name="id"
+                                       value="@technician.LabTechnicianId" />
+
+                                <button type="submit"
+                                        class="btn btn-delete btn-sm"
+                                        onclick="return confirm('Are you sure you want to deactivate this technician?');">
+
+                                    Delete
+
+                                </button>
+
+                            </form>
+
+                        </td>
+
+                    </tr>
+                }
+
+            </tbody>
+        </table>
+    </div>
+
+</div>
+
+<!-- ========================================================= -->
+<!-- ADD / EDIT TECHNICIAN PANEL -->
+<!-- ========================================================= -->
+
+<div class="offcanvas offcanvas-end"
+     tabindex="-1"
+     id="technicianPanel"
+     style="width:600px;">
+
+    <div class="offcanvas-header">
+
+        <h4 id="technicianPanelTitle">
+            Add Technician
+        </h4>
+
+        <button type="button"
+                class="btn-close"
+                data-bs-dismiss="offcanvas"></button>
+
+    </div>
+
+    <div class="offcanvas-body">
+
+        <form id="technicianForm"
+              asp-controller="LabManager"
+              asp-action="CreateTechnician"
+              method="post"
+              onsubmit="return validateSouthAfricanId('TechnicianSaIdNumber','TechnicianDateOfBirth');">
+
+            <input type="hidden"
+                   id="LabTechnicianId"
+                   name="LabTechnicianId"
+                   value="0" />
+
+            <div class="form-group">
+                <label class="form-label">First Name</label>
+                <input id="Name"
+                       class="form-control"
+                       name="User.Name"
+                       required />
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Surname</label>
+                <input id="Surname"
+                       class="form-control"
+                       name="User.Surname"
+                       required />
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Email</label>
+                <input id="Email"
+                       type="email"
+                       class="form-control"
+                       name="User.Email"
+                       required />
+            </div>
+
+            <div class="form-row">
+
+                <div class="form-group">
+                    <label class="form-label">Cellphone</label>
+
+                    <input id="Cellphone"
+                           class="form-control"
+                           name="User.Cellphone" />
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Date of Birth</label>
+
+                    <input id="TechnicianDateOfBirth"
+                           type="date"
+                           class="form-control"
+                           name="User.DateOfBirth"
+                           onchange="validateSouthAfricanId('TechnicianSaIdNumber','TechnicianDateOfBirth')" />
+                </div>
+
+            </div>
+
+            <div class="form-group">
+
+                <label class="form-label">SA ID</label>
+
+                <input id="TechnicianSaIdNumber"
+                       class="form-control"
+                       maxlength="13"
+                       name="User.SaIdNumber"
+                       onkeyup="validateSouthAfricanId('TechnicianSaIdNumber','TechnicianDateOfBirth')"
+                       onchange="validateSouthAfricanId('TechnicianSaIdNumber','TechnicianDateOfBirth')" />
+
+                <small id="idValidation"
+                       style="color:red;font-weight:bold;"></small>
+
+            </div>
+
+            <div class="form-group">
+
+                <label class="form-label">Home Address</label>
+
+                <textarea id="HomeAddress"
+                          class="form-control"
+                          name="User.HomeAddress"></textarea>
+
+            </div>
+
+            
+            <button id="technicianSubmitButton"
+                    type="submit"
+                    class="btn btn-primary">
+
+                Save Technician
+
+            </button>
+
+            <button type="button"
+                    class="btn btn-secondary"
+                    data-bs-dismiss="offcanvas">
+
+                Cancel
+
+            </button>
+
+        </form>
+
+    </div>
+
+</div>
+
+<script>
+
+    function openCreateTechnician() {
+
+        document.getElementById("technicianPanelTitle").innerText = "Add Technician";
+
+        document.getElementById("technicianSubmitButton").innerText = "Save Technician";
+
+        document.getElementById("technicianForm").action = "/LabManager/CreateTechnician";
+
+        document.getElementById("technicianForm").reset();
+        document.getElementById("idValidation").innerText = "";
+        document.getElementById("LabTechnicianId").value = "0";
+
+    }
+
+
+    function openEditTechnician(button) {
+
+        document.getElementById("technicianPanelTitle").innerText = "Edit Technician";
+
+        document.getElementById("technicianSubmitButton").innerText = "Update Technician";
+
+        document.getElementById("technicianForm").action = "/LabManager/EditTechnician";
+
+        document.getElementById("LabTechnicianId").value = button.dataset.id;
+
+        document.getElementById("Name").value = button.dataset.name;
+
+        document.getElementById("Surname").value = button.dataset.surname;
+
+        document.getElementById("Email").value = button.dataset.email;
+
+        document.getElementById("Cellphone").value = button.dataset.cellphone;
+
+            document.getElementById("TechnicianDateOfBirth").value = button.dataset.dob;
+
+    document.getElementById("TechnicianSaIdNumber").value = button.dataset.said;
+
+        document.getElementById("HomeAddress").value = button.dataset.address;
+
+        
+
+    }
+
+</script>

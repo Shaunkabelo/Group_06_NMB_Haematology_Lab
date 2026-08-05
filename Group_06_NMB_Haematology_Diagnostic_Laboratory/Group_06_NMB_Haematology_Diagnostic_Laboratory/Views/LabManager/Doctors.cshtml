@@ -81,6 +81,7 @@
                                        name="id"
                                        value="@doctor.DoctorId" />
 
+
                                 <button type="submit"
                                         class="btn btn-delete btn-sm"
                                         onclick="return confirm('Are you sure you want to deactivate this doctor?');">
@@ -128,7 +129,8 @@
         <form id="doctorForm"
               asp-controller="LabManager"
               asp-action="CreateDoctor"
-              method="post">
+              method="post"
+              onsubmit="return validateSouthAfricanId('SaIdNumber','DateOfBirth');">
 
             <input type="hidden"
                    id="DoctorId"
@@ -175,7 +177,8 @@
                     <input id="DateOfBirth"
                            type="date"
                            class="form-control"
-                           name="User.DateOfBirth" />
+                           name="User.DateOfBirth"
+                           onchange="validateSouthAfricanId('SaIdNumber','DateOfBirth')" />
                 </div>
 
             </div>
@@ -187,7 +190,9 @@
                 <input id="SaIdNumber"
                        class="form-control"
                        maxlength="13"
-                       name="User.SaIdNumber" />
+                       name="User.SaIdNumber"
+                       onkeyup="validateSouthAfricanId('SaIdNumber','DateOfBirth')"
+                       onchange="validateSouthAfricanId('SaIdNumber','DateOfBirth')" />
 
             </div>
 
@@ -211,7 +216,7 @@
                        required />
 
             </div>
-
+            
             <button id="doctorSubmitButton"
                     type="submit"
                     class="btn btn-primary">
