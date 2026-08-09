@@ -235,3 +235,72 @@ tr:hover {
         grid-template-columns: 1fr
     }
 }
+
+/* =========================================================
+   FILTER SELECT
+   ========================================================= */
+
+#filterSelect {
+    width: 150px;
+    min-width: 150px;
+    padding: 10px 40px 10px 14px;
+    border-radius: 10px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background-color: #fff;
+}
+
+    /* ACTIVE */
+    #filterSelect.filter-active {
+        color: #087443 !important;
+        background-color: #e8f8f1 !important;
+        border: 2px solid #00a878 !important;
+        box-shadow: 0 3px 10px rgba(0, 168, 120, 0.18);
+    }
+
+    /* INACTIVE */
+    #filterSelect.filter-inactive {
+        color: #c92a38 !important;
+        background-color: #fff0f2 !important;
+        border: 2px solid #ff4757 !important;
+        box-shadow: 0 3px 10px rgba(255, 71, 87, 0.18);
+    }
+
+    /* ALL */
+    #filterSelect.filter-all {
+        color: #1769aa !important;
+        background-color: #edf6ff !important;
+        border: 2px solid #3d9ae8 !important;
+        box-shadow: 0 3px 10px rgba(61, 154, 232, 0.18);
+    }
+
+    /* Hover */
+    #filterSelect:hover {
+        transform: translateY(-1px);
+    }
+
+    /* Focus */
+    #filterSelect:focus {
+        outline: none !important;
+    }
+
+    /* Active focus */
+    #filterSelect.filter-active:focus {
+        border-color: #008f6b !important;
+        box-shadow: 0 0 0 4px rgba(0, 201, 167, 0.15);
+    }
+
+    /* Inactive focus */
+    #filterSelect.filter-inactive:focus {
+        border-color: #e12f40 !important;
+        box-shadow: 0 0 0 4px rgba(255, 71, 87, 0.15);
+    }
+
+    /* All focus */
+    #filterSelect.filter-all:focus {
+        border-color: #2787d0 !important;
+        box-shadow: 0 0 0 4px rgba(61, 154, 232, 0.15);
+    }
+
+

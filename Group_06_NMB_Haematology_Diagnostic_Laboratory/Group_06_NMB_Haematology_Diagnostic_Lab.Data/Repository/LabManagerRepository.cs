@@ -22,7 +22,7 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
         //=======================================================================================================
 
         // ------------------- GET/DISPLAY DOCTORS -----------
-        public async Task<IEnumerable<Doctor>> GetDoctors()
+        public async Task<IEnumerable<Doctor>> GetDoctors(string filter = "Active")
         {
             return await _db.GetData<Doctor, User, Doctor, dynamic>(
                 "sp_Doctor_GetAll",
@@ -31,7 +31,10 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
                     doctor.User = user;
                     return doctor;
                 },
-                new { },
+                new
+                {
+                    Filter = filter
+                },
                 splitOn: "UserId"
             );
         }
@@ -116,6 +119,16 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
                     DoctorID = doctorId
                 });
         }
+        // ------------ REACTIVATE -----------------------
+        public async Task ReactivateDoctor(int doctorId)
+        {
+            await _db.SaveData(
+                "sp_Doctor_Reactivate",
+                new
+                {
+                    DoctorID = doctorId
+                });
+        }
         //===========================================================================================================
         //===========================================================================================================
 
@@ -127,7 +140,7 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
         //=======================================================================================================
 
         //------------------------- DISPLAY TECHNICIANS
-        public async Task<IEnumerable<LabTechnician>> GetTechnicians() 
+        public async Task<IEnumerable<LabTechnician>> GetTechnicians(string filter = "Active")
         {
             return await _db.GetData<LabTechnician, User, LabTechnician, dynamic>(
                 "sp_LabTechnician_GetAll",
@@ -136,7 +149,10 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
                     technician.User = user;
                     return technician;
                 },
-                new { },
+                new
+                {
+                    Filter = filter
+                },
                 splitOn: "UserId"
             );
         }
@@ -223,6 +239,17 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
                     LabTechnicianID = technicianId
                 });
         }
+
+        // ------------------------ REACTIVATE TECHNICIAN ------------------------
+        public async Task ReactivateTechnician(int technicianId)
+        {
+            await _db.SaveData(
+                "sp_LabTechnician_Reactivate",
+                new
+                {
+                    LabTechnicianID = technicianId
+                });
+        }
         //==================================================================================================
 
 
@@ -231,7 +258,7 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
 
 
         // ------------------------- DISPLAY MANAGERS -------------------------
-        public async Task<IEnumerable<LabManager>> GetManagers()
+        public async Task<IEnumerable<LabManager>> GetManagers(string filter = "Active")
         {
             return await _db.GetData<LabManager, User, LabManager, dynamic>(
                 "sp_LabManager_GetAll",
@@ -240,7 +267,10 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
                     manager.User = user;
                     return manager;
                 },
-                new { },
+                new
+                {
+                    Filter = filter
+                },
                 splitOn: "UserId"
             );
         }
@@ -323,6 +353,82 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
                 new
                 {
                     LabManagerID = managerId
+                });
+        }
+
+        // ------------------------- REACTIVATE MANAGER -------------------------
+        public async Task ReactivateManager(int managerId)
+        {
+            await _db.SaveData(
+                "sp_LabManager_Reactivate",
+                new
+                {
+                    LabManagerID = managerId
+                });
+        }
+
+
+        //================================ SUPPLIER ======================================================
+        //================================================================================================
+
+        // ------------------------- DISPLAY SUPPLIERS -------------------------
+        public async Task<IEnumerable<Supplier>> GetSuppliers()
+        {
+            return await _db.GetData<Supplier, dynamic>(
+                "sp_Supplier_GetAll",
+                new { }
+            );
+        }
+
+        // ------------------------- GET SUPPLIER BY ID -------------------------
+        public async Task<Supplier?> GetSupplierById(int supplierId)
+        {
+            var supplier = await _db.GetData<Supplier, dynamic>(
+                "sp_Supplier_GetById",
+                new
+                {
+                    SupplierID = supplierId
+                }
+            );
+
+            return supplier.FirstOrDefault();
+        }
+
+        // ------------------------- CREATE SUPPLIER -------------------------
+        public async Task CreateSupplier(Supplier supplier)
+        {
+            await _db.SaveData(
+                "sp_Supplier_Create",
+                new
+                {
+                    supplier.SupplierName,
+                    supplier.ContactPerson,
+                    supplier.SupplierEmail
+                });
+        }
+
+        // ------------------------- UPDATE SUPPLIER -------------------------
+        public async Task UpdateSupplier(Supplier supplier)
+        {
+            await _db.SaveData(
+                "sp_Supplier_Update",
+                new
+                {
+                    supplier.SupplierId,
+                    supplier.SupplierName,
+                    supplier.ContactPerson,
+                    supplier.SupplierEmail
+                });
+        }
+
+        // ------------------------- DELETE SUPPLIER [Soft Delete] -------------------------
+        public async Task DeleteSupplier(int supplierId)
+        {
+            await _db.SaveData(
+                "sp_Supplier_Delete",
+                new
+                {
+                    SupplierID = supplierId
                 });
         }
     }

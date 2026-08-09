@@ -7,23 +7,89 @@
 
 <div class="page-body">
 
+    
+    <!-- ========================================================= -->
+    <!-- PAGE HEADER -->
+    <!-- ========================================================= -->
+
     <div class="section-header">
+
         <div>
             <h2>Technicians</h2>
             <small>Manage registered laboratory technicians.</small>
         </div>
 
-        <button class="btn btn-primary"
-                onclick="openCreateTechnician()"
-                data-bs-toggle="offcanvas"
-                data-bs-target="#technicianPanel">
-            Add Technician
-        </button>
+        <div style="display:flex; gap:10px; align-items:center;">
+
+            <!-- FILTER -->
+            <form asp-controller="LabManager"
+                  asp-action="Technicians"
+                  method="get">
+
+                <select id="filterSelect"
+                        name="filter"
+                        class="form-select @(ViewBag.Filter == "Active" ? "filter-active" : ViewBag.Filter == "Inactive" ? "filter-inactive" : "filter-all")"
+                        onchange="this.form.submit()">
+
+                                        )"
+                        onchange="this.form.submit()">
+
+                    @if (ViewBag.Filter == "Active")
+                    {
+                        <option value="Active" selected>Active</option>
+                    }
+                    else
+                    {
+                        <option value="Active">Active</option>
+                    }
+
+                    @if (ViewBag.Filter == "Inactive")
+                    {
+                        <option value="Inactive" selected>Inactive</option>
+                    }
+                    else
+                    {
+                        <option value="Inactive">Inactive</option>
+                    }
+
+                    @if (ViewBag.Filter == "All")
+                    {
+                        <option value="All" selected>All</option>
+                    }
+                    else
+                    {
+                        <option value="All">All</option>
+                    }
+
+                </select>
+
+            </form>
+
+            <!-- ADD TECHNICIAN -->
+            <button class="btn btn-primary"
+                    onclick="openCreateTechnician()"
+                    data-bs-toggle="offcanvas"
+                    data-bs-target="#technicianPanel">
+
+                Add Technician
+
+            </button>
+
+        </div>
+
     </div>
 
+
+    <!-- ========================================================= -->
+    <!-- TECHNICIANS TABLE -->
+    <!-- ========================================================= -->
+
     <div class="table-wrap">
+
         <table>
+
             <thead>
+
                 <tr>
                     <th>Name</th>
                     <th>Surname</th>
@@ -33,6 +99,7 @@
                     <th>Status</th>
                     <th>Actions</th>
                 </tr>
+
             </thead>
 
             <tbody>
@@ -42,16 +109,35 @@
                     <tr>
 
                         <td>@technician.User.Name</td>
+
                         <td>@technician.User.Surname</td>
+
                         <td>@technician.User.Email</td>
+
                         <td>@technician.User.Cellphone</td>
+
                         <td>@technician.User.SaIdNumber</td>
 
                         <td>
-                            @(technician.User.IsActive ? "Active" : "Inactive")
+
+                            @if (technician.User.IsActive)
+                            {
+                                <span class="status-active">
+                                    Active
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="status-inactive">
+                                    Inactive
+                                </span>
+                            }
+
                         </td>
 
                         <td class="td-actions">
+
+                            <!-- ================= EDIT ================= -->
 
                             <button type="button"
                                     class="btn btn-edit btn-sm"
@@ -72,24 +158,61 @@
 
                             </button>
 
-                            <form asp-action="DeleteTechnician"
-                                  asp-controller="LabManager"
-                                  method="post"
-                                  style="display:inline;">
 
-                                <input type="hidden"
-                                       name="id"
-                                       value="@technician.LabTechnicianId" />
+                            <!-- ================= ACTIVE TECHNICIAN ================= -->
+                            @if (technician.User.IsActive)
+                            {
+                                <form asp-action="DeleteTechnician"
+                                      asp-controller="LabManager"
+                                      method="post"
+                                      style="display:inline;">
 
-                                <button type="submit"
-                                        class="btn btn-delete btn-sm"
-                                        onclick="return confirm('Are you sure you want to deactivate this technician?');">
+                                    <input type="hidden"
+                                           name="id"
+                                           value="@technician.LabTechnicianId" />
 
-                                    Delete
+                                    <input type="hidden"
+                                           name="filter"
+                                           value="@ViewBag.Filter" />
 
-                                </button>
+                                    <button type="submit"
+                                            class="btn btn-delete btn-sm"
+                                            onclick="return confirm('Are you sure you want to deactivate this technician?');">
 
-                            </form>
+                                        Delete
+
+                                    </button>
+
+                                </form>
+                            }
+
+
+                            <!-- ================= INACTIVE TECHNICIAN ================= -->
+                            @if (!technician.User.IsActive)
+                            {
+                                <form asp-action="ReactivateTechnician"
+                                      asp-controller="LabManager"
+                                      method="post"
+                                      style="display:inline;">
+
+                                    <input type="hidden"
+                                           name="id"
+                                           value="@technician.LabTechnicianId" />
+
+                                    <input type="hidden"
+                                           name="filter"
+                                           value="@ViewBag.Filter" />
+
+                                    <button type="submit"
+                                            class="btn btn-activate btn-sm"
+                                            onclick="return confirm('Are you sure you want to reactivate this technician?');">
+
+                                        Reactivate
+
+                                    </button>
+
+                                </form>
+                            }
 
                         </td>
 
@@ -97,8 +220,11 @@
                 }
 
             </tbody>
+
         </table>
+
     </div>
+    
 
 </div>
 
@@ -111,6 +237,7 @@
      id="technicianPanel"
      style="width:600px;">
 
+    
     <div class="offcanvas-header">
 
         <h4 id="technicianPanelTitle">
@@ -119,9 +246,11 @@
 
         <button type="button"
                 class="btn-close"
-                data-bs-dismiss="offcanvas"></button>
+                data-bs-dismiss="offcanvas">
+        </button>
 
     </div>
+
 
     <div class="offcanvas-body">
 
@@ -136,56 +265,97 @@
                    name="LabTechnicianId"
                    value="0" />
 
+
+            <!-- FIRST NAME -->
+
             <div class="form-group">
-                <label class="form-label">First Name</label>
-                <input id="Name"
+
+                <label class="form-label">
+                    First Name
+                </label>
+
+                <input id="TechnicianName"
                        class="form-control"
                        name="User.Name"
                        required />
+
             </div>
 
+
+            <!-- SURNAME -->
+
             <div class="form-group">
-                <label class="form-label">Surname</label>
-                <input id="Surname"
+
+                <label class="form-label">
+                    Surname
+                </label>
+
+                <input id="TechnicianSurname"
                        class="form-control"
                        name="User.Surname"
                        required />
+
             </div>
 
+
+            <!-- EMAIL -->
+
             <div class="form-group">
-                <label class="form-label">Email</label>
-                <input id="Email"
+
+                <label class="form-label">
+                    Email
+                </label>
+
+                <input id="TechnicianEmail"
                        type="email"
                        class="form-control"
                        name="User.Email"
                        required />
+
             </div>
+
+
+            <!-- CELLPHONE + DOB -->
 
             <div class="form-row">
 
                 <div class="form-group">
-                    <label class="form-label">Cellphone</label>
 
-                    <input id="Cellphone"
+                    <label class="form-label">
+                        Cellphone
+                    </label>
+
+                    <input id="TechnicianCellphone"
                            class="form-control"
                            name="User.Cellphone" />
+
                 </div>
 
+
                 <div class="form-group">
-                    <label class="form-label">Date of Birth</label>
+
+                    <label class="form-label">
+                        Date of Birth
+                    </label>
 
                     <input id="TechnicianDateOfBirth"
                            type="date"
                            class="form-control"
                            name="User.DateOfBirth"
                            onchange="validateSouthAfricanId('TechnicianSaIdNumber','TechnicianDateOfBirth')" />
+
                 </div>
 
             </div>
 
+
+            <!-- SA ID -->
+
             <div class="form-group">
 
-                <label class="form-label">SA ID</label>
+                <label class="form-label">
+                    SA ID
+                </label>
 
                 <input id="TechnicianSaIdNumber"
                        class="form-control"
@@ -195,21 +365,29 @@
                        onchange="validateSouthAfricanId('TechnicianSaIdNumber','TechnicianDateOfBirth')" />
 
                 <small id="idValidation"
-                       style="color:red;font-weight:bold;"></small>
+                       style="color:red;font-weight:bold;">
+                </small>
 
             </div>
 
+
+            <!-- HOME ADDRESS -->
+
             <div class="form-group">
 
-                <label class="form-label">Home Address</label>
+                <label class="form-label">
+                    Home Address
+                </label>
 
-                <textarea id="HomeAddress"
+                <textarea id="TechnicianHomeAddress"
                           class="form-control"
                           name="User.HomeAddress"></textarea>
 
             </div>
 
-            
+
+            <!-- BUTTONS -->
+
             <button id="technicianSubmitButton"
                     type="submit"
                     class="btn btn-primary">
@@ -229,52 +407,125 @@
         </form>
 
     </div>
+    
 
 </div>
 
+<!-- ========================================================= -->
+<!-- JAVASCRIPT -->
+<!-- ========================================================= -->
+
 <script>
 
-    function openCreateTechnician() {
+    // =========================================================
+    // CREATE TECHNICIAN
+    // =========================================================
 
-        document.getElementById("technicianPanelTitle").innerText = "Add Technician";
+    function openCreateTechnician()
+    {
+        document.getElementById("technicianPanelTitle").innerText =
+            "Add Technician";
 
-        document.getElementById("technicianSubmitButton").innerText = "Save Technician";
+        document.getElementById("technicianSubmitButton").innerText =
+            "Save Technician";
 
-        document.getElementById("technicianForm").action = "/LabManager/CreateTechnician";
+        document.getElementById("technicianForm").action =
+            "/LabManager/CreateTechnician";
 
         document.getElementById("technicianForm").reset();
-        document.getElementById("idValidation").innerText = "";
+
         document.getElementById("LabTechnicianId").value = "0";
 
+        document.getElementById("idValidation").innerText = "";
     }
 
 
-    function openEditTechnician(button) {
+    // =========================================================
+    // EDIT TECHNICIAN
+    // =========================================================
 
-        document.getElementById("technicianPanelTitle").innerText = "Edit Technician";
+    function openEditTechnician(button)
+    {
+        document.getElementById("technicianPanelTitle").innerText =
+            "Edit Technician";
 
-        document.getElementById("technicianSubmitButton").innerText = "Update Technician";
+        document.getElementById("technicianSubmitButton").innerText =
+            "Update Technician";
 
-        document.getElementById("technicianForm").action = "/LabManager/EditTechnician";
+        document.getElementById("technicianForm").action =
+            "/LabManager/EditTechnician";
 
-        document.getElementById("LabTechnicianId").value = button.dataset.id;
 
-        document.getElementById("Name").value = button.dataset.name;
+        document.getElementById("LabTechnicianId").value =
+            button.dataset.id;
 
-        document.getElementById("Surname").value = button.dataset.surname;
+        document.getElementById("TechnicianName").value =
+            button.dataset.name;
 
-        document.getElementById("Email").value = button.dataset.email;
+        document.getElementById("TechnicianSurname").value =
+            button.dataset.surname;
 
-        document.getElementById("Cellphone").value = button.dataset.cellphone;
+        document.getElementById("TechnicianEmail").value =
+            button.dataset.email;
 
-            document.getElementById("TechnicianDateOfBirth").value = button.dataset.dob;
+        document.getElementById("TechnicianCellphone").value =
+            button.dataset.cellphone;
 
-    document.getElementById("TechnicianSaIdNumber").value = button.dataset.said;
+        document.getElementById("TechnicianDateOfBirth").value =
+            button.dataset.dob;
 
-        document.getElementById("HomeAddress").value = button.dataset.address;
+        document.getElementById("TechnicianSaIdNumber").value =
+            button.dataset.said;
 
-        
+        document.getElementById("TechnicianHomeAddress").value =
+            button.dataset.address;
 
+        document.getElementById("idValidation").innerText = "";
+    }
+
+
+    // =========================================================
+    // SA ID / DOB VALIDATION
+    // =========================================================
+
+    function validateSouthAfricanId(idInputId, dobInputId)
+    {
+        const id =
+            document.getElementById(idInputId).value;
+
+        const dob =
+            document.getElementById(dobInputId).value;
+
+
+        if (id.length !== 13 || dob === "")
+        {
+            document.getElementById("idValidation").innerText = "";
+
+            return true;
+        }
+
+
+        const parts = dob.split("-");
+
+
+        const expected =
+            parts[0].substring(2) +
+            parts[1] +
+            parts[2];
+
+
+        if (id.substring(0, 6) !== expected)
+        {
+            document.getElementById("idValidation").innerText =
+                "SA ID Number does not match the Date of Birth.";
+
+            return false;
+        }
+
+
+        document.getElementById("idValidation").innerText = "";
+
+        return true;
     }
 
 </script>

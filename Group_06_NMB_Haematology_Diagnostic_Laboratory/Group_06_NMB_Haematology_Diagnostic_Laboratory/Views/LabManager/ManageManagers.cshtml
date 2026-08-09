@@ -7,20 +7,79 @@
 
 <div class="page-body">
 
+    
+    <!-- ========================================================= -->
+    <!-- PAGE HEADER -->
+    <!-- ========================================================= -->
+
     <div class="section-header">
+
         <div>
             <h2>Lab Managers</h2>
             <small>Manage registered laboratory managers.</small>
         </div>
+       
+        <div style="display:flex; gap:10px; align-items:center;">
 
-        <button class="btn btn-primary"
-                onclick="openCreateManager()"
-                data-bs-toggle="offcanvas"
-                data-bs-target="#managerPanel">
-            Add Lab Manager
-        </button>
+            <form asp-controller="LabManager"
+                  asp-action="ManageManagers"
+                  method="get">
+                <select id="filterSelect"
+                        name="filter"
+                        class="form-select @(ViewBag.Filter == "Active" ? "filter-active" : ViewBag.Filter == "Inactive" ? "filter-inactive" : "filter-all")"
+                        onchange="this.form.submit()">
+
+                    @if (ViewBag.Filter == "Active")
+                    {
+                        <option value="Active" selected>Active</option>
+                    }
+                    else
+                    {
+                        <option value="Active">Active</option>
+                    }
+
+                    @if (ViewBag.Filter == "Inactive")
+                    {
+                        <option value="Inactive" selected>Inactive</option>
+                    }
+                    else
+                    {
+                        <option value="Inactive">Inactive</option>
+                    }
+
+                    @if (ViewBag.Filter == "All")
+                    {
+                        <option value="All" selected>All</option>
+                    }
+                    else
+                    {
+                        <option value="All">All</option>
+                    }
+
+                </select>
+
+            </form>
+            <button class="btn btn-primary"
+                    onclick="openCreateManager()"
+                    data-bs-toggle="offcanvas"
+                    data-bs-target="#managerPanel">
+
+                Add Lab Manager
+
+            </button>
+
+        </div>
+
+        
 
     </div>
+
+
+    
+
+    <!-- ========================================================= -->
+    <!-- MANAGERS TABLE -->
+    <!-- ========================================================= -->
 
     <div class="table-wrap">
 
@@ -49,53 +108,107 @@
                     <tr>
 
                         <td>@manager.User.Name</td>
+
                         <td>@manager.User.Surname</td>
+
                         <td>@manager.User.Email</td>
+
                         <td>@manager.User.Cellphone</td>
+
                         <td>@manager.User.SaIdNumber</td>
 
                         <td>
-                            @(manager.User.IsActive ? "Active" : "Inactive")
+                            @if (manager.User.IsActive)
+                            {
+                                <span class="status-active">
+                                    Active
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="status-inactive">
+                                    Inactive
+                                </span>
+                            }
                         </td>
 
                         <td class="td-actions">
 
-                            <button type="button"
-                                    class="btn btn-edit btn-sm"
-                                    data-bs-toggle="offcanvas"
-                                    data-bs-target="#managerPanel"
-                                    onclick="openEditManager(this)"
-                                    data-id="@manager.LabManagerId"
-                                    data-name="@manager.User.Name"
-                                    data-surname="@manager.User.Surname"
-                                    data-email="@manager.User.Email"
-                                    data-cellphone="@manager.User.Cellphone"
-                                    data-dob="@manager.User.DateOfBirth?.ToString("yyyy-MM-dd")"
-                                    data-said="@manager.User.SaIdNumber"
-                                    data-address="@manager.User.HomeAddress">
+                            @if (manager.User.IsActive)
+                            {
+                                <!-- EDIT -->
 
-                                Edit
+                                <button type="button"
+                                        class="btn btn-edit btn-sm"
+                                        data-bs-toggle="offcanvas"
+                                        data-bs-target="#managerPanel"
+                                        onclick="openEditManager(this)"
+                                        data-id="@manager.LabManagerId"
+                                        data-name="@manager.User.Name"
+                                        data-surname="@manager.User.Surname"
+                                        data-email="@manager.User.Email"
+                                        data-cellphone="@manager.User.Cellphone"
+                                        data-dob="@manager.User.DateOfBirth?.ToString("yyyy-MM-dd")"
+                                        data-said="@manager.User.SaIdNumber"
+                                        data-address="@manager.User.HomeAddress">
 
-                            </button>
-
-                            <form asp-action="DeleteLabManager"
-                                  asp-controller="LabManager"
-                                  method="post"
-                                  style="display:inline;">
-
-                                <input type="hidden"
-                                       name="id"
-                                       value="@manager.LabManagerId" />
-
-                                <button type="submit"
-                                        class="btn btn-delete btn-sm"
-                                        onclick="return confirm('Are you sure you want to deactivate this Lab Manager?');">
-
-                                    Delete
+                                    Edit
 
                                 </button>
 
-                            </form>
+
+                                <!-- DELETE / DEACTIVATE -->
+
+                                <form asp-action="DeleteManager"
+                                      asp-controller="LabManager"
+                                      method="post"
+                                      style="display:inline;">
+
+                                    <input type="hidden"
+                                           name="id"
+                                           value="@manager.LabManagerId" />
+
+                                    <input type="hidden"
+                                           name="filter"
+                                           value="@ViewBag.Filter" />
+
+                                    <button type="submit"
+                                            class="btn btn-delete btn-sm"
+                                            onclick="return confirm('Are you sure you want to deactivate this Lab Manager?');">
+
+                                        Delete
+
+                                    </button>
+
+                                </form>
+                            }
+                            else
+                            {
+                                <!-- REACTIVATE -->
+
+                                <form asp-action="ReactivateManager"
+                                      asp-controller="LabManager"
+                                      method="post"
+                                      style="display:inline;">
+
+                                    <input type="hidden"
+                                           name="id"
+                                           value="@manager.LabManagerId" />
+
+                                    <input type="hidden"
+                                           name="filter"
+                                           value="@ViewBag.Filter" />
+
+                                    <button type="submit"
+                                            class="btn btn-activate btn-sm"
+                                            onclick="return confirm('Are you sure you want to reactivate this Lab Manager?');">
+
+                                        Reactivate
+
+                                    </button>
+
+                                </form>
+                            }
 
                         </td>
 
@@ -107,6 +220,7 @@
         </table>
 
     </div>
+    
 
 </div>
 
@@ -119,6 +233,7 @@
      id="managerPanel"
      style="width:600px;">
 
+    
     <div class="offcanvas-header">
 
         <h4 id="managerPanelTitle">
@@ -127,9 +242,11 @@
 
         <button type="button"
                 class="btn-close"
-                data-bs-dismiss="offcanvas"></button>
+                data-bs-dismiss="offcanvas">
+        </button>
 
     </div>
+
 
     <div class="offcanvas-body">
 
@@ -139,44 +256,71 @@
               method="post"
               onsubmit="return validateSouthAfricanId('ManagerSaIdNumber','ManagerDateOfBirth');">
 
+
             <input type="hidden"
                    id="LabManagerId"
                    name="LabManagerId"
                    value="0" />
 
+
+            <!-- FIRST NAME -->
+
             <div class="form-group">
-                <label class="form-label">First Name</label>
+
+                <label class="form-label">
+                    First Name
+                </label>
 
                 <input id="Name"
                        class="form-control"
                        name="User.Name"
                        required />
+
             </div>
 
+
+            <!-- SURNAME -->
+
             <div class="form-group">
-                <label class="form-label">Surname</label>
+
+                <label class="form-label">
+                    Surname
+                </label>
 
                 <input id="Surname"
                        class="form-control"
                        name="User.Surname"
                        required />
+
             </div>
 
+
+            <!-- EMAIL -->
+
             <div class="form-group">
-                <label class="form-label">Email</label>
+
+                <label class="form-label">
+                    Email
+                </label>
 
                 <input id="Email"
                        type="email"
                        class="form-control"
                        name="User.Email"
                        required />
+
             </div>
+
+
+            <!-- CELLPHONE + DOB -->
 
             <div class="form-row">
 
                 <div class="form-group">
 
-                    <label class="form-label">Cellphone</label>
+                    <label class="form-label">
+                        Cellphone
+                    </label>
 
                     <input id="Cellphone"
                            class="form-control"
@@ -184,9 +328,12 @@
 
                 </div>
 
+
                 <div class="form-group">
 
-                    <label class="form-label">Date of Birth</label>
+                    <label class="form-label">
+                        Date of Birth
+                    </label>
 
                     <input id="ManagerDateOfBirth"
                            type="date"
@@ -198,9 +345,14 @@
 
             </div>
 
+
+            <!-- SA ID -->
+
             <div class="form-group">
 
-                <label class="form-label">SA ID</label>
+                <label class="form-label">
+                    SA ID
+                </label>
 
                 <input id="ManagerSaIdNumber"
                        class="form-control"
@@ -210,19 +362,28 @@
                        onchange="validateSouthAfricanId('ManagerSaIdNumber','ManagerDateOfBirth')" />
 
                 <small id="idValidation"
-                       style="color:red;font-weight:bold;"></small>
+                       style="color:red;font-weight:bold;">
+                </small>
 
             </div>
 
+
+            <!-- HOME ADDRESS -->
+
             <div class="form-group">
 
-                <label class="form-label">Home Address</label>
+                <label class="form-label">
+                    Home Address
+                </label>
 
                 <textarea id="HomeAddress"
                           class="form-control"
                           name="User.HomeAddress"></textarea>
 
             </div>
+
+
+            <!-- SUBMIT -->
 
             <button id="managerSubmitButton"
                     type="submit"
@@ -231,6 +392,9 @@
                 Save Lab Manager
 
             </button>
+
+
+            <!-- CANCEL -->
 
             <button type="button"
                     class="btn btn-secondary"
@@ -243,18 +407,30 @@
         </form>
 
     </div>
+    
 
 </div>
 
+<!-- ========================================================= -->
+<!-- JAVASCRIPT -->
+<!-- ========================================================= -->
+
 <script>
+
+    // =========================================================
+    // CREATE MANAGER
+    // =========================================================
 
     function openCreateManager() {
 
-        document.getElementById("managerPanelTitle").innerText = "Add Lab Manager";
+        document.getElementById("managerPanelTitle").innerText =
+            "Add Lab Manager";
 
-        document.getElementById("managerSubmitButton").innerText = "Save Lab Manager";
+        document.getElementById("managerSubmitButton").innerText =
+            "Save Lab Manager";
 
-        document.getElementById("managerForm").action = "/LabManager/CreateManager";
+        document.getElementById("managerForm").action =
+            "/LabManager/CreateManager";
 
         document.getElementById("managerForm").reset();
 
@@ -264,57 +440,88 @@
     }
 
 
+    // =========================================================
+    // EDIT MANAGER
+    // =========================================================
+
     function openEditManager(button) {
 
-        document.getElementById("managerPanelTitle").innerText = "Edit Lab Manager";
+        document.getElementById("managerPanelTitle").innerText =
+            "Edit Lab Manager";
 
-        document.getElementById("managerSubmitButton").innerText = "Update Lab Manager";
+        document.getElementById("managerSubmitButton").innerText =
+            "Update Manager";
 
-        document.getElementById("managerForm").action = "/LabManager/EditManager";
+        document.getElementById("managerForm").action =
+            "/LabManager/EditManager";
 
-        document.getElementById("LabManagerId").value = button.dataset.id;
+        document.getElementById("LabManagerId").value =
+            button.dataset.id;
 
-        document.getElementById("Name").value = button.dataset.name;
+        document.getElementById("Name").value =
+            button.dataset.name;
 
-        document.getElementById("Surname").value = button.dataset.surname;
+        document.getElementById("Surname").value =
+            button.dataset.surname;
 
-        document.getElementById("Email").value = button.dataset.email;
+        document.getElementById("Email").value =
+            button.dataset.email;
 
-        document.getElementById("Cellphone").value = button.dataset.cellphone;
+        document.getElementById("Cellphone").value =
+            button.dataset.cellphone;
 
-        document.getElementById("ManagerDateOfBirth").value = button.dataset.dob;
+        document.getElementById("ManagerDateOfBirth").value =
+            button.dataset.dob;
 
-        document.getElementById("ManagerSaIdNumber").value = button.dataset.said;
+        document.getElementById("ManagerSaIdNumber").value =
+            button.dataset.said;
 
-        document.getElementById("HomeAddress").value = button.dataset.address;
+        document.getElementById("HomeAddress").value =
+            button.dataset.address;
 
         clearValidation();
     }
 
 
+    // =========================================================
+    // SA ID / DATE OF BIRTH VALIDATION
+    // =========================================================
+
     function validateSouthAfricanId(idInputId, dobInputId) {
 
-        const id = document.getElementById(idInputId).value;
-        const dob = document.getElementById(dobInputId).value;
+        const id =
+            document.getElementById(idInputId).value;
+
+        const dob =
+            document.getElementById(dobInputId).value;
+
 
         if (id.length !== 13 || dob === "") {
+
             clearValidation();
+
             return true;
         }
 
+
         const parts = dob.split("-");
+
 
         const expected =
             parts[0].substring(2) +
             parts[1] +
             parts[2];
 
+
         if (id.substring(0, 6) !== expected) {
 
-            showValidation("SA ID Number does not match the Date of Birth.");
+            showValidation(
+                "SA ID Number does not match the Date of Birth."
+            );
 
             return false;
         }
+
 
         clearValidation();
 
@@ -324,15 +531,15 @@
 
     function showValidation(message) {
 
-        document.getElementById("idValidation").innerText = message;
-
+        document.getElementById("idValidation").innerText =
+            message;
     }
 
 
     function clearValidation() {
 
-        document.getElementById("idValidation").innerText = "";
-
+        document.getElementById("idValidation").innerText =
+            "";
     }
 
 </script>

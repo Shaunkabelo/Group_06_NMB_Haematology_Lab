@@ -7,24 +7,91 @@
 
 <div class="page-body">
 
+    
+    <!-- ========================================================= -->
+    <!-- PAGE HEADER -->
+    <!-- ========================================================= -->
+
     <div class="section-header">
+
         <div>
             <h2>Doctors</h2>
             <small>Manage registered doctors.</small>
         </div>
 
-        <button class="btn btn-primary"
-                onclick="openCreateDoctor()"
-                data-bs-toggle="offcanvas"
-                data-bs-target="#doctorPanel">
-            Add Doctor
-        </button>
+        <div style="display:flex; gap:10px; align-items:center;">
+
+            <!-- FILTER -->
+
+            <form asp-controller="LabManager"
+                  asp-action="Doctors"
+                  method="get">
+
+                <select id="filterSelect"
+                        name="filter"
+                        class="form-select @(ViewBag.Filter == "Active" ? "filter-active" : ViewBag.Filter == "Inactive" ? "filter-inactive" : "filter-all")"
+                        onchange="this.form.submit()">
+
+                    @if (ViewBag.Filter == "Active")
+                    {
+                        <option value="Active" selected>Active</option>
+                    }
+                    else
+                    {
+                        <option value="Active">Active</option>
+                    }
+
+                    @if (ViewBag.Filter == "Inactive")
+                    {
+                        <option value="Inactive" selected>Inactive</option>
+                    }
+                    else
+                    {
+                        <option value="Inactive">Inactive</option>
+                    }
+
+                    @if (ViewBag.Filter == "All")
+                    {
+                        <option value="All" selected>All</option>
+                    }
+                    else
+                    {
+                        <option value="All">All</option>
+                    }
+
+                </select>
+
+            </form>
+
+
+            <!-- ADD DOCTOR -->
+
+            <button class="btn btn-primary"
+                    onclick="openCreateDoctor()"
+                    data-bs-toggle="offcanvas"
+                    data-bs-target="#doctorPanel">
+
+                Add Doctor
+
+            </button>
+
+        </div>
+
     </div>
 
+
+    <!-- ========================================================= -->
+    <!-- DOCTORS TABLE -->
+    <!-- ========================================================= -->
+
     <div class="table-wrap">
+
         <table>
+
             <thead>
+
                 <tr>
+
                     <th>Name</th>
                     <th>Surname</th>
                     <th>Email</th>
@@ -32,7 +99,9 @@
                     <th>SA ID</th>
                     <th>Status</th>
                     <th>Actions</th>
+
                 </tr>
+
             </thead>
 
             <tbody>
@@ -42,9 +111,13 @@
                     <tr>
 
                         <td>@doctor.User.Name</td>
+
                         <td>@doctor.User.Surname</td>
+
                         <td>@doctor.User.Email</td>
+
                         <td>@doctor.User.Cellphone</td>
+
                         <td>@doctor.User.SaIdNumber</td>
 
                         <td>
@@ -52,6 +125,8 @@
                         </td>
 
                         <td class="td-actions">
+
+                            <!-- EDIT -->
 
                             <button type="button"
                                     class="btn btn-edit btn-sm"
@@ -72,25 +147,53 @@
 
                             </button>
 
-                            <form asp-action="DeleteDoctor"
-                                  asp-controller="LabManager"
-                                  method="post"
-                                  style="display:inline;">
 
-                                <input type="hidden"
-                                       name="id"
-                                       value="@doctor.DoctorId" />
+                            @if (doctor.User.IsActive)
+                            {
+                                <!-- DELETE -->
 
+                                <form asp-action="DeleteDoctor"
+                                      asp-controller="LabManager"
+                                      method="post"
+                                      style="display:inline;">
 
-                                <button type="submit"
-                                        class="btn btn-delete btn-sm"
-                                        onclick="return confirm('Are you sure you want to deactivate this doctor?');">
+                                    <input type="hidden"
+                                           name="id"
+                                           value="@doctor.DoctorId" />
 
-                                    Delete
+                                    <button type="submit"
+                                            class="btn btn-delete btn-sm"
+                                            onclick="return confirm('Are you sure you want to deactivate this doctor?');">
 
-                                </button>
+                                        Delete
 
-                            </form>
+                                    </button>
+
+                                </form>
+                            }
+                            else
+                            {
+                                <!-- REACTIVATE -->
+
+                                <form asp-action="ReactivateDoctor"
+                                      asp-controller="LabManager"
+                                      method="post"
+                                      style="display:inline;">
+
+                                    <input type="hidden"
+                                           name="id"
+                                           value="@doctor.DoctorId" />
+
+                                    <button type="submit"
+                                            class="btn btn-primary btn-sm"
+                                            onclick="return confirm('Are you sure you want to reactivate this doctor?');">
+
+                                        Reactivate
+
+                                    </button>
+
+                                </form>
+                            }
 
                         </td>
 
@@ -98,8 +201,11 @@
                 }
 
             </tbody>
+
         </table>
+
     </div>
+    
 
 </div>
 
@@ -112,6 +218,7 @@
      id="doctorPanel"
      style="width:600px;">
 
+    
     <div class="offcanvas-header">
 
         <h4 id="doctorPanelTitle">
@@ -120,9 +227,11 @@
 
         <button type="button"
                 class="btn-close"
-                data-bs-dismiss="offcanvas"></button>
+                data-bs-dismiss="offcanvas">
+        </button>
 
     </div>
+
 
     <div class="offcanvas-body">
 
@@ -134,58 +243,100 @@
 
             <input type="hidden"
                    id="DoctorId"
-                   name="DoctorId" />
+                   name="DoctorId"
+                   value="0" />
+
+
+            <!-- FIRST NAME -->
 
             <div class="form-group">
-                <label class="form-label">First Name</label>
+
+                <label class="form-label">
+                    First Name
+                </label>
+
                 <input id="Name"
                        class="form-control"
                        name="User.Name"
                        required />
+
             </div>
 
+
+            <!-- SURNAME -->
+
             <div class="form-group">
-                <label class="form-label">Surname</label>
+
+                <label class="form-label">
+                    Surname
+                </label>
+
                 <input id="Surname"
                        class="form-control"
                        name="User.Surname"
                        required />
+
             </div>
 
+
+            <!-- EMAIL -->
+
             <div class="form-group">
-                <label class="form-label">Email</label>
+
+                <label class="form-label">
+                    Email
+                </label>
+
                 <input id="Email"
                        type="email"
                        class="form-control"
                        name="User.Email"
                        required />
+
             </div>
+
+
+            <!-- CELLPHONE + DOB -->
 
             <div class="form-row">
 
                 <div class="form-group">
-                    <label class="form-label">Cellphone</label>
+
+                    <label class="form-label">
+                        Cellphone
+                    </label>
 
                     <input id="Cellphone"
                            class="form-control"
                            name="User.Cellphone" />
+
                 </div>
 
+
                 <div class="form-group">
-                    <label class="form-label">Date of Birth</label>
+
+                    <label class="form-label">
+                        Date of Birth
+                    </label>
 
                     <input id="DateOfBirth"
                            type="date"
                            class="form-control"
                            name="User.DateOfBirth"
                            onchange="validateSouthAfricanId('SaIdNumber','DateOfBirth')" />
+
                 </div>
 
             </div>
 
+
+            <!-- SA ID -->
+
             <div class="form-group">
 
-                <label class="form-label">SA ID</label>
+                <label class="form-label">
+                    SA ID
+                </label>
 
                 <input id="SaIdNumber"
                        class="form-control"
@@ -194,11 +345,20 @@
                        onkeyup="validateSouthAfricanId('SaIdNumber','DateOfBirth')"
                        onchange="validateSouthAfricanId('SaIdNumber','DateOfBirth')" />
 
+                <small id="idValidation"
+                       style="color:red;font-weight:bold;">
+                </small>
+
             </div>
+
+
+            <!-- HOME ADDRESS -->
 
             <div class="form-group">
 
-                <label class="form-label">Home Address</label>
+                <label class="form-label">
+                    Home Address
+                </label>
 
                 <textarea id="HomeAddress"
                           class="form-control"
@@ -206,9 +366,14 @@
 
             </div>
 
+
+            <!-- HPCSA NUMBER -->
+
             <div class="form-group">
 
-                <label class="form-label">HPCSA Number</label>
+                <label class="form-label">
+                    HPCSA Number
+                </label>
 
                 <input id="HpcsaNumber"
                        class="form-control"
@@ -216,7 +381,10 @@
                        required />
 
             </div>
-            
+
+
+            <!-- BUTTONS -->
+
             <button id="doctorSubmitButton"
                     type="submit"
                     class="btn btn-primary">
@@ -236,51 +404,79 @@
         </form>
 
     </div>
+    
 
 </div>
 
+<!-- ========================================================= -->
+<!-- JAVASCRIPT -->
+<!-- ========================================================= -->
+
 <script>
+
+    // =========================================================
+    // CREATE DOCTOR
+    // =========================================================
 
     function openCreateDoctor() {
 
-        document.getElementById("doctorPanelTitle").innerText = "Add Doctor";
+        document.getElementById("doctorPanelTitle").innerText =
+            "Add Doctor";
 
-        document.getElementById("doctorSubmitButton").innerText = "Save Doctor";
+        document.getElementById("doctorSubmitButton").innerText =
+            "Save Doctor";
 
-        document.getElementById("doctorForm").action = "/LabManager/CreateDoctor";
+        document.getElementById("doctorForm").action =
+            "/LabManager/CreateDoctor";
 
         document.getElementById("doctorForm").reset();
 
-        document.getElementById("DoctorId").value = "";
+        document.getElementById("DoctorId").value = "0";
     }
 
 
+    // =========================================================
+    // EDIT DOCTOR
+    // =========================================================
+
     function openEditDoctor(button) {
 
-        document.getElementById("doctorPanelTitle").innerText = "Edit Doctor";
+        document.getElementById("doctorPanelTitle").innerText =
+            "Edit Doctor";
 
-        document.getElementById("doctorSubmitButton").innerText = "Update Doctor";
+        document.getElementById("doctorSubmitButton").innerText =
+            "Update Doctor";
 
-        document.getElementById("doctorForm").action = "/LabManager/EditDoctor";
+        document.getElementById("doctorForm").action =
+            "/LabManager/EditDoctor";
 
-        document.getElementById("DoctorId").value = button.dataset.id;
 
-        document.getElementById("Name").value = button.dataset.name;
+        document.getElementById("DoctorId").value =
+            button.dataset.id;
 
-        document.getElementById("Surname").value = button.dataset.surname;
+        document.getElementById("Name").value =
+            button.dataset.name;
 
-        document.getElementById("Email").value = button.dataset.email;
+        document.getElementById("Surname").value =
+            button.dataset.surname;
 
-        document.getElementById("Cellphone").value = button.dataset.cellphone;
+        document.getElementById("Email").value =
+            button.dataset.email;
 
-        document.getElementById("DateOfBirth").value = button.dataset.dob;
+        document.getElementById("Cellphone").value =
+            button.dataset.cellphone;
 
-        document.getElementById("SaIdNumber").value = button.dataset.said;
+        document.getElementById("DateOfBirth").value =
+            button.dataset.dob;
 
-        document.getElementById("HomeAddress").value = button.dataset.address;
+        document.getElementById("SaIdNumber").value =
+            button.dataset.said;
 
-        document.getElementById("HpcsaNumber").value = button.dataset.hpcsa;
+        document.getElementById("HomeAddress").value =
+            button.dataset.address;
 
+        document.getElementById("HpcsaNumber").value =
+            button.dataset.hpcsa;
     }
 
 </script>

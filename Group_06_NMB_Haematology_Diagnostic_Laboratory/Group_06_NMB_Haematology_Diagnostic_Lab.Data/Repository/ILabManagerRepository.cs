@@ -10,14 +10,15 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
     public interface ILabManagerRepository
     {
         //      ==== DOCTOR ====
-        Task<IEnumerable<Doctor>> GetDoctors();
+        Task<IEnumerable<Doctor>> GetDoctors(string filter = "Active");
         Task CreateDoctor(Doctor doctor);
         Task<Doctor> GetDoctorById(int doctorId);
         Task UpdateDoctor(Doctor doctor);
         Task DeleteDoctor(int doctorId);
+        Task ReactivateDoctor(int doctorId);
 
         //      ==== TECHNICIAN ===
-        Task<IEnumerable<LabTechnician>> GetTechnicians();
+        Task<IEnumerable<LabTechnician>> GetTechnicians(string filter = "Active");
 
         Task<LabTechnician?> GetTechnicianById(int technicianId);
 
@@ -26,9 +27,10 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
         Task UpdateTechnician(LabTechnician technician);
 
         Task DeleteTechnician(int technicianId);
+        Task ReactivateTechnician(int technicianId);
 
-        //      === LAB TECHNICIAN ===
-        Task<IEnumerable<LabManager>> GetManagers();
+        //      === LAB MANAGER ===
+        Task<IEnumerable<LabManager>> GetManagers(string filter = "Active");
 
         Task<LabManager?> GetManagerById(int managerId);
 
@@ -37,6 +39,19 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
         Task UpdateManager(LabManager manager);
 
         Task DeleteManager(int managerId);
+        Task ReactivateManager(int managerId);
+
+        // ============================ SUPPLIER ============================
+
+        Task<IEnumerable<Supplier>> GetSuppliers();
+
+        Task<Supplier?> GetSupplierById(int supplierId);
+
+        Task CreateSupplier(Supplier supplier);
+
+        Task UpdateSupplier(Supplier supplier);
+
+        Task DeleteSupplier(int supplierId);
     }
 
 }

@@ -23,7 +23,54 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 
         public IActionResult Orders() => View();
 
-        public IActionResult Suppliers() => View();
+       
+        // ==================== SUPPLIERS ====================
+
+        // ==================== DISPLAY SUPPLIERS ====================
+        [HttpGet]
+        public async Task<IActionResult> Suppliers()
+        {
+            var suppliers = await _repository.GetSuppliers();
+
+            return View(suppliers);
+        }
+
+        // ==================== CREATE SUPPLIER ====================
+        [HttpPost]
+        public async Task<IActionResult> CreateSupplier(Supplier supplier)
+        {
+            if (!ModelState.IsValid)
+            {
+                return RedirectToAction(nameof(Suppliers));
+            }
+
+            await _repository.CreateSupplier(supplier);
+
+            return RedirectToAction(nameof(Suppliers));
+        }
+
+        // ==================== EDIT SUPPLIER ====================
+        [HttpPost]
+        public async Task<IActionResult> EditSupplier(Supplier supplier)
+        {
+            if (!ModelState.IsValid)
+            {
+                return RedirectToAction(nameof(Suppliers));
+            }
+
+            await _repository.UpdateSupplier(supplier);
+
+            return RedirectToAction(nameof(Suppliers));
+        }
+
+        // ==================== DELETE SUPPLIER [SOFT DELETE] ====================
+        [HttpPost]
+        public async Task<IActionResult> DeleteSupplier(int id)
+        {
+            await _repository.DeleteSupplier(id);
+
+            return RedirectToAction(nameof(Suppliers));
+        }
 
 
 
@@ -32,12 +79,15 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 
         // ==================== DISPLAY MANAGERS ====================
         [HttpGet]
-        public async Task<IActionResult> ManageManagers()
+        public async Task<IActionResult> ManageManagers(string filter = "Active")
         {
-            var managers = await _repository.GetManagers();
+            var managers = await _repository.GetManagers(filter);
+
+            ViewBag.Filter = filter;
 
             return View(managers);
         }
+
 
         // ==================== CREATE MANAGER ====================
         [HttpPost]
@@ -83,11 +133,25 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 
         // ==================== DELETE MANAGER ====================
         [HttpPost]
-        public async Task<IActionResult> DeleteManager(int id)
+        public async Task<IActionResult> DeleteManager(int id, string filter = "Active")
         {
             await _repository.DeleteManager(id);
 
-            return RedirectToAction(nameof(ManageManagers));
+            return RedirectToAction(
+                nameof(ManageManagers),
+                new { filter }
+            );
+        }
+        // ==================== REACTIVATE MANAGER ====================
+        [HttpPost]
+        public async Task<IActionResult> ReactivateManager(int id, string filter = "Inactive")
+        {
+            await _repository.ReactivateManager(id);
+
+            return RedirectToAction(
+                nameof(ManageManagers),
+                new { filter }
+            );
         }
         //==========================================================================================================================
 
@@ -99,12 +163,15 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 
         // ==================== DISPLAY DOCTORS ====================
         [HttpGet]
-        public async Task<IActionResult> Doctors()
+        public async Task<IActionResult> Doctors(string filter = "Active")
         {
-            var doctors = await _repository.GetDoctors();
+            var doctors = await _repository.GetDoctors(filter);
+
+            ViewBag.Filter = filter;
 
             return View(doctors);
         }
+
 
         // ==================== CREATE/ADD DOCTORS ====================
         [HttpPost]
@@ -114,9 +181,10 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
             {
                 return RedirectToAction(nameof(Doctors));
             }
+
             if (!ValidationHelper.IsSouthAfricanIdMatchDob(
-                        doctor.User.SaIdNumber,
-                        doctor.User.DateOfBirth))
+                doctor.User.SaIdNumber,
+                doctor.User.DateOfBirth))
             {
                 TempData["Error"] = "SA ID Number does not match the Date of Birth.";
 
@@ -166,9 +234,19 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 
         // ==================== DELETE DOCTORS ====================
         [HttpPost]
-        public async Task<IActionResult> DeleteDoctor(int id)
+        public async Task<IActionResult> DeleteDoctor(int id, string filter = "Active")
         {
             await _repository.DeleteDoctor(id);
+
+            return RedirectToAction(nameof(Doctors), new { filter });
+        }
+        
+
+        // ==================== REACTIVATE DOCTOR ====================
+        [HttpPost]
+        public async Task<IActionResult> ReactivateDoctor(int id)
+        {
+            await _repository.ReactivateDoctor(id);
 
             return RedirectToAction(nameof(Doctors));
         }
@@ -177,9 +255,11 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 
         // ==================== DISPLAY TECHNICIANS ====================
         [HttpGet]
-        public async Task<IActionResult> Technicians()
+        public async Task<IActionResult> Technicians(string filter = "Active")
         {
-            var technicians = await _repository.GetTechnicians();
+            var technicians = await _repository.GetTechnicians(filter);
+
+            ViewBag.Filter = filter;
 
             return View(technicians);
         }
@@ -253,13 +333,28 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 
         // ==================== DELETE TECHNICIAN ====================
         [HttpPost]
-        public async Task<IActionResult> DeleteTechnician(int id)
+        public async Task<IActionResult> DeleteTechnician(int id, string filter = "Active")
         {
             await _repository.DeleteTechnician(id);
 
-            return RedirectToAction(nameof(Technicians));
+            return RedirectToAction(
+                nameof(Technicians),
+                new { filter }
+            );
         }
 
+        // ==================== REACTIVATE TECHNICIAN ====================
+        [HttpPost]
+        public async Task<IActionResult> ReactivateTechnician(int id, string filter = "Inactive")
+        {
+            await _repository.ReactivateTechnician(id);
+
+            return RedirectToAction(
+                nameof(Technicians),
+                new { filter }
+            );
+        }
+        //================================================================================================================
 
         public IActionResult ManagerReports() => View();
 
@@ -267,6 +362,7 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 
 
     }
+
 
 
 
