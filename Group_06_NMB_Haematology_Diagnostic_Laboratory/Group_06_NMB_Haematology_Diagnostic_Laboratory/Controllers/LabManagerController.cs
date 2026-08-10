@@ -17,20 +17,238 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 
         public IActionResult Categories() => View();
 
-        public IActionResult TestTypes() => View();
+        
 
-        public IActionResult Consumables() => View();
-
+        
         public IActionResult Orders() => View();
 
-       
+        // ==================== TEST TYPES ========================================================================
+        // =========================================================================================================
+
+        // ==================== DISPLAY TEST TYPES ====================
+
+        [HttpGet]
+        public async Task<IActionResult> TestTypes(
+    string filter = "Active",
+    string search = "")
+        {
+            var testTypes = await _repository.GetTestTypes(filter, search);
+
+            var categories = await _repository.GetTestCategories();
+
+            var sampleTypes = await _repository.GetSampleTypes();
+
+            ViewBag.Filter = filter;
+            ViewBag.Search = search;
+
+            ViewBag.Categories = categories;
+            ViewBag.SampleTypes = sampleTypes;
+
+            return View(testTypes);
+        }
+
+
+        // ==================== CREATE TEST TYPE ====================
+
+        [HttpPost]
+        public async Task<IActionResult> CreateTestType(TestType testType)
+        {
+            if (!ModelState.IsValid)
+            {
+                return RedirectToAction(
+                    nameof(TestTypes),
+                    new { filter = "Active" });
+            }
+
+            await _repository.CreateTestType(testType);
+
+            return RedirectToAction(
+                nameof(TestTypes),
+                new { filter = "Active" });
+        }
+
+
+        // ==================== GET TEST TYPE BY ID ====================
+
+        [HttpGet]
+        public async Task<IActionResult> EditTestType(int id)
+        {
+            var testType = await _repository.GetTestTypeById(id);
+
+            if (testType == null)
+            {
+                return NotFound();
+            }
+
+            return View(testType);
+        }
+
+
+        // ==================== UPDATE TEST TYPE ====================
+
+        [HttpPost]
+        public async Task<IActionResult> EditTestType(TestType testType)
+        {
+            if (!ModelState.IsValid)
+            {
+                return RedirectToAction(
+                    nameof(TestTypes),
+                    new { filter = "Active" });
+            }
+
+            await _repository.UpdateTestType(testType);
+
+            return RedirectToAction(
+                nameof(TestTypes),
+                new { filter = "Active" });
+        }
+
+
+        // ==================== DELETE TEST TYPE ====================
+
+        [HttpPost]
+        public async Task<IActionResult> DeleteTestType(
+            int id,
+            string filter = "Active")
+        {
+            await _repository.DeleteTestType(id);
+
+            return RedirectToAction(
+                nameof(TestTypes),
+                new { filter });
+        }
+
+
+        // ==================== REACTIVATE TEST TYPE ====================
+
+        [HttpPost]
+        public async Task<IActionResult> ReactivateTestType(
+            int id,
+            string filter = "Inactive")
+        {
+            await _repository.ReactivateTestType(id);
+
+            return RedirectToAction(
+                nameof(TestTypes),
+                new { filter });
+        }
+
+        // ==================== CONSUMABLES ========================================================================
+        // ==========================================================================================================
+
+        // ==================== DISPLAY CONSUMABLES ====================
+
+        [HttpGet]
+        public async Task<IActionResult> Consumables(
+        string filter = "Active",
+        string search = "")
+        {
+            var consumables = await _repository.GetConsumables(
+                filter,
+                search);
+
+            var suppliers = await _repository.GetSuppliers("Active");
+
+            ViewBag.Filter = filter;
+            ViewBag.Search = search;
+            ViewBag.Suppliers = suppliers;
+
+            return View(consumables);
+        }
+
+
+        // ==================== CREATE / ADD CONSUMABLES ====================
+
+        [HttpPost]
+        public async Task<IActionResult> CreateConsumable(Consumable consumable)
+        {
+            if (!ModelState.IsValid)
+            {
+                return RedirectToAction(nameof(Consumables));
+            }
+
+            await _repository.CreateConsumable(consumable);
+
+            return RedirectToAction(nameof(Consumables));
+        }
+
+
+        // ==================== GET CONSUMABLE FOR EDIT ====================
+
+        [HttpGet]
+        public async Task<IActionResult> EditConsumable(int id)
+        {
+            var consumable = await _repository.GetConsumableById(id);
+
+            if (consumable == null)
+            {
+                return NotFound();
+            }
+
+            return View(consumable);
+        }
+
+
+        // ==================== UPDATE / EDIT CONSUMABLE ====================
+
+        [HttpPost]
+        public async Task<IActionResult> EditConsumable(Consumable consumable)
+        {
+            if (!ModelState.IsValid)
+            {
+                return RedirectToAction(nameof(Consumables));
+            }
+
+            await _repository.UpdateConsumable(consumable);
+
+            return RedirectToAction(nameof(Consumables));
+        }
+
+
+        // ==================== DELETE CONSUMABLE ====================
+
+        [HttpPost]
+        public async Task<IActionResult> DeleteConsumable(
+            int id,
+            string filter = "Active")
+        {
+            await _repository.DeleteConsumable(id);
+
+            return RedirectToAction(
+                nameof(Consumables),
+                new { filter });
+        }
+
+
+        // ==================== REACTIVATE CONSUMABLE ====================
+
+        [HttpPost]
+        public async Task<IActionResult> ReactivateConsumable(
+            int id,
+            string filter = "Inactive")
+        {
+            await _repository.ReactivateConsumable(id);
+
+            return RedirectToAction(
+                nameof(Consumables),
+                new { filter });
+        }
+
+        //-----------------------------------------------------------------------------------------------------------------------
+
+
         // ==================== SUPPLIERS ====================
 
         // ==================== DISPLAY SUPPLIERS ====================
         [HttpGet]
-        public async Task<IActionResult> Suppliers()
+        public async Task<IActionResult> Suppliers(
+        string filter = "Active",
+        string search = "")
         {
-            var suppliers = await _repository.GetSuppliers();
+            var suppliers = await _repository.GetSuppliers(filter, search);
+
+            ViewBag.Filter = filter;
+            ViewBag.Search = search;
 
             return View(suppliers);
         }
@@ -65,11 +283,27 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 
         // ==================== DELETE SUPPLIER [SOFT DELETE] ====================
         [HttpPost]
-        public async Task<IActionResult> DeleteSupplier(int id)
+        public async Task<IActionResult> DeleteSupplier(int id, string filter = "Active")
         {
             await _repository.DeleteSupplier(id);
 
-            return RedirectToAction(nameof(Suppliers));
+            return RedirectToAction(
+                nameof(Suppliers),
+                new { filter }
+            );
+        }
+
+
+        // ==================== REACTIVATE [SOFT DELETE] ====================
+        [HttpPost]
+        public async Task<IActionResult> ReactivateSupplier(int id, string filter = "Inactive")
+        {
+            await _repository.ReactivateSupplier(id);
+
+            return RedirectToAction(
+                nameof(Suppliers),
+                new { filter }
+            );
         }
 
 

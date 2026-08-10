@@ -43,7 +43,7 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
 
         // ============================ SUPPLIER ============================
 
-        Task<IEnumerable<Supplier>> GetSuppliers();
+        Task<IEnumerable<Supplier>> GetSuppliers(string filter = "Active", string search = "");
 
         Task<Supplier?> GetSupplierById(int supplierId);
 
@@ -52,6 +52,54 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
         Task UpdateSupplier(Supplier supplier);
 
         Task DeleteSupplier(int supplierId);
-    }
+        Task ReactivateSupplier(int supplierId);
 
+
+        // ============================ CONSUMABLES ============================
+
+        Task<IEnumerable<Consumable>> GetConsumables(
+        string filter = "Active",
+        string search = "");
+
+        Task<Consumable?> GetConsumableById(int consumableId);
+
+        Task CreateConsumable(Consumable consumable,int? performedByUserId = null);
+
+        Task UpdateConsumable(Consumable consumable);
+
+        Task DeleteConsumable(int consumableId);
+
+        Task ReactivateConsumable(int consumableId);
+
+        Task UpdateConsumableStock(int consumableId,int changeAmount,string reason,int? referenceId = null,
+            int? performedByUserId = null);
+
+
+        // ==================== TEST TYPES ====================
+
+        Task<IEnumerable<TestType>> GetTestTypes(
+        string filter = "Active",
+        string search = "");
+
+        Task<TestType> GetTestTypeById(int id);
+
+        Task CreateTestType(TestType testType);
+
+        Task UpdateTestType(TestType testType);
+
+        Task DeleteTestType(int id);
+
+        Task ReactivateTestType(int id);
+
+
+
+        // ==================== TEST CATEGORIES ====================
+
+        Task<IEnumerable<TestCategory>> GetTestCategories();
+
+
+        // ==================== SAMPLE TYPES ====================
+
+        Task<IEnumerable<SampleType>> GetSampleTypes();
+    }
 }

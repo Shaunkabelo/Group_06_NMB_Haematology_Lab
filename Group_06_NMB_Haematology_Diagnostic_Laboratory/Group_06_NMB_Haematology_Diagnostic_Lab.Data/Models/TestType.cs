@@ -24,7 +24,7 @@ public partial class TestType
     public int TurnaroundTimeMinutes { get; set; }
 
     public DateTime? CreatedAt { get; set; }
-
+    public bool IsActive { get; set; }
     public virtual ICollection<LabTechnicianTestType> LabTechnicianTestType { get; set; } = new List<LabTechnicianTestType>();
 
     public virtual SampleType SampleType { get; set; }

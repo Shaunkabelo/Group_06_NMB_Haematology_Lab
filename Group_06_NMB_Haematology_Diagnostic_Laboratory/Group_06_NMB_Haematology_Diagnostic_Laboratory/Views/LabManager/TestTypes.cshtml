@@ -1,0 +1,628 @@
+﻿
+@using Group_06_NMB_Haematology_Diagnostic_Lab.Data.Models
+@model IEnumerable<TestType>
+
+@{
+    Layout = "~/Views/Shared/_LabManager_Layout.cshtml";
+}
+
+<div class="page-body">
+
+    <!-- ========================================================= -->
+    <!-- PAGE HEADER -->
+    <!-- ========================================================= -->
+
+    <div class="section-header">
+
+        <div>
+            <h2>Test Types</h2>
+            <small>Manage registered laboratory test types.</small>
+        </div>
+
+        <div style="display:flex; gap:10px; align-items:center;">
+
+            <!-- ================================================= -->
+            <!-- LIVE SEARCH -->
+            <!-- ================================================= -->
+
+            <input type="text"
+                   id="searchInput"
+                   class="form-control"
+                   placeholder="Search test types..."
+                   value="@ViewBag.Search"
+                   autocomplete="off"
+                   style="width:240px;" />
+
+
+            <!-- ================================================= -->
+            <!-- FILTER -->
+            <!-- ================================================= -->
+
+            <form asp-controller="LabManager"
+                  asp-action="TestTypes"
+                  method="get"
+                  id="filterForm">
+
+                <input type="hidden"
+                       name="search"
+                       id="filterSearch"
+                       value="@ViewBag.Search" />
+
+                <select id="filterSelect"
+                        name="filter"
+                        class="form-select @(ViewBag.Filter == "Active" ? "filter-active" : ViewBag.Filter == "Inactive" ? "filter-inactive" : "filter-all")"
+                        onchange="document.getElementById('filterSearch').value = document.getElementById('searchInput').value; this.form.submit();">
+
+                    @if (ViewBag.Filter == "Active")
+                    {
+                        <option value="Active" selected>Active</option>
+                    }
+                    else
+                    {
+                        <option value="Active">Active</option>
+                    }
+
+                    @if (ViewBag.Filter == "Inactive")
+                    {
+                        <option value="Inactive" selected>Inactive</option>
+                    }
+                    else
+                    {
+                        <option value="Inactive">Inactive</option>
+                    }
+
+                    @if (ViewBag.Filter == "All")
+                    {
+                        <option value="All" selected>All</option>
+                    }
+                    else
+                    {
+                        <option value="All">All</option>
+                    }
+
+                </select>
+
+            </form>
+
+
+            <!-- ================================================= -->
+            <!-- ADD TEST TYPE -->
+            <!-- ================================================= -->
+
+            <button class="btn btn-primary"
+                    type="button"
+                    onclick="openCreateTestType()"
+                    data-bs-toggle="offcanvas"
+                    data-bs-target="#testTypePanel">
+
+                Add Test Type
+
+            </button>
+
+        </div>
+
+    </div>
+
+
+    <!-- ========================================================= -->
+    <!-- TEST TYPES TABLE -->
+    <!-- ========================================================= -->
+
+    <div class="table-wrap">
+
+        <table id="testTypesTable">
+
+            <thead>
+
+                <tr>
+
+                    <th>Test Name</th>
+                    <th>Category</th>
+                    <th>Sample Type</th>
+                    <th>Unit</th>
+                    <th>Normal Range</th>
+                    <th>Turnaround</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+
+                </tr>
+
+            </thead>
+
+
+            <tbody id="testTypesTableBody">
+
+                @foreach (var testType in Model)
+                {
+                    <tr>
+
+                        <td>
+                            @testType.TestName
+                        </td>
+
+                        <td>
+                            @testType.TestCategory?.CategoryName
+                        </td>
+
+                        <td>
+                            @testType.SampleType?.SampleTypeName
+                        </td>
+
+                        <td>
+                            @testType.UnitOfMeasurement
+                        </td>
+
+                        <td>
+                            @testType.NormalRangeMin
+                            -
+                            @testType.NormalRangeMax
+                        </td>
+
+                        <td>
+                            @testType.TurnaroundTimeMinutes min
+                        </td>
+
+                        <td>
+
+                            @(testType.IsActive ? "Active" : "Inactive")
+
+                        </td>
+
+
+                        <td class="td-actions">
+
+                            <!-- ================================================= -->
+                            <!-- EDIT -->
+                            <!-- ================================================= -->
+
+                            <button type="button"
+                                    class="btn btn-edit btn-sm"
+                                    data-bs-toggle="offcanvas"
+                                    data-bs-target="#testTypePanel"
+                                    onclick="openEditTestType(this)"
+                                    data-id="@testType.TestTypeId"
+                                    data-name="@testType.TestName"
+                                    data-category="@testType.TestCategoryId"
+                                    data-sample="@testType.SampleTypeId"
+                                    data-unit="@testType.UnitOfMeasurement"
+                                    data-min="@testType.NormalRangeMin"
+                                    data-max="@testType.NormalRangeMax"
+                                    data-turnaround="@testType.TurnaroundTimeMinutes">
+
+                                Edit
+
+                            </button>
+
+
+                            @if (testType.IsActive)
+                            {
+                                <!-- ================================================= -->
+                                <!-- DELETE -->
+                                <!-- ================================================= -->
+
+                                <form asp-action="DeleteTestType"
+                                      asp-controller="LabManager"
+                                      method="post"
+                                      style="display:inline;">
+
+                                    <input type="hidden"
+                                           name="id"
+                                           value="@testType.TestTypeId" />
+
+                                    <input type="hidden"
+                                           name="filter"
+                                           value="@ViewBag.Filter" />
+
+                                    <button type="submit"
+                                            class="btn btn-delete btn-sm"
+                                            onclick="return confirm('Are you sure you want to deactivate this test type?');">
+
+                                        Delete
+
+                                    </button>
+
+                                </form>
+                            }
+                            else
+                            {
+                                <!-- ================================================= -->
+                                <!-- REACTIVATE -->
+                                <!-- ================================================= -->
+
+                                <form asp-action="ReactivateTestType"
+                                      asp-controller="LabManager"
+                                      method="post"
+                                      style="display:inline;">
+
+                                    <input type="hidden"
+                                           name="id"
+                                           value="@testType.TestTypeId" />
+
+                                    <input type="hidden"
+                                           name="filter"
+                                           value="@ViewBag.Filter" />
+
+                                    <button type="submit"
+                                            class="btn btn-primary btn-sm"
+                                            onclick="return confirm('Are you sure you want to reactivate this test type?');">
+
+                                        Reactivate
+
+                                    </button>
+
+                                </form>
+                            }
+
+                        </td>
+
+                    </tr>
+                }
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+</div>
+
+
+<!-- ========================================================= -->
+<!-- ADD / EDIT TEST TYPE OFFCANVAS -->
+<!-- ========================================================= -->
+
+<div class="offcanvas offcanvas-end"
+     tabindex="-1"
+     id="testTypePanel"
+     style="width:600px;">
+
+    <div class="offcanvas-header">
+
+        <h4 id="testTypePanelTitle">
+            Add Test Type
+        </h4>
+
+        <button type="button"
+                class="btn-close"
+                data-bs-dismiss="offcanvas">
+        </button>
+
+    </div>
+
+
+    <div class="offcanvas-body">
+
+        <form id="testTypeForm"
+              asp-controller="LabManager"
+              asp-action="CreateTestType"
+              method="post">
+
+
+            <!-- TEST TYPE ID -->
+
+            <input type="hidden"
+                   id="TestTypeId"
+                   name="TestTypeId"
+                   value="0" />
+
+
+            <!-- ================================================= -->
+            <!-- TEST NAME -->
+            <!-- ================================================= -->
+
+            <div class="form-group">
+
+                <label class="form-label">
+                    Test Name
+                </label>
+
+                <input id="TestName"
+                       class="form-control"
+                       name="TestName"
+                       required />
+
+            </div>
+
+
+            <!-- ================================================= -->
+            <!-- CATEGORY -->
+            <!-- ================================================= -->
+
+            <div class="form-group">
+
+                <label class="form-label">
+                    Test Category
+                </label>
+
+                <select id="TestCategoryId"
+                        name="TestCategoryId"
+                        class="form-control"
+                        required>
+
+                    <option value="">
+                        Select Test Category
+                    </option>
+
+                    @foreach (var category in ViewBag.Categories)
+                    {
+                        <option value="@category.TestCategoryId">
+                            @category.CategoryName
+                        </option>
+                    }
+
+                </select>
+
+            </div>
+
+
+            <!-- ================================================= -->
+            <!-- SAMPLE TYPE -->
+            <!-- ================================================= -->
+
+            <div class="form-group">
+
+                <label class="form-label">
+                    Sample Type
+                </label>
+
+                <select id="SampleTypeId"
+                        name="SampleTypeId"
+                        class="form-control"
+                        required>
+
+                    <option value="">
+                        Select Sample Type
+                    </option>
+
+                    @foreach (var sampleType in ViewBag.SampleTypes)
+                    {
+                        <option value="@sampleType.SampleTypeId">
+                            @sampleType.SampleTypeName
+                        </option>
+                    }
+
+                </select>
+
+            </div>
+
+
+            <!-- ================================================= -->
+            <!-- UNIT OF MEASUREMENT -->
+            <!-- ================================================= -->
+
+            <div class="form-group">
+
+                <label class="form-label">
+                    Unit of Measurement
+                </label>
+
+                <input id="UnitOfMeasurement"
+                       class="form-control"
+                       name="UnitOfMeasurement"
+                       placeholder="e.g. g/dL, g/L, µL" />
+
+            </div>
+
+
+            <!-- ================================================= -->
+            <!-- NORMAL RANGE -->
+            <!-- ================================================= -->
+
+            <div class="form-row">
+
+                <div class="form-group">
+
+                    <label class="form-label">
+                        Normal Range Minimum
+                    </label>
+
+                    <input id="NormalRangeMin"
+                           type="number"
+                           step="0.0001"
+                           class="form-control"
+                           name="NormalRangeMin" />
+
+                </div>
+
+
+                <div class="form-group">
+
+                    <label class="form-label">
+                        Normal Range Maximum
+                    </label>
+
+                    <input id="NormalRangeMax"
+                           type="number"
+                           step="0.0001"
+                           class="form-control"
+                           name="NormalRangeMax" />
+
+                </div>
+
+            </div>
+
+
+            <!-- ================================================= -->
+            <!-- TURNAROUND TIME -->
+            <!-- ================================================= -->
+
+            <div class="form-group">
+
+                <label class="form-label">
+                    Turnaround Time (Minutes)
+                </label>
+
+                <input id="TurnaroundTimeMinutes"
+                       type="number"
+                       min="1"
+                       class="form-control"
+                       name="TurnaroundTimeMinutes"
+                       value="60"
+                       required />
+
+            </div>
+
+
+            <!-- ================================================= -->
+            <!-- BUTTONS -->
+            <!-- ================================================= -->
+
+            <button id="testTypeSubmitButton"
+                    type="submit"
+                    class="btn btn-primary">
+
+                Save Test Type
+
+            </button>
+
+
+            <button type="button"
+                    class="btn btn-secondary"
+                    data-bs-dismiss="offcanvas">
+
+                Cancel
+
+            </button>
+
+        </form>
+
+    </div>
+
+</div>
+
+
+<!-- ========================================================= -->
+<!-- JAVASCRIPT -->
+<!-- ========================================================= -->
+
+<script>
+
+    // =========================================================
+    // CREATE TEST TYPE
+    // =========================================================
+
+    function openCreateTestType()
+    {
+        document.getElementById("testTypePanelTitle").innerText =
+            "Add Test Type";
+
+        document.getElementById("testTypeSubmitButton").innerText =
+            "Save Test Type";
+
+        document.getElementById("testTypeForm").action =
+            "/LabManager/CreateTestType";
+
+        document.getElementById("testTypeForm").reset();
+
+        document.getElementById("TestTypeId").value = "0";
+
+        document.getElementById("TurnaroundTimeMinutes").value = "60";
+    }
+
+
+    // =========================================================
+    // EDIT TEST TYPE
+    // =========================================================
+
+    function openEditTestType(button)
+    {
+        document.getElementById("testTypePanelTitle").innerText =
+            "Edit Test Type";
+
+        document.getElementById("testTypeSubmitButton").innerText =
+            "Update Test Type";
+
+        document.getElementById("testTypeForm").action =
+            "/LabManager/EditTestType";
+
+
+        document.getElementById("TestTypeId").value =
+            button.dataset.id;
+
+        document.getElementById("TestName").value =
+            button.dataset.name;
+
+        document.getElementById("TestCategoryId").value =
+            button.dataset.category;
+
+        document.getElementById("SampleTypeId").value =
+            button.dataset.sample;
+
+        document.getElementById("UnitOfMeasurement").value =
+            button.dataset.unit;
+
+        document.getElementById("NormalRangeMin").value =
+            button.dataset.min;
+
+        document.getElementById("NormalRangeMax").value =
+            button.dataset.max;
+
+        document.getElementById("TurnaroundTimeMinutes").value =
+            button.dataset.turnaround;
+    }
+
+
+    // =========================================================
+    // LIVE SEARCH
+    // =========================================================
+
+    const searchInput =
+        document.getElementById("searchInput");
+
+    let searchTimer;
+
+    searchInput.addEventListener("input", function ()
+    {
+        clearTimeout(searchTimer);
+
+        const searchValue =
+            this.value.trim();
+
+        searchTimer = setTimeout(function ()
+        {
+            const currentFilter =
+                document.getElementById("filterSelect").value;
+
+            const url =
+                new URL(window.location.href);
+
+            url.searchParams.set("filter", currentFilter);
+
+            if (searchValue.length > 0)
+            {
+                url.searchParams.set("search", searchValue);
+            }
+            else
+            {
+                url.searchParams.delete("search");
+            }
+
+            window.location.href = url.toString();
+
+        }, 350);
+
+    });
+
+
+    // =========================================================
+    // KEEP SEARCH FOCUSED AFTER PAGE REFRESH
+    // =========================================================
+
+    window.addEventListener("load", function ()
+    {
+        const input =
+            document.getElementById("searchInput");
+
+        if (input)
+        {
+            input.focus();
+
+            const length =
+                input.value.length;
+
+            input.setSelectionRange(length, length);
+        }
+    });
+
+</script>
+

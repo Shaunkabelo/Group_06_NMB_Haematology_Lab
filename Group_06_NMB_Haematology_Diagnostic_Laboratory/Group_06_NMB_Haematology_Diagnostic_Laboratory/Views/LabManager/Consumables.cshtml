@@ -1,0 +1,590 @@
+﻿@using Group_06_NMB_Haematology_Diagnostic_Lab.Data.Models
+@model IEnumerable<Consumable>
+
+@{
+    Layout = "~/Views/Shared/_LabManager_Layout.cshtml";
+}
+
+<div class="page-body">
+
+    <!-- ========================================================= -->
+    <!-- PAGE HEADER -->
+    <!-- ========================================================= -->
+
+    <div class="section-header">
+
+        <div>
+            <h2>Consumables</h2>
+            <small>Manage laboratory consumables and stock.</small>
+        </div>
+
+        <div style="display:flex; gap:10px; align-items:center;">
+
+            <!-- ================================================= -->
+            <!-- LIVE SEARCH -->
+            <!-- ================================================= -->
+
+            <input type="text"
+                   id="consumableSearch"
+                   class="form-control"
+                   placeholder="Search consumables..."
+                   autocomplete="off" />
+
+
+            <!-- ================================================= -->
+            <!-- FILTER -->
+            <!-- ================================================= -->
+
+            <form asp-controller="LabManager"
+                  asp-action="Consumables"
+                  method="get">
+
+                <select id="filterSelect"
+                        name="filter"
+                        class="form-select @(ViewBag.Filter == "Active" ? "filter-active" : ViewBag.Filter == "Inactive" ? "filter-inactive" : "filter-all")"
+                        onchange="this.form.submit()">
+
+                    @if (ViewBag.Filter == "Active")
+                    {
+                        <option value="Active" selected>Active</option>
+                    }
+                    else
+                    {
+                        <option value="Active">Active</option>
+                    }
+
+                    @if (ViewBag.Filter == "Inactive")
+                    {
+                        <option value="Inactive" selected>Inactive</option>
+                    }
+                    else
+                    {
+                        <option value="Inactive">Inactive</option>
+                    }
+
+                    @if (ViewBag.Filter == "All")
+                    {
+                        <option value="All" selected>All</option>
+                    }
+                    else
+                    {
+                        <option value="All">All</option>
+                    }
+
+                </select>
+
+            </form>
+
+
+            <!-- ================================================= -->
+            <!-- ADD CONSUMABLE -->
+            <!-- ================================================= -->
+
+            <button class="btn btn-primary"
+                    onclick="openCreateConsumable()"
+                    data-bs-toggle="offcanvas"
+                    data-bs-target="#consumablePanel">
+
+                Add Consumable
+
+            </button>
+
+        </div>
+
+    </div>
+
+
+    <!-- ========================================================= -->
+    <!-- CONSUMABLE TABLE -->
+    <!-- ========================================================= -->
+
+    <div class="table-wrap">
+
+        <table id="consumableTable">
+
+            <thead>
+
+                <tr>
+
+                    <th>Name</th>
+                    <th>Supplier</th>
+                    <th>Reorder Level</th>
+                    <th>Quantity On Hand</th>
+                    <th>Stock Status</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+
+                </tr>
+
+            </thead>
+
+
+            <tbody>
+
+                @foreach (var consumable in Model)
+                {
+                    <tr>
+
+                        <!-- ================================================= -->
+                        <!-- NAME -->
+                        <!-- ================================================= -->
+
+                        <td>
+                            @consumable.Name
+                        </td>
+
+
+                        <!-- ================================================= -->
+                        <!-- SUPPLIER -->
+                        <!-- ================================================= -->
+
+                        <td>
+                            @consumable.Supplier?.SupplierName
+                        </td>
+
+
+                        <!-- ================================================= -->
+                        <!-- REORDER LEVEL -->
+                        <!-- ================================================= -->
+
+                        <td>
+                            @consumable.ReorderLevel
+                        </td>
+
+
+                        <!-- ================================================= -->
+                        <!-- QUANTITY ON HAND -->
+                        <!-- ================================================= -->
+
+                        <td>
+                            @consumable.QuantityOnHand
+                        </td>
+
+
+                        <!-- ================================================= -->
+                        <!-- STOCK STATUS -->
+                        <!-- ================================================= -->
+
+                        <td>
+
+                            @if (consumable.QuantityOnHand <= 0)
+                            {
+                                <span class="btn btn-delete btn-sm">
+                                    Out of Stock
+                                </span>
+                            }
+                            else if (consumable.QuantityOnHand <= consumable.ReorderLevel)
+                            {
+                                <span class="btn btn-deactivate btn-sm">
+                                    Low Stock
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="btn btn-activate btn-sm">
+                                    In Stock
+                                </span>
+                            }
+
+                        </td>
+
+
+                        <!-- ================================================= -->
+                        <!-- ACTIVE STATUS -->
+                        <!-- ================================================= -->
+
+                        <td>
+                            @(consumable.IsActive ? "Active" : "Inactive")
+                        </td>
+
+
+                        <!-- ================================================= -->
+                        <!-- ACTIONS -->
+                        <!-- ================================================= -->
+
+                        <td class="td-actions">
+
+                            <!-- EDIT -->
+
+                            <button type="button"
+                                    class="btn btn-edit btn-sm"
+                                    data-bs-toggle="offcanvas"
+                                    data-bs-target="#consumablePanel"
+                                    onclick="openEditConsumable(this)"
+                                    data-id="@consumable.ConsumableId"
+                                    data-name="@consumable.Name"
+                                    data-supplier="@consumable.SupplierId"
+                                    data-reorder="@consumable.ReorderLevel"
+                                    data-quantity="@consumable.QuantityOnHand">
+
+                                Edit
+
+                            </button>
+
+
+                            @if (consumable.IsActive)
+                            {
+                                <!-- DELETE -->
+
+                                <form asp-action="DeleteConsumable"
+                                      asp-controller="LabManager"
+                                      method="post"
+                                      style="display:inline;">
+
+                                    <input type="hidden"
+                                           name="id"
+                                           value="@consumable.ConsumableId" />
+
+                                    <button type="submit"
+                                            class="btn btn-delete btn-sm"
+                                            onclick="return confirm('Are you sure you want to deactivate this consumable?');">
+
+                                        Delete
+
+                                    </button>
+
+                                </form>
+                            }
+                            else
+                            {
+                                <!-- REACTIVATE -->
+
+                                <form asp-action="ReactivateConsumable"
+                                      asp-controller="LabManager"
+                                      method="post"
+                                      style="display:inline;">
+
+                                    <input type="hidden"
+                                           name="id"
+                                           value="@consumable.ConsumableId" />
+
+                                    <button type="submit"
+                                            class="btn btn-primary btn-sm"
+                                            onclick="return confirm('Are you sure you want to reactivate this consumable?');">
+
+                                        Reactivate
+
+                                    </button>
+
+                                </form>
+                            }
+
+                        </td>
+
+                    </tr>
+                }
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+</div>
+
+
+<!-- ========================================================= -->
+<!-- ADD / EDIT CONSUMABLE PANEL -->
+<!-- ========================================================= -->
+
+<div class="offcanvas offcanvas-end"
+     tabindex="-1"
+     id="consumablePanel"
+     style="width:600px;">
+
+    <div class="offcanvas-header">
+
+        <h4 id="consumablePanelTitle">
+            Add Consumable
+        </h4>
+
+        <button type="button"
+                class="btn-close"
+                data-bs-dismiss="offcanvas">
+        </button>
+
+    </div>
+
+
+    <div class="offcanvas-body">
+
+        <form id="consumableForm"
+              asp-controller="LabManager"
+              asp-action="CreateConsumable"
+              method="post">
+
+
+            <!-- ================================================= -->
+            <!-- CONSUMABLE ID -->
+            <!-- ================================================= -->
+
+            <input type="hidden"
+                   id="ConsumableId"
+                   name="ConsumableId"
+                   value="0" />
+
+
+            <!-- ================================================= -->
+            <!-- CONSUMABLE NAME -->
+            <!-- ================================================= -->
+
+            <div class="form-group">
+
+                <label class="form-label">
+                    Consumable Name
+                </label>
+
+                <input id="ConsumableName"
+                       class="form-control"
+                       name="Name"
+                       required />
+
+            </div>
+
+
+            <!-- ================================================= -->
+            <!-- SUPPLIER -->
+            <!-- ================================================= -->
+
+            <div class="form-group">
+
+                <label class="form-label">
+                    Supplier
+                </label>
+
+                <select id="SupplierId"
+                        class="form-control"
+                        name="SupplierId"
+                        required>
+
+                    <option value="">
+                        Select Supplier
+                    </option>
+
+                    @if (ViewBag.Suppliers != null)
+                    {
+                        foreach (var supplier in ViewBag.Suppliers)
+                        {
+                            <option value="@supplier.SupplierId">
+                                @supplier.SupplierName
+                            </option>
+                        }
+                    }
+
+                </select>
+
+            </div>
+
+
+            <!-- ================================================= -->
+            <!-- REORDER LEVEL -->
+            <!-- ================================================= -->
+
+            <div class="form-group">
+
+                <label class="form-label">
+                    Reorder Level
+                </label>
+
+                <input id="ReorderLevel"
+                       type="number"
+                       min="0"
+                       class="form-control"
+                       name="ReorderLevel"
+                       required />
+
+            </div>
+
+
+            <!-- ================================================= -->
+            <!-- QUANTITY ON HAND -->
+            <!-- ================================================= -->
+
+            <div class="form-group">
+
+                <label class="form-label">
+                    Quantity On Hand
+                </label>
+
+                <input id="QuantityOnHand"
+                       type="number"
+                       min="0"
+                       class="form-control"
+                       name="QuantityOnHand"
+                       value="0"
+                       required />
+
+                <small id="quantityHelp"
+                       class="text-muted">
+
+                    Enter the initial quantity when creating
+                    the consumable.
+
+                </small>
+
+            </div>
+
+
+            <!-- ================================================= -->
+            <!-- BUTTONS -->
+            <!-- ================================================= -->
+
+            <button id="consumableSubmitButton"
+                    type="submit"
+                    class="btn btn-primary">
+
+                Save Consumable
+
+            </button>
+
+
+            <button type="button"
+                    class="btn btn-secondary"
+                    data-bs-dismiss="offcanvas">
+
+                Cancel
+
+            </button>
+
+        </form>
+
+    </div>
+
+</div>
+
+
+<!-- ========================================================= -->
+<!-- JAVASCRIPT -->
+<!-- ========================================================= -->
+
+<script>
+
+    // =========================================================
+    // LIVE SEARCH
+    // =========================================================
+
+    document
+        .getElementById("consumableSearch")
+        .addEventListener("input", function ()
+        {
+            const searchValue =
+                this.value.toLowerCase().trim();
+
+            const rows =
+                document.querySelectorAll(
+                    "#consumableTable tbody tr"
+                );
+
+            rows.forEach(function (row)
+            {
+                const consumableName =
+                    row.cells[0].textContent.toLowerCase();
+
+                const supplierName =
+                    row.cells[1].textContent.toLowerCase();
+
+                if (
+                    consumableName.includes(searchValue) ||
+                    supplierName.includes(searchValue)
+                )
+                {
+                    row.style.display = "";
+                }
+                else
+                {
+                    row.style.display = "none";
+                }
+            });
+        });
+
+
+    // =========================================================
+    // CREATE CONSUMABLE
+    // =========================================================
+
+    function openCreateConsumable()
+    {
+        document.getElementById("consumablePanelTitle").innerText =
+            "Add Consumable";
+
+        document.getElementById("consumableSubmitButton").innerText =
+            "Save Consumable";
+
+        document.getElementById("consumableForm").action =
+            "/LabManager/CreateConsumable";
+
+        document.getElementById("consumableForm").reset();
+
+        document.getElementById("ConsumableId").value =
+            "0";
+
+
+        // Quantity can be entered during creation.
+
+        document.getElementById("QuantityOnHand").readOnly =
+            false;
+
+        document.getElementById("QuantityOnHand").value =
+            "0";
+
+        document.getElementById("quantityHelp").innerText =
+            "Enter the initial quantity when creating the consumable.";
+    }
+
+
+    // =========================================================
+    // EDIT CONSUMABLE
+    // =========================================================
+
+    function openEditConsumable(button)
+    {
+        document.getElementById("consumablePanelTitle").innerText =
+            "Edit Consumable";
+
+        document.getElementById("consumableSubmitButton").innerText =
+            "Update Consumable";
+
+        document.getElementById("consumableForm").action =
+            "/LabManager/EditConsumable";
+
+
+        // Consumable ID
+
+        document.getElementById("ConsumableId").value =
+            button.dataset.id;
+
+
+        // Consumable Name
+
+        document.getElementById("ConsumableName").value =
+            button.dataset.name;
+
+
+        // Supplier
+
+        document.getElementById("SupplierId").value =
+            button.dataset.supplier;
+
+
+        // Reorder Level
+
+        document.getElementById("ReorderLevel").value =
+            button.dataset.reorder;
+
+
+        // Current Quantity
+
+        document.getElementById("QuantityOnHand").value =
+            button.dataset.quantity;
+
+
+        // Quantity must NOT be changed through Edit.
+
+        document.getElementById("QuantityOnHand").readOnly =
+            true;
+
+        document.getElementById("quantityHelp").innerText =
+            "Quantity can only be changed through stock transactions.";
+    }
+
+</script>
