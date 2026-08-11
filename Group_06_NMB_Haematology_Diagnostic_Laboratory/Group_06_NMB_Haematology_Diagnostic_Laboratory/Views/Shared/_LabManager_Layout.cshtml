@@ -1,65 +1,407 @@
-﻿@{
+﻿
+@{
     var currentAction = ViewContext.RouteData.Values["action"]?.ToString() ?? "";
     var title = ViewData["Title"]?.ToString() ?? "NMB-HLabSys";
-    string IsActive(string action) => string.Equals(currentAction, action, StringComparison.OrdinalIgnoreCase) ? " active" : "";
+
+    string IsActive(string action) =>
+        string.Equals(
+            currentAction,
+            action,
+            StringComparison.OrdinalIgnoreCase)
+            ? " active"
+            : "";
 }
 
 <!DOCTYPE html>
 
 <html>
+
 <head>
+
     <meta name="viewport" content="width=device-width" />
+
     <title>@ViewBag.Title</title>
+
     <base href="@Url.Content("~/")" />
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="~/css/LabManagerStyle.css" asp-append-version="true" />
+
+    <!-- Bootstrap -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css"
+          rel="stylesheet">
+
+    <!-- Lab Manager Styles -->
+    <link rel="stylesheet"
+          href="~/css/LabManagerStyle.css"
+          asp-append-version="true" />
+
+    <!-- Validation -->
     <script src="~/js/LabManager_Validation_Script.js"></script>
+
 </head>
+
+
 <body>
 
+    <!-- ========================================================= -->
+    <!-- SIDEBAR -->
+    <!-- ========================================================= -->
+
     <aside class="sidebar">
+
+        <!-- BRAND -->
+
         <div class="sidebar-brand">
-            <span class="brand-icon">🧬</span> NMB-HLabSys
+
+            <span class="brand-icon">🧬</span>
+
+            NMB-HLabSys
+
         </div>
+
+
+        <!-- NAVIGATION -->
+
         <nav class="nav-menu">
-            <div class="sidebar-section">Overview</div>
-            <a asp-controller="LabManager" asp-action="Dashboard" class="nav-item@(IsActive("Dashboard"))"><span>📊</span> Dashboard</a>
-            <a asp-controller="LabManager" asp-action="ManagerReports" class="nav-item@(IsActive("ManagerReports"))"><span>📄</span> Reports</a>
-            <div class="sidebar-section">Catalogue</div>
-            <a asp-controller="LabManager" asp-action="Categories" class="nav-item@(IsActive("Categories"))"><span>🗂️</span> Categories</a>
-            <a asp-controller="LabManager" asp-action="TestTypes" class="nav-item@(IsActive("TestTypes"))"><span>🔬</span> Test Types</a>
-            <div class="sidebar-section">Inventory</div>
-            <a asp-controller="LabManager" asp-action="Consumables" class="nav-item@(IsActive("Consumables"))"><span>📦</span> Consumables</a>
-            <a asp-controller="LabManager" asp-action="Orders" class="nav-item@(IsActive("Orders"))"><span>🛒</span> Orders</a>
-            <a asp-controller="LabManager" asp-action="Suppliers" class="nav-item@(IsActive("Suppliers"))"><span>🏭</span> Suppliers</a>
-            <div class="sidebar-section">Staff</div>
-            <a asp-controller="LabManager" asp-action="Doctors" class="nav-item@(IsActive("Doctors"))"><span>👨‍⚕️</span> Doctors</a>
-            <a asp-controller="LabManager" asp-action="Technicians" class="nav-item@(IsActive("Technicians"))"><span>🧪</span> Technicians</a>
-            <a asp-controller="LabManager" asp-action="ManageManagers" class="nav-item@(IsActive("ManageManagers"))"><span>👥</span> Manage Managers</a>
-            <div class="sidebar-section">Account</div>
-            <a asp-controller="LabManager" asp-action="Profile" class="nav-item@(IsActive("Profile"))"><span>👤</span> My Profile</a>
-            <div class="sidebar-footer">
-                <div class="user-info">
-                    <strong id="sidebar-user-name">Guest User</strong>
-                    <small id="sidebar-user-role">Lab Manager</small>
-                </div>
+
+
+            <!-- ================================================= -->
+            <!-- OVERVIEW -->
+            <!-- ================================================= -->
+
+            <div class="sidebar-section">
+                Overview
             </div>
+
+            <a asp-controller="LabManager"
+               asp-action="Dashboard"
+               class="nav-item@(IsActive("Dashboard"))">
+
+                <span>📊</span>
+                Dashboard
+
+            </a>
+
+
+            <a asp-controller="LabManager"
+               asp-action="ManagerReports"
+               class="nav-item@(IsActive("ManagerReports"))">
+
+                <span>📄</span>
+                Reports
+
+            </a>
+
+
+            <!-- ================================================= -->
+            <!-- CATALOGUE -->
+            <!-- ================================================= -->
+
+            <div class="sidebar-section">
+                Catalogue
+            </div>
+
+
+            <a asp-controller="LabManager"
+               asp-action="TestCategories"
+               class="nav-item@(IsActive("TestCategories"))">
+
+                <span>🗂️</span>
+                Categories
+
+            </a>
+
+
+            <a asp-controller="LabManager"
+               asp-action="TestTypes"
+               class="nav-item@(IsActive("TestTypes"))">
+
+                <span>🔬</span>
+                Test Types
+
+            </a>
+
+
+            <a asp-controller="LabManager"
+               asp-action="SampleTypes"
+               class="nav-item@(IsActive("SampleTypes"))">
+
+                <span>🧫</span>
+                Sample Types
+
+            </a>
+
+
+            <!-- ================================================= -->
+            <!-- INVENTORY -->
+            <!-- ================================================= -->
+
+            <div class="sidebar-section">
+                Inventory
+            </div>
+
+
+            <a asp-controller="LabManager"
+               asp-action="Consumables"
+               class="nav-item@(IsActive("Consumables"))">
+
+                <span>📦</span>
+                Consumables
+
+            </a>
+
+
+            <a asp-controller="LabManager"
+               asp-action="Orders"
+               class="nav-item@(IsActive("Orders"))">
+
+                <span>🛒</span>
+                Orders
+
+            </a>
+
+
+            <a asp-controller="LabManager"
+               asp-action="Suppliers"
+               class="nav-item@(IsActive("Suppliers"))">
+
+                <span>🏭</span>
+                Suppliers
+
+            </a>
+
+
+            <!-- ================================================= -->
+            <!-- STAFF -->
+            <!-- ================================================= -->
+
+            <div class="sidebar-section">
+                Staff
+            </div>
+
+
+            <a asp-controller="LabManager"
+               asp-action="Doctors"
+               class="nav-item@(IsActive("Doctors"))">
+
+                <span>👨‍⚕️</span>
+                Doctors
+
+            </a>
+
+
+            <a asp-controller="LabManager"
+               asp-action="Technicians"
+               class="nav-item@(IsActive("Technicians"))">
+
+                <span>🧪</span>
+                Technicians
+
+            </a>
+
+
+            <a asp-controller="LabManager"
+               asp-action="ManageManagers"
+               class="nav-item@(IsActive("ManageManagers"))">
+
+                <span>👥</span>
+                Manage Managers
+
+            </a>
+
+
+            <!-- ================================================= -->
+            <!-- SIDEBAR FOOTER -->
+            <!-- ================================================= -->
+
+            <div class="sidebar-footer">
+
+                <div class="user-info">
+
+                    <strong id="sidebar-user-name">
+                        Guest User
+                    </strong>
+
+                    <small id="sidebar-user-role">
+                        Lab Manager
+                    </small>
+
+                </div>
+
+            </div>
+
         </nav>
+
     </aside>
 
 
+    <!-- ========================================================= -->
+    <!-- MAIN CONTENT -->
+    <!-- ========================================================= -->
+
     <main class="main-content">
+
+
+        <!-- ===================================================== -->
+        <!-- TOP BAR -->
+        <!-- ===================================================== -->
 
         <header class="topbar">
 
-            <h2>@title</h2>
+            <!-- PAGE TITLE -->
+
+            <h2>
+                @title
+            </h2>
+
+
+            <!-- ACCOUNT -->
+
+            <div class="account-menu">
+
+                <button type="button"
+                        class="account-button"
+                        id="accountButton">
+
+                    <span class="account-icon">
+                        👤
+                    </span>
+
+                    <span class="account-details">
+
+                        <strong id="topbar-user-name">
+                            Guest User
+                        </strong>
+
+                        <small id="topbar-user-role">
+                            Lab Manager
+                        </small>
+
+                    </span>
+
+                    <span class="account-arrow">
+                        ▾
+                    </span>
+
+                </button>
+
+
+                <!-- ACCOUNT DROPDOWN -->
+
+                <div class="account-dropdown"
+                     id="accountDropdown">
+
+                    <div class="account-dropdown-header">
+
+                        <strong id="dropdown-user-name">
+                            Guest User
+                        </strong>
+
+                        <small id="dropdown-user-role">
+                            Lab Manager
+                        </small>
+
+                    </div>
+
+
+                    <div class="account-dropdown-divider"></div>
+
+
+                    <a asp-controller="LabManager"
+                       asp-action="Profile"
+                       class="account-dropdown-item">
+
+                        <span>👤</span>
+                        My Profile
+
+                    </a>
+
+
+                    <a asp-controller="LabManager"
+                       asp-action="Profile"
+                       class="account-dropdown-item">
+
+                        <span>✏️</span>
+                        Update Details
+
+                    </a>
+
+
+                    <a asp-controller="LabManager"
+                       asp-action="ChangePassword"
+                       class="account-dropdown-item">
+
+                        <span>🔑</span>
+                        Change Password
+
+                    </a>
+
+
+                    <div class="account-dropdown-divider"></div>
+
+
+                    <a asp-controller="Account"
+                       asp-action="Logout"
+                       class="account-dropdown-item logout-item">
+
+                        <span>🚪</span>
+                        Logout
+
+                    </a>
+
+                </div>
+
+            </div>
 
         </header>
 
+
+        <!-- ===================================================== -->
+        <!-- PAGE CONTENT -->
+        <!-- ===================================================== -->
         @RenderBody()
 
+
     </main>
+
+
+    <!-- ========================================================= -->
+    <!-- BOOTSTRAP JAVASCRIPT -->
+    <!-- ========================================================= -->
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js">
+    </script>
+
+
+    <!-- ========================================================= -->
+    <!-- ACCOUNT DROPDOWN -->
+    <!-- ========================================================= -->
+
+    <script>
+
+        const accountButton =
+            document.getElementById("accountButton");
+
+        const accountDropdown =
+            document.getElementById("accountDropdown");
+
+
+        accountButton.addEventListener("click", function ()
+        {
+            accountDropdown.classList.toggle("show");
+        });
+
+
+        document.addEventListener("click", function (event)
+        {
+            if (!accountButton.contains(event.target) &&
+                !accountDropdown.contains(event.target))
+            {
+                accountDropdown.classList.remove("show");
+            }
+        });
+
+    </script>
+
 </body>
+
 </html>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"></script>

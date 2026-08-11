@@ -15,12 +15,178 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
         }
         public IActionResult Dashboard() => View();
 
-        public IActionResult Categories() => View();
-
-        
-
         
         public IActionResult Orders() => View();
+
+        // ==================== SAMPLE TYPES ====================
+
+        // ==================== DISPLAY SAMPLE TYPES ====================
+        [HttpGet]
+        public async Task<IActionResult> SampleTypes(
+            string filter = "Active",
+            string search = "")
+        {
+            var sampleTypes = await _repository.GetSampleTypes(filter, search);
+
+            ViewBag.Filter = filter;
+            ViewBag.Search = search;
+
+            return View(sampleTypes);
+        }
+
+
+        // ==================== CREATE SAMPLE TYPE ====================
+        [HttpPost]
+        public async Task<IActionResult> CreateSampleType(SampleType sampleType)
+        {
+            if (!ModelState.IsValid)
+            {
+                return RedirectToAction(nameof(SampleTypes));
+            }
+
+            await _repository.CreateSampleType(sampleType);
+
+            return RedirectToAction(nameof(SampleTypes));
+        }
+
+
+        // ==================== UPDATE SAMPLE TYPE ====================
+        [HttpPost]
+        public async Task<IActionResult> EditSampleType(SampleType sampleType)
+        {
+            if (!ModelState.IsValid)
+            {
+                return RedirectToAction(nameof(SampleTypes));
+            }
+
+            await _repository.UpdateSampleType(sampleType);
+
+            return RedirectToAction(nameof(SampleTypes));
+        }
+
+
+        // ==================== DELETE SAMPLE TYPE ====================
+        [HttpPost]
+        public async Task<IActionResult> DeleteSampleType(
+            int id,
+            string filter = "Active",
+            string search = "")
+        {
+            await _repository.DeleteSampleType(id);
+
+            return RedirectToAction(
+                nameof(SampleTypes),
+                new
+                {
+                    filter,
+                    search
+                });
+        }
+
+
+        // ==================== REACTIVATE SAMPLE TYPE ====================
+        [HttpPost]
+        public async Task<IActionResult> ReactivateSampleType(
+            int id,
+            string filter = "Inactive",
+            string search = "")
+        {
+            await _repository.ReactivateSampleType(id);
+
+            return RedirectToAction(
+                nameof(SampleTypes),
+                new
+                {
+                    filter,
+                    search
+                });
+        }
+
+
+
+        // ---------==================== TEST CATEGORIES ====================----------------
+
+        // ==================== DISPLAY TEST CATEGORIES ====================
+        [HttpGet]
+        public async Task<IActionResult> TestCategories(
+            string filter = "Active",
+            string search = "")
+        {
+            var categories = await _repository.GetTestCategories(filter, search);
+
+            ViewBag.Filter = filter;
+            ViewBag.Search = search;
+
+            return View(categories);
+        }
+
+
+        // ==================== CREATE TEST CATEGORY ====================
+        [HttpPost]
+        public async Task<IActionResult> CreateTestCategory(TestCategory category)
+        {
+            if (!ModelState.IsValid)
+            {
+                return RedirectToAction(nameof(TestCategories));
+            }
+
+            await _repository.CreateTestCategory(category);
+
+            return RedirectToAction(nameof(TestCategories));
+        }
+
+
+        // ==================== UPDATE TEST CATEGORY ====================
+        [HttpPost]
+        public async Task<IActionResult> EditTestCategory(TestCategory category)
+        {
+            if (!ModelState.IsValid)
+            {
+                return RedirectToAction(nameof(TestCategories));
+            }
+
+            await _repository.UpdateTestCategory(category);
+
+            return RedirectToAction(nameof(TestCategories));
+        }
+
+
+        // ==================== DELETE TEST CATEGORY ====================
+        [HttpPost]
+        public async Task<IActionResult> DeleteTestCategory(
+            int id,
+            string filter = "Active",
+            string search = "")
+        {
+            await _repository.DeleteTestCategory(id);
+
+            return RedirectToAction(
+                nameof(TestCategories),
+                new
+                {
+                    filter,
+                    search
+                });
+        }
+
+
+        // ==================== REACTIVATE TEST CATEGORY ====================
+        [HttpPost]
+        public async Task<IActionResult> ReactivateTestCategory(
+            int id,
+            string filter = "Inactive",
+            string search = "")
+        {
+            await _repository.ReactivateTestCategory(id);
+
+            return RedirectToAction(
+                nameof(TestCategories),
+                new
+                {
+                    filter,
+                    search
+                });
+        }
 
         // ==================== TEST TYPES ========================================================================
         // =========================================================================================================

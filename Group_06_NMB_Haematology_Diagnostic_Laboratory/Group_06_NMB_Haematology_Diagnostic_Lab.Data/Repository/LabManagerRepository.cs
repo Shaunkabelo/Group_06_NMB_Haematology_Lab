@@ -671,30 +671,215 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
         }
 
 
+        //// ==================== TEST TYPE CONSUMABLES ====================
+
+        //public async Task<IEnumerable<TestTypeConsumable>> GetTestTypeConsumables(int testTypeId)
+        //{
+        //    var results = await _db.GetData<TestTypeConsumable, Consumable, TestTypeConsumable, object>(
+        //        "sp_TestTypeConsumable_GetByTestType",
+        //        (testTypeConsumable, consumable) =>
+        //        {
+        //            testTypeConsumable.Consumable = consumable;
+
+        //            return testTypeConsumable;
+        //        },
+        //        new
+        //        {
+        //            TestTypeID = testTypeId
+        //        },
+        //        splitOn: "ConsumableMappingID"
+        //    );
+
+        //    return results;
+        //}
+
+        //// Add Relationship
+        //public async Task AddTestTypeConsumable(TestTypeConsumable testTypeConsumable)
+        //{
+        //    await _db.SaveData(
+        //        "sp_TestTypeConsumable_Create",
+        //        new
+        //        {
+        //            testTypeConsumable.TestTypeId,
+        //            testTypeConsumable.ConsumableId,
+        //            testTypeConsumable.QuantityRequired
+        //        });
+        //}
+
+        //// Delete one
+        //public async Task DeleteTestTypeConsumable(int testTypeConsumableId)
+        //{
+        //    await _db.SaveData(
+        //        "sp_TestTypeConsumable_Delete",
+        //        new
+        //        {
+        //            TestTypeConsumableID = testTypeConsumableId
+        //        });
+        //}
+
+        ////delete all for the test type
+        //public async Task DeleteTestTypeConsumables(int testTypeId)
+        //{
+        //    await _db.SaveData(
+        //        "sp_TestTypeConsumable_DeleteByTestType",
+        //        new
+        //        {
+        //            TestTypeID = testTypeId
+        //        });
+        //}
 
 
 
+        // ==================== CATEGORIES ====================
 
-        // ==================== GET TEST CATEGORIES ====================
+        // ------------------- DISPLAY CATEGORIES
 
-        public async Task<IEnumerable<TestCategory>> GetTestCategories()
+        public async Task<IEnumerable<TestCategory>> GetTestCategories(
+            string filter = "Active",
+            string search = "")
         {
             return await _db.GetData<TestCategory, object>(
                 "sp_TestCategory_GetAll",
-                new { });
+                new
+                {
+                    Filter = filter,
+                    Search = search
+                });
+        }
+
+        // ------------------- GET CATEGOTRY BY ID -----------
+        public async Task<TestCategory> GetTestCategoryById(int id)
+        {
+            var result = await _db.GetData<TestCategory, object>(
+                "sp_TestCategory_GetById",
+                new
+                {
+                    TestCategoryID = id
+                });
+
+            return result.FirstOrDefault();
+        }
+
+        // --------------------- CREATE CATEGORY ID ----------
+        public async Task CreateTestCategory(TestCategory category)
+        {
+            await _db.SaveData(
+                "sp_TestCategory_Create",
+                new
+                {
+                    category.CategoryName,
+                    category.CategoryDescription
+                });
+        }
+
+        // -------------------- UPDATE ------------------------
+        public async Task UpdateTestCategory(TestCategory category)
+        {
+            await _db.SaveData(
+                "sp_TestCategory_Update",
+                new
+                {
+                    category.TestCategoryId,
+                    category.CategoryName,
+                    category.CategoryDescription
+                });
+        }
+
+        // --------------------- DELETE TEST CATEGORY -----------
+        public async Task DeleteTestCategory(int id)
+        {
+            await _db.SaveData(
+                "sp_TestCategory_Delete",
+                new
+                {
+                    TestCategoryID = id
+                });
+        }
+
+        // ------------------ REACTIVATE ---------------------------
+        public async Task ReactivateTestCategory(int id)
+        {
+            await _db.SaveData(
+                "sp_TestCategory_Reactivate",
+                new
+                {
+                    TestCategoryID = id
+                });
         }
 
 
 
 
-        // ==================== GET SAMPLE TYPES ====================
-
-        public async Task<IEnumerable<SampleType>> GetSampleTypes()
+        // ==================== SAMPLE TYPES ====================
+        //----------------------- DISPLAY -----------------------
+        public async Task<IEnumerable<SampleType>> GetSampleTypes(
+            string filter = "Active",
+            string search = "")
         {
             return await _db.GetData<SampleType, object>(
                 "sp_SampleType_GetAll",
-                new { });
+                new
+                {
+                    Filter = filter,
+                    Search = search
+                });
         }
 
+        //-------------------- GET BY ID ---------------------------------
+        public async Task<SampleType> GetSampleTypeById(int id)
+        {
+            var result = await _db.GetData<SampleType, object>(
+                "sp_SampleType_GetById",
+                new
+                {
+                    SampleTypeID = id
+                });
+
+            return result.FirstOrDefault();
+        }
+
+        // ----------------- CREATE ------------------------
+        public async Task CreateSampleType(SampleType sampleType)
+        {
+            await _db.SaveData(
+                "sp_SampleType_Create",
+                new
+                {
+                    sampleType.SampleTypeName
+                });
+        }
+
+        // --------------------- UPDATE -------------------------
+        public async Task UpdateSampleType(SampleType sampleType)
+        {
+            await _db.SaveData(
+                "sp_SampleType_Update",
+                new
+                {
+                    sampleType.SampleTypeId,
+                    sampleType.SampleTypeName
+                });
+        }
+
+        // -------------------- DELETE ---------------------
+        public async Task DeleteSampleType(int id)
+        {
+            await _db.SaveData(
+                "sp_SampleType_Delete",
+                new
+                {
+                    SampleTypeID = id
+                });
+        }
+        // -------------------- REACTIVATE -----------------
+        public async Task ReactivateSampleType(int id)
+        {
+            await _db.SaveData(
+                "sp_SampleType_Reactivate",
+                new
+                {
+                    SampleTypeID = id
+                });
+        }
     }
 }

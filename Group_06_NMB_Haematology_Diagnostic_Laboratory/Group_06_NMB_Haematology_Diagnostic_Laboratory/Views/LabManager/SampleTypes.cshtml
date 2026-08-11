@@ -1,0 +1,401 @@
+﻿@using Group_06_NMB_Haematology_Diagnostic_Lab.Data.Models
+@model IEnumerable<SampleType>
+
+@{
+    Layout = "~/Views/Shared/_LabManager_Layout.cshtml";
+}
+
+<div class="page-body">
+
+    <!-- ========================================================= -->
+    <!-- HEADER -->
+    <!-- ========================================================= -->
+
+    <div class="section-header">
+
+        <div>
+            <h2>Sample Types</h2>
+            <small>Manage laboratory sample types.</small>
+        </div>
+
+        <div style="display:flex; gap:10px; align-items:center;">
+
+            <!-- SEARCH -->
+
+            <form asp-controller="LabManager"
+                  asp-action="SampleTypes"
+                  method="get"
+                  id="sampleTypeSearchForm">
+
+                <input type="hidden"
+                       name="filter"
+                       value="@ViewBag.Filter" />
+
+                <input type="text"
+                       id="sampleTypeSearch"
+                       name="search"
+                       value="@ViewBag.Search"
+                       class="form-control"
+                       placeholder="Search sample types..."
+                       autocomplete="off" />
+
+            </form>
+
+
+            <!-- FILTER -->
+
+            <form asp-controller="LabManager"
+                  asp-action="SampleTypes"
+                  method="get">
+
+                <input type="hidden"
+                       name="search"
+                       value="@ViewBag.Search" />
+
+                <select id="filterSelect"
+                        name="filter"
+                        class="form-select @(ViewBag.Filter == "Active" ? "filter-active" : ViewBag.Filter == "Inactive" ? "filter-inactive" : "filter-all")"
+                        onchange="this.form.submit()">
+
+                    @if (ViewBag.Filter == "Active")
+                    {
+                        <option value="Active" selected>Active</option>
+                    }
+                    else
+                    {
+                        <option value="Active">Active</option>
+                    }
+
+                    @if (ViewBag.Filter == "Inactive")
+                    {
+                        <option value="Inactive" selected>Inactive</option>
+                    }
+                    else
+                    {
+                        <option value="Inactive">Inactive</option>
+                    }
+
+                    @if (ViewBag.Filter == "All")
+                    {
+                        <option value="All" selected>All</option>
+                    }
+                    else
+                    {
+                        <option value="All">All</option>
+                    }
+
+                </select>
+
+            </form>
+
+
+            <!-- ADD SAMPLE TYPE -->
+
+            <button class="btn btn-primary"
+                    onclick="openCreateSampleType()"
+                    data-bs-toggle="offcanvas"
+                    data-bs-target="#sampleTypePanel">
+
+                Add Sample Type
+
+            </button>
+
+        </div>
+
+    </div>
+
+
+    <!-- ========================================================= -->
+    <!-- SAMPLE TYPE TABLE -->
+    <!-- ========================================================= -->
+
+    <div class="table-wrap">
+
+        <table>
+
+            <thead>
+
+                <tr>
+
+                    <th>Sample Type</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+
+                </tr>
+
+            </thead>
+
+            <tbody>
+
+                @foreach (var sampleType in Model)
+                {
+                    <tr>
+
+                        <td>
+                            @sampleType.SampleTypeName
+                        </td>
+
+                        <td>
+                            @(sampleType.IsActive ? "Active" : "Inactive")
+                        </td>
+
+                        <td class="td-actions">
+
+                            <!-- EDIT -->
+
+                            <button type="button"
+                                    class="btn btn-edit btn-sm"
+                                    data-bs-toggle="offcanvas"
+                                    data-bs-target="#sampleTypePanel"
+                                    onclick="openEditSampleType(this)"
+                                    data-id="@sampleType.SampleTypeId"
+                                    data-name="@sampleType.SampleTypeName">
+
+                                Edit
+
+                            </button>
+
+
+                            @if (sampleType.IsActive)
+                            {
+                                <!-- DELETE / DEACTIVATE -->
+
+                                <form asp-action="DeleteSampleType"
+                                      asp-controller="LabManager"
+                                      method="post"
+                                      style="display:inline;">
+
+                                    <input type="hidden"
+                                           name="id"
+                                           value="@sampleType.SampleTypeId" />
+
+                                    <input type="hidden"
+                                           name="filter"
+                                           value="@ViewBag.Filter" />
+
+                                    <input type="hidden"
+                                           name="search"
+                                           value="@ViewBag.Search" />
+
+                                    <button type="submit"
+                                            class="btn btn-delete btn-sm"
+                                            onclick="return confirm('Are you sure you want to deactivate this sample type?');">
+
+                                        Delete
+
+                                    </button>
+
+                                </form>
+                            }
+                            else
+                            {
+                                <!-- REACTIVATE -->
+
+                                <form asp-action="ReactivateSampleType"
+                                      asp-controller="LabManager"
+                                      method="post"
+                                      style="display:inline;">
+
+                                    <input type="hidden"
+                                           name="id"
+                                           value="@sampleType.SampleTypeId" />
+
+                                    <input type="hidden"
+                                           name="filter"
+                                           value="@ViewBag.Filter" />
+
+                                    <input type="hidden"
+                                           name="search"
+                                           value="@ViewBag.Search" />
+
+                                    <button type="submit"
+                                            class="btn btn-primary btn-sm"
+                                            onclick="return confirm('Are you sure you want to reactivate this sample type?');">
+
+                                        Reactivate
+
+                                    </button>
+
+                                </form>
+                            }
+
+                        </td>
+
+                    </tr>
+                }
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+</div>
+
+
+<!-- ========================================================= -->
+<!-- ADD / EDIT SAMPLE TYPE OFFCANVAS -->
+<!-- ========================================================= -->
+
+<div class="offcanvas offcanvas-end"
+     tabindex="-1"
+     id="sampleTypePanel"
+     style="width:600px;">
+
+    <div class="offcanvas-header">
+
+        <h4 id="sampleTypePanelTitle">
+            Add Sample Type
+        </h4>
+
+        <button type="button"
+                class="btn-close"
+                data-bs-dismiss="offcanvas">
+        </button>
+
+    </div>
+
+
+    <div class="offcanvas-body">
+
+        <form id="sampleTypeForm"
+              asp-controller="LabManager"
+              asp-action="CreateSampleType"
+              method="post">
+
+            <!-- SAMPLE TYPE ID -->
+
+            <input type="hidden"
+                   id="SampleTypeId"
+                   name="SampleTypeId"
+                   value="0" />
+
+
+            <!-- SAMPLE TYPE NAME -->
+
+            <div class="form-group">
+
+                <label class="form-label">
+                    Sample Type
+                </label>
+
+                <input id="SampleTypeName"
+                       class="form-control"
+                       name="SampleTypeName"
+                       required />
+
+            </div>
+
+
+            <!-- BUTTONS -->
+
+            <button id="sampleTypeSubmitButton"
+                    type="submit"
+                    class="btn btn-primary">
+
+                Save Sample Type
+
+            </button>
+
+
+            <button type="button"
+                    class="btn btn-secondary"
+                    data-bs-dismiss="offcanvas">
+
+                Cancel
+
+            </button>
+
+        </form>
+
+    </div>
+
+</div>
+
+
+<!-- ========================================================= -->
+<!-- JAVASCRIPT -->
+<!-- ========================================================= -->
+
+<script>
+
+    // =========================================================
+    // LIVE SEARCH
+    // =========================================================
+
+    let sampleTypeSearchTimer;
+
+    const sampleTypeSearch =
+        document.getElementById("sampleTypeSearch");
+
+    if (sampleTypeSearch)
+    {
+        sampleTypeSearch.focus();
+
+        const searchLength = sampleTypeSearch.value.length;
+
+        sampleTypeSearch.setSelectionRange(
+            searchLength,
+            searchLength
+        );
+
+        sampleTypeSearch.addEventListener("input", function ()
+        {
+            clearTimeout(sampleTypeSearchTimer);
+
+            sampleTypeSearchTimer = setTimeout(function ()
+            {
+                document
+                    .getElementById("sampleTypeSearchForm")
+                    .submit();
+
+            }, 400);
+        });
+    }
+
+
+    // =========================================================
+    // CREATE SAMPLE TYPE
+    // =========================================================
+
+    function openCreateSampleType()
+    {
+        document.getElementById("sampleTypePanelTitle").innerText =
+            "Add Sample Type";
+
+        document.getElementById("sampleTypeSubmitButton").innerText =
+            "Save Sample Type";
+
+        document.getElementById("sampleTypeForm").action =
+            "/LabManager/CreateSampleType";
+
+        document.getElementById("sampleTypeForm").reset();
+
+        document.getElementById("SampleTypeId").value = "0";
+    }
+
+
+    // =========================================================
+    // EDIT SAMPLE TYPE
+    // =========================================================
+
+    function openEditSampleType(button)
+    {
+        document.getElementById("sampleTypePanelTitle").innerText =
+            "Edit Sample Type";
+
+        document.getElementById("sampleTypeSubmitButton").innerText =
+            "Update Sample Type";
+
+        document.getElementById("sampleTypeForm").action =
+            "/LabManager/EditSampleType";
+
+
+        document.getElementById("SampleTypeId").value =
+            button.dataset.id;
+
+        document.getElementById("SampleTypeName").value =
+            button.dataset.name;
+    }
+
+</script>

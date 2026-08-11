@@ -1,4 +1,9 @@
-﻿/* LabManagerStyle.css - Simplified */
+﻿/* =========================================================
+   LabManagerStyle.css
+   Original Layout
+   + Custom Sidebar Scrollbar
+   + Top-Right Account
+========================================================= */
 
 :root {
     --bg: #F5F7FA;
@@ -8,22 +13,37 @@
     --teal: #00C9A7;
     --blue: #3D9AE8;
     --red: #FF4757;
-    --sidebar: 240px;
+    --sidebar: 210px;
 }
+
+
+/* =========================================================
+   RESET
+========================================================= */
 
 * {
     box-sizing: border-box;
     margin: 0;
-    padding: 0
+    padding: 0;
 }
 
+
+/* =========================================================
+   BODY
+========================================================= */
+
 body {
-    font: 14px 'DM Sans',sans-serif;
+    font: 14px 'DM Sans', sans-serif;
     background: var(--bg);
     color: var(--text);
     display: flex;
-    min-height: 100vh
+    min-height: 100vh;
 }
+
+
+/* =========================================================
+   SIDEBAR
+========================================================= */
 
 .sidebar {
     position: fixed;
@@ -34,21 +54,80 @@ body {
     background: #0B1929;
     color: #fff;
     display: flex;
-    flex-direction: column
+    flex-direction: column;
 }
+
+
+/* =========================================================
+   SIDEBAR BRAND
+========================================================= */
 
 .sidebar-brand {
     padding: 20px;
     font-size: 18px;
     font-weight: 700;
-    border-bottom: 1px solid rgba(255,255,255,.08)
+    border-bottom: 1px solid rgba(255,255,255,.08);
 }
 
+
+/* =========================================================
+   NAVIGATION
+========================================================= */
 
 .nav-menu {
     flex: 1;
-    padding: 12px 0
+    padding: 12px 0;
+    /*
+       Allows the navigation to scroll
+       independently of the page.
+    */
+    overflow-y: auto;
+    overflow-x: hidden;
+    /* Firefox */
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255,255,255,.25) transparent;
 }
+
+
+    /* =========================================================
+   CUSTOM SCROLLBAR
+========================================================= */
+
+    .nav-menu::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    .nav-menu::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    .nav-menu::-webkit-scrollbar-thumb {
+        background: rgba(255,255,255,.25);
+        border-radius: 10px;
+    }
+
+        .nav-menu::-webkit-scrollbar-thumb:hover {
+            background: rgba(255,255,255,.45);
+        }
+
+
+/* =========================================================
+   SIDEBAR SECTION
+========================================================= */
+
+.sidebar-section {
+    padding: 15px 20px 7px;
+    color: #71869C;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .7px;
+}
+
+
+/* =========================================================
+   NAV ITEM
+========================================================= */
 
 .nav-item {
     display: flex;
@@ -57,29 +136,52 @@ body {
     color: #C7D0DB;
     text-decoration: none;
     border-left: 3px solid transparent;
-    transition: .2s
+    transition: .2s;
 }
+
+
+    /* Hover */
 
     .nav-item:hover {
         background: rgba(255,255,255,.05);
-        color: #fff
+        color: #fff;
     }
+
+
+    /* Active */
 
     .nav-item.active {
         background: #057dc2;
         color: #fff;
-        border-left-color: var(--teal)
+        border-left-color: var(--teal);
     }
+
+
+/* =========================================================
+   SIDEBAR FOOTER
+========================================================= */
 
 .sidebar-footer {
     padding: 16px 20px;
-    border-top: 1px solid rgba(255,255,255,.08)
+    border-top: 1px solid rgba(255,255,255,.08);
 }
+
+
+/* =========================================================
+   MAIN CONTENT
+========================================================= */
 
 .main-content {
     margin-left: var(--sidebar);
-    flex: 1
+    min-height: 100vh;
+    background: #f5f7fa;
+    flex: 1;
 }
+
+
+/* =========================================================
+   TOPBAR
+========================================================= */
 
 .topbar {
     height: 64px;
@@ -87,158 +189,326 @@ body {
     border-bottom: 1px solid var(--border);
     display: flex;
     align-items: center;
+    /*
+       IMPORTANT:
+       This keeps the title on the left
+       and Account on the right.
+    */
+    justify-content: space-between;
     padding: 0 24px;
     position: sticky;
-    top: 0
+    top: 0;
+    z-index: 100;
 }
+
+
+    /* =========================================================
+   TOPBAR TITLE
+========================================================= */
+
+    .topbar h2 {
+        margin: 0;
+        font-size: 20px;
+        font-weight: 700;
+        color: var(--text);
+    }
+
+
+/* =========================================================
+   ACCOUNT - TOP RIGHT
+========================================================= */
+
+.account-area {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+
+/* Account button */
+
+.account-button {
+    border: none;
+    background: transparent;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 10px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: background .2s ease;
+}
+
+
+    .account-button:hover {
+        background: #F3F6F9;
+    }
+
+
+/* =========================================================
+   ACCOUNT AVATAR
+========================================================= */
+
+.account-avatar {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    background: #E8F8F1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    flex-shrink: 0;
+}
+
+
+/* =========================================================
+   ACCOUNT INFORMATION
+========================================================= */
+
+.account-details {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    line-height: 1.3;
+}
+
+
+.account-name {
+    color: var(--text);
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+
+.account-role {
+    color: var(--muted);
+    font-size: 12px;
+    white-space: nowrap;
+}
+
+
+/* =========================================================
+   ACCOUNT DROPDOWN
+========================================================= */
+
+.account-dropdown {
+    position: absolute;
+    right: 0;
+    top: calc(100% + 8px);
+    width: 200px;
+    background: var(--blue);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    box-shadow: 0 8px 25px rgba(0,0,0,.12);
+    padding: 8px;
+    display: none;
+    z-index: 1000;
+}
+
+
+    /*
+   Your JavaScript can add .show
+   when the Account button is clicked.
+*/
+
+    .account-dropdown.show {
+        display: block;
+    }
+
+
+    .account-dropdown a {
+        display: block;
+        padding: 10px 12px;
+        border-radius: 7px;
+        color: var(--text);
+        text-decoration: none;
+        transition: .2s;
+    }
+
+
+        .account-dropdown a:hover {
+            background: var(--bg);
+        }
+
+
+/* =========================================================
+   PAGE BODY
+========================================================= */
 
 .page-body {
     padding: 35px;
 }
 
-.main-content {
-    margin-left: 240px;
-    min-height: 100vh;
-    background: #f5f7fa;
-}
 
+/* =========================================================
+   SECTION HEADER / TABLE TOP
+========================================================= */
 
-.section-header, .tbl-top {
+.section-header,
+.tbl-top {
     display: flex;
     justify-content: space-between;
     align-items: center;
     gap: 16px;
-    margin-bottom: 16px
+    margin-bottom: 16px;
 }
+
+
+/* =========================================================
+   TABLE
+========================================================= */
 
 .table-wrap {
     margin-top: 20px;
     overflow-x: auto;
     background: #fff;
     border: 1px solid var(--border);
-    border-radius: 10px
+    border-radius: 10px;
 }
 
-table, .table {
+
+table,
+.table {
     width: 100%;
-    border-collapse: collapse
+    border-collapse: collapse;
 }
+
 
 th {
     background: var(--bg);
     color: var(--muted);
     padding: 12px;
     text-align: left;
-    border-bottom: 1px solid var(--border)
+    border-bottom: 1px solid var(--border);
 }
+
 
 td {
     padding: 12px;
-    border-bottom: 1px solid var(--border)
+    border-bottom: 1px solid var(--border);
 }
+
 
 tr:hover {
-    background: rgba(0,0,0,.02)
+    background: rgba(0,0,0,.02);
 }
+
+
+/* =========================================================
+   TABLE ACTIONS
+========================================================= */
 
 .td-actions {
-   
 }
 
-.btn, .btn-icon {
+
+/* =========================================================
+   BUTTONS
+========================================================= */
+
+.btn,
+.btn-icon {
     border: none;
     border-radius: 8px;
     padding: 9px 14px;
     cursor: pointer;
     font: inherit;
     font-weight: 600;
-    transition: .2s
+    transition: .2s;
 }
 
-    .btn:hover, .btn-icon:hover {
-        transform: translateY(-1px)
+
+    .btn:hover,
+    .btn-icon:hover {
+        transform: translateY(-1px);
     }
 
-.btn-primary, .btn-add, .btn-activate {
+
+/* Primary */
+
+.btn-primary,
+.btn-add,
+.btn-activate {
     background: var(--teal);
-    color: #fff
+    color: #fff;
 }
 
-.btn-edit, .btn-icon.info {
+
+/* Edit */
+
+.btn-edit,
+.btn-icon.info {
     background: var(--blue);
-    color: #fff
+    color: #fff;
 }
 
-.btn-delete, .btn-danger, .btn-deactivate, .btn-icon.danger {
+
+/* Delete */
+
+.btn-delete,
+.btn-danger,
+.btn-deactivate,
+.btn-icon.danger {
     background: var(--red);
-    color: #fff
+    color: #fff;
 }
 
+
+/* Small buttons */
 
 .btn-sm {
     padding: 6px 10px;
-    font-size: 12px
+    font-size: 12px;
 }
 
+
+/* =========================================================
+   FORMS
+========================================================= */
+
 .form-group {
-    margin-bottom: 14px
+    margin-bottom: 14px;
 }
+
 
 .form-row {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 14px
+    gap: 14px;
 }
+
 
 .form-label {
     display: block;
     margin-bottom: 6px;
-    font-weight: 600
+    font-weight: 600;
 }
+
 
 .form-control {
     width: 100%;
     padding: 10px 12px;
     border: 1px solid var(--border);
-    border-radius: 8px
+    border-radius: 8px;
 }
+
 
     .form-control:focus {
         outline: none;
         border-color: var(--teal);
-        box-shadow: 0 0 0 3px rgba(0,201,167,.15)
+        box-shadow: 0 0 0 3px rgba(0,201,167,.15);
     }
+
 
 .required {
-    color: var(--red)
+    color: var(--red);
 }
 
-@media(max-width:860px) {
-    body {
-        display: block
-    }
-
-    .sidebar {
-        position: static;
-        width: 100%
-    }
-
-    .main-content {
-        margin: 0
-    }
-
-    .topbar, .section-header, .tbl-top {
-        flex-wrap: wrap
-    }
-
-    .form-row {
-        grid-template-columns: 1fr
-    }
-}
 
 /* =========================================================
    FILTER SELECT
-   ========================================================= */
+========================================================= */
 
 #filterSelect {
     width: 150px;
@@ -251,7 +521,11 @@ tr:hover {
     background-color: #fff;
 }
 
-    /* ACTIVE */
+
+    /* =========================================================
+   ACTIVE
+========================================================= */
+
     #filterSelect.filter-active {
         color: #087443 !important;
         background-color: #e8f8f1 !important;
@@ -259,7 +533,11 @@ tr:hover {
         box-shadow: 0 3px 10px rgba(0, 168, 120, 0.18);
     }
 
-    /* INACTIVE */
+
+    /* =========================================================
+   INACTIVE
+========================================================= */
+
     #filterSelect.filter-inactive {
         color: #c92a38 !important;
         background-color: #fff0f2 !important;
@@ -267,7 +545,11 @@ tr:hover {
         box-shadow: 0 3px 10px rgba(255, 71, 87, 0.18);
     }
 
-    /* ALL */
+
+    /* =========================================================
+   ALL
+========================================================= */
+
     #filterSelect.filter-all {
         color: #1769aa !important;
         background-color: #edf6ff !important;
@@ -275,32 +557,92 @@ tr:hover {
         box-shadow: 0 3px 10px rgba(61, 154, 232, 0.18);
     }
 
+
     /* Hover */
+
     #filterSelect:hover {
         transform: translateY(-1px);
     }
 
+
     /* Focus */
+
     #filterSelect:focus {
         outline: none !important;
     }
 
+
     /* Active focus */
+
     #filterSelect.filter-active:focus {
         border-color: #008f6b !important;
         box-shadow: 0 0 0 4px rgba(0, 201, 167, 0.15);
     }
 
+
     /* Inactive focus */
+
     #filterSelect.filter-inactive:focus {
         border-color: #e12f40 !important;
         box-shadow: 0 0 0 4px rgba(255, 71, 87, 0.15);
     }
 
+
     /* All focus */
+
     #filterSelect.filter-all:focus {
         border-color: #2787d0 !important;
         box-shadow: 0 0 0 4px rgba(61, 154, 232, 0.15);
     }
 
 
+/* =========================================================
+   RESPONSIVE
+========================================================= */
+
+@media (max-width: 860px) {
+
+    body {
+        display: block;
+    }
+
+
+    .sidebar {
+        position: static;
+        width: 100%;
+    }
+
+
+    .main-content {
+        margin: 0;
+    }
+
+
+    .topbar,
+    .section-header,
+    .tbl-top {
+        flex-wrap: wrap;
+    }
+
+
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+}
+
+
+/* =========================================================
+   SMALL SCREENS - ACCOUNT
+========================================================= */
+
+@media (max-width: 600px) {
+
+    .account-details {
+        display: none;
+        
+    }
+
+    .account-button {
+        padding: 4px;
+    }
+}

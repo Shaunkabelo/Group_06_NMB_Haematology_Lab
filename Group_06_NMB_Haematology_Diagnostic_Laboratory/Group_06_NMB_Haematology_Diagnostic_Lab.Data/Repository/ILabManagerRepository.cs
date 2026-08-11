@@ -92,14 +92,50 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
         Task ReactivateTestType(int id);
 
 
+        // ==================== TEST TYPE CONSUMABLES ====================
+
+        //Task<IEnumerable<TestTypeConsumable>> GetTestTypeConsumables(int testTypeId);
+
+        //Task AddTestTypeConsumable(TestTypeConsumable testTypeConsumable);
+
+        //Task DeleteTestTypeConsumable(int testTypeConsumableId);
+
+        //Task DeleteTestTypeConsumables(int testTypeId);
 
         // ==================== TEST CATEGORIES ====================
 
-        Task<IEnumerable<TestCategory>> GetTestCategories();
+        Task<IEnumerable<TestCategory>> GetTestCategories(
+            string filter = "Active",
+            string search = "");
+
+        Task<TestCategory> GetTestCategoryById(int id);
+
+        Task CreateTestCategory(TestCategory category);
+
+        Task UpdateTestCategory(TestCategory category);
+
+        Task DeleteTestCategory(int id);
+
+        Task ReactivateTestCategory(int id);
+
 
 
         // ==================== SAMPLE TYPES ====================
 
-        Task<IEnumerable<SampleType>> GetSampleTypes();
+        // ==================== SAMPLE TYPES ====================
+
+        Task<IEnumerable<SampleType>> GetSampleTypes(
+            string filter = "Active",
+            string search = "");
+
+        Task<SampleType> GetSampleTypeById(int id);
+
+        Task CreateSampleType(SampleType sampleType);
+
+        Task UpdateSampleType(SampleType sampleType);
+
+        Task DeleteSampleType(int id);
+
+        Task ReactivateSampleType(int id);
     }
 }
