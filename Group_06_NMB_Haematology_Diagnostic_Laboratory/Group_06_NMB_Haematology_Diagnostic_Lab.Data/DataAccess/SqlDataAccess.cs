@@ -25,119 +25,72 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.DataAccess
             return await connection.QueryAsync<T>(spName, parameters, commandType: CommandType.StoredProcedure);
         }
 
-
-        // ===============================================================================
-        // GET DATA OVERLOAD METHODS
-
-        // NEW - Two object mapping
-        public async Task<IEnumerable<TReturn>> GetData<TFirst, TSecond, TReturn, P>(
-        string spName,
-        Func<TFirst, TSecond, TReturn> map,
-        P parameters,
-        string splitOn = "Id",
-        string connectionId = "conn")
-        {
-            using IDbConnection connection =
-                new SqlConnection(_config.GetConnectionString(connectionId));
-
-            return await connection.QueryAsync(
-                spName,
-                map,
-                param: parameters,
-                splitOn: splitOn,
-                commandType: CommandType.StoredProcedure);
-        }
-
-
-        // NEW - Three object mapping
-        public async Task<IEnumerable<TReturn>> GetData<TFirst, TSecond, TThird, TReturn, P>(
-        string spName,
-        Func<TFirst, TSecond, TThird, TReturn> map,
-        P parameters,
-        string splitOn = "Id",
-        string connectionId = "conn")
-        {
-            using IDbConnection connection =
-                new SqlConnection(_config.GetConnectionString(connectionId));
-
-            return await connection.QueryAsync(
-                spName,
-                map,
-                param: parameters,
-                splitOn: splitOn,
-                commandType: CommandType.StoredProcedure);
-        }
-
-        // NEW - Four object mapping
-        public async Task<IEnumerable<TReturn>> GetData<TFirst, TSecond, TThird, TFourth, TReturn, P>(
-        string spName,
-        Func<TFirst, TSecond, TThird, TFourth, TReturn> map,
-        P parameters,
-        string splitOn = "Id",
-        string connectionId = "conn")
-        {
-            using IDbConnection connection =
-                new SqlConnection(_config.GetConnectionString(connectionId));
-
-            return await connection.QueryAsync(
-                spName,
-                map,
-                param: parameters,
-                splitOn: splitOn,
-                commandType: CommandType.StoredProcedure);
-        }
-
-        // ==========================================================================================
-
-
-
-
         public async Task SaveData<T>(string spName, T parameters, string connectionId = "conn")
         {
             using IDbConnection connection = new SqlConnection(_config.GetConnectionString(connectionId));
             await connection.ExecuteAsync(spName, parameters, commandType: CommandType.StoredProcedure);
         }
-        // ===============================================================================
-        // SAVE DATA OVERLOAD METHODS
 
-        public async Task<T> SaveDataAndReturn<T, P>(
-        string spName,
-        P parameters,
-         string connectionId = "conn")
+        // Insert overload method
+        public async Task<T> SaveDataReturnId<T, U>(string spName, U parameters, string connectionId = "conn")
         {
-            using IDbConnection connection =
-                new SqlConnection(_config.GetConnectionString(connectionId));
+            using IDbConnection connection = new SqlConnection(_config.GetConnectionString(connectionId));
 
-            return await connection.ExecuteScalarAsync<T>(
+            return await connection.QuerySingleAsync<T>(
                 spName,
                 parameters,
                 commandType: CommandType.StoredProcedure);
         }
 
-        // ======================== TRANSACTION METHOD ================================
-        public async Task ExecuteInTransaction(
-        Func<IDbConnection, IDbTransaction, Task> action)
+
+
+
+
+
+
+
+        // [LOGIN]  Implementing the QueryFirstOrDefaultAsync method 
+        public async Task<T?> QueryFirstOrDefaultAsync<T>(string query, object? parameters = null, string connectionId = "conn")
         {
-            using var connection =
-                new SqlConnection(_config.GetConnectionString("conn"));
+            using IDbConnection connection = new SqlConnection(_config.GetConnectionString(connectionId));
+            return await connection.QueryFirstOrDefaultAsync<T>(query, parameters);
+        }
 
-            await connection.OpenAsync();
 
-            using var transaction = connection.BeginTransaction();
 
-            try
+
+
+        // Implementing NEW Methods for CRUD Operations
+        public async Task<IEnumerable<T>> LoadData<T, U>(string sql, U parameters, string connectionId = "conn")
+        {
+            using (var connection = new SqlConnection(_config.GetConnectionString(connectionId)))
             {
-                await action(connection, transaction);
-
-                transaction.Commit();
-            }
-            catch
-            {
-                transaction.Rollback();
-                throw;
+                await connection.OpenAsync();
+                return await connection.QueryAsync<T>(sql, parameters, commandType: CommandType.Text);
             }
         }
-        //===========================================================================
+
+        // Method to execute a SQL query (e.g., INSERT, UPDATE, DELETE)
+        public async Task<int> Save<T>(string sql, T parameters, string connectionId = "conn")
+        {
+            using (var connection = new SqlConnection(_config.GetConnectionString(connectionId)))
+            {
+                await connection.OpenAsync();
+                Console.WriteLine($"Opened connection to {connectionId}");
+                Console.WriteLine($"Executing SQL: {sql}");
+
+
+                return await connection.ExecuteAsync(sql, parameters, commandType: CommandType.Text);
+            }
+        }
+
+        public async Task<int> ExecuteScalarAsync<T>(string sql, T parameters, string connectionId = "conn")
+        {
+            using var connection = new SqlConnection(_config.GetConnectionString(connectionId));
+            await connection.OpenAsync();
+            return await connection.ExecuteScalarAsync<int>(sql, parameters, commandType: CommandType.Text);
+        }
+
     }
 
 }
