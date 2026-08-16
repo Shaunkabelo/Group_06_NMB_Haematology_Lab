@@ -1,0 +1,179 @@
+﻿@{
+    ViewData["Title"] = "Medical History";
+}
+
+<div class="page-body">
+    <div class="section-header">
+        <div>
+            <!--<div class="section-title">Medical History</div>-->
+            <div class="section-sub">Manage chronic conditions, allergies and current medication for lab testing context.</div>
+        </div>
+    </div>
+
+    <div class="grid-3">
+        <div class="card">
+            <div class="card-header">
+                <span class="card-title">Condition</span>
+            </div>
+            <div class="card-body">
+                <div class="filter-row">
+                    <select id="condition-input" class="form-control compact-select">
+                        <option value="">Select medical condition</option>
+                        <option>Anaemia</option>
+                        <option>Asthma</option>
+                        <option>Diabetes</option>
+                        <option>Haemophilia</option>
+                        <option>Hypertension</option>
+                        <option>Leukaemia</option>
+                        <option>Sickle Cell Anaemia</option>
+                        <option>Thrombocytopenia</option>
+                        <option value="Other">Other</option>
+                    </select>
+                    <button class="btn btn-primary" type="button" onclick="addHistoryItem('Condition', 'condition-input', 'badge-amber')">Add</button>
+                </div>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-header">
+                <span class="card-title">Allergy</span>
+            </div>
+            <div class="card-body">
+                <div class="filter-row">
+                    <select id="allergy-input" class="form-control compact-select">
+                        <option value="">Select allergy</option>
+                        <option>Aspirin</option>
+                        <option>Dust mites</option>
+                        <option>Latex</option>
+                        <option>Peanuts</option>
+                        <option>Penicillin</option>
+                        <option>Pollen</option>
+                        <option>Shellfish</option>
+                        <option>Sulfa drugs</option>
+                        <option value="Other">Other</option>
+                    </select>
+                    <button class="btn btn-primary" type="button" onclick="addHistoryItem('Allergy', 'allergy-input', 'badge-red')">Add</button>
+                </div>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-header">
+                <span class="card-title">Medication</span>
+            </div>
+            <div class="card-body">
+                <div class="filter-row">
+                    <select id="med-input" class="form-control compact-select">
+                        <option value="">Select medication</option>
+                        <option>Amlodipine 5mg</option>
+                        <option>Aspirin 100mg</option>
+                        <option>Atorvastatin 20mg</option>
+                        <option>Insulin</option>
+                        <option>Losartan 50mg</option>
+                        <option>Metformin 500mg</option>
+                        <option>Salbutamol inhaler</option>
+                        <option>Warfarin</option>
+                        <option value="Other">Other</option>
+                    </select>
+                    <button class="btn btn-primary" type="button" onclick="addHistoryItem('Medication', 'med-input', 'badge-teal')">Add</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card section-gap">
+        <div class="card-header">
+            <span class="card-title">Selected Medical History</span>
+            <span class="td-muted" id="history-count">0 items</span>
+        </div>
+        <table>
+            <thead>
+                <tr><th>Category</th><th>Selected Item</th><th>Action</th></tr>
+            </thead>
+            <tbody id="history-table-body">
+                <tr id="history-empty-row">
+                    <td colspan="3" class="td-muted">No medical history items selected.</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+</div>
+
+@section Scripts {
+    <script>
+        function addHistoryItem(category, inputId, badgeClass) {
+            const input = document.getElementById(inputId);
+            let value = input.value.trim();
+            if (!value) return;
+
+            if (value === 'Other') {
+                value = prompt('Enter other item:')?.trim() || '';
+                if (!value) return;
+            }
+
+            const existingItems = Array.from(document.querySelectorAll('#history-table-body tr[data-category]'));
+            if (existingItems.some(item => item.dataset.category === category && item.dataset.value.toLowerCase() === value.toLowerCase())) {
+                toast('This item is already added.');
+                return;
+            }
+
+            addHistoryRow(category, value, badgeClass);
+            input.value = '';
+            toast('History item added.');
+        }
+
+        function addHistoryRow(category, value, badgeClass) {
+            const tableBody = document.getElementById('history-table-body');
+            const row = document.createElement('tr');
+            row.dataset.category = category;
+            row.dataset.value = value;
+            row.dataset.badgeClass = badgeClass;
+
+            const categoryCell = document.createElement('td');
+            categoryCell.textContent = category;
+
+            const itemCell = document.createElement('td');
+            const badge = document.createElement('span');
+            badge.className = 'badge ' + badgeClass;
+            badge.textContent = value;
+            itemCell.appendChild(badge);
+
+            const actionCell = document.createElement('td');
+
+            const removeButton = document.createElement('button');
+            removeButton.className = 'btn btn-secondary btn-sm';
+            removeButton.type = 'button';
+            removeButton.setAttribute('aria-label', `Remove ${value}`);
+            removeButton.textContent = 'Delete';
+            removeButton.onclick = () => removeHistoryItem(row);
+            actionCell.appendChild(removeButton);
+
+            row.appendChild(categoryCell);
+            row.appendChild(itemCell);
+            row.appendChild(actionCell);
+            tableBody.appendChild(row);
+            sortHistoryTable();
+        }
+
+        function removeHistoryItem(row) {
+            row.remove();
+            sortHistoryTable();
+            toast('History item removed.');
+        }
+
+        function sortHistoryTable() {
+            const tableBody = document.getElementById('history-table-body');
+            const rows = Array.from(tableBody.querySelectorAll('tr[data-category]'));
+            rows
+                .sort((first, second) => {
+                    const categoryCompare = first.dataset.category.localeCompare(second.dataset.category);
+                    if (categoryCompare !== 0) return categoryCompare;
+                    return first.dataset.value.localeCompare(second.dataset.value);
+                })
+                .forEach(row => tableBody.appendChild(row));
+
+            const emptyRow = document.getElementById('history-empty-row');
+            emptyRow.classList.toggle('hidden', rows.length > 0);
+            document.getElementById('history-count').textContent = rows.length === 1 ? '1 item' : `${rows.length} items`;
+        }
+    </script>
+}

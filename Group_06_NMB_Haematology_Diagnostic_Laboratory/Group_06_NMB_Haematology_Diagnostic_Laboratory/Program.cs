@@ -3,6 +3,7 @@ using Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository;
 using Group_06_NMB_Haematology_Diagnostic_Laboratory.Services;
 
 
+
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddScoped<IPasswordService, PasswordService>();
 builder.Services.AddControllersWithViews();

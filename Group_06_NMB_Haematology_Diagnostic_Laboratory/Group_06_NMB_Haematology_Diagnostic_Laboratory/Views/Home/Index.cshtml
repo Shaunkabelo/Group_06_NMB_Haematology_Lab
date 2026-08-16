@@ -4,9 +4,14 @@
 
 <div class="text-center">
     <h1 class="display-4">Welcome</h1>
-    
+    @*asp-route-id="@Model.PatientId"
+           class="btn btn-primary">*@
 
 </div>
 <li>
     <a asp-controller="Patient" asp-action="Register">register</a>
+    
+    <a asp-controller="Patient" asp-action="Update">Update My Profile </a>
+    
+    <a asp-controller="Patient" asp-action="MedicalHistory">Medical History</a>
 </li>

@@ -1,6 +1,10 @@
 ﻿using Group_06_NMB_Haematology_Diagnostic_Lab.Data.DataAccess;
 using Group_06_NMB_Haematology_Diagnostic_Lab.Data.Models;
 using Group_06_NMB_Haematology_Diagnostic_Laboratory.Services;
+using System;
+using System.Dynamic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
 {
@@ -55,8 +59,51 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
             {
                 throw new NotImplementedException();
             }
+
+        //==========================================================================================
+        //Get patient for update
+        //==========================================================================================
+        public async Task<PatientUpdate> GetPatientForUpdate(
+           int patientId)
+        {
+            var result = await _db.GetData<
+                PatientUpdate,
+                object>(
+                    "dbo.sp_GetPatientForUpdate",
+                    new
+                    {
+                        PatientId = patientId
+                    });
+
+            return result.FirstOrDefault();
+        }
+
+
+        //==========================================================================================
+        //Update patient information
+        //==========================================================================================
+
+        public async Task UpdatePatient(
+        PatientUpdate model)
+        {
+            var parameters = new
+            {
+                UserId = model.UserId,
+                Name = model.Name,
+                Surname = model.Surname,
+                Email = model.Email,
+                Cellphone = model.Cellphone,
+                HomeAddress = model.HomeAddress,
+                DateOfBirth = model.DateOfBirth
+            };
+
+            await _db.SaveData(
+                "dbo.sp_UpdatePatient",
+                parameters);
         }
     }
+    }
+   
 
    
 

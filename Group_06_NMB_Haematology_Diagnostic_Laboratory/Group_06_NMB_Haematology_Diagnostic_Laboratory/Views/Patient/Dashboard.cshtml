@@ -1,0 +1,73 @@
+﻿@{
+    ViewData["Title"] = "Patient Dashboard";
+}
+
+<div class="page-body patient-dashboard">
+    <div class="section-header">
+        <div>
+            <div class="section-title">Good morning, Sabelo</div>
+            <div class="section-sub">Overview of your test requests, released results and health history.</div>
+        </div>
+    </div>
+
+    <div class="stats-grid">
+        <a asp-controller="Patient" asp-action="Requests" class="stat-card clickable teal">
+            <div class="stat-label">Total Requests</div>
+            <div class="stat-value">8</div>
+            <div class="stat-sub">Linked to your patient profile</div>
+        </a>
+        <a asp-controller="Patient" asp-action="Requests" class="stat-card clickable blue">
+            <div class="stat-label">In Progress</div>
+            <div class="stat-value">2</div>
+            <div class="stat-sub">Samples being processed</div>
+        </a>
+        <a asp-controller="Patient" asp-action="Requests" class="stat-card clickable amber">
+            <div class="stat-label">Submitted</div>
+            <div class="stat-value">1</div>
+            <div class="stat-sub">Awaiting sample receipt</div>
+        </a>
+        <a asp-controller="Patient" asp-action="Reports" class="stat-card clickable red">
+            <div class="stat-label">Abnormal Flags</div>
+            <div class="stat-value">1</div>
+            <div class="stat-sub">Released by your doctor</div>
+        </a>
+    </div>
+
+    <div class="grid-2 section-gap">
+        <div class="card">
+            <div class="card-header">
+                <span class="card-title">Recent Test Requests</span>
+                <a asp-controller="Patient" asp-action="Requests" class="card-link">View all</a>
+            </div>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr><th>Request</th><th>Date</th><th>Doctor</th><th>Status</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr data-searchable><td><strong>REQ-2026-041</strong><br /><span class="td-muted">Full Blood Count</span></td><td>18 Apr 2026</td><td>Dr. T. Nkosi</td><td><span class="badge badge-blue">In Progress</span></td></tr>
+                        <tr data-searchable><td><strong>REQ-2026-040</strong><br /><span class="td-muted">Coagulation Studies</span></td><td>18 Apr 2026</td><td>Dr. T. Nkosi</td><td><span class="badge badge-amber">Submitted</span></td></tr>
+                        <tr data-searchable><td><strong>REQ-2026-038</strong><br /><span class="td-muted">Differential Count</span></td><td>02 Apr 2026</td><td>Dr. T. Nkosi</td><td><span class="badge badge-green">Released</span></td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <span class="card-title">Personalisation Summary</span>
+                <a asp-controller="Patient" asp-action="Profile" class="card-link">Edit profile</a>
+            </div>
+            <div class="card-body patient-summary">
+                <div><strong>Email username:</strong> sabelokwandile@gmail.com</div>
+                <div><strong>Conditions:</strong> Type 2 Diabetes, Hypertension</div>
+                <div><strong>Allergies:</strong> Penicillin, Latex</div>
+                <div><strong>Medication:</strong> Metformin 500mg, Amlodipine 5mg</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="section-gap">
+        <a asp-controller="Patient" asp-action="Reports" class="btn btn-primary btn-sm">Download Report</a>
+    </div>
+</div>
