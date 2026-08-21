@@ -12,6 +12,7 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.DataAccess
     public interface ISqlDataAccess
     {
         Task<IEnumerable<T>> GetData<T, P>(string spName, P parameters, string connectionId = "conn");
+        Task<(IEnumerable<TFirst> First, IEnumerable<TSecond> Second, IEnumerable<TThird> Third)> GetMultipleData<TFirst, TSecond, TThird, P>(string spName, P parameters, string connectionId = "conn");
         Task SaveData<T>(string spName, T parameters, string connectionId = "conn");
 
 

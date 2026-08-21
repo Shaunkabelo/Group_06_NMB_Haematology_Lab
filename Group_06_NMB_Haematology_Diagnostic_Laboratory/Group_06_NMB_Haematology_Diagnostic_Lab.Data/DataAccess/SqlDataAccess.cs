@@ -25,6 +25,18 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.DataAccess
             return await connection.QueryAsync<T>(spName, parameters, commandType: CommandType.StoredProcedure);
         }
 
+        public async Task<(IEnumerable<TFirst> First, IEnumerable<TSecond> Second, IEnumerable<TThird> Third)> GetMultipleData<TFirst, TSecond, TThird, P>(string spName, P parameters, string connectionId = "conn")
+        {
+            using IDbConnection connection = new SqlConnection(_config.GetConnectionString(connectionId));
+            using var results = await connection.QueryMultipleAsync(spName, parameters, commandType: CommandType.StoredProcedure);
+
+            var first = await results.ReadAsync<TFirst>();
+            var second = await results.ReadAsync<TSecond>();
+            var third = await results.ReadAsync<TThird>();
+
+            return (first, second, third);
+        }
+
         public async Task SaveData<T>(string spName, T parameters, string connectionId = "conn")
         {
             using IDbConnection connection = new SqlConnection(_config.GetConnectionString(connectionId));

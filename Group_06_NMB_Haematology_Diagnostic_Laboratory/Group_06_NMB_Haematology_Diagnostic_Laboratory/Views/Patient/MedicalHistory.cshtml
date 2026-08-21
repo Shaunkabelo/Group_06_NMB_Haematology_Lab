@@ -1,79 +1,126 @@
-﻿@{
+﻿@model IEnumerable<string>
+
+@{
+    Layout = "~/Views/Shared/_LayoutPatient.cshtml";
     ViewData["Title"] = "Medical History";
 }
 
+<style>
+    .medical-history-grid {
+        display: grid !important;
+        grid-template-columns: repeat(3, 1fr) !important;
+        gap: 20px !important;
+        width: 100%;
+        margin-bottom: 30px;
+    }
+
+    .medical-history-card {
+        display: flex !important;
+        flex-direction: column !important;
+        min-width: 0 !important;
+    }
+
+    .medical-history-card .card-body {
+        flex: 1;
+    }
+
+    .medical-history-card .filter-row {
+        display: flex !important;
+        gap: 10px !important;
+        align-items: center !important;
+        flex-wrap: nowrap !important;
+    }
+
+    .medical-history-card .compact-select {
+        flex: 1 !important;
+        min-width: 0 !important;
+    }
+
+    .medical-history-card .btn {
+        flex-shrink: 0 !important;
+        white-space: nowrap !important;
+    }
+
+    @@media (max-width: 1200px) {
+        .medical-history-grid {
+            grid-template-columns: repeat(3, 1fr) !important;
+        }
+    }
+</style>
+
 <div class="page-body">
+    @Html.AntiForgeryToken()
     <div class="section-header">
         <div>
-            <!--<div class="section-title">Medical History</div>-->
+            <div class="section-title">Medical History</div>
             <div class="section-sub">Manage chronic conditions, allergies and current medication for lab testing context.</div>
         </div>
     </div>
 
-    <div class="grid-3">
-        <div class="card">
+    <div class="medical-history-grid">
+        <div class="card medical-history-card">
             <div class="card-header">
                 <span class="card-title">Condition</span>
             </div>
             <div class="card-body">
-                <div class="filter-row">
-                    <select id="condition-input" class="form-control compact-select">
-                        <option value="">Select medical condition</option>
-                        <option>Anaemia</option>
-                        <option>Asthma</option>
-                        <option>Diabetes</option>
-                        <option>Haemophilia</option>
-                        <option>Hypertension</option>
-                        <option>Leukaemia</option>
-                        <option>Sickle Cell Anaemia</option>
-                        <option>Thrombocytopenia</option>
-                        <option value="Other">Other</option>
+                <div style="margin-bottom: 12px;">
+                    <select id="condition-category" class="form-control compact-select" style="width: 100%; display: block;">
+                        <option value="">Select category</option>
+                        @foreach (var category in ViewBag.MedicalConditionCategories as IEnumerable<string> ?? Enumerable.Empty<string>())
+                        {
+                            <option value="@category">@category</option>
+                        }
                     </select>
-                    <button class="btn btn-primary" type="button" onclick="addHistoryItem('Condition', 'condition-input', 'badge-amber')">Add</button>
+                </div>
+                <div class="filter-row" style="gap: 8px;">
+                    <select id="condition-input" class="form-control compact-select" style="flex: 1; min-width: 0;" disabled>
+                        <option value="">Select medical condition</option>
+                    </select>
+                    <button class="btn btn-primary" type="button" onclick="saveMedicalCondition()">Add</button>
                 </div>
             </div>
         </div>
-        <div class="card">
+        <div class="card medical-history-card">
             <div class="card-header">
                 <span class="card-title">Allergy</span>
             </div>
             <div class="card-body">
-                <div class="filter-row">
-                    <select id="allergy-input" class="form-control compact-select">
-                        <option value="">Select allergy</option>
-                        <option>Aspirin</option>
-                        <option>Dust mites</option>
-                        <option>Latex</option>
-                        <option>Peanuts</option>
-                        <option>Penicillin</option>
-                        <option>Pollen</option>
-                        <option>Shellfish</option>
-                        <option>Sulfa drugs</option>
-                        <option value="Other">Other</option>
+                <div style="margin-bottom: 12px;">
+                    <select id="allergy-category" class="form-control compact-select" style="width: 100%; display: block;">
+                        <option value="">Select category</option>
+                        @foreach (var category in Model ?? Enumerable.Empty<string>())
+                        {
+                            <option value="@category">@category</option>
+                        }
                     </select>
-                    <button class="btn btn-primary" type="button" onclick="addHistoryItem('Allergy', 'allergy-input', 'badge-red')">Add</button>
+                </div>
+                <div class="filter-row" style="gap: 8px;">
+                    <select id="allergy-input" class="form-control compact-select" style="flex: 1; min-width: 0;" disabled>
+                        <option value="">Select allergy</option>
+                    </select>
+                    <button class="btn btn-primary" type="button" onclick="saveAllergy()">Add</button>
                 </div>
             </div>
         </div>
-        <div class="card">
+        <div class="card medical-history-card">
             <div class="card-header">
                 <span class="card-title">Medication</span>
             </div>
             <div class="card-body">
-                <div class="filter-row">
-                    <select id="med-input" class="form-control compact-select">
-                        <option value="">Select medication</option>
-                        <option>Amlodipine 5mg</option>
-                        <option>Aspirin 100mg</option>
-                        <option>Atorvastatin 20mg</option>
-                        <option>Insulin</option>
-                        <option>Losartan 50mg</option>
-                        <option>Metformin 500mg</option>
-                        <option>Salbutamol inhaler</option>
-                        <option>Warfarin</option>
-                        <option value="Other">Other</option>
+                <div style="margin-bottom: 12px;">
+                    <select id="medication-category" class="form-control compact-select" style="width: 100%; display: block;">
+                        <option value="">Select category</option>
+                        @foreach (var category in ViewBag.MedicationCategories as IEnumerable<string> ?? Enumerable.Empty<string>())
+                        {
+                            <option value="@category">@category</option>
+                        }
                     </select>
-                    <button class="btn btn-primary" type="button" onclick="addHistoryItem('Medication', 'med-input', 'badge-teal')">Add</button>
+                </div>
+                <div class="filter-row" style="gap: 8px;">
+                    <select id="med-input" class="form-control compact-select" style="flex: 1; min-width: 0;" disabled>
+                        <option value="">Select medication</option>
+                    </select>
+                    <button class="btn btn-primary" type="button" onclick="saveMedication()">Add</button>
                 </div>
             </div>
         </div>
@@ -82,14 +129,22 @@
     <div class="card section-gap">
         <div class="card-header">
             <span class="card-title">Selected Medical History</span>
-            <span class="td-muted" id="history-count">0 items</span>
+            <span class="td-muted" id="history-count">@((ViewBag.SelectedMedicalHistory as IEnumerable<Group_06_NMB_Haematology_Diagnostic_Lab.Data.Models.PatientMedicalInformation>)?.Count() ?? 0) items</span>
         </div>
         <table>
             <thead>
                 <tr><th>Category</th><th>Selected Item</th><th>Action</th></tr>
             </thead>
             <tbody id="history-table-body">
-                <tr id="history-empty-row">
+                @foreach (var item in ViewBag.SelectedMedicalHistory as IEnumerable<Group_06_NMB_Haematology_Diagnostic_Lab.Data.Models.PatientMedicalInformation> ?? Enumerable.Empty<Group_06_NMB_Haematology_Diagnostic_Lab.Data.Models.PatientMedicalInformation>())
+                {
+                    <tr data-category="@item.Category" data-value="@item.SelectedItem" data-badge-class="@item.BadgeClass" data-item-type="@item.ItemType">
+                        <td>@item.Category</td>
+                        <td><span class="badge @item.BadgeClass">@item.SelectedItem</span></td>
+                        <td><button class="btn btn-secondary btn-sm" type="button" aria-label="Remove @item.SelectedItem" onclick="deleteHistoryItem(this.closest('tr'))">Delete</button></td>
+                    </tr>
+                }
+                <tr id="history-empty-row" class="@((ViewBag.SelectedMedicalHistory as IEnumerable<Group_06_NMB_Haematology_Diagnostic_Lab.Data.Models.PatientMedicalInformation>)?.Any() == true ? "hidden" : "")">
                     <td colspan="3" class="td-muted">No medical history items selected.</td>
                 </tr>
             </tbody>
@@ -100,6 +155,177 @@
 
 @section Scripts {
     <script>
+        const medicationCategorySelect = document.getElementById('medication-category');
+        const medicationSelect = document.getElementById('med-input');
+
+        medicationCategorySelect.addEventListener('change', async () => {
+            const categoryName = medicationCategorySelect.value;
+            medicationSelect.replaceChildren(new Option('Select medication', ''));
+            medicationSelect.disabled = true;
+
+            if (!categoryName) return;
+
+            try {
+                const url = '@Url.Action("GetMedicationsByCategory", "Patient")' +
+                    '?categoryName=' + encodeURIComponent(categoryName);
+                const response = await fetch(url);
+
+                if (!response.ok) throw new Error('Unable to load medications.');
+
+                const medications = await response.json();
+                medications.forEach(medication => medicationSelect.add(new Option(medication, medication)));
+                medicationSelect.disabled = false;
+            } catch {
+                toast('Unable to load medications for the selected category.');
+            }
+        });
+
+        async function saveMedication() {
+            const medicationName = medicationSelect.value.trim();
+            if (!medicationName) return;
+
+            const isAlreadyAdded = Array.from(document.querySelectorAll('#history-table-body tr[data-category]'))
+                .some(item => item.dataset.category === 'Medication' &&
+                    item.dataset.value.toLowerCase() === medicationName.toLowerCase());
+            if (isAlreadyAdded) {
+                toast('This item is already added.');
+                return;
+            }
+
+            try {
+                const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+                const response = await fetch('@Url.Action("SaveMedication", "Patient")', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
+                    body: new URLSearchParams({
+                        __RequestVerificationToken: token,
+                        medicationName: medicationName
+                    })
+                });
+                const result = await response.json().catch(() => ({}));
+
+                if (!response.ok) throw new Error(result.message || 'Unable to save the selected medication.');
+
+                addHistoryItem('Medication', 'med-input', 'badge-teal');
+            } catch (error) {
+                toast(error.message || 'Unable to save the selected medication.');
+            }
+        }
+
+        const conditionCategorySelect = document.getElementById('condition-category');
+        const conditionSelect = document.getElementById('condition-input');
+
+        conditionCategorySelect.addEventListener('change', async () => {
+            const categoryName = conditionCategorySelect.value;
+            conditionSelect.replaceChildren(new Option('Select medical condition', ''));
+            conditionSelect.disabled = true;
+
+            if (!categoryName) return;
+
+            try {
+                const url = '@Url.Action("GetMedicalConditionsByCategory", "Patient")' +
+                    '?categoryName=' + encodeURIComponent(categoryName);
+                const response = await fetch(url);
+
+                if (!response.ok) throw new Error('Unable to load medical conditions.');
+
+                const conditions = await response.json();
+                conditions.forEach(condition => conditionSelect.add(new Option(condition, condition)));
+                conditionSelect.disabled = false;
+            } catch {
+                toast('Unable to load conditions for the selected category.');
+            }
+        });
+
+        async function saveMedicalCondition() {
+            const conditionName = conditionSelect.value.trim();
+            if (!conditionName) return;
+
+            const isAlreadyAdded = Array.from(document.querySelectorAll('#history-table-body tr[data-category]'))
+                .some(item => item.dataset.category === 'Condition' &&
+                    item.dataset.value.toLowerCase() === conditionName.toLowerCase());
+            if (isAlreadyAdded) {
+                toast('This item is already added.');
+                return;
+            }
+
+            try {
+                const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+                const response = await fetch('@Url.Action("SaveMedicalCondition", "Patient")', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
+                    body: new URLSearchParams({
+                        __RequestVerificationToken: token,
+                        conditionName: conditionName
+                    })
+                });
+                const result = await response.json().catch(() => ({}));
+
+                if (!response.ok) throw new Error(result.message || 'Unable to save the selected medical condition.');
+
+                addHistoryItem('Condition', 'condition-input', 'badge-amber');
+            } catch (error) {
+                toast(error.message || 'Unable to save the selected medical condition.');
+            }
+        }
+
+        const allergyCategorySelect = document.getElementById('allergy-category');
+        const allergySelect = document.getElementById('allergy-input');
+
+        allergyCategorySelect.addEventListener('change', async () => {
+            const categoryName = allergyCategorySelect.value;
+            allergySelect.replaceChildren(new Option('Select allergy', ''));
+            allergySelect.disabled = true;
+
+            if (!categoryName) return;
+
+            try {
+                const url = '@Url.Action("GetAllergiesByCategory", "Patient")' +
+                    '?categoryName=' + encodeURIComponent(categoryName);
+                const response = await fetch(url);
+
+                if (!response.ok) throw new Error('Unable to load allergies.');
+
+                const allergies = await response.json();
+                allergies.forEach(allergy => allergySelect.add(new Option(allergy, allergy)));
+                allergySelect.disabled = false;
+            } catch {
+                toast('Unable to load allergies for the selected category.');
+            }
+        });
+
+        async function saveAllergy() {
+            const allergyName = allergySelect.value.trim();
+            if (!allergyName) return;
+
+            const isAlreadyAdded = Array.from(document.querySelectorAll('#history-table-body tr[data-category]'))
+                .some(item => item.dataset.category === 'Allergy' &&
+                    item.dataset.value.toLowerCase() === allergyName.toLowerCase());
+            if (isAlreadyAdded) {
+                toast('This item is already added.');
+                return;
+            }
+
+            try {
+                const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+                const response = await fetch('@Url.Action("SaveAllergy", "Patient")', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
+                    body: new URLSearchParams({
+                        __RequestVerificationToken: token,
+                        allergyName: allergyName
+                    })
+                });
+                const result = await response.json().catch(() => ({}));
+
+                if (!response.ok) throw new Error(result.message || 'Unable to save the selected allergy.');
+
+                addHistoryItem('Allergy', 'allergy-input', 'badge-red');
+            } catch (error) {
+                toast(error.message || 'Unable to save the selected allergy.');
+            }
+        }
+
         function addHistoryItem(category, inputId, badgeClass) {
             const input = document.getElementById(inputId);
             let value = input.value.trim();
@@ -127,6 +353,7 @@
             row.dataset.category = category;
             row.dataset.value = value;
             row.dataset.badgeClass = badgeClass;
+            row.dataset.itemType = category;
 
             const categoryCell = document.createElement('td');
             categoryCell.textContent = category;
@@ -144,7 +371,7 @@
             removeButton.type = 'button';
             removeButton.setAttribute('aria-label', `Remove ${value}`);
             removeButton.textContent = 'Delete';
-            removeButton.onclick = () => removeHistoryItem(row);
+            removeButton.onclick = () => deleteHistoryItem(row);
             actionCell.appendChild(removeButton);
 
             row.appendChild(categoryCell);
@@ -158,6 +385,52 @@
             row.remove();
             sortHistoryTable();
             toast('History item removed.');
+        }
+
+        async function deleteHistoryItem(row) {
+            const itemType = row.dataset.itemType;
+            if (!['Condition', 'Allergy', 'Medication'].includes(itemType)) {
+                toast('Invalid medical history item.');
+                return;
+            }
+
+            try {
+                const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+                const isCondition = itemType === 'Condition';
+                const isAllergy = itemType === 'Allergy';
+                const url = isCondition
+                    ? '@Url.Action("DeleteMedicalCondition", "Patient")'
+                    : isAllergy
+                        ? '@Url.Action("DeleteAllergy", "Patient")'
+                        : '@Url.Action("DeleteMedication", "Patient")';
+                const requestData = new URLSearchParams({
+                    __RequestVerificationToken: token
+                });
+                const itemParameterName = isCondition
+                    ? 'conditionName'
+                    : isAllergy
+                        ? 'allergyName'
+                        : 'medicationName';
+                requestData.append(itemParameterName, row.dataset.value);
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
+                    body: requestData
+                });
+                const result = await response.json().catch(() => ({}));
+
+                if (!response.ok) throw new Error(result.message || 'Unable to delete the selected item.');
+
+                row.remove();
+                sortHistoryTable();
+                toast(isCondition
+                    ? 'Medical condition deleted.'
+                    : isAllergy
+                        ? 'Allergy deleted.'
+                        : 'Medication deleted.');
+            } catch (error) {
+                toast(error.message || 'Unable to delete the selected item.');
+            }
         }
 
         function sortHistoryTable() {

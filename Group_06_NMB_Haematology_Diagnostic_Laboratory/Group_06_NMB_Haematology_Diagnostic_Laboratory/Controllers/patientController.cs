@@ -8,15 +8,22 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 {
     public class PatientController : Controller
     {
+        // Temporary patient context until authentication supplies the patient identity.
+        private const int CurrentPatientId = 9977;
+
         public IActionResult Index()
         {
             return View();
         }
         private readonly IPatientRepository _patientRepository;
+        private readonly IWebHostEnvironment _environment;
 
-            public PatientController(IPatientRepository patientRepository)
+            public PatientController(
+                IPatientRepository patientRepository,
+                IWebHostEnvironment environment)
             {
                 _patientRepository = patientRepository;
+                _environment = environment;
             }
 
             // GET: Patient/Register
@@ -121,9 +128,218 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 
         // GET: Patient/MedicalHistory
         [HttpGet]
-        public IActionResult MedicalHistory()
+        public async Task<IActionResult> MedicalHistory()
         {
-            return View();
+            var categories = await _patientRepository.GetAllergyCategories();
+            ViewBag.MedicalConditionCategories =
+                await _patientRepository.GetMedicalConditionCategories();
+            ViewBag.MedicationCategories =
+                await _patientRepository.GetMedicationCategories();
+            ViewBag.SelectedMedicalHistory =
+                await _patientRepository.GetPatientMedicalInformation(CurrentPatientId);
+
+            return View(categories);
+        }
+
+        // GET: Patient/GetAllergiesByCategory?categoryName=Medication
+        [HttpGet]
+        public async Task<IActionResult> GetAllergiesByCategory(string categoryName)
+        {
+            if (string.IsNullOrWhiteSpace(categoryName))
+            {
+                return Json(Array.Empty<string>());
+            }
+
+            var allergies = await _patientRepository.GetAllergiesByCategoryName(categoryName);
+            return Json(allergies);
+        }
+
+        // GET: Patient/GetMedicalConditionsByCategory?categoryName=Blood%20Disorders
+        [HttpGet]
+        public async Task<IActionResult> GetMedicalConditionsByCategory(string categoryName)
+        {
+            if (string.IsNullOrWhiteSpace(categoryName))
+            {
+                return Json(Array.Empty<string>());
+            }
+
+            var conditions = await _patientRepository.GetMedicalConditionsByCategory(categoryName);
+            return Json(conditions);
+        }
+
+        // GET: Patient/GetMedicationsByCategory?categoryName=Cardiovascular
+        [HttpGet]
+        public async Task<IActionResult> GetMedicationsByCategory(string categoryName)
+        {
+            if (string.IsNullOrWhiteSpace(categoryName))
+            {
+                return Json(Array.Empty<string>());
+            }
+
+            var medications = await _patientRepository.GetMedicationsByCategory(categoryName);
+            return Json(medications);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SaveMedication(string medicationName)
+        {
+            if (string.IsNullOrWhiteSpace(medicationName))
+            {
+                return BadRequest(new { message = "Select a medication before adding it." });
+            }
+
+            try
+            {
+                await _patientRepository.SavePatientMedication(CurrentPatientId, medicationName);
+                return Json(new { message = "Medication saved." });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                var message = _environment.IsDevelopment()
+                    ? ex.GetBaseException().Message
+                    : "Unable to save the selected medication.";
+                return StatusCode(500, new { message });
+            }
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SaveAllergy(string allergyName)
+        {
+            if (string.IsNullOrWhiteSpace(allergyName))
+            {
+                return BadRequest(new { message = "Select an allergy before adding it." });
+            }
+
+            try
+            {
+                await _patientRepository.SavePatientAllergy(CurrentPatientId, allergyName);
+                return Json(new { message = "Allergy saved." });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                var message = _environment.IsDevelopment()
+                    ? ex.GetBaseException().Message
+                    : "Unable to save the selected allergy.";
+                return StatusCode(500, new { message });
+            }
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SaveMedicalCondition(string conditionName)
+        {
+            if (string.IsNullOrWhiteSpace(conditionName))
+            {
+                return BadRequest(new { message = "Select a medical condition before adding it." });
+            }
+
+            try
+            {
+                await _patientRepository.SavePatientMedicalCondition(CurrentPatientId, conditionName);
+                return Json(new { message = "Medical condition saved." });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                var message = _environment.IsDevelopment()
+                    ? ex.GetBaseException().Message
+                    : "Unable to save the selected medical condition.";
+                return StatusCode(500, new { message });
+            }
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteMedicalCondition(string conditionName)
+        {
+            if (string.IsNullOrWhiteSpace(conditionName))
+            {
+                return BadRequest(new { message = "Invalid medical condition." });
+            }
+
+            try
+            {
+                await _patientRepository.DeletePatientMedicalCondition(CurrentPatientId, conditionName);
+                return Json(new { message = "Medical condition deleted." });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                var message = _environment.IsDevelopment()
+                    ? ex.GetBaseException().Message
+                    : "Unable to delete the selected medical condition.";
+                return StatusCode(500, new { message });
+            }
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteAllergy(string allergyName)
+        {
+            if (string.IsNullOrWhiteSpace(allergyName))
+            {
+                return BadRequest(new { message = "Invalid allergy." });
+            }
+
+            try
+            {
+                await _patientRepository.DeletePatientAllergy(CurrentPatientId, allergyName);
+                return Json(new { message = "Allergy deleted." });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                var message = _environment.IsDevelopment()
+                    ? ex.GetBaseException().Message
+                    : "Unable to delete the selected allergy.";
+                return StatusCode(500, new { message });
+            }
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteMedication(string medicationName)
+        {
+            if (string.IsNullOrWhiteSpace(medicationName))
+            {
+                return BadRequest(new { message = "Invalid medication." });
+            }
+
+            try
+            {
+                await _patientRepository.DeletePatientMedication(CurrentPatientId, medicationName);
+                return Json(new { message = "Medication deleted." });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                var message = _environment.IsDevelopment()
+                    ? ex.GetBaseException().Message
+                    : "Unable to delete the selected medication.";
+                return StatusCode(500, new { message });
+            }
         }
 
             private string HashPassword(string password, string salt)
