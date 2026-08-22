@@ -119,21 +119,42 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
 
         public async Task<IEnumerable<string>> GetAllergiesByCategoryName(string categoryName)
         {
-            var allergies = await _db.GetData<string, object>(
-                "dbo.sp_GetAllergiesByCategoryName",
-                new { CategoryName = categoryName });
+            var allergies = await _db.GetData<AllergyOption, object>(
+                "dbo.sp_GetAllAllergies",
+                new { });
 
             return allergies
-                .Where(allergy => !string.IsNullOrWhiteSpace(allergy))
+                .Where(allergy => string.Equals(
+                    allergy.AllergyCategory,
+                    categoryName,
+                    StringComparison.OrdinalIgnoreCase))
+                .Select(allergy => allergy.AllergyName)
+                .Where(allergyName => !string.IsNullOrWhiteSpace(allergyName))
                 .Distinct(StringComparer.OrdinalIgnoreCase)
-                .OrderBy(allergy => allergy)
+                .OrderBy(allergyName => allergyName)
                 .ToList();
+        }
+
+        public async Task<int> GetAllergyCount()
+        {
+            var allergies = await _db.GetData<AllergyOption, object>(
+                "dbo.sp_GetAllAllergiesByCategory",
+                new { });
+
+            return allergies.Count();
+        }
+
+        public async Task<IEnumerable<AllergyOption>> GetAllAllergiesByCategory()
+        {
+            return await _db.GetData<AllergyOption, object>(
+                "dbo.sp_GetAllAllergiesByCategory",
+                new { });
         }
 
         public async Task<IEnumerable<string>> GetMedicalConditionCategories()
         {
             var rows = await _db.GetData<MedicalConditionCategoryOption, object>(
-                "dbo.sp_GetMedicalConditionsCategories",
+                "dbo.sp_GetMedicalConditionCategories",
                 new { });
 
             return rows
@@ -144,16 +165,83 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
                 .ToList();
         }
 
+        public async Task<IEnumerable<MedicalConditionWithPatientCount>> GetMedicalConditionsWithPatientCount()
+        {
+            var conditions = (await _db.GetData<MedicalConditionWithPatientCount, object>(
+                "dbo.sp_GetMedicalConditionsWithPatientCount",
+                new { })).ToList();
+
+            var activeConditionNames = (await _db.GetData<MedicalConditionOption, object>(
+                "dbo.sp_GetAllMedicalConditions",
+                new { }))
+                .Select(condition => condition.ConditionName)
+                .Where(conditionName => !string.IsNullOrWhiteSpace(conditionName))
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+            foreach (var condition in conditions)
+            {
+                condition.IsActive = activeConditionNames.Contains(condition.ConditionName);
+            }
+
+            return conditions;
+        }
+
+        public async Task<int> GetMedicalConditionCount()
+        {
+            var conditions = await _db.GetData<MedicalConditionWithPatientCount, object>(
+                "dbo.sp_GetMedicalConditionsWithPatientCount",
+                new { });
+
+            return conditions.Count();
+        }
+
+        public Task UpdateMedicalCondition(MedicalConditionUpdate model)
+        {
+            return _db.SaveData(
+                "dbo.sp_UpdateMedicalCondition",
+                new
+                {
+                    model.OldConditionName,
+                    model.ConditionName,
+                    model.CategoryName,
+                    model.CategoryDescription
+                });
+        }
+
+        public Task AddMedicalCondition(MedicalConditionCreate model)
+        {
+            return _db.SaveData(
+                "dbo.sp_AddMedicalCondition",
+                new
+                {
+                    model.ConditionName,
+                    model.CategoryName,
+                    model.CategoryDescription
+                });
+        }
+
+        public Task SetMedicalConditionStatus(MedicalConditionStatusUpdate model)
+        {
+            return _db.SaveData(
+                "dbo.sp_SetMedicalConditionStatus",
+                new { model.ConditionName, model.IsActive });
+        }
+
         public async Task<IEnumerable<string>> GetMedicalConditionsByCategory(string categoryName)
         {
-            var conditions = await _db.GetData<string, object>(
-                "dbo.sp_GetMedicalConditionsByCategory",
-                new { CategoryName = categoryName });
+            var conditions = await _db.GetData<MedicalConditionOption, object>(
+                "dbo.sp_GetAllMedicalConditions",
+                new { });
 
             return conditions
-                .Where(condition => !string.IsNullOrWhiteSpace(condition))
+                .Where(condition => string.Equals(
+                    condition.ConditionCategory,
+                    categoryName,
+                    StringComparison.OrdinalIgnoreCase))
+                .Select(condition => condition.ConditionName)
+                .Where(conditionName => !string.IsNullOrWhiteSpace(conditionName))
                 .Distinct(StringComparer.OrdinalIgnoreCase)
-                .OrderBy(condition => condition)
+                .OrderBy(conditionName => conditionName)
                 .ToList();
         }
 
@@ -173,14 +261,19 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
 
         public async Task<IEnumerable<string>> GetMedicationsByCategory(string categoryName)
         {
-            var medications = await _db.GetData<string, object>(
-                "dbo.sp_GetMedicationsByCategory",
-                new { CategoryName = categoryName });
+            var medications = await _db.GetData<MedicationOption, object>(
+                "dbo.sp_GetAllMedications",
+                new { });
 
             return medications
-                .Where(medication => !string.IsNullOrWhiteSpace(medication))
+                .Where(medication => string.Equals(
+                    medication.MedicationCategory?.Trim(),
+                    categoryName.Trim(),
+                    StringComparison.OrdinalIgnoreCase))
+                .Select(medication => medication.MedicationName?.Trim())
+                .Where(medicationName => !string.IsNullOrWhiteSpace(medicationName))
                 .Distinct(StringComparer.OrdinalIgnoreCase)
-                .OrderBy(medication => medication)
+                .OrderBy(medicationName => medicationName)
                 .ToList();
         }
 

@@ -170,13 +170,14 @@
                     '?categoryName=' + encodeURIComponent(categoryName);
                 const response = await fetch(url);
 
-                if (!response.ok) throw new Error('Unable to load medications.');
+                const result = await response.json().catch(() => ({}));
+                if (!response.ok) throw new Error(result.message || 'Unable to load medications.');
 
-                const medications = await response.json();
+                const medications = result;
                 medications.forEach(medication => medicationSelect.add(new Option(medication, medication)));
                 medicationSelect.disabled = false;
-            } catch {
-                toast('Unable to load medications for the selected category.');
+            } catch (error) {
+                toast(error.message || 'Unable to load medications for the selected category.');
             }
         });
 

@@ -176,8 +176,15 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
                 return Json(Array.Empty<string>());
             }
 
-            var medications = await _patientRepository.GetMedicationsByCategory(categoryName);
-            return Json(medications);
+            try
+            {
+                var medications = await _patientRepository.GetMedicationsByCategory(categoryName);
+                return Json(medications);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = ex.GetBaseException().Message });
+            }
         }
 
         [HttpPost]

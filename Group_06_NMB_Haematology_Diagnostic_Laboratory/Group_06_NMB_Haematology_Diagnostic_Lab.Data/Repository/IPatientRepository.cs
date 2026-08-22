@@ -20,7 +20,21 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
 
         Task<IEnumerable<string>> GetAllergiesByCategoryName(string categoryName);
 
+        Task<int> GetAllergyCount();
+
+        Task<IEnumerable<AllergyOption>> GetAllAllergiesByCategory();
+
         Task<IEnumerable<string>> GetMedicalConditionCategories();
+
+        Task<IEnumerable<MedicalConditionWithPatientCount>> GetMedicalConditionsWithPatientCount();
+
+        Task<int> GetMedicalConditionCount();
+
+        Task UpdateMedicalCondition(MedicalConditionUpdate model);
+
+        Task AddMedicalCondition(MedicalConditionCreate model);
+
+        Task SetMedicalConditionStatus(MedicalConditionStatusUpdate model);
 
         Task<IEnumerable<string>> GetMedicalConditionsByCategory(string categoryName);
 
