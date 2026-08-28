@@ -1,0 +1,1461 @@
+﻿@model IEnumerable<Group_06_NMB_Haematology_Diagnostic_Lab.Data.Models.StockOrder>
+
+@{
+    ViewData["Title"] = "Stock Orders";
+    
+    Layout = "~/Views/Shared/_LabManager_Layout.cshtml";
+
+
+var consumables =
+    ViewBag.Consumables as IEnumerable<Group_06_NMB_Haematology_Diagnostic_Lab.Data.Models.Consumable>
+    ?? Enumerable.Empty<Group_06_NMB_Haematology_Diagnostic_Lab.Data.Models.Consumable>();
+
+    var suppliers =
+        ViewBag.Suppliers as IEnumerable<Group_06_NMB_Haematology_Diagnostic_Lab.Data.Models.Supplier>
+        ?? Enumerable.Empty<Group_06_NMB_Haematology_Diagnostic_Lab.Data.Models.Supplier>();
+
+    var currentFilter = ViewBag.Filter as string ?? "All";
+
+
+}
+
+<div class="container-fluid px-4 py-4">
+
+    ```
+    <!-- ========================================================= -->
+    <!-- PAGE HEADER -->
+    <!-- ========================================================= -->
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+
+        <div>
+            <h2 class="fw-bold mb-1">Stock Orders</h2>
+            <p class="text-muted mb-0">
+                Manage stock orders, monitor low stock and receive deliveries.
+            </p>
+        </div>
+
+        <button type="button"
+                class="btn btn-primary"
+                data-bs-toggle="modal"
+                data-bs-target="#createOrderModal">
+            <i class="bi bi-plus-lg me-1"></i>
+            Add Order
+        </button>
+
+    </div>
+
+
+    <!-- ========================================================= -->
+    <!-- SUCCESS / ERROR MESSAGES -->
+    <!-- ========================================================= -->
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="bi bi-check-circle me-2"></i>
+            @TempData["SuccessMessage"]
+
+            <button type="button"
+                    class="btn-close"
+                    data-bs-dismiss="alert">
+            </button>
+        </div>
+    }
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="bi bi-exclamation-circle me-2"></i>
+            @TempData["ErrorMessage"]
+
+            <button type="button"
+                    class="btn-close"
+                    data-bs-dismiss="alert">
+            </button>
+        </div>
+    }
+
+
+    <!-- ========================================================= -->
+    <!-- SUMMARY CARDS -->
+    <!-- ========================================================= -->
+    @{
+        var orderList = Model?.ToList() ?? new List<Group_06_NMB_Haematology_Diagnostic_Lab.Data.Models.StockOrder>();
+
+        var totalOrders = orderList.Count;
+
+        var orderedOrders = orderList.Count(o =>
+        string.Equals(o.Status, "Ordered", StringComparison.OrdinalIgnoreCase));
+
+        var partialOrders = orderList.Count(o =>
+        string.Equals(o.Status, "Partially Complete", StringComparison.OrdinalIgnoreCase));
+
+        var completeOrders = orderList.Count(o =>
+        string.Equals(o.Status, "Complete", StringComparison.OrdinalIgnoreCase));
+
+        var lowStockCount = consumables.Count(c =>
+        c.QuantityOnHand <= c.ReorderLevel);
+    }
+
+    <div class="row g-3 mb-4">
+
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <p class="text-muted mb-1">Total Orders</p>
+                            <h3 class="fw-bold mb-0">@totalOrders</h3>
+                        </div>
+
+                        <div class="text-primary fs-3">
+                            <i class="bi bi-box-seam"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <p class="text-muted mb-1">Ordered</p>
+                            <h3 class="fw-bold mb-0">@orderedOrders</h3>
+                        </div>
+
+                        <div class="text-warning fs-3">
+                            <i class="bi bi-clock"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <p class="text-muted mb-1">Partially Complete</p>
+                            <h3 class="fw-bold mb-0">@partialOrders</h3>
+                        </div>
+
+                        <div class="text-info fs-3">
+                            <i class="bi bi-boxes"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <p class="text-muted mb-1">Low Stock</p>
+                            <h3 class="fw-bold mb-0">@lowStockCount</h3>
+                        </div>
+
+                        <div class="text-danger fs-3">
+                            <i class="bi bi-exclamation-triangle"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+
+    <!-- ========================================================= -->
+    <!-- ORDERS -->
+    <!-- ========================================================= -->
+
+    <div class="card border-0 shadow-sm mb-4">
+
+        <div class="card-header bg-white border-0 pt-4 px-4">
+
+            <div class="d-flex justify-content-between align-items-center">
+
+                <div>
+                    <h5 class="fw-bold mb-1">Orders</h5>
+                    <small class="text-muted">
+                        View and manage stock orders.
+                    </small>
+                </div>
+
+                <div class="d-flex gap-2">
+
+                    <!-- LIVE SEARCH -->
+                    <div class="input-group" style="width: 280px;">
+                        <span class="input-group-text bg-white">
+                            <i class="bi bi-search"></i>
+                        </span>
+
+                        <input type="text"
+                               id="orderSearch"
+                               class="form-control"
+                               placeholder="Search orders..."
+                               autocomplete="off" />
+                    </div>
+
+
+                    <!-- SERVER-SIDE FILTER -->
+                    <form asp-action="Orders"
+                          asp-controller="LabManager"
+                          method="get">
+
+                        <select name="filter"
+                                class="form-select"
+                                onchange="this.form.submit()">
+
+                            <option value="All"
+                                    selected="@(currentFilter == "All")">
+                                All
+                            </option>
+
+                            <option value="Ordered"
+                                    selected="@(currentFilter == "Ordered")">
+                                Ordered
+                            </option>
+
+                            <option value="Partially Complete"
+                                    selected="@(currentFilter == "Partially Complete")">
+                                Partially Complete
+                            </option>
+
+                            <option value="Complete"
+                                    selected="@(currentFilter == "Complete")">
+                                Complete
+                            </option>
+
+                            <option value="Cancelled"
+                                    selected="@(currentFilter == "Cancelled")">
+                                Cancelled
+                            </option>
+
+                        </select>
+
+                    </form>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <div class="card-body px-4">
+
+            <div class="table-responsive">
+
+                <table class="table table-hover align-middle"
+                       id="ordersTable">
+
+                    <thead class="table-light">
+
+                        <tr>
+                            <th>Order Number</th>
+                            <th>Supplier</th>
+                            <th>Order Date</th>
+                            <th>Items</th>
+                            <th>Status</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+
+                    </thead>
+
+                    <tbody>
+
+                        @if (!orderList.Any())
+                        {
+                            <tr id="noOrdersRow">
+                                <td colspan="6"
+                                    class="text-center py-5 text-muted">
+
+                                    <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+
+                                    No stock orders found.
+
+                                </td>
+                            </tr>
+                        }
+                        else
+                        {
+                            foreach (var order in orderList)
+                            {
+                                var statusClass =
+                                order.Status?.ToLower() switch
+                                {
+                                    "ordered" => "bg-warning text-dark",
+                                    "partially complete" => "bg-info text-dark",
+                                    "complete" => "bg-success",
+                                    "cancelled" => "bg-danger",
+                                    _ => "bg-secondary"
+                                };
+
+                                <tr class="order-row">
+
+                                    <td>
+                                        <strong>
+                                            @order.OrderNumber
+                                        </strong>
+                                    </td>
+
+                                    <td>
+                                        @(order.Supplier?.SupplierName ?? "Unknown")
+                                    </td>
+
+                                    <td>
+                                        @(order.OrderDate?.ToString("dd MMM yyyy") ?? "-")
+                                    </td>
+
+                                    <td>
+                                        @(order.StockOrderItem?.Count ?? 0)
+                                    </td>
+
+                                    <td>
+                                        <span class="badge @statusClass">
+                                            @order.Status
+                                        </span>
+                                    </td>
+
+                                    <td class="text-end">
+
+                                        <button type="button"
+                                                class="btn btn-sm btn-outline-primary"
+                                                onclick="viewOrder(@order.StockOrderId)">
+
+                                            <i class="bi bi-eye me-1"></i>
+                                            View
+
+                                        </button>
+
+                                    </td>
+
+                                </tr>
+                            }
+                        }
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+            <div id="noSearchResults"
+                 class="text-center text-muted py-4 d-none">
+
+                No orders match your search.
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- ========================================================= -->
+    <!-- LOW STOCK -->
+    <!-- ========================================================= -->
+
+    <div class="card border-0 shadow-sm">
+
+        <div class="card-header bg-white border-0 pt-4 px-4">
+
+            <div>
+                <h5 class="fw-bold mb-1">
+                    Low Stock Consumables
+                </h5>
+
+                <small class="text-muted">
+                    Consumables currently at or below their reorder level.
+                </small>
+            </div>
+
+        </div>
+
+
+        <div class="card-body px-4">
+
+            <div class="table-responsive">
+
+                <table class="table align-middle">
+
+                    <thead class="table-light">
+
+                        <tr>
+                            <th>Consumable</th>
+                            <th>Supplier</th>
+                            <th>Stock Level</th>
+                            <th>Reorder Level</th>
+                            <th>Difference</th>
+                        </tr>
+
+                    </thead>
+
+                    <tbody>
+
+                        @{
+                            var lowStockItems =
+                            consumables
+                            .Where(c => c.QuantityOnHand <= c.ReorderLevel)
+                            .OrderBy(c => c.QuantityOnHand)
+                            .ToList();
+                        }
+
+                        @if (!lowStockItems.Any())
+                        {
+                            <tr>
+                                <td colspan="5"
+                                    class="text-center text-success py-4">
+
+                                    <i class="bi bi-check-circle fs-4 me-2"></i>
+                                    No consumables currently require reordering.
+
+                                </td>
+                            </tr>
+                        }
+                        else
+                        {
+                            foreach (var consumable in lowStockItems)
+                            {
+                                var difference =
+                                consumable.ReorderLevel -
+                                consumable.QuantityOnHand;
+
+                                <tr>
+
+                                    <td>
+                                        <strong>
+                                            @consumable.Name
+                                        </strong>
+                                    </td>
+
+                                    <td>
+                                        @(consumable.Supplier?.SupplierName ?? "Unknown")
+                                    </td>
+
+                                    <td>
+
+                                        <span class="badge bg-danger">
+                                            @consumable.QuantityOnHand
+                                        </span>
+
+                                    </td>
+
+                                    <td>
+                                        @consumable.ReorderLevel
+                                    </td>
+
+                                    <td>
+                                        <span class="text-danger fw-semibold">
+                                            -@difference
+                                        </span>
+                                    </td>
+
+                                </tr>
+                            }
+                        }
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </div>
+
+    </div>
+    ```
+
+</div>
+
+<!-- ============================================================= -->
+<!-- CREATE ORDER MODAL -->
+<!-- ============================================================= -->
+
+<div class="modal fade"
+     id="createOrderModal"
+     tabindex="-1"
+     aria-labelledby="createOrderModalLabel"
+     aria-hidden="true">
+
+    ```
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+
+        <div class="modal-content">
+
+            <form asp-action="CreateOrder"
+                  asp-controller="LabManager"
+                  method="post"
+                  id="createOrderForm">
+
+                @Html.AntiForgeryToken()
+
+                <div class="modal-header">
+
+                    <div>
+                        <h5 class="modal-title fw-bold"
+                            id="createOrderModalLabel">
+
+                            Create Stock Order
+
+                        </h5>
+
+                        <small class="text-muted">
+                            Select the consumables and quantities required.
+                        </small>
+                    </div>
+
+                    <button type="button"
+                            class="btn-close"
+                            data-bs-dismiss="modal">
+                    </button>
+
+                </div>
+
+
+                <div class="modal-body">
+
+                    <!-- ORDER INFORMATION -->
+
+                    <div class="row g-3 mb-4">
+
+                        <div class="col-md-6">
+
+                            <label class="form-label fw-semibold">
+                                Order Number
+                            </label>
+
+                            <input type="text"
+                                   name="orderNumber"
+                                   id="orderNumber"
+                                   class="form-control"
+                                   readonly />
+
+                        </div>
+
+
+                        <div class="col-md-6">
+
+                            <label class="form-label fw-semibold">
+                                Supplier
+                            </label>
+
+                            <select name="supplierId"
+                                    id="supplierId"
+                                    class="form-select"
+                                    required>
+
+                                <option value="">
+                                    Select Supplier
+                                </option>
+
+                                @foreach (var supplier in suppliers)
+                                {
+                                    <option value="@supplier.SupplierId">
+                                        @supplier.SupplierName
+                                    </option>
+                                }
+
+                            </select>
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- CONSUMABLE SEARCH -->
+
+                    <div class="mb-3">
+
+                        <label class="form-label fw-semibold">
+                            Consumables
+                        </label>
+
+                        <div class="input-group">
+
+                            <span class="input-group-text bg-white">
+                                <i class="bi bi-search"></i>
+                            </span>
+
+                            <input type="text"
+                                   id="consumableSearch"
+                                   class="form-control"
+                                   placeholder="Search consumables..."
+                                   autocomplete="off" />
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- CONSUMABLE TABLE -->
+
+                    <div class="table-responsive"
+                         style="max-height: 450px;">
+
+                        <table class="table table-hover align-middle"
+                               id="consumablesTable">
+
+                            <thead class="table-light sticky-top">
+
+                                <tr>
+
+                                    <th style="width: 50px;">
+                                        Select
+                                    </th>
+
+                                    <th>
+                                        Consumable
+                                    </th>
+
+                                    <th>
+                                        Stock Level
+                                    </th>
+
+                                    <th>
+                                        Reorder Level
+                                    </th>
+
+                                    <th>
+                                        Supplier
+                                    </th>
+
+                                    <th style="width: 150px;">
+                                        Order Quantity
+                                    </th>
+
+                                </tr>
+
+                            </thead>
+
+
+                            <tbody>
+
+                                @foreach (var consumable in consumables)
+                                {
+                                    var isLowStock =
+                                    consumable.QuantityOnHand <=
+                                    consumable.ReorderLevel;
+
+                                    <tr class="consumable-row @(isLowStock ? "table-danger" : "")"
+                                        data-name="@consumable.Name.ToLower()">
+
+                                        <td>
+
+                                            <input type="checkbox"
+                                                   class="form-check-input consumable-check"
+                                                   name="selectedConsumables"
+                                                   value="@consumable.ConsumableId"
+                                                   data-consumable-id="@consumable.ConsumableId" />
+
+                                        </td>
+
+
+                                        <td>
+
+                                            <strong>
+                                                @consumable.Name
+                                            </strong>
+
+                                            @if (isLowStock)
+                                            {
+                                                <span class="badge bg-danger ms-2">
+                                                    Low Stock
+                                                </span>
+                                            }
+
+                                        </td>
+
+
+                                        <td>
+
+                                            <span class="fw-semibold @(isLowStock ? "text-danger" : "text-success")">
+                                                @consumable.QuantityOnHand
+                                            </span>
+
+                                        </td>
+
+
+                                        <td>
+                                            @consumable.ReorderLevel
+                                        </td>
+
+
+                                        <td>
+
+                                            @(consumable.Supplier?.SupplierName ?? "Unknown")
+
+                                        </td>
+
+
+                                        <td>
+
+                                            <input type="number"
+                                                   class="form-control quantity-input"
+                                                   name="quantity_@consumable.ConsumableId"
+                                                   min="1"
+                                                   value=""
+                                                   disabled
+                                                   placeholder="Qty" />
+
+                                        </td>
+
+                                    </tr>
+                                }
+
+                            </tbody>
+
+                        </table>
+
+                    </div>
+
+
+                    <!-- SELECTED ITEM SUMMARY -->
+
+                    <div class="d-flex justify-content-between align-items-center mt-3 p-3 bg-light rounded">
+
+                        <div>
+
+                            <strong>
+                                Selected Items:
+                            </strong>
+
+                            <span id="selectedItemCount">
+                                0
+                            </span>
+
+                        </div>
+
+
+                        <div>
+
+                            <strong>
+                                Total Quantity:
+                            </strong>
+
+                            <span id="totalOrderQuantity">
+                                0
+                            </span>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <div class="modal-footer">
+
+                    <button type="button"
+                            class="btn btn-secondary"
+                            data-bs-dismiss="modal">
+
+                        Cancel
+
+                    </button>
+
+                    <button type="submit"
+                            class="btn btn-primary">
+
+                        <i class="bi bi-check-lg me-1"></i>
+                        Create Order
+
+                    </button>
+
+                </div>
+
+            </form>
+
+        </div>
+
+    </div>
+    ```
+
+</div>
+
+<!-- ============================================================= -->
+<!-- ORDER DETAILS OFFCANVAS -->
+<!-- ============================================================= -->
+
+<div class="offcanvas offcanvas-end"
+     tabindex="-1"
+     id="orderDetailsCanvas"
+     style="width: 650px;">
+
+    ```
+    <div class="offcanvas-header border-bottom">
+
+        <div>
+            <h5 class="offcanvas-title fw-bold"
+                id="detailsOrderNumber">
+
+                Order Details
+
+            </h5>
+
+            <small class="text-muted"
+                   id="detailsSupplier">
+            </small>
+        </div>
+
+        <button type="button"
+                class="btn-close"
+                data-bs-dismiss="offcanvas">
+        </button>
+
+    </div>
+
+
+    <div class="offcanvas-body">
+
+        <div id="orderDetailsLoading"
+             class="text-center py-5">
+
+            <div class="spinner-border text-primary"
+                 role="status">
+
+                <span class="visually-hidden">
+                    Loading...
+                </span>
+
+            </div>
+
+        </div>
+
+
+        <div id="orderDetailsContent"
+             class="d-none">
+
+            <!-- ORDER INFO -->
+
+            <div class="row g-3 mb-4">
+
+                <div class="col-6">
+
+                    <small class="text-muted">
+                        Order Date
+                    </small>
+
+                    <div class="fw-semibold"
+                         id="detailsOrderDate">
+                    </div>
+
+                </div>
+
+
+                <div class="col-6">
+
+                    <small class="text-muted">
+                        Status
+                    </small>
+
+                    <div id="detailsStatus">
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- ITEMS -->
+
+            <h6 class="fw-bold mb-3">
+                Order Items
+            </h6>
+
+            <div class="table-responsive">
+
+                <table class="table table-sm align-middle"
+
+                       id="orderItemsTable">
+
+                    <thead class="table-light">
+
+                        <tr>
+                            <th>Consumable</th>
+                            <th>Qty</th>
+                            <th>Status</th>
+                            <th class="text-end"></th>
+                        </tr>
+
+                    </thead>
+
+                    <tbody id="orderItemsBody">
+                    </tbody>
+
+                </table>
+
+            </div>
+
+
+            <!-- CANCEL ORDER -->
+
+            <div class="border-top pt-4 mt-4"
+                 id="cancelOrderSection">
+
+                <button type="button"
+                        class="btn btn-outline-danger w-100"
+                        id="cancelOrderButton">
+
+                    <i class="bi bi-x-circle me-1"></i>
+                    Cancel Entire Order
+
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+    ```
+
+</div>
+
+<!-- ============================================================= -->
+<!-- CANCEL REASON MODAL -->
+<!-- ============================================================= -->
+
+<div class="modal fade"
+     id="cancelReasonModal"
+     tabindex="-1"
+     aria-hidden="true">
+
+    ```
+    <div class="modal-dialog modal-dialog-centered">
+
+        <div class="modal-content">
+
+            <form id="cancelReasonForm"
+                  method="post">
+
+                @Html.AntiForgeryToken()
+
+                <div class="modal-header">
+
+                    <h5 class="modal-title fw-bold">
+                        Cancel Order
+                    </h5>
+
+                    <button type="button"
+                            class="btn-close"
+                            data-bs-dismiss="modal">
+                    </button>
+
+                </div>
+
+
+                <div class="modal-body">
+
+                    <input type="hidden"
+                           name="stockOrderId"
+                           id="cancelStockOrderId" />
+
+                    <input type="hidden"
+                           name="stockOrderItemId"
+                           id="cancelStockOrderItemId" />
+
+
+                    <div class="mb-3">
+
+                        <label class="form-label fw-semibold">
+                            Reason for cancellation
+                        </label>
+
+                        <textarea name="cancelReason"
+                                  id="cancelReason"
+                                  class="form-control"
+                                  rows="4"
+                                  required
+                                  placeholder="Enter the reason for cancellation...">
+                    </textarea>
+
+                    </div>
+
+                </div>
+
+
+                <div class="modal-footer">
+
+                    <button type="button"
+                            class="btn btn-secondary"
+                            data-bs-dismiss="modal">
+
+                        Back
+
+                    </button>
+
+                    <button type="submit"
+                            class="btn btn-danger">
+
+                        Confirm Cancellation
+
+                    </button>
+
+                </div>
+
+            </form>
+
+        </div>
+
+    </div>
+    ```
+
+</div>
+
+@section Scripts {
+
+    <script>
+
+        // ============================================================
+        // ORDER SEARCH
+        // ============================================================
+
+        const orderSearch =
+            document.getElementById("orderSearch");
+
+        const orderRows =
+            document.querySelectorAll(".order-row");
+
+        const noSearchResults =
+            document.getElementById("noSearchResults");
+
+
+        orderSearch.addEventListener("input", function () {
+
+            const search =
+                this.value.toLowerCase().trim();
+
+            let visibleRows = 0;
+
+            orderRows.forEach(row => {
+
+                const text =
+                    row.innerText.toLowerCase();
+
+                if (text.includes(search)) {
+
+                    row.style.display = "";
+                    visibleRows++;
+
+                } else {
+
+                    row.style.display = "none";
+
+                }
+
+            });
+
+
+            if (visibleRows === 0 && search !== "") {
+
+                noSearchResults.classList.remove("d-none");
+
+            } else {
+
+                noSearchResults.classList.add("d-none");
+
+            }
+
+        });
+
+
+        // ============================================================
+        // GENERATE ORDER NUMBER
+        // ============================================================
+
+        function generateOrderNumber() {
+
+            const now = new Date();
+
+            const year =
+                now.getFullYear();
+
+            const month =
+                String(now.getMonth() + 1).padStart(2, "0");
+
+            const day =
+                String(now.getDate()).padStart(2, "0");
+
+            const random =
+                Math.floor(1000 + Math.random() * 9000);
+
+            return `ORD-${year}${month}${day}-${random}`;
+
+        }
+
+
+        const createOrderModal =
+            document.getElementById("createOrderModal");
+
+
+        createOrderModal.addEventListener(
+            "show.bs.modal",
+            function () {
+
+                document.getElementById("orderNumber").value =
+                    generateOrderNumber();
+
+            }
+        );
+
+
+        // ============================================================
+        // CONSUMABLE SEARCH
+        // ============================================================
+
+        const consumableSearch =
+            document.getElementById("consumableSearch");
+
+        consumableSearch.addEventListener(
+            "input",
+            function () {
+
+                const search =
+                    this.value.toLowerCase().trim();
+
+                const rows =
+                    document.querySelectorAll(".consumable-row");
+
+                rows.forEach(row => {
+
+                    const name =
+                        row.dataset.name;
+
+                    row.style.display =
+                        name.includes(search)
+                            ? ""
+                            : "none";
+
+                });
+
+            }
+        );
+
+
+        // ============================================================
+        // CONSUMABLE SELECTION
+        // ============================================================
+
+        const checks =
+            document.querySelectorAll(".consumable-check");
+
+
+        checks.forEach(check => {
+
+            check.addEventListener("change", function () {
+
+                const row =
+                    this.closest(".consumable-row");
+
+                const quantityInput =
+                    row.querySelector(".quantity-input");
+
+
+                if (this.checked) {
+
+                    quantityInput.disabled = false;
+
+                    quantityInput.focus();
+
+                } else {
+
+                    quantityInput.disabled = true;
+
+                    quantityInput.value = "";
+
+                }
+
+
+                updateOrderSummary();
+
+            });
+
+        });
+
+
+        // ============================================================
+        // QUANTITY CHANGES
+        // ============================================================
+
+        document
+            .querySelectorAll(".quantity-input")
+            .forEach(input => {
+
+                input.addEventListener(
+                    "input",
+                    updateOrderSummary
+                );
+
+            });
+
+
+        function updateOrderSummary() {
+
+            let selectedCount = 0;
+            let totalQuantity = 0;
+
+
+            checks.forEach(check => {
+
+                if (check.checked) {
+
+                    selectedCount++;
+
+                    const row =
+                        check.closest(".consumable-row");
+
+                    const quantityInput =
+                        row.querySelector(".quantity-input");
+
+                    const quantity =
+                        parseInt(quantityInput.value) || 0;
+
+                    totalQuantity += quantity;
+
+                }
+
+            });
+
+
+            document.getElementById(
+                "selectedItemCount"
+            ).textContent = selectedCount;
+
+
+            document.getElementById(
+                "totalOrderQuantity"
+            ).textContent = totalQuantity;
+
+        }
+
+
+        // ============================================================
+        // VALIDATE CREATE ORDER
+        // ============================================================
+
+        document
+            .getElementById("createOrderForm")
+            .addEventListener("submit", function (event) {
+
+                let selectedCount = 0;
+                let valid = true;
+
+
+                checks.forEach(check => {
+
+                    if (check.checked) {
+
+                        selectedCount++;
+
+                        const row =
+                            check.closest(".consumable-row");
+
+                        const quantityInput =
+                            row.querySelector(".quantity-input");
+
+                        const quantity =
+                            parseInt(quantityInput.value);
+
+
+                        if (!quantity || quantity <= 0) {
+
+                            quantityInput.classList.add(
+                                "is-invalid"
+                            );
+
+                            valid = false;
+
+                        } else {
+
+                            quantityInput.classList.remove(
+                                "is-invalid"
+                            );
+
+                        }
+
+                    }
+
+                });
+
+
+                if (selectedCount === 0) {
+
+                    event.preventDefault();
+
+                    alert(
+                        "Please select at least one consumable."
+                    );
+
+                    return;
+
+                }
+
+
+                if (!valid) {
+
+                    event.preventDefault();
+
+                    alert(
+                        "Please enter a valid quantity for every selected consumable."
+                    );
+
+                }
+
+            });
+
+
+        // ============================================================
+        // VIEW ORDER
+        // ============================================================
+
+        async function viewOrder(orderId) {
+
+            const canvasElement =
+                document.getElementById(
+                    "orderDetailsCanvas"
+                );
+
+            const canvas =
+                bootstrap.Offcanvas.getOrCreateInstance(
+                    canvasElement
+                );
+
+            const loading =
+                document.getElementById(
+                    "orderDetailsLoading"
+                );
+
+            const content =
+                document.getElementById(
+                    "orderDetailsContent"
+                );
+
+
+            loading.classList.remove("d-none");
+            content.classList.add("d-none");
+
+            canvas.show();
+
+
+            try {
+
+                const response =
+                    await fetch(
+                        `/LabManager/GetOrderDetails/${orderId}`
+                    );
+
+
+                if (!response.ok) {
+
+                    throw new Error(
+                        "Unable to load order."
+                    );
+
+                }
+
+                const order = await response.json();
+
+                // Populate basic fields
+                const detailsOrderNumber = document.getElementById("detailsOrderNumber");
+                detailsOrderNumber.textContent = order.orderNumber ?? "—";
+                detailsOrderNumber.dataset.orderId = order.stockOrderId ?? order.stockOrderID ?? "";
+
+                document.getElementById("detailsSupplier").textContent =
+                    (order.supplier && order.supplier.supplierName) ? order.supplier.supplierName : "";
+
+                // Format date (dd MMM yyyy)
+                const orderDateEl = document.getElementById("detailsOrderDate");
+                if (order.orderDate) {
+                    const d = new Date(order.orderDate);
+                    orderDateEl.textContent = d.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
+                } else {
+                    orderDateEl.textContent = "-";
+                }
+
+                // Status badge
+                const statusEl = document.getElementById("detailsStatus");
+                const status = (order.status ?? "").toString();
+                const statusClass = (status.toLowerCase()) switch {
+                    "ordered" => "bg-warning text-dark",
+                    "partially complete" => "bg-info text-dark",
+                    "complete" => "bg-success",
+                    "cancelled" => "bg-danger",
+                    _ => "bg-secondary"
+                };
+                statusEl.innerHTML = `<span class="badge ${statusClass}">${status}</span>`;
+
+                // Items table
+                const body = document.getElementById("orderItemsBody");
+                body.innerHTML = "";
+
+                const items = order.stockOrderItem ?? order.stockOrderItems ?? [];
+                if (!items.length) {
+                    body.innerHTML = `<tr><td colspan="4" class="text-center text-muted">No items for this order.</td></tr>`;
+                } else {
+                    for (const item of items) {
+                        const consumableName = item.consumable?.name ?? item.name ?? "Unknown";
+                        const qty = item.quantityOrdered ?? item.quantity ?? 0;
+                        const itemStatus = item.status ?? "";
+
+                        // Actions: receive/cancel buttons (postback forms will route to controller actions)
+                        const receiveBtn = itemStatus.toLowerCase() === "ordered"
+                            ? `<form method="post" action="/LabManager/ReceiveOrderItem" class="d-inline ms-1">
+                                    <input type="hidden" name="stockOrderItemId" value="${item.stockOrderItemId ?? item.stockOrderItemID ?? item.stockOrderItemId}" />
+                                    <input type="hidden" name="stockOrderId" value="${order.stockOrderId ?? order.stockOrderID ?? ''}" />
+                                    <button type="submit" class="btn btn-sm btn-outline-success">Receive</button>
+                               </form>`
+                            : "";
+
+                        const cancelBtn = `<button type="button" class="btn btn-sm btn-outline-danger ms-1" onclick="showCancelItemModal(${item.stockOrderItemId ?? item.stockOrderItemID ?? item.stockOrderItemId}, ${order.stockOrderId ?? order.stockOrderID ?? ''})">Cancel</button>`;
+
+                        const tr = document.createElement("tr");
+                        tr.innerHTML = `
+                            <td><strong>${consumableName}</strong></td>
+                            <td>${qty}</td>
+                            <td><span class="badge">${itemStatus}</span></td>
+                            <td class="text-end">
+                                ${receiveBtn}
+                                ${cancelBtn}
+                            </td>`;
+                        body.appendChild(tr);
+                    }
+                }
+
+                // Set cancel modal hidden inputs for cancel entire order
+                const cancelStockOrderId = document.getElementById("cancelStockOrderId");
+                if (cancelStockOrderId) cancelStockOrderId.value = order.stockOrderId ?? order.stockOrderID ?? "";
+
+                loading.classList.add("d-none");
+                content.classList.remove("d-none");
+            } catch (error) {
+                loading.innerHTML = `
+                    <div class="alert alert-danger">
+                        Unable to load order details.
+                    </div>
+                `;
+                console.error(error);
+            }
+        }
+
+        // helper to show cancel item modal (sets hidden inputs and form action)
+        function showCancelItemModal(stockOrderItemId, stockOrderId) {
+            document.getElementById("cancelStockOrderItemId").value = stockOrderItemId;
+            document.getElementById("cancelStockOrderId").value = stockOrderId;
+            const form = document.getElementById("cancelReasonForm");
+            if (form) form.action = "/LabManager/CancelOrderItem";
+            const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById("cancelReasonModal"));
+            modal.show();
+        }
+    </script>
+
+}
+
