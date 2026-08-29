@@ -151,6 +151,62 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
                 new { });
         }
 
+        public async Task UpdateAllergy(AllergyUpdate model)
+        {
+            const string allergyIdQuery = "SELECT AllergyID FROM dbo.Allergy WHERE AllergyName = @AllergyName;";
+            const string categoryIdQuery = "SELECT AllergyCategoryID FROM dbo.AllergyCategory WHERE CategoryName = @CategoryName;";
+
+            var allergyId = await _db.QueryFirstOrDefaultAsync<int?>(
+                allergyIdQuery,
+                new { AllergyName = model.OriginalAllergyName });
+            var allergyCategoryId = await _db.QueryFirstOrDefaultAsync<int?>(
+                categoryIdQuery,
+                new { model.CategoryName });
+
+            if (!allergyId.HasValue)
+            {
+                throw new InvalidOperationException("Allergy not found.");
+            }
+
+            if (!allergyCategoryId.HasValue)
+            {
+                throw new InvalidOperationException("Allergy category not found.");
+            }
+
+            await _db.SaveData(
+                "dbo.sp_UpdateAllergy",
+                new
+                {
+                    AllergyID = allergyId.Value,
+                    model.AllergyName,
+                    AllergyCategoryID = allergyCategoryId.Value,
+                    model.AllergyDescription
+                });
+        }
+
+        public async Task AddAllergy(AllergyCreate model)
+        {
+            const string categoryIdQuery = "SELECT AllergyCategoryID FROM dbo.AllergyCategory WHERE CategoryName = @CategoryName;";
+
+            var allergyCategoryId = await _db.QueryFirstOrDefaultAsync<int?>(
+                categoryIdQuery,
+                new { model.CategoryName });
+
+            if (!allergyCategoryId.HasValue)
+            {
+                throw new InvalidOperationException("Allergy category not found.");
+            }
+
+            await _db.SaveData(
+                "dbo.sp_AddAllergy",
+                new
+                {
+                    model.AllergyName,
+                    AllergyCategoryID = allergyCategoryId.Value,
+                    model.AllergyDescription
+                });
+        }
+
         public async Task<IEnumerable<string>> GetMedicalConditionCategories()
         {
             var rows = await _db.GetData<MedicalConditionCategoryOption, object>(
@@ -198,13 +254,14 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
         public Task UpdateMedicalCondition(MedicalConditionUpdate model)
         {
             return _db.SaveData(
-                "dbo.sp_UpdateMedicalCondition",
+                "dbo.sp_UpdateMedicalConditions",
                 new
                 {
                     model.OldConditionName,
                     model.ConditionName,
                     model.CategoryName,
-                    model.CategoryDescription
+                    model.CategoryDescription,
+                    model.MedicalConditionDescription
                 });
         }
 

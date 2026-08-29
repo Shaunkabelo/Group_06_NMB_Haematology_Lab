@@ -39,6 +39,49 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        public async Task<IActionResult> UpdateAllergy([FromForm] AllergyUpdate model)
+        {
+            if (string.IsNullOrWhiteSpace(model.OriginalAllergyName) ||
+                string.IsNullOrWhiteSpace(model.AllergyName) ||
+                string.IsNullOrWhiteSpace(model.CategoryName))
+            {
+                return BadRequest(new { message = "Allergy name and category are required." });
+            }
+
+            try
+            {
+                await _patientRepository.UpdateAllergy(model);
+                return Ok(new { message = "Allergy updated." });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.GetBaseException().Message });
+            }
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AddAllergy([FromForm] AllergyCreate model)
+        {
+            if (string.IsNullOrWhiteSpace(model.AllergyName) ||
+                string.IsNullOrWhiteSpace(model.CategoryName))
+            {
+                return BadRequest(new { message = "Allergy name and category are required." });
+            }
+
+            try
+            {
+                await _patientRepository.AddAllergy(model);
+                return Ok(new { message = "Allergy added." });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.GetBaseException().Message });
+            }
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> UpdateMedicalCondition([FromBody] MedicalConditionUpdate model)
         {
             if (!ModelState.IsValid)

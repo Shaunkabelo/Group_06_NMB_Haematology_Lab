@@ -24,6 +24,10 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
 
         Task<IEnumerable<AllergyOption>> GetAllAllergiesByCategory();
 
+        Task UpdateAllergy(AllergyUpdate model);
+
+        Task AddAllergy(AllergyCreate model);
+
         Task<IEnumerable<string>> GetMedicalConditionCategories();
 
         Task<IEnumerable<MedicalConditionWithPatientCount>> GetMedicalConditionsWithPatientCount();
