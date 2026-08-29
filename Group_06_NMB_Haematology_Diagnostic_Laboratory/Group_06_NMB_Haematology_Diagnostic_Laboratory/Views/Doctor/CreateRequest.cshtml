@@ -71,15 +71,25 @@
 
                 <div class="form-group">
                     <label class="form-label">Requested Test Types</label>
-                    <div class="checkbox-list" id="test-types" onchange="updateRequestSummary()">
-                        <label class="checkbox-item"><input type="checkbox" value="Full Blood Count"> Full Blood Count</label>
-                        <label class="checkbox-item"><input type="checkbox" value="Coagulation Profile"> Coagulation Profile</label>
-                        <label class="checkbox-item"><input type="checkbox" value="Peripheral Blood Film"> Peripheral Blood Film</label>
-                        <label class="checkbox-item"><input type="checkbox" value="Differential Count"> Differential Count</label>
-                        <label class="checkbox-item"><input type="checkbox" value="Basic Metabolic Panel"> Basic Metabolic Panel</label>
-                        <label class="checkbox-item"><input type="checkbox" value="Liver Function Test"> Liver Function Test</label>
+                    <div class="form-row test-selection-row">
+                        <div class="form-group">
+                            <label class="form-label" for="test-category-select">Test Category</label>
+                            <select id="test-category-select" class="form-control" onchange="loadTestsForCategory()">
+                                <option value="">-- Select Category --</option>
+                                <option value="Hematology">Hematology</option>
+                                <option value="Coagulation">Coagulation</option>
+                                <option value="Clinical Chemistry">Clinical Chemistry</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="test-select">Test</label>
+                            <select id="test-select" class="form-control" disabled>
+                                <option value="">-- Select a category first --</option>
+                            </select>
+                        </div>
+                        <button class="btn btn-primary add-test-button" type="button" onclick="addSelectedTest()">Add Test</button>
                     </div>
-                    <small class="form-hint">Each selected test type receives its own sample and barcode. Check multiple tests to create them together.</small>
+                    <small class="form-hint">Select a category, choose a test, and add it to the request. Each selected test receives its own sample and barcode.</small>
                 </div>
 
                 <div class="form-row">
@@ -112,6 +122,42 @@
     };
 
     const sampleBarcodes = {};
+    const testsByCategory = {
+        'Hematology': ['Full Blood Count', 'Peripheral Blood Film', 'Differential Count'],
+        'Coagulation': ['Coagulation Profile'],
+        'Clinical Chemistry': ['Basic Metabolic Panel', 'Liver Function Test']
+    };
+    const selectedTests = [];
+
+    function loadTestsForCategory() {
+        const category = document.getElementById('test-category-select').value;
+        const testSelect = document.getElementById('test-select');
+        const tests = testsByCategory[category] || [];
+
+        testSelect.innerHTML = tests.length
+            ? '<option value="">-- Select Test --</option>'
+            : '<option value="">-- Select a category first --</option>';
+        tests.forEach(test => {
+            const option = document.createElement('option');
+            option.value = test;
+            option.textContent = test;
+            option.disabled = selectedTests.includes(test);
+            testSelect.appendChild(option);
+        });
+        testSelect.disabled = tests.length === 0;
+    }
+
+    function addSelectedTest() {
+        const test = document.getElementById('test-select').value;
+        if (!test || selectedTests.includes(test)) {
+            return;
+        }
+
+        selectedTests.push(test);
+        updateRequestSummary();
+        loadTestsForCategory();
+        document.getElementById('test-select').value = '';
+    }
 
     function loadPatientDetails() {
         const patientId = document.getElementById('patient-select').value;
@@ -145,7 +191,7 @@
     }
 
     function getSelectedTests() {
-        return Array.from(document.querySelectorAll('#test-types input[type="checkbox"]:checked')).map(input => input.value);
+        return selectedTests;
     }
 
     function updateRequestSummary() {

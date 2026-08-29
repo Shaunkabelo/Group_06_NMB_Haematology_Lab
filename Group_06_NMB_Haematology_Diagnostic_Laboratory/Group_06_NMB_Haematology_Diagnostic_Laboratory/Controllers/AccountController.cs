@@ -2,9 +2,18 @@
 
 namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 {
+
 	public class AccountController : Controller
 	{
-		public IActionResult Index()
+		public IActionResult Login()
+		{
+			return View();
+		}
+		public IActionResult Registration()
+		{
+			return View();
+		}
+		public IActionResult ResetPassword()
 		{
 			return View();
 		}

@@ -70,6 +70,21 @@
 </div>
 
 <style>
+    .modal-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 1000;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        background: rgba(11, 25, 41, 0.58);
+    }
+
+    .modal-overlay.is-open {
+        display: flex;
+    }
+
     .status-guide {
         display: grid;
         grid-template-columns: repeat(2, minmax(220px, 1fr));
@@ -302,13 +317,19 @@
         document.getElementById('cancel-request-summary').textContent = `${request.id} for ${request.patientName}`;
         document.getElementById('cancel-request-reason').value = '';
         document.getElementById('cancel-request-reason').classList.remove('field-error');
-        openModal('modal-cancel-request');
+        const modal = document.getElementById('modal-cancel-request');
+        modal.classList.add('is-open');
+        modal.setAttribute('aria-hidden', 'false');
+        document.body.style.overflow = 'hidden';
         document.getElementById('cancel-request-reason').focus();
     }
 
     function closeCancelRequestModal() {
         pendingCancelRequestId = null;
-        closeModal('modal-cancel-request');
+        const modal = document.getElementById('modal-cancel-request');
+        modal.classList.remove('is-open');
+        modal.setAttribute('aria-hidden', 'true');
+        document.body.style.overflow = '';
         document.getElementById('cancel-request-reason').value = '';
         document.getElementById('cancel-request-reason').classList.remove('field-error');
     }
@@ -349,5 +370,15 @@
         document.getElementById('requests-search')?.addEventListener('input', renderRequests);
         document.getElementById('requests-filter-status')?.addEventListener('change', renderRequests);
         document.getElementById('requests-filter-urgency')?.addEventListener('change', renderRequests);
+        document.getElementById('modal-cancel-request')?.addEventListener('click', event => {
+            if (event.target.id === 'modal-cancel-request') {
+                closeCancelRequestModal();
+            }
+        });
+        document.addEventListener('keydown', event => {
+            if (event.key === 'Escape' && pendingCancelRequestId) {
+                closeCancelRequestModal();
+            }
+        });
     });
 </script>

@@ -56,11 +56,39 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
 			}
 		}
 
-		public async Task<bool> UpdateAsync(Patient patient)
+		/*public async Task<bool> UpdateAsync(Patient patient)
 		{
 			try
 			{
 				await _db.SaveData("dbo.spPatient_Update", new { patient.PatientId, patient.Name, patient.Age, patient.Gender, patient.Address, patient.ContactNumber, patient.DateOfBirth, patient.email, patient.PatientCondition, patient.PatientAllergy, patient.PatientMedication });
+				return true;
+			}
+			catch (Exception ex)
+			{
+				return false;
+			}
+		}*/
+		public async Task<bool> UpdateAsync(Patient patient)
+		{
+			try
+			{
+				await _db.SaveData(
+					"dbo.spPatient_Update",
+					new
+					{
+						patient.PatientId,
+						patient.Name,
+						patient.Age,
+						patient.Gender,
+						patient.Address,
+						patient.ContactNumber,
+						patient.DateOfBirth,
+						patient.email,
+						patient.PatientCondition,
+						patient.PatientAllergy,
+						patient.PatientMedication
+					});
+
 				return true;
 			}
 			catch (Exception ex)

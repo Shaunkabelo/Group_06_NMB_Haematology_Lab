@@ -2,8 +2,8 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
-builder.Services.AddTransient<ISqlDataAccess, SqlDataAccess>();
-builder.Services.AddTransient<IDoctorRepository, DoctorRepository>();
+//builder.Services.AddTransient<ISqlDataAccess, SqlDataAccess>();
+//builder.Services.AddTransient<IDoctorRepository, DoctorRepository>();
 
 var app = builder.Build();
 
@@ -24,6 +24,6 @@ app.UseAuthorization();
 
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Home}/{action=Index}/{id?}");
+    pattern: "{controller=Doctor}/{action=Patients}/{id?}");
 
 app.Run();
