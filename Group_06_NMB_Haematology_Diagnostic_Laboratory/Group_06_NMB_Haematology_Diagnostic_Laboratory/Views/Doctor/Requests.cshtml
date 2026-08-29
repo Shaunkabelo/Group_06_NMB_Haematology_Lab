@@ -214,6 +214,19 @@
         return status || 'Unknown';
     }
 
+    function formatCancellationDate(value) {
+        if (!value) return 'N/A';
+        const date = new Date(value);
+        if (Number.isNaN(date.getTime())) return 'N/A';
+        return new Intl.DateTimeFormat('en-ZA', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        }).format(date);
+    }
+
     function canDoctorCancel(status) {
         const value = normalizeStatus(status).toLowerCase();
         return value === 'submitted' || value === 'samples received';
@@ -256,7 +269,7 @@
         host.innerHTML = alerts.map(request => `
             <div class="technician-cancel-alert">
                 <strong>${request.id}</strong> was cancelled by a lab technician.
-                <span class="cancel-reason-note">Reason: ${request.cancellationReason || 'No reason captured.'}</span>
+                <span class="cancel-reason-note">Reason: ${request.cancellationReason || 'No reason captured.'} Date: ${formatCancellationDate(request.cancelledDate || request.cancelledAt || request.cancelledOn)}</span>
             </div>
         `).join('');
     }
@@ -290,8 +303,9 @@
             const displayStatus = normalizeStatus(request.status);
             const canCancel = canDoctorCancel(request.status);
             const cancelButton = canCancel ? ` <button type="button" class="btn btn-sm btn-danger" onclick="openCancelRequestModal('${request.id}')">Cancel</button>` : '';
+            const cancellationDate = formatCancellationDate(request.cancelledDate || request.cancelledAt || request.cancelledOn);
             const cancellationNote = displayStatus === 'Cancelled'
-                ? `<span class="cancel-reason-note">Reason: ${request.cancellationReason || 'No reason captured.'}${isTechnicianCancelled(request) ? ' Cancelled by lab technician.' : ''}</span>`
+                ? `<span class="cancel-reason-note">Reason: ${request.cancellationReason || 'No reason captured.'}${isTechnicianCancelled(request) ? ' Cancelled by lab technician.' : ''} Date: ${cancellationDate}</span>`
                 : '';
             const row = document.createElement('tr');
             row.innerHTML = `
@@ -348,11 +362,14 @@
         const requests = getStoredRequests() || [];
         const updated = requests.map(request => {
             if (request.id === pendingCancelRequestId) {
+                const cancelledDate = new Date().toISOString();
                 return {
                     ...request,
                     status: 'Cancelled',
                     cancellationReason: reason,
-                    cancelledAt: new Date().toISOString(),
+                    cancelledAt: cancelledDate,
+                    cancelledDate: cancelledDate,
+                    CancelledDate: cancelledDate,
                     cancelledBy: 'Doctor'
                 };
             }

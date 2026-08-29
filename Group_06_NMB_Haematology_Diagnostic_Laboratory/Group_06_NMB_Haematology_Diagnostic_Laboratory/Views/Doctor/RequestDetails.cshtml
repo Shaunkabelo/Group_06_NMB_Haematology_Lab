@@ -75,6 +75,19 @@
         return status || 'Unknown';
     }
 
+    function formatCancellationDate(value) {
+        if (!value) return 'N/A';
+        const date = new Date(value);
+        if (Number.isNaN(date.getTime())) return 'N/A';
+        return new Intl.DateTimeFormat('en-ZA', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        }).format(date);
+    }
+
     function isTechnicianCancelled(request) {
         const cancelledBy = String(request.cancelledBy || request.cancelledByRole || '').toLowerCase();
         return normalizeStatus(request.status).toLowerCase() === 'cancelled' && (cancelledBy.includes('technician') || cancelledBy.includes('lab'));
@@ -118,10 +131,12 @@
         const displayStatus = normalizeStatus(req.status);
         document.getElementById('request-meta').innerText = `${req.id} - ${req.patientName || 'Unknown'} - ${displayStatus}`;
         if (displayStatus === 'Cancelled') {
+            const cancellationDate = formatCancellationDate(req.cancelledDate || req.cancelledAt || req.cancelledOn);
             document.getElementById('cancellation-panel').innerHTML = `
                 <div class="alert warning" style="margin-bottom: 16px;">
                     <strong>${isTechnicianCancelled(req) ? 'Cancelled by lab technician.' : 'Cancelled.'}</strong>
                     <div>Reason: ${req.cancellationReason || 'No reason captured.'}</div>
+                    <div>Cancellation date: ${cancellationDate}</div>
                 </div>
             `;
         }
