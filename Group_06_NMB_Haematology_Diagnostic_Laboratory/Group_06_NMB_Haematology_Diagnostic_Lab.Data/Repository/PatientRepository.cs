@@ -64,7 +64,7 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
         //==========================================================================================
         //Get patient for update
         //==========================================================================================
-        public async Task<PatientUpdate> GetPatientForUpdate(
+        public async Task<PatientUpdate?> GetPatientForUpdate(
            int patientId)
         {
             var result = await _db.GetData<
@@ -147,7 +147,7 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
         public async Task<IEnumerable<AllergyOption>> GetAllAllergiesByCategory()
         {
             return await _db.GetData<AllergyOption, object>(
-                "dbo.sp_GetAllAllergiesByCategory",
+                "dbo.sp_GetAllAllergies",
                 new { });
         }
 
@@ -316,6 +316,44 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
                 .ToList();
         }
 
+        public async Task<IEnumerable<MedicationWithPatientCount>> GetMedicationsWithPatientCount()
+        {
+            return await _db.GetData<MedicationWithPatientCount, object>(
+                "dbo.sp_GetAllMedicationsWithPatientCount",
+                new { });
+        }
+
+        public async Task<int> GetMedicationCount()
+        {
+            var medications = await GetMedicationsWithPatientCount();
+            return medications.Count();
+        }
+
+        public Task UpdateMedication(MedicationUpdate model)
+        {
+            return _db.SaveData(
+                "dbo.sp_UpdateMedication",
+                new
+                {
+                    model.OldMedicationName,
+                    model.MedicationName,
+                    model.CategoryName,
+                    model.Description
+                });
+        }
+
+        public Task AddMedication(MedicationCreate model)
+        {
+            return _db.SaveData(
+                "dbo.sp_AddMedication",
+                new
+                {
+                    model.MedicationName,
+                    model.CategoryName,
+                    model.Description
+                });
+        }
+
         public async Task<IEnumerable<string>> GetMedicationsByCategory(string categoryName)
         {
             var medications = await _db.GetData<MedicationOption, object>(
@@ -327,7 +365,7 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
                     medication.MedicationCategory?.Trim(),
                     categoryName.Trim(),
                     StringComparison.OrdinalIgnoreCase))
-                .Select(medication => medication.MedicationName?.Trim())
+                .Select(medication => medication.MedicationName.Trim())
                 .Where(medicationName => !string.IsNullOrWhiteSpace(medicationName))
                 .Distinct(StringComparer.OrdinalIgnoreCase)
                 .OrderBy(medicationName => medicationName)
@@ -526,6 +564,112 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
                     PatientID = patientId,
                     MedicationID = medicationId.Value
                 });
+        }
+
+        public Task SaveCategory(CategorySave model)
+        {
+            var tableName = GetCategoryTableName(model.CategoryType);
+            if (string.IsNullOrWhiteSpace(model.OriginalCategoryName))
+            {
+                var insertSql = $"INSERT INTO dbo.[{tableName}] (CategoryName, CategoryDescription) VALUES (@CategoryName, @Description);";
+                return _db.Save(insertSql, new { model.CategoryName, Description = model.Description ?? string.Empty });
+            }
+
+            var updateSql = $"UPDATE dbo.[{tableName}] SET CategoryName = @CategoryName, CategoryDescription = @Description WHERE CategoryName = @OriginalCategoryName;";
+            return _db.Save(updateSql, new { model.CategoryName, Description = model.Description ?? string.Empty, model.OriginalCategoryName });
+        }
+
+        public Task<IEnumerable<CategoryItem>> GetCategoryDetails(string categoryType)
+        {
+            var tableName = GetCategoryTableName(categoryType);
+            var sql = $"SELECT CategoryName, COALESCE(CategoryDescription, '') AS Description FROM dbo.[{tableName}] ORDER BY CategoryName;";
+            return _db.LoadData<CategoryItem, object>(sql, new { });
+        }
+
+        public Task DeleteCategory(string categoryType, string categoryName)
+        {
+            var tableName = GetCategoryTableName(categoryType);
+            var sql = $"DELETE FROM dbo.[{tableName}] WHERE CategoryName = @CategoryName;";
+            return _db.Save(sql, new { CategoryName = categoryName });
+        }
+
+        private static string GetCategoryTableName(string categoryType)
+        {
+            return categoryType.Trim().ToLowerInvariant() switch
+            {
+                "allergy" => "AllergyCategory",
+                "medication" => "MedicationCategory",
+                "condition" => "MedicalConditionsCategory",
+                _ => throw new ArgumentException("Invalid category type.", nameof(categoryType))
+            };
+        }
+
+        public Task<IEnumerable<UserListItem>> GetAllUsers()
+        {
+            return _db.GetData<UserListItem, object>(
+                "dbo.sp_GetAllUsers",
+                new { });
+        }
+
+        public async Task<int> GetUserCount()
+        {
+            var users = await GetAllUsers();
+            return users.Count();
+        }
+
+        public Task SetUserActiveStatus(string email, bool isActive)
+        {
+            const string sql = "UPDATE dbo.[User] SET IsActive = @IsActive, UpdatedAt = SYSUTCDATETIME() WHERE Email = @Email;";
+            return _db.Save(sql, new { Email = email, IsActive = isActive });
+        }
+
+        public Task DeleteUser(string email)
+        {
+            const string sql = "DELETE FROM dbo.[User] WHERE Email = @Email;";
+            return _db.Save(sql, new { Email = email });
+        }
+
+        public Task UpdateAdminProfile(AdminProfileUpdate model)
+        {
+            const string sql = """
+                UPDATE dbo.[User]
+                SET Name = @Name,
+                    Surname = @Surname,
+                    Email = @Email,
+                    UpdatedAt = SYSUTCDATETIME()
+                WHERE Email = @OriginalEmail
+                  AND Role = 'Admin';
+                """;
+            return _db.Save(sql, model);
+        }
+
+        public async Task ChangeAdminPassword(AdminPasswordChange model)
+        {
+            const string credentialSql = "SELECT PasswordHash, PasswordSalt FROM dbo.[User] WHERE Email = @Email AND Role = 'Admin';";
+            var credential = await _db.QueryFirstOrDefaultAsync<PasswordCredential>(
+                credentialSql,
+                new { model.Email });
+
+            if (credential == null)
+                throw new InvalidOperationException("Admin account not found.");
+            if (!_pass.VerifyPassword(model.CurrentPassword, credential.PasswordHash, credential.PasswordSalt))
+                throw new InvalidOperationException("The current password is incorrect.");
+
+            var password = _pass.HashPassword(model.NewPassword);
+            const string updateSql = """
+                UPDATE dbo.[User]
+                SET PasswordHash = @PasswordHash,
+                    PasswordSalt = @PasswordSalt,
+                    MustChangePassword = 0,
+                    UpdatedAt = SYSUTCDATETIME()
+                WHERE Email = @Email AND Role = 'Admin';
+                """;
+            await _db.Save(updateSql, new
+            {
+                model.Email,
+                PasswordHash = password.Hash,
+                PasswordSalt = password.Salt
+            });
         }
     }
     }

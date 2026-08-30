@@ -13,7 +13,7 @@
   <div class="sidebar-section">Reference Data</div>
   <a class="nav-item" asp-controller="Admin" asp-action="Condition"><span class="nav-icon">&#129497;</span> Medical Conditions <span class="nav-badge" style="background:var(--blue)">9</span></a>
   <a class="nav-item active" asp-controller="Admin" asp-action="Allergies"><span class="nav-icon">&#9888;&#65039;</span> Allergies <span class="nav-badge" style="background:var(--blue)">@ViewBag.AllergyCount</span></a>
-  <a class="nav-item" asp-controller="Admin" asp-action="Medication"><span class="nav-icon">&#128138;</span> Medications <span class="nav-badge" style="background:var(--blue)">9</span></a>
+  <a class="nav-item" asp-controller="Admin" asp-action="Medication"><span class="nav-icon">&#128138;</span> Medications <span class="nav-badge" style="background:var(--blue)">@ViewBag.MedicationCount</span></a>
   <div class="sidebar-section">System</div>
   <a class="nav-item" asp-controller="Admin" asp-action="Users"><span class="nav-icon">&#128101;</span> System Users</a>
   <a class="nav-item" asp-controller="Admin" asp-action="Audit"><span class="nav-icon">&#128203;</span> Audit Log</a>
@@ -59,8 +59,8 @@
             {
               <tr data-is-active="true">
                 <td><strong>@allergy.AllergyName</strong></td>
-                <td><span class="pill-a">@allergy.CategoryName</span></td>
-                <td class="td-muted">@allergy.CategoryDescription</td>
+                <td><span class="pill-a">@allergy.AllergyCategory</span></td>
+                <td class="td-muted">@allergy.Description</td>
                 <td>@allergy.TotalPatients</td>
                 <td><div style="display:flex;gap:6px;"><button class="btn btn-secondary btn-sm" onclick="editAllergy(this)">Edit</button><button class="btn btn-secondary btn-sm" onclick="toggleAllergyStatus(this)">Deactivate</button></div></td>
               </tr>

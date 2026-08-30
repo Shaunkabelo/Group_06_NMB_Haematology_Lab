@@ -11,32 +11,32 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Models
     public class PatientRegistrationViewModel
     {
         [Required]
-        public string Name { get; set; }
+        public string Name { get; set; } = string.Empty;
 
         [Required]
-        public string Surname { get; set; }
+        public string Surname { get; set; } = string.Empty;
 
         [Required]
-        public string SaIdNumber { get; set; }
+        public string SaIdNumber { get; set; } = string.Empty;
 
         [Required]
         public DateOnly? DateOfBirth { get; set; }
 
         [Required]
-        public string Cellphone { get; set; }
+        public string Cellphone { get; set; } = string.Empty;
 
         [Required]
         [EmailAddress]
-        public string Email { get; set; }
+        public string Email { get; set; } = string.Empty;
 
         [Required]
-        public string HomeAddress { get; set; }
+        public string HomeAddress { get; set; } = string.Empty;
 
         [Required]
-        public string Password { get; set; }
+        public string Password { get; set; } = string.Empty;
 
         [Required]
         [Compare("Password")]
-        public string ConfirmPassword { get; set; }
+        public string ConfirmPassword { get; set; } = string.Empty;
     }
 }

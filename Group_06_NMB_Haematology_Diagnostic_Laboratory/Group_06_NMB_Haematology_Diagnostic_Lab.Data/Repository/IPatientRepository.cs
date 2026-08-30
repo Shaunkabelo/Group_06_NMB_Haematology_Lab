@@ -10,7 +10,7 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
 
         //update patient information
         // Update methods
-        Task<PatientUpdate> GetPatientForUpdate(
+        Task<PatientUpdate?> GetPatientForUpdate(
             int patientId);
 
         Task UpdatePatient(
@@ -44,6 +44,14 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
 
         Task<IEnumerable<string>> GetMedicationCategories();
 
+        Task<IEnumerable<MedicationWithPatientCount>> GetMedicationsWithPatientCount();
+
+        Task<int> GetMedicationCount();
+
+        Task UpdateMedication(MedicationUpdate model);
+
+        Task AddMedication(MedicationCreate model);
+
         Task<IEnumerable<string>> GetMedicationsByCategory(string categoryName);
 
         Task SavePatientMedication(int patientId, string medicationName);
@@ -59,6 +67,24 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
         Task DeletePatientAllergy(int patientId, string allergyName);
 
         Task DeletePatientMedication(int patientId, string medicationName);
+
+        Task SaveCategory(CategorySave model);
+
+        Task DeleteCategory(string categoryType, string categoryName);
+
+        Task<IEnumerable<CategoryItem>> GetCategoryDetails(string categoryType);
+
+        Task<IEnumerable<UserListItem>> GetAllUsers();
+
+        Task<int> GetUserCount();
+
+        Task SetUserActiveStatus(string email, bool isActive);
+
+        Task DeleteUser(string email);
+
+        Task UpdateAdminProfile(AdminProfileUpdate model);
+
+        Task ChangeAdminPassword(AdminPasswordChange model);
 
     }
 }

@@ -6,6 +6,8 @@ public class AllergyOption
 
     public string AllergyCategory { get; set; } = string.Empty;
 
+    public string Description { get; set; } = string.Empty;
+
     public string CategoryName { get; set; } = string.Empty;
 
     public string CategoryDescription { get; set; } = string.Empty;

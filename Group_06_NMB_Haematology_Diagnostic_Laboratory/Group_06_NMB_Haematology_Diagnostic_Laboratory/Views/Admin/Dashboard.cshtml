@@ -13,18 +13,20 @@
   <div class="sidebar-section">Reference Data</div>
   <a class="nav-item" asp-controller="Admin" asp-action="Conditions"><span class="nav-icon">&#9874;</span> Conditions <span class="nav-badge" style="background:var(--blue)">@ViewBag.MedicalConditionCount</span></a>
   <a class="nav-item" asp-controller="Admin" asp-action="Allergies"><span class="nav-icon">&#9888;&#65039;</span> Allergies <span class="nav-badge" style="background:var(--blue)">@ViewBag.AllergyCount</span></a>
-  <a class="nav-item" asp-controller="Admin" asp-action="Medication"><span class="nav-icon">&#128279;</span> Medications <span class="nav-badge" style="background:var(--blue)">9</span></a>
+  <a class="nav-item" asp-controller="Admin" asp-action="Medication"><span class="nav-icon">&#128279;</span> Medications <span class="nav-badge" style="background:var(--blue)">@ViewBag.MedicationCount</span></a>
+  <a class="nav-item" asp-controller="Admin" asp-action="Categories"><span class="nav-icon">&#128193;</span> Categories</a>
   <div class="sidebar-section">System</div>
+  <a class="nav-item" asp-controller="Admin" asp-action="Profile"><span class="nav-icon">&#128100;</span> Profile</a>
   <a class="nav-item" asp-controller="Admin" asp-action="Users"><span class="nav-icon">&#128101;</span> System Users</a>
   <a class="nav-item" asp-controller="Admin" asp-action="Audit"><span class="nav-icon">&#128203;</span> Audit Log</a>
   <div class="sidebar-footer">
-    <div class="user-card">
+    <a class="user-card" asp-controller="Admin" asp-action="Profile" style="text-decoration:none;color:inherit;">
       <div class="avatar avatar-lg admin-avatar">SA</div>
       <div class="user-info">
         <div class="user-name">System Admin</div>
         <div class="user-role">Administrator</div>
       </div>
-    </div>
+    </a>
   </div>
 </nav>
 @* <div class="main main-content"> *@
@@ -83,8 +85,8 @@
     <div class="stats-grid">
       <a class="stat-card clickable" asp-controller="Admin" asp-action="Conditions" style="--accent:var(--blue)"><div class="stat-emoji">&#9874;</div><div class="stat-label">Medical Conditions</div><div class="stat-value">@ViewBag.MedicalConditionCount</div><div class="stat-sub">Across 6 categories</div></a>
       <a class="stat-card clickable" asp-controller="Admin" asp-action="Allergies" style="--accent:var(--red)"><div class="stat-emoji">&#9888;&#65039;</div><div class="stat-label">Allergies</div><div class="stat-value">@ViewBag.AllergyCount</div><div class="stat-sub">Listed allergies</div></a>
-      <a class="stat-card clickable" asp-controller="Admin" asp-action="Medication" style="--accent:var(--teal)"><div class="stat-emoji">&#128279;</div><div class="stat-label">Medications</div><div class="stat-value">9</div><div class="stat-sub">Across 8 categories</div></a>
-      <a class="stat-card clickable" asp-controller="Admin" asp-action="Users" style="--accent:#F5A623"><div class="stat-emoji">&#128101;</div><div class="stat-label">Registered Users</div><div class="stat-value">8</div><div class="stat-sub">+12 this month</div></a>
+      <a class="stat-card clickable" asp-controller="Admin" asp-action="Medication" style="--accent:var(--teal)"><div class="stat-emoji">&#128279;</div><div class="stat-label">Medications</div><div class="stat-value">@ViewBag.MedicationCount</div><div class="stat-sub">Listed medications</div></a>
+      <a class="stat-card clickable" asp-controller="Admin" asp-action="Users" style="--accent:#F5A623"><div class="stat-emoji">&#128101;</div><div class="stat-label">Registered Users</div><div class="stat-value">@ViewBag.UserCount</div><div class="stat-sub">Total system users</div></a>
     </div>
     <div>
         <br>
