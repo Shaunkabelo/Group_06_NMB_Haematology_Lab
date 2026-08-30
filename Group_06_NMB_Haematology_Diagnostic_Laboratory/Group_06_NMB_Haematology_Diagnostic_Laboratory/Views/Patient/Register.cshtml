@@ -190,8 +190,9 @@
 
                 <input asp-for="HomeAddress"
                        id="reg-addr"
+                       data-address-autocomplete
                        class="form-control"
-                       placeholder="Physical Address" />
+                       placeholder="Start typing your physical address" />
 
                 <span asp-validation-for="HomeAddress"
                       class="text-danger">
@@ -274,15 +275,12 @@
         </form>
 
     </div>
-    ```
-
 </div>
 
 @section Scripts
 {
     <partial name="_ValidationScriptsPartial" />
 
-    ```
     <script>
 
         function validatePassword(inputId)
@@ -329,6 +327,6 @@
         }
 
     </script>
-    ```
+    <script src="~/js/address-autocomplete.js" asp-append-version="true"></script>
 
 }

@@ -946,6 +946,45 @@ td {
     gap: 8px;
 }
 
+.address-autocomplete {
+    position: relative;
+    width: 100%;
+}
+
+.address-suggestions {
+    display: none;
+    position: absolute;
+    z-index: 1000;
+    top: calc(100% + 4px);
+    left: 0;
+    right: 0;
+    max-height: 260px;
+    overflow-y: auto;
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    box-shadow: 0 14px 32px rgba(10, 30, 60, .16);
+}
+
+.address-suggestions.open { display: block; }
+.address-suggestion {
+    display: block;
+    width: 100%;
+    padding: 11px 13px;
+    border: 0;
+    border-bottom: 1px solid var(--border);
+    background: #fff;
+    color: var(--text);
+    font: inherit;
+    font-size: 13px;
+    line-height: 1.4;
+    text-align: left;
+    cursor: pointer;
+}
+.address-suggestion:last-child { border-bottom: 0; }
+.address-suggestion:hover, .address-suggestion.active { background: var(--bg); }
+.address-suggestion-status { padding: 11px 13px; color: var(--muted); font-size: 13px; }
+
 .login-hint {
     background: #F5F7FA;
     border: 1px solid #E3E8F0;

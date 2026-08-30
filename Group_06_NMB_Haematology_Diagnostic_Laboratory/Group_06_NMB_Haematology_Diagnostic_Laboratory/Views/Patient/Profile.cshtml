@@ -176,6 +176,9 @@
 
                     <input asp-for="HomeAddress"
                            id="p-addr"
+                           data-address-autocomplete
+                           autocomplete="street-address"
+                           placeholder="Start typing your physical address"
                            class="form-control" />
 
                     <span asp-validation-for="HomeAddress"
@@ -387,4 +390,5 @@
 @section Scripts
 {
     <partial name="_ValidationScriptsPartial" />
+    <script src="~/js/address-autocomplete.js" asp-append-version="true"></script>
 }
