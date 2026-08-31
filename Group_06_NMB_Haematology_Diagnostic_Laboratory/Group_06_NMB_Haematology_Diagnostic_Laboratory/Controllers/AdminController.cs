@@ -149,37 +149,19 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> SetUserStatus([FromForm] string email, [FromForm] bool isActive)
+        public async Task<IActionResult> SetUserStatus([FromForm] int userId, [FromForm] int isActive)
         {
-            if (string.IsNullOrWhiteSpace(email))
-                return BadRequest(new { message = "User email is required." });
+            if (userId <= 0 || (isActive != 0 && isActive != 1))
+                return BadRequest(new { message = "A valid user is required." });
 
             try
             {
-                await _patientRepository.SetUserActiveStatus(email, isActive);
-                return Ok(new { message = isActive ? "User unblocked." : "User blocked." });
+                await _patientRepository.SetUserStatus(userId, isActive);
+                return Ok(new { message = isActive == 1 ? "User activated." : "User deactivated." });
             }
             catch (Exception ex)
             {
                 return BadRequest(new { message = ex.GetBaseException().Message });
-            }
-        }
-
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteUser([FromForm] string email)
-        {
-            if (string.IsNullOrWhiteSpace(email))
-                return BadRequest(new { message = "User email is required." });
-
-            try
-            {
-                await _patientRepository.DeleteUser(email);
-                return Ok(new { message = "User deleted." });
-            }
-            catch (Exception)
-            {
-                return BadRequest(new { message = "This user cannot be deleted because related system records exist." });
             }
         }
 

@@ -604,11 +604,13 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
             };
         }
 
-        public Task<IEnumerable<UserListItem>> GetAllUsers()
+        public async Task<IEnumerable<UserListItem>> GetAllUsers()
         {
-            return _db.GetData<UserListItem, object>(
+            var users = await _db.GetData<UserListItem, object>(
                 "dbo.sp_GetAllUsers",
                 new { });
+
+            return users.OrderBy(user => user.Name, StringComparer.OrdinalIgnoreCase);
         }
 
         public async Task<int> GetUserCount()
@@ -617,16 +619,11 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
             return users.Count();
         }
 
-        public Task SetUserActiveStatus(string email, bool isActive)
+        public Task SetUserStatus(int userId, int isActive)
         {
-            const string sql = "UPDATE dbo.[User] SET IsActive = @IsActive, UpdatedAt = SYSUTCDATETIME() WHERE Email = @Email;";
-            return _db.Save(sql, new { Email = email, IsActive = isActive });
-        }
-
-        public Task DeleteUser(string email)
-        {
-            const string sql = "DELETE FROM dbo.[User] WHERE Email = @Email;";
-            return _db.Save(sql, new { Email = email });
+            return _db.SaveData(
+                "dbo.sp_SetUserStatus",
+                new { UserID = userId, IsActive = isActive });
         }
 
         public Task UpdateAdminProfile(AdminProfileUpdate model)

@@ -5,6 +5,8 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Models;
 /// </summary>
 public class UserListItem
 {
+    public int UserID { get; set; }
+
     public string Name { get; set; } = string.Empty;
 
     public string Surname { get; set; } = string.Empty;

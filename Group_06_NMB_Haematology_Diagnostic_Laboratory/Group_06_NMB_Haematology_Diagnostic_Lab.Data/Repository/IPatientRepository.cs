@@ -78,9 +78,7 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
 
         Task<int> GetUserCount();
 
-        Task SetUserActiveStatus(string email, bool isActive);
-
-        Task DeleteUser(string email);
+        Task SetUserStatus(int userId, int isActive);
 
         Task UpdateAdminProfile(AdminProfileUpdate model);
 
