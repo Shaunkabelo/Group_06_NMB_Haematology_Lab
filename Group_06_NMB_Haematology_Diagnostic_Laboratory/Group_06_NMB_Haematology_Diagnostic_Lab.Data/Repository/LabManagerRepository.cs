@@ -178,7 +178,7 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
         }
 
         // ------------------------   CREATE / ADD TECHNICIAN --------------------------------
-        public async Task CreateTechnician(LabTechnician technician)
+        public async Task<int> CreateTechnician(LabTechnician technician)
         {
             string password = PasswordHelper.GenerateTemporaryPassword();
 
@@ -186,7 +186,7 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
 
             string hash = PasswordHelper.HashPassword(password, salt);
 
-            await _db.SaveData(
+            return await _db.SaveDataAndReturn<int, object>(
                 "sp_LabTechnician_Create",
                 new
                 {
@@ -203,7 +203,7 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
                     SA_ID_Number = technician.User.SaIdNumber,
 
                     technician.User.DateOfBirth,
-                    
+
                 });
         }
 
@@ -225,8 +225,8 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
                     SA_ID_Number = technician.User.SaIdNumber,
 
                     technician.User.DateOfBirth,
-                    
-                    
+
+
                 });
         }
         // ------------------------ DELETE TECHNICIAN [Soft Delete] ------------
@@ -250,6 +250,20 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
                     LabTechnicianID = technicianId
                 });
         }
+
+        public Task<IEnumerable<LabTechnicianTestType>> GetTechnicianTestTypes(int technicianId) =>
+            _db.GetData<LabTechnicianTestType, object>(
+                "sp_LabTechnicianTestType_GetByTechnician",
+                new { LabTechnicianID = technicianId });
+
+        public Task ReplaceTechnicianTestTypes(int technicianId, IEnumerable<int> testTypeIds) =>
+            _db.SaveData(
+                "sp_LabTechnicianTestType_Replace",
+                new
+                {
+                    LabTechnicianID = technicianId,
+                    TestTypeIDs = string.Join(",", testTypeIds.Distinct())
+                });
         //==================================================================================================
 
 
@@ -457,41 +471,39 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
         string filter = "Active",
         string search = "")
         {
-            return await _db.GetData<Consumable, Supplier, Consumable, dynamic>(
+            var consumables = (await _db.GetData<Consumable, dynamic>(
                 "sp_Consumable_GetAll",
-                (consumable, supplier) =>
-                {
-                    consumable.Supplier = supplier;
-                    return consumable;
-                },
                 new
                 {
                     Filter = filter,
                     Search = search
-                },
-                splitOn: "SupplierID"
-            );
+                })).ToList();
+
+            foreach (var consumable in consumables)
+            {
+                consumable.Supplier = await GetSupplierById(consumable.SupplierId);
+            }
+
+            return consumables;
         }
 
         // ------------------------- GET CONSUMABLE BY ID -------------------------
 
         public async Task<Consumable?> GetConsumableById(int consumableId)
         {
-            var consumable = await _db.GetData<Consumable, Supplier, Consumable, dynamic>(
+            var consumable = (await _db.GetData<Consumable, dynamic>(
                 "sp_Consumable_GetById",
-                (consumable, supplier) =>
-                {
-                    consumable.Supplier = supplier;
-                    return consumable;
-                },
                 new
                 {
                     ConsumableID = consumableId
-                },
-                splitOn: "SupplierID"
-            );
+                })).FirstOrDefault();
 
-            return consumable.FirstOrDefault();
+            if (consumable != null)
+            {
+                consumable.Supplier = await GetSupplierById(consumable.SupplierId);
+            }
+
+            return consumable;
         }
 
         // ------------------------- CREATE CONSUMABLE -------------------------
@@ -572,139 +584,367 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
                 });
         }
 
+        // ============================ STOCK ORDERS ============================
+
+        public async Task<IEnumerable<StockOrder>> GetStockOrders(
+            string filter = "All",
+            string search = "")
+        {
+            var orders = (await _db.GetData<StockOrder, dynamic>(
+                "sp_StockOrder_GetAll",
+                new { Filter = filter, Search = search })).ToList();
+
+            for (var index = 0; index < orders.Count; index++)
+            {
+                var detailedOrder = await GetStockOrderById(orders[index].StockOrderId);
+                if (detailedOrder != null)
+                {
+                    orders[index] = detailedOrder;
+                }
+                else
+                {
+                    orders[index].Supplier = await GetSupplierById(orders[index].SupplierId);
+                }
+            }
+
+            return orders;
+        }
+
+        public async Task<StockOrder?> GetStockOrderById(int stockOrderId)
+        {
+            var rows = (await _db.GetData<dynamic, dynamic>(
+                "sp_StockOrder_GetById",
+                new { StockOrderID = stockOrderId })).ToList();
+
+            if (!rows.Any())
+            {
+                return null;
+            }
+
+            var first = (IDictionary<string, object>)rows[0];
+            var order = new StockOrder
+            {
+                StockOrderId = ReadValue<int>(first, "StockOrderID"),
+                SupplierId = ReadValue<int>(first, "SupplierID"),
+                OrderNumber = ReadValue<string>(first, "OrderNumber"),
+                OrderDate = ReadValue<DateTime?>(first, "OrderDate"),
+                Status = ReadValue<string>(first, "Status"),
+                CompletionDate = ReadValue<DateTime?>(first, "CompletionDate"),
+                CancelledDate = ReadValue<DateTime?>(first, "CancelledDate"),
+                CancelReason = ReadValue<string>(first, "CancelReason"),
+                Supplier = new Supplier
+                {
+                    SupplierId = ReadValue<int>(first, "SupplierMappingID"),
+                    SupplierName = ReadValue<string>(first, "SupplierName"),
+                    ContactPerson = ReadValue<string>(first, "ContactPerson"),
+                    SupplierEmail = ReadValue<string>(first, "SupplierEmail"),
+                    IsActive = ReadValue<bool>(first, "SupplierIsActive")
+                }
+            };
+
+            foreach (var row in rows.Cast<IDictionary<string, object>>())
+            {
+                order.StockOrderItem.Add(new StockOrderItem
+                {
+                    StockOrderItemId = ReadValue<int>(row, "StockOrderItemID"),
+                    StockOrderId = ReadValue<int>(row, "ItemStockOrderID"),
+                    ConsumableId = ReadValue<int>(row, "ConsumableID"),
+                    QuantityOrdered = ReadValue<int>(row, "QuantityOrdered"),
+                    Status = ReadValue<string>(row, "ItemStatus"),
+                    DateReceived = ReadValue<DateTime?>(row, "DateReceived"),
+                    CancelReason = ReadValue<string>(row, "ItemCancelReason"),
+                    CancelledDate = ReadValue<DateTime?>(row, "ItemCancelledDate"),
+                    Consumable = new Consumable
+                    {
+                        ConsumableId = ReadValue<int>(row, "ConsumableMappingID"),
+                        SupplierId = ReadValue<int>(row, "ConsumableSupplierID"),
+                        Name = ReadValue<string>(row, "Name"),
+                        ReorderLevel = ReadValue<int>(row, "ReorderLevel"),
+                        QuantityOnHand = ReadValue<int>(row, "QuantityOnHand"),
+                        IsActive = ReadValue<bool>(row, "ConsumableIsActive")
+                    }
+                });
+            }
+
+            return order;
+        }
+
+        public Task<int> CreateStockOrder(StockOrder order) =>
+            _db.SaveDataAndReturn<int, dynamic>(
+                "sp_StockOrder_Create",
+                new
+                {
+                    order.SupplierId,
+                    order.OrderNumber
+                });
+
+        public Task CreateStockOrderItem(int stockOrderId, int consumableId, int quantityOrdered) =>
+            _db.SaveData(
+                "sp_StockOrder_AddItem",
+                new
+                {
+                    StockOrderID = stockOrderId,
+                    ConsumableID = consumableId,
+                    QuantityOrdered = quantityOrdered
+                });
+
+        public Task ReceiveStockOrderItem(int stockOrderItemId) =>
+            _db.SaveData(
+                "sp_StockOrder_ReceiveItem",
+                new { StockOrderItemID = stockOrderItemId });
+
+        public Task CancelStockOrderItem(int stockOrderItemId, string cancelReason) =>
+            _db.SaveData(
+                "sp_StockOrder_CancelItem",
+                new { StockOrderItemID = stockOrderItemId, CancelReason = cancelReason });
+
+        public Task CancelStockOrder(int stockOrderId, string cancelReason) =>
+            _db.SaveData(
+                "sp_StockOrder_Cancel",
+                new { StockOrderID = stockOrderId, CancelReason = cancelReason });
+
+        public async Task<IEnumerable<Consumable>> GetLowStockConsumables()
+        {
+            var consumables = (await _db.GetData<Consumable, dynamic>(
+                "sp_StockOrder_GetLowStock",
+                new { })).ToList();
+
+            foreach (var consumable in consumables)
+            {
+                consumable.Supplier = await GetSupplierById(consumable.SupplierId);
+            }
+
+            return consumables;
+        }
+
+        private static T ReadValue<T>(IDictionary<string, object> row, string columnName)
+        {
+            if (!row.TryGetValue(columnName, out var value) || value is null || value == DBNull.Value)
+            {
+                return default!;
+            }
+
+            var targetType = Nullable.GetUnderlyingType(typeof(T)) ?? typeof(T);
+            return (T)Convert.ChangeType(value, targetType);
+        }
+
         // ==================== TEST TYPES ====================================
 
+        // ============================================================
+        // GET ALL
+        // ============================================================
+
         public async Task<IEnumerable<TestType>> GetTestTypes(
-        string filter = "Active",
-        string search = "")
+            string filter = "Active",
+            string search = "")
         {
-            var results = await _db.GetData<
-            TestType,
-            TestCategory,
-            SampleType,
-            TestType,
-            object>(
-            "sp_TestType_GetAll",
-            (testType, category, sampleType) =>
-            { 
-               testType.TestCategory = category;
-               testType.SampleType = sampleType;
+            var parameters = new
+            {
+                Filter = filter,
+                Search = search ?? ""
+            };
 
-                return testType;
-                            },
-                 new
-                 {
-                   Filter = filter,
-                   Search = search
-                 },
-
-               splitOn: "CategoryMappingID,SampleMappingID"
-                                                );
-
-            return results;
+            return MapTestTypes(await _db.GetData<dynamic, object>("sp_TestType_GetAll", parameters));
         }
 
-        // ==================== GET TEST TYPE BY ID ====================
 
-        public async Task<TestType> GetTestTypeById(int id)
+        // ============================================================
+        // GET BY ID
+        // ============================================================
+
+        public async Task<TestType?> GetTestTypeById(int testTypeId)
         {
-            var result = await _db.GetData<TestType, object>(
-                "sp_TestType_GetById",
-                new
-                {
-                    TestTypeID = id
-                });
+            var parameters = new
+            {
+                TestTypeID = testTypeId
+            };
 
-            return result.FirstOrDefault();
+            return MapTestTypes(await _db.GetData<dynamic, object>("sp_TestType_GetById", parameters))
+                .FirstOrDefault();
         }
-        public async Task CreateTestType(TestType testType)
+
+
+        // ============================================================
+        // CREATE
+        // ============================================================
+
+        public async Task<int> CreateTestType(
+            int testCategoryId,
+            string testName,
+            int sampleTypeId,
+            string unitOfMeasurement,
+            decimal? normalRangeMin,
+            decimal? normalRangeMax,
+            int turnaroundTimeMinutes,
+            int consumableId,
+            int quantityRequired)
         {
-            await _db.SaveData(
+            var parameters = new
+            {
+                TestCategoryID = testCategoryId,
+                TestName = testName,
+                SampleTypeID = sampleTypeId,
+                UnitOfMeasurement = unitOfMeasurement,
+                NormalRangeMin = normalRangeMin,
+                NormalRangeMax = normalRangeMax,
+                TurnaroundTimeMinutes = turnaroundTimeMinutes,
+                ConsumableID = consumableId,
+                QuantityRequired = quantityRequired
+            };
+
+            return await _db.SaveDataAndReturn<int, object>(
                 "sp_TestType_Create",
-                new
-                {
-                    testType.TestCategoryId,
-                    testType.TestName,
-                    testType.SampleTypeId,
-                    testType.UnitOfMeasurement,
-                    testType.NormalRangeMin,
-                    testType.NormalRangeMax,
-                    testType.TurnaroundTimeMinutes
-                });
+                parameters);
         }
 
-        public async Task UpdateTestType(TestType testType)
+
+        // ============================================================
+        // UPDATE
+        // ============================================================
+
+        public async Task UpdateTestType(
+            int testTypeId,
+            int testCategoryId,
+            string testName,
+            int sampleTypeId,
+            string unitOfMeasurement,
+            decimal? normalRangeMin,
+            decimal? normalRangeMax,
+            int turnaroundTimeMinutes)
         {
+            var parameters = new
+            {
+                TestTypeID = testTypeId,
+                TestCategoryID = testCategoryId,
+                TestName = testName,
+                SampleTypeID = sampleTypeId,
+                UnitOfMeasurement = unitOfMeasurement,
+                NormalRangeMin = normalRangeMin,
+                NormalRangeMax = normalRangeMax,
+                TurnaroundTimeMinutes = turnaroundTimeMinutes
+            };
+
             await _db.SaveData(
                 "sp_TestType_Update",
-                new
-                {
-                    testType.TestTypeId,
-                    testType.TestCategoryId,
-                    testType.TestName,
-                    testType.SampleTypeId,
-                    testType.UnitOfMeasurement,
-                    testType.NormalRangeMin,
-                    testType.NormalRangeMax,
-                    testType.TurnaroundTimeMinutes
-                });
+                parameters);
         }
 
-        public async Task DeleteTestType(int id)
+
+        // ============================================================
+        // DELETE / DEACTIVATE
+        // ============================================================
+
+        public async Task DeleteTestType(int testTypeId)
         {
+            var parameters = new
+            {
+                TestTypeID = testTypeId
+            };
+
             await _db.SaveData(
                 "sp_TestType_Delete",
-                new
-                {
-                    TestTypeID = id
-                });
+                parameters);
         }
 
-        public async Task ReactivateTestType(int id)
+
+        // ============================================================
+        // REACTIVATE
+        // ============================================================
+
+        public async Task ReactivateTestType(int testTypeId)
         {
+            var parameters = new
+            {
+                TestTypeID = testTypeId
+            };
+
             await _db.SaveData(
                 "sp_TestType_Reactivate",
-                new
-                {
-                    TestTypeID = id
-                });
+                parameters);
         }
 
 
-        //// ==================== TEST TYPE CONSUMABLES ====================
+        private static IEnumerable<TestType> MapTestTypes(IEnumerable<dynamic> rows)
+        {
+            var testTypes = new Dictionary<int, TestType>();
 
-        //public async Task<IEnumerable<TestTypeConsumable>> GetTestTypeConsumables(int testTypeId)
-        //{
-        //    var results = await _db.GetData<TestTypeConsumable, Consumable, TestTypeConsumable, object>(
-        //        "sp_TestTypeConsumable_GetByTestType",
-        //        (testTypeConsumable, consumable) =>
-        //        {
-        //            testTypeConsumable.Consumable = consumable;
+            foreach (IDictionary<string, object> row in rows)
+            {
+                var testTypeId = ReadValue<int>(row, "TestTypeId");
+                if (!testTypes.TryGetValue(testTypeId, out var testType))
+                {
+                    testType = new TestType
+                    {
+                        TestTypeId = testTypeId,
+                        TestCategoryId = ReadValue<int>(row, "TestCategoryId"),
+                        TestName = ReadValue<string>(row, "TestName"),
+                        SampleTypeId = ReadValue<int>(row, "SampleTypeId"),
+                        UnitOfMeasurement = ReadValue<string>(row, "UnitOfMeasurement"),
+                        NormalRangeMin = ReadValue<decimal?>(row, "NormalRangeMin"),
+                        NormalRangeMax = ReadValue<decimal?>(row, "NormalRangeMax"),
+                        TurnaroundTimeMinutes = ReadValue<int>(row, "TurnaroundTimeMinutes"),
+                        CreatedAt = ReadValue<DateTime?>(row, "TestTypeCreatedAt"),
+                        IsActive = ReadValue<bool>(row, "TestTypeIsActive"),
+                        TestCategory = new TestCategory
+                        {
+                            TestCategoryId = ReadValue<int>(row, "CategoryId"),
+                            CategoryName = ReadValue<string>(row, "CategoryName")
+                        },
+                        SampleType = new SampleType
+                        {
+                            SampleTypeId = ReadValue<int>(row, "SampleTypeId"),
+                            SampleTypeName = ReadValue<string>(row, "SampleTypeName")
+                        }
+                    };
+                    testTypes.Add(testTypeId, testType);
+                }
 
-        //            return testTypeConsumable;
-        //        },
-        //        new
-        //        {
-        //            TestTypeID = testTypeId
-        //        },
-        //        splitOn: "ConsumableMappingID"
-        //    );
+                var requirementId = ReadValue<int>(row, "TestTypeConsumableId");
+                if (requirementId != 0)
+                {
+                    testType.TestTypeConsumable.Add(new TestTypeConsumable
+                    {
+                        TestTypeConsumableId = requirementId,
+                        TestTypeId = testTypeId,
+                        ConsumableId = ReadValue<int>(row, "ConsumableId"),
+                        QuantityRequired = ReadValue<int>(row, "QuantityRequired"),
+                        Consumable = new Consumable
+                        {
+                            ConsumableId = ReadValue<int>(row, "ConsumableId"),
+                            Name = ReadValue<string>(row, "ConsumableName") ?? ReadValue<string>(row, "Name"),
+                            QuantityOnHand = ReadValue<int>(row, "QuantityOnHand"),
+                            IsActive = ReadValue<bool>(row, "ConsumableIsActive")
+                        }
+                    });
+                }
+            }
 
-        //    return results;
-        //}
+            return testTypes.Values;
+        }
 
-        //// Add Relationship
-        //public async Task AddTestTypeConsumable(TestTypeConsumable testTypeConsumable)
-        //{
-        //    await _db.SaveData(
-        //        "sp_TestTypeConsumable_Create",
-        //        new
-        //        {
-        //            testTypeConsumable.TestTypeId,
-        //            testTypeConsumable.ConsumableId,
-        //            testTypeConsumable.QuantityRequired
-        //        });
-        //}
+        public Task CreateTestTypeConsumable(int testTypeId, int consumableId, int quantityRequired) =>
+            _db.SaveData("sp_TestTypeConsumable_Create", new
+            {
+                TestTypeID = testTypeId,
+                ConsumableID = consumableId,
+                QuantityRequired = quantityRequired
+            });
+
+        public Task UpdateTestTypeConsumable(int testTypeConsumableId, int testTypeId, int consumableId, int quantityRequired) =>
+            _db.SaveData("sp_TestTypeConsumable_Update", new
+            {
+                TestTypeConsumableID = testTypeConsumableId,
+                TestTypeID = testTypeId,
+                ConsumableID = consumableId,
+                QuantityRequired = quantityRequired
+            });
+
+        public Task DeleteTestTypeConsumable(int testTypeConsumableId, int testTypeId) =>
+            _db.SaveData("sp_TestTypeConsumable_Delete", new
+            {
+                TestTypeConsumableID = testTypeConsumableId,
+                TestTypeID = testTypeId
+            });
 
         //// Delete one
         //public async Task DeleteTestTypeConsumable(int testTypeConsumableId)

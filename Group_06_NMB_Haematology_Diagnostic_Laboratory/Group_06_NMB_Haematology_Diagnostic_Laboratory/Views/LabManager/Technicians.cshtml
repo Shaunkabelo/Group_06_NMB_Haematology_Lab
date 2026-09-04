@@ -3,11 +3,23 @@
 
 @{
     Layout = "~/Views/Shared/_LabManager_Layout.cshtml";
+    var testTypes = ViewBag.TestTypes as IEnumerable<TestType> ?? Enumerable.Empty<TestType>();
+    var technicianTestTypes = ViewBag.TechnicianTestTypes as Dictionary<int, HashSet<int>>
+        ?? new Dictionary<int, HashSet<int>>();
 }
 
 <div class="page-body">
 
-    
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success">@TempData["Success"]</div>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger">@TempData["Error"]</div>
+    }
+
+
     <!-- ========================================================= -->
     <!-- PAGE HEADER -->
     <!-- ========================================================= -->
@@ -31,8 +43,8 @@
                         class="form-select @(ViewBag.Filter == "Active" ? "filter-active" : ViewBag.Filter == "Inactive" ? "filter-inactive" : "filter-all")"
                         onchange="this.form.submit()">
 
-                                        )"
-                        onchange="this.form.submit()">
+                    )"
+                    onchange="this.form.submit()">
 
                     @if (ViewBag.Filter == "Active")
                     {
@@ -96,6 +108,7 @@
                     <th>Email</th>
                     <th>Cellphone</th>
                     <th>SA ID</th>
+                    <th>Assigned Test Types</th>
                     <th>Status</th>
                     <th>Actions</th>
                 </tr>
@@ -106,6 +119,10 @@
 
                 @foreach (var technician in Model)
                 {
+                    var assignedIds = technicianTestTypes.TryGetValue(technician.LabTechnicianId, out var ids)
+                    ? ids
+                    : new HashSet<int>();
+                    var assignedTestTypes = testTypes.Where(testType => assignedIds.Contains(testType.TestTypeId)).ToList();
                     <tr>
 
                         <td>@technician.User.Name</td>
@@ -117,6 +134,17 @@
                         <td>@technician.User.Cellphone</td>
 
                         <td>@technician.User.SaIdNumber</td>
+
+                        <td>
+                            @if (assignedTestTypes.Any())
+                            {
+                                @string.Join(", ", assignedTestTypes.Select(testType => testType.TestName))
+                            }
+                            else
+                            {
+                                <span class="text-muted">None assigned</span>
+                            }
+                        </td>
 
                         <td>
 
@@ -157,6 +185,20 @@
                                 Edit
 
                             </button>
+
+                            @if (technician.User.IsActive)
+                            {
+                                <button type="button"
+                                        class="btn btn-primary btn-sm"
+                                        data-bs-toggle="offcanvas"
+                                        data-bs-target="#testTypeAssignmentPanel"
+                                        onclick="openTestTypeAssignment(this)"
+                                        data-id="@technician.LabTechnicianId"
+                                        data-name="@($"{technician.User.Name} {technician.User.Surname}")"
+                                        data-assigned="@string.Join(",", assignedIds)">
+                                    Assign Tests
+                                </button>
+                            }
 
 
                             <!-- ================= ACTIVE TECHNICIAN ================= -->
@@ -224,8 +266,39 @@
         </table>
 
     </div>
-    
 
+
+</div>
+
+<div class="offcanvas offcanvas-end" tabindex="-1" id="testTypeAssignmentPanel" style="width:500px;">
+    <div class="offcanvas-header">
+        <h4 id="assignmentPanelTitle">Assign Test Types</h4>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
+    </div>
+    <div class="offcanvas-body">
+        <form asp-controller="LabManager" asp-action="UpdateTechnicianTestTypes" method="post">
+            <input type="hidden" id="assignmentTechnicianId" name="technicianId" />
+            <input type="hidden" name="filter" value="@ViewBag.Filter" />
+            <p class="text-muted">Select every test type this technician may perform.</p>
+            <div id="testTypeAssignmentList">
+                @foreach (var testType in testTypes)
+                {
+                    <div class="form-check mb-2">
+                        <input class="form-check-input assignment-test-type"
+                               type="checkbox"
+                               name="testTypeIds"
+                               value="@testType.TestTypeId"
+                               id="assignment-test-@testType.TestTypeId" />
+                        <label class="form-check-label" for="assignment-test-@testType.TestTypeId">
+                            @testType.TestName
+                        </label>
+                    </div>
+                }
+            </div>
+            <button type="submit" class="btn btn-primary mt-3">Save Assignments</button>
+            <button type="button" class="btn btn-secondary mt-3" data-bs-dismiss="offcanvas">Cancel</button>
+        </form>
+    </div>
 </div>
 
 <!-- ========================================================= -->
@@ -237,7 +310,7 @@
      id="technicianPanel"
      style="width:600px;">
 
-    
+
     <div class="offcanvas-header">
 
         <h4 id="technicianPanelTitle">
@@ -385,6 +458,26 @@
 
             </div>
 
+            <div id="createTestTypeAssignmentSection" class="form-group border-top pt-4 mt-4">
+                <h6 class="mb-1">Assign Test Types</h6>
+                <small class="text-muted d-block mb-3">
+                    Optionally select the tests this technician is authorised to perform.
+                </small>
+                @foreach (var testType in testTypes)
+                {
+                    <div class="form-check mb-2">
+                        <input class="form-check-input create-assignment-test-type"
+                               type="checkbox"
+                               name="testTypeIds"
+                               value="@testType.TestTypeId"
+                               id="create-assignment-test-@testType.TestTypeId" />
+                        <label class="form-check-label" for="create-assignment-test-@testType.TestTypeId">
+                            @testType.TestName
+                        </label>
+                    </div>
+                }
+            </div>
+
 
             <!-- BUTTONS -->
 
@@ -407,7 +500,7 @@
         </form>
 
     </div>
-    
+
 
 </div>
 
@@ -435,6 +528,8 @@
         document.getElementById("technicianForm").reset();
 
         document.getElementById("LabTechnicianId").value = "0";
+        document.getElementById("createTestTypeAssignmentSection").style.display = "block";
+        document.querySelectorAll(".create-assignment-test-type").forEach(checkbox => checkbox.checked = false);
 
         document.getElementById("idValidation").innerText = "";
     }
@@ -480,7 +575,23 @@
         document.getElementById("TechnicianHomeAddress").value =
             button.dataset.address;
 
+        document.getElementById("createTestTypeAssignmentSection").style.display = "none";
+
         document.getElementById("idValidation").innerText = "";
+    }
+
+    function openTestTypeAssignment(button)
+    {
+        const assignedIds = (button.dataset.assigned || "")
+            .split(",")
+            .filter(id => id)
+            .map(id => Number(id));
+
+        document.getElementById("assignmentTechnicianId").value = button.dataset.id;
+        document.getElementById("assignmentPanelTitle").innerText = `Assign Test Types — ${button.dataset.name}`;
+        document.querySelectorAll(".assignment-test-type").forEach(checkbox => {
+            checkbox.checked = assignedIds.includes(Number(checkbox.value));
+        });
     }
 
 

@@ -22,12 +22,14 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
 
         Task<LabTechnician?> GetTechnicianById(int technicianId);
 
-        Task CreateTechnician(LabTechnician technician);
+        Task<int> CreateTechnician(LabTechnician technician);
 
         Task UpdateTechnician(LabTechnician technician);
 
         Task DeleteTechnician(int technicianId);
         Task ReactivateTechnician(int technicianId);
+        Task<IEnumerable<LabTechnicianTestType>> GetTechnicianTestTypes(int technicianId);
+        Task ReplaceTechnicianTestTypes(int technicianId, IEnumerable<int> testTypeIds);
 
         //      === LAB MANAGER ===
         Task<IEnumerable<LabManager>> GetManagers(string filter = "Active");
@@ -63,7 +65,7 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
 
         Task<Consumable?> GetConsumableById(int consumableId);
 
-        Task CreateConsumable(Consumable consumable,int? performedByUserId = null);
+        Task CreateConsumable(Consumable consumable, int? performedByUserId = null);
 
         Task UpdateConsumable(Consumable consumable);
 
@@ -71,36 +73,57 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
 
         Task ReactivateConsumable(int consumableId);
 
-        Task UpdateConsumableStock(int consumableId,int changeAmount,string reason,int? referenceId = null,
+        Task UpdateConsumableStock(int consumableId, int changeAmount, string reason, int? referenceId = null,
             int? performedByUserId = null);
+
+        // ============================ STOCK ORDERS ============================
+
+        Task<IEnumerable<StockOrder>> GetStockOrders(string filter = "All", string search = "");
+        Task<StockOrder?> GetStockOrderById(int stockOrderId);
+        Task<IEnumerable<Consumable>> GetLowStockConsumables();
+        Task<int> CreateStockOrder(StockOrder order);
+        Task CreateStockOrderItem(int stockOrderId, int consumableId, int quantityOrdered);
+        Task ReceiveStockOrderItem(int stockOrderItemId);
+        Task CancelStockOrderItem(int stockOrderItemId, string cancelReason);
+        Task CancelStockOrder(int stockOrderId, string cancelReason);
 
 
         // ==================== TEST TYPES ====================
 
         Task<IEnumerable<TestType>> GetTestTypes(
-        string filter = "Active",
-        string search = "");
+            string filter = "Active",
+            string search = "");
+        Task<int> CreateTestType(
+            int testCategoryId,
+            string testName,
+            int sampleTypeId,
+            string unitOfMeasurement,
+            decimal? normalRangeMin,
+            decimal? normalRangeMax,
+            int turnaroundTimeMinutes,
+            int consumableId,
+            int quantityRequired);
 
         Task<TestType> GetTestTypeById(int id);
 
-        Task CreateTestType(TestType testType);
 
-        Task UpdateTestType(TestType testType);
+
+        Task UpdateTestType(int testTypeId,
+            int testCategoryId,
+            string testName,
+            int sampleTypeId,
+            string unitOfMeasurement,
+            decimal? normalRangeMin,
+            decimal? normalRangeMax,
+            int turnaroundTimeMinutes);
 
         Task DeleteTestType(int id);
 
         Task ReactivateTestType(int id);
 
-
-        // ==================== TEST TYPE CONSUMABLES ====================
-
-        //Task<IEnumerable<TestTypeConsumable>> GetTestTypeConsumables(int testTypeId);
-
-        //Task AddTestTypeConsumable(TestTypeConsumable testTypeConsumable);
-
-        //Task DeleteTestTypeConsumable(int testTypeConsumableId);
-
-        //Task DeleteTestTypeConsumables(int testTypeId);
+        Task CreateTestTypeConsumable(int testTypeId, int consumableId, int quantityRequired);
+        Task UpdateTestTypeConsumable(int testTypeConsumableId, int testTypeId, int consumableId, int quantityRequired);
+        Task DeleteTestTypeConsumable(int testTypeConsumableId, int testTypeId);
 
         // ==================== TEST CATEGORIES ====================
 

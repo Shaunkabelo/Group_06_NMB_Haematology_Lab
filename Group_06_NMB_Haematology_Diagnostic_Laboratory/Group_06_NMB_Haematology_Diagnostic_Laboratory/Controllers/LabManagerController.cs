@@ -15,8 +15,165 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
         }
         public IActionResult Dashboard() => View();
 
-        
-        public IActionResult Orders() => View();
+
+        [HttpGet]
+        public async Task<IActionResult> Orders(string filter = "All", string search = "")
+        {
+            var orders = await _repository.GetStockOrders(filter, search);
+
+            // The page deliberately has the stock context beside the orders so a
+            // manager can make a purchasing decision without changing screens.
+            ViewBag.Consumables = await _repository.GetConsumables("Active");
+            ViewBag.LowStockConsumables = await _repository.GetLowStockConsumables();
+            ViewBag.Suppliers = await _repository.GetSuppliers("Active");
+            ViewBag.Filter = filter;
+            ViewBag.Search = search;
+
+            return View(orders);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CreateOrder(
+            int supplierId,
+            string? orderNumber,
+            [FromForm] int[] selectedConsumables,
+            IFormCollection form)
+        {
+            var selectedIds = selectedConsumables.Distinct().ToList();
+            if (supplierId <= 0 || selectedIds.Count == 0)
+            {
+                TempData["ErrorMessage"] = "Select a supplier and at least one consumable.";
+                return RedirectToAction(nameof(Orders));
+            }
+
+            var supplier = await _repository.GetSupplierById(supplierId);
+            var consumables = (await _repository.GetConsumables("Active"))
+                .ToDictionary(c => c.ConsumableId);
+
+            if (supplier == null || selectedIds.Any(id => !consumables.ContainsKey(id)))
+            {
+                TempData["ErrorMessage"] = "The supplier or one of the selected consumables is no longer available.";
+                return RedirectToAction(nameof(Orders));
+            }
+
+            var items = new List<(int ConsumableId, int Quantity)>();
+            foreach (var consumableId in selectedIds)
+            {
+                if (!int.TryParse(form[$"quantity_{consumableId}"], out var quantity) || quantity <= 0)
+                {
+                    TempData["ErrorMessage"] = "Each selected consumable needs a quantity greater than zero.";
+                    return RedirectToAction(nameof(Orders));
+                }
+
+                items.Add((consumableId, quantity));
+            }
+
+            var safeOrderNumber = string.IsNullOrWhiteSpace(orderNumber)
+                ? $"ORD-{DateTime.UtcNow:yyyyMMdd}-{Guid.NewGuid().ToString("N")[..8]}"
+                : orderNumber.Trim();
+
+            var stockOrderId = await _repository.CreateStockOrder(new StockOrder
+            {
+                SupplierId = supplierId,
+                OrderNumber = safeOrderNumber,
+                OrderDate = DateTime.Now
+            });
+
+            foreach (var item in items)
+            {
+                await _repository.CreateStockOrderItem(stockOrderId, item.ConsumableId, item.Quantity);
+            }
+
+            TempData["SuccessMessage"] = $"Order {safeOrderNumber} was created.";
+            return RedirectToAction(nameof(Orders));
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetOrderDetails(int id)
+        {
+            var order = await _repository.GetStockOrderById(id);
+            if (order == null)
+            {
+                return NotFound();
+            }
+
+            // Return only data the browser needs; EF navigation properties would
+            // otherwise create circular JSON graphs.
+            return Json(new
+            {
+                order.StockOrderId,
+                order.OrderNumber,
+                order.OrderDate,
+                order.Status,
+                order.CompletionDate,
+                order.CancelledDate,
+                order.CancelReason,
+                Supplier = new
+                {
+                    order.Supplier?.SupplierId,
+                    order.Supplier?.SupplierName,
+                    order.Supplier?.ContactPerson,
+                    order.Supplier?.SupplierEmail
+                },
+                StockOrderItem = order.StockOrderItem.Select(item => new
+                {
+                    item.StockOrderItemId,
+                    item.ConsumableId,
+                    item.QuantityOrdered,
+                    item.Status,
+                    item.DateReceived,
+                    item.CancelReason,
+                    item.CancelledDate,
+                    Consumable = new { item.Consumable?.Name }
+                })
+            });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ReceiveOrderItem(int stockOrderItemId, int stockOrderId)
+        {
+            if (stockOrderItemId <= 0)
+            {
+                TempData["ErrorMessage"] = "Invalid order item.";
+                return RedirectToAction(nameof(Orders));
+            }
+
+            await _repository.ReceiveStockOrderItem(stockOrderItemId);
+            TempData["SuccessMessage"] = "Order item received and stock updated.";
+            return RedirectToAction(nameof(Orders));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CancelOrderItem(int stockOrderItemId, string? cancelReason)
+        {
+            if (stockOrderItemId <= 0 || string.IsNullOrWhiteSpace(cancelReason))
+            {
+                TempData["ErrorMessage"] = "A reason is required to cancel an order item.";
+                return RedirectToAction(nameof(Orders));
+            }
+
+            await _repository.CancelStockOrderItem(stockOrderItemId, cancelReason.Trim());
+            TempData["SuccessMessage"] = "Order item cancelled.";
+            return RedirectToAction(nameof(Orders));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CancelOrder(int stockOrderId, string? cancelReason)
+        {
+            if (stockOrderId <= 0 || string.IsNullOrWhiteSpace(cancelReason))
+            {
+                TempData["ErrorMessage"] = "A reason is required to cancel an order.";
+                return RedirectToAction(nameof(Orders));
+            }
+
+            await _repository.CancelStockOrder(stockOrderId, cancelReason.Trim());
+            TempData["SuccessMessage"] = "Order cancelled.";
+            return RedirectToAction(nameof(Orders));
+        }
 
         // ==================== SAMPLE TYPES ====================
 
@@ -204,11 +361,14 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 
             var sampleTypes = await _repository.GetSampleTypes();
 
+            var consumables = await _repository.GetConsumables("Active");
+
             ViewBag.Filter = filter;
             ViewBag.Search = search;
 
             ViewBag.Categories = categories;
             ViewBag.SampleTypes = sampleTypes;
+            ViewBag.Consumables = consumables;
 
             return View(testTypes);
         }
@@ -217,16 +377,50 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
         // ==================== CREATE TEST TYPE ====================
 
         [HttpPost]
-        public async Task<IActionResult> CreateTestType(TestType testType)
+        public async Task<IActionResult> CreateTestType(
+            [Bind("TestCategoryId,TestName,SampleTypeId,UnitOfMeasurement,NormalRangeMin,NormalRangeMax,TurnaroundTimeMinutes")] TestType testType,
+            List<TestTypeConsumable> requirements)
         {
-            if (!ModelState.IsValid)
+            var validRequirements = requirements?.Where(r => r.ConsumableId > 0 && r.QuantityRequired > 0).ToList()
+                ?? new List<TestTypeConsumable>();
+            if (!validRequirements.Any())
             {
+                TempData["Error"] = "Select a consumable and enter a quantity greater than zero.";
                 return RedirectToAction(
                     nameof(TestTypes),
                     new { filter = "Active" });
             }
 
-            await _repository.CreateTestType(testType);
+            if (!ModelState.IsValid)
+            {
+                var errors = ModelState.Values
+                    .SelectMany(value => value.Errors)
+                    .Select(error => error.ErrorMessage)
+                    .Where(message => !string.IsNullOrWhiteSpace(message));
+
+                TempData["Error"] = errors.Any()
+                    ? string.Join(" ", errors)
+                    : "Enter valid test type details.";
+                return RedirectToAction(nameof(TestTypes), new { filter = "Active" });
+            }
+
+            foreach (var requirement in validRequirements)
+            {
+                var consumable = await _repository.GetConsumableById(requirement.ConsumableId);
+                if (consumable == null || !consumable.IsActive)
+                {
+                    TempData["Error"] = "One or more selected consumables are not available.";
+                    return RedirectToAction(nameof(TestTypes), new { filter = "Active" });
+                }
+            }
+
+            var testTypeId = await _repository.CreateTestType(
+                testType.TestCategoryId, testType.TestName, testType.SampleTypeId,
+                testType.UnitOfMeasurement, testType.NormalRangeMin, testType.NormalRangeMax,
+                testType.TurnaroundTimeMinutes, validRequirements[0].ConsumableId, validRequirements[0].QuantityRequired);
+            foreach (var requirement in validRequirements.Skip(1))
+                await _repository.CreateTestTypeConsumable(testTypeId, requirement.ConsumableId, requirement.QuantityRequired);
+            TempData["Success"] = "Test type created and consumable stock allocated.";
 
             return RedirectToAction(
                 nameof(TestTypes),
@@ -253,7 +447,9 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
         // ==================== UPDATE TEST TYPE ====================
 
         [HttpPost]
-        public async Task<IActionResult> EditTestType(TestType testType)
+        public async Task<IActionResult> EditTestType(
+            [Bind("TestTypeId,TestCategoryId,TestName,SampleTypeId,UnitOfMeasurement,NormalRangeMin,NormalRangeMax,TurnaroundTimeMinutes")] TestType testType,
+            List<TestTypeConsumable> requirements)
         {
             if (!ModelState.IsValid)
             {
@@ -262,11 +458,50 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
                     new { filter = "Active" });
             }
 
-            await _repository.UpdateTestType(testType);
+            var validRequirements = requirements?.Where(r => r.ConsumableId > 0 && r.QuantityRequired > 0).ToList()
+                ?? new List<TestTypeConsumable>();
+            if (!validRequirements.Any())
+            {
+                TempData["Error"] = "Select a consumable and enter a quantity greater than zero.";
+                return RedirectToAction(nameof(TestTypes), new { filter = "Active" });
+            }
 
-            return RedirectToAction(
-                nameof(TestTypes),
-                new { filter = "Active" });
+            var existingTestType = await _repository.GetTestTypeById(testType.TestTypeId);
+            if (existingTestType == null)
+            {
+                TempData["Error"] = "The test type no longer exists.";
+                return RedirectToAction(nameof(TestTypes), new { filter = "Active" });
+            }
+
+            foreach (var requirement in validRequirements)
+            {
+                var consumable = await _repository.GetConsumableById(requirement.ConsumableId);
+                if (consumable == null || !consumable.IsActive)
+                {
+                    TempData["Error"] = "One or more selected consumables are not available.";
+                    return RedirectToAction(nameof(TestTypes), new { filter = "Active" });
+                }
+            }
+
+            await _repository.UpdateTestType(
+                testType.TestTypeId, testType.TestCategoryId, testType.TestName,
+                testType.SampleTypeId, testType.UnitOfMeasurement, testType.NormalRangeMin,
+                testType.NormalRangeMax, testType.TurnaroundTimeMinutes);
+
+            var existingIds = existingTestType.TestTypeConsumable.Select(r => r.TestTypeConsumableId).ToHashSet();
+            var submittedIds = validRequirements.Where(r => r.TestTypeConsumableId > 0).Select(r => r.TestTypeConsumableId).ToHashSet();
+            foreach (var requirement in validRequirements)
+            {
+                if (requirement.TestTypeConsumableId > 0 && existingIds.Contains(requirement.TestTypeConsumableId))
+                    await _repository.UpdateTestTypeConsumable(requirement.TestTypeConsumableId, testType.TestTypeId, requirement.ConsumableId, requirement.QuantityRequired);
+                else
+                    await _repository.CreateTestTypeConsumable(testType.TestTypeId, requirement.ConsumableId, requirement.QuantityRequired);
+            }
+            foreach (var removedId in existingIds.Except(submittedIds))
+                await _repository.DeleteTestTypeConsumable(removedId, testType.TestTypeId);
+            TempData["Success"] = "Test type and its consumable requirement updated.";
+
+            return RedirectToAction(nameof(TestTypes), new { filter = "Active" });
         }
 
 
@@ -640,7 +875,7 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 
             return RedirectToAction(nameof(Doctors), new { filter });
         }
-        
+
 
         // ==================== REACTIVATE DOCTOR ====================
         [HttpPost]
@@ -657,16 +892,28 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
         [HttpGet]
         public async Task<IActionResult> Technicians(string filter = "Active")
         {
-            var technicians = await _repository.GetTechnicians(filter);
+            var technicians = (await _repository.GetTechnicians(filter)).ToList();
+            var testTypes = (await _repository.GetTestTypes("Active")).ToList();
+            var assignmentTasks = technicians.Select(async technician => new
+            {
+                technician.LabTechnicianId,
+                TestTypeIds = (await _repository.GetTechnicianTestTypes(technician.LabTechnicianId))
+                    .Select(assignment => assignment.TestTypeId)
+                    .ToHashSet()
+            });
+            var assignments = (await Task.WhenAll(assignmentTasks))
+                .ToDictionary(item => item.LabTechnicianId, item => item.TestTypeIds);
 
             ViewBag.Filter = filter;
+            ViewBag.TestTypes = testTypes;
+            ViewBag.TechnicianTestTypes = assignments;
 
             return View(technicians);
         }
 
         // ==================== CREATE TECHNICIAN ====================
         [HttpPost]
-        public async Task<IActionResult> CreateTechnician(LabTechnician technician)
+        public async Task<IActionResult> CreateTechnician(LabTechnician technician, int[] testTypeIds)
         {
             if (!ModelState.IsValid)
             {
@@ -691,7 +938,21 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
                 return RedirectToAction(nameof(Technicians));
             }
 
-            await _repository.CreateTechnician(technician);
+            var selectedIds = (testTypeIds ?? Array.Empty<int>()).Where(id => id > 0).Distinct().ToArray();
+            var activeIds = (await _repository.GetTestTypes("Active"))
+                .Select(testType => testType.TestTypeId)
+                .ToHashSet();
+            if (selectedIds.Any(id => !activeIds.Contains(id)))
+            {
+                TempData["Error"] = "One or more selected test types are not active.";
+                return RedirectToAction(nameof(Technicians));
+            }
+
+            var technicianId = await _repository.CreateTechnician(technician);
+            if (selectedIds.Any())
+                await _repository.ReplaceTechnicianTestTypes(technicianId, selectedIds);
+
+            TempData["Success"] = "Technician created and test-type assignments saved.";
 
             return RedirectToAction(nameof(Technicians));
         }
@@ -753,6 +1014,31 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
                 nameof(Technicians),
                 new { filter }
             );
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> UpdateTechnicianTestTypes(int technicianId, int[] testTypeIds, string filter = "Active")
+        {
+            var technician = await _repository.GetTechnicianById(technicianId);
+            if (technician?.User?.IsActive != true)
+            {
+                TempData["Error"] = "Only active technicians can be assigned test types.";
+                return RedirectToAction(nameof(Technicians), new { filter });
+            }
+
+            var selectedIds = (testTypeIds ?? Array.Empty<int>()).Where(id => id > 0).Distinct().ToArray();
+            var activeIds = (await _repository.GetTestTypes("Active"))
+                .Select(testType => testType.TestTypeId)
+                .ToHashSet();
+            if (selectedIds.Any(id => !activeIds.Contains(id)))
+            {
+                TempData["Error"] = "One or more selected test types are not active.";
+                return RedirectToAction(nameof(Technicians), new { filter });
+            }
+
+            await _repository.ReplaceTechnicianTestTypes(technicianId, selectedIds);
+            TempData["Success"] = "Technician test-type assignments updated.";
+            return RedirectToAction(nameof(Technicians), new { filter });
         }
         //================================================================================================================
 

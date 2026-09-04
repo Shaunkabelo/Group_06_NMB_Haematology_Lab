@@ -14,6 +14,10 @@ var consumables =
         ViewBag.Suppliers as IEnumerable<Group_06_NMB_Haematology_Diagnostic_Lab.Data.Models.Supplier>
         ?? Enumerable.Empty<Group_06_NMB_Haematology_Diagnostic_Lab.Data.Models.Supplier>();
 
+    var lowStockConsumables =
+        ViewBag.LowStockConsumables as IEnumerable<Group_06_NMB_Haematology_Diagnostic_Lab.Data.Models.Consumable>
+        ?? Enumerable.Empty<Group_06_NMB_Haematology_Diagnostic_Lab.Data.Models.Consumable>();
+
     var currentFilter = ViewBag.Filter as string ?? "All";
 
 
@@ -21,7 +25,6 @@ var consumables =
 
 <div class="container-fluid px-4 py-4">
 
-    ```
     <!-- ========================================================= -->
     <!-- PAGE HEADER -->
     <!-- ========================================================= -->
@@ -93,8 +96,7 @@ var consumables =
         var completeOrders = orderList.Count(o =>
         string.Equals(o.Status, "Complete", StringComparison.OrdinalIgnoreCase));
 
-        var lowStockCount = consumables.Count(c =>
-        c.QuantityOnHand <= c.ReorderLevel);
+        var lowStockCount = lowStockConsumables.Count();
     }
 
     <div class="row g-3 mb-4">
@@ -404,8 +406,7 @@ var consumables =
 
                         @{
                             var lowStockItems =
-                            consumables
-                            .Where(c => c.QuantityOnHand <= c.ReorderLevel)
+                            lowStockConsumables
                             .OrderBy(c => c.QuantityOnHand)
                             .ToList();
                         }
@@ -473,8 +474,6 @@ var consumables =
         </div>
 
     </div>
-    ```
-
 </div>
 
 <!-- ============================================================= -->
@@ -487,7 +486,6 @@ var consumables =
      aria-labelledby="createOrderModalLabel"
      aria-hidden="true">
 
-    ```
     <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
 
         <div class="modal-content">
@@ -778,8 +776,6 @@ var consumables =
         </div>
 
     </div>
-    ```
-
 </div>
 
 <!-- ============================================================= -->
@@ -791,7 +787,6 @@ var consumables =
      id="orderDetailsCanvas"
      style="width: 650px;">
 
-    ```
     <div class="offcanvas-header border-bottom">
 
         <div>
@@ -916,8 +911,6 @@ var consumables =
         </div>
 
     </div>
-    ```
-
 </div>
 
 <!-- ============================================================= -->
@@ -929,7 +922,6 @@ var consumables =
      tabindex="-1"
      aria-hidden="true">
 
-    ```
     <div class="modal-dialog modal-dialog-centered">
 
         <div class="modal-content">
@@ -1007,8 +999,6 @@ var consumables =
         </div>
 
     </div>
-    ```
-
 </div>
 
 @section Scripts {
@@ -1384,13 +1374,13 @@ var consumables =
                 // Status badge
                 const statusEl = document.getElementById("detailsStatus");
                 const status = (order.status ?? "").toString();
-                const statusClass = (status.toLowerCase()) switch {
-                    "ordered" => "bg-warning text-dark",
-                    "partially complete" => "bg-info text-dark",
-                    "complete" => "bg-success",
-                    "cancelled" => "bg-danger",
-                    _ => "bg-secondary"
+                const statusClasses = {
+                    "ordered": "bg-warning text-dark",
+                    "partially complete": "bg-info text-dark",
+                    "complete": "bg-success",
+                    "cancelled": "bg-danger"
                 };
+                const statusClass = statusClasses[status.toLowerCase()] ?? "bg-secondary";
                 statusEl.innerHTML = `<span class="badge ${statusClass}">${status}</span>`;
 
                 // Items table
@@ -1407,15 +1397,19 @@ var consumables =
                         const itemStatus = item.status ?? "";
 
                         // Actions: receive/cancel buttons (postback forms will route to controller actions)
+                        const antiForgeryToken = document.querySelector('input[name="__RequestVerificationToken"]').value;
                         const receiveBtn = itemStatus.toLowerCase() === "ordered"
                             ? `<form method="post" action="/LabManager/ReceiveOrderItem" class="d-inline ms-1">
+                                    <input type="hidden" name="__RequestVerificationToken" value="${antiForgeryToken}" />
                                     <input type="hidden" name="stockOrderItemId" value="${item.stockOrderItemId ?? item.stockOrderItemID ?? item.stockOrderItemId}" />
                                     <input type="hidden" name="stockOrderId" value="${order.stockOrderId ?? order.stockOrderID ?? ''}" />
                                     <button type="submit" class="btn btn-sm btn-outline-success">Receive</button>
                                </form>`
                             : "";
 
-                        const cancelBtn = `<button type="button" class="btn btn-sm btn-outline-danger ms-1" onclick="showCancelItemModal(${item.stockOrderItemId ?? item.stockOrderItemID ?? item.stockOrderItemId}, ${order.stockOrderId ?? order.stockOrderID ?? ''})">Cancel</button>`;
+                        const cancelBtn = itemStatus.toLowerCase() === "ordered"
+                            ? `<button type="button" class="btn btn-sm btn-outline-danger ms-1" onclick="showCancelItemModal(${item.stockOrderItemId ?? item.stockOrderItemID ?? item.stockOrderItemId}, ${order.stockOrderId ?? order.stockOrderID ?? ''})">Cancel</button>`
+                            : "";
 
                         const tr = document.createElement("tr");
                         tr.innerHTML = `
@@ -1430,9 +1424,13 @@ var consumables =
                     }
                 }
 
-                // Set cancel modal hidden inputs for cancel entire order
+                // Configure cancellation of the complete order.
                 const cancelStockOrderId = document.getElementById("cancelStockOrderId");
                 if (cancelStockOrderId) cancelStockOrderId.value = order.stockOrderId ?? order.stockOrderID ?? "";
+                const cancelOrderButton = document.getElementById("cancelOrderButton");
+                const canCancelOrder = status.toLowerCase() === "ordered" || status.toLowerCase() === "partially complete";
+                cancelOrderButton.classList.toggle("d-none", !canCancelOrder);
+                cancelOrderButton.onclick = () => showCancelOrderModal(order.stockOrderId ?? order.stockOrderID ?? "");
 
                 loading.classList.add("d-none");
                 content.classList.remove("d-none");
@@ -1454,6 +1452,15 @@ var consumables =
             if (form) form.action = "/LabManager/CancelOrderItem";
             const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById("cancelReasonModal"));
             modal.show();
+        }
+
+        function showCancelOrderModal(stockOrderId) {
+            document.getElementById("cancelStockOrderItemId").value = "";
+            document.getElementById("cancelStockOrderId").value = stockOrderId;
+            document.getElementById("cancelReason").value = "";
+            const form = document.getElementById("cancelReasonForm");
+            if (form) form.action = "/LabManager/CancelOrder";
+            bootstrap.Modal.getOrCreateInstance(document.getElementById("cancelReasonModal")).show();
         }
     </script>
 

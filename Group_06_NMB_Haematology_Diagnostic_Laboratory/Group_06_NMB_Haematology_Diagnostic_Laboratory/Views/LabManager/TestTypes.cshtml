@@ -1,12 +1,24 @@
-﻿
-@using Group_06_NMB_Haematology_Diagnostic_Lab.Data.Models
+﻿@using Group_06_NMB_Haematology_Diagnostic_Lab.Data.Models
 @model IEnumerable<TestType>
 
 @{
     Layout = "~/Views/Shared/_LabManager_Layout.cshtml";
+
+    var consumables = ViewBag.Consumables as IEnumerable<Consumable>
+        ?? Enumerable.Empty<Consumable>();
 }
 
 <div class="page-body">
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success">@TempData["Success"]</div>
+    }
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger">@TempData["Error"]</div>
+    }
 
     <!-- ========================================================= -->
     <!-- PAGE HEADER -->
@@ -122,6 +134,8 @@
                     <th>Unit</th>
                     <th>Normal Range</th>
                     <th>Turnaround</th>
+                    <th>Consumable(s)</th>
+                    <th>Qty / Test</th>
                     <th>Status</th>
                     <th>Actions</th>
 
@@ -163,6 +177,34 @@
                         </td>
 
                         <td>
+                            @if (testType.TestTypeConsumable.Any())
+                            {
+                                foreach (var requirement in testType.TestTypeConsumable)
+                                {
+                                    <div>@(requirement.Consumable?.Name ?? "Unknown")</div>
+                                }
+                            }
+                            else
+                            {
+                                <span class="text-muted">None</span>
+                            }
+                        </td>
+
+                        <td>
+                            @if (testType.TestTypeConsumable.Any())
+                            {
+                                foreach (var requirement in testType.TestTypeConsumable)
+                                {
+                                    <div>@requirement.QuantityRequired</div>
+                                }
+                            }
+                            else
+                            {
+                                <span class="text-muted">-</span>
+                            }
+                        </td>
+
+                        <td>
 
                             @(testType.IsActive ? "Active" : "Inactive")
 
@@ -187,7 +229,11 @@
                                     data-unit="@testType.UnitOfMeasurement"
                                     data-min="@testType.NormalRangeMin"
                                     data-max="@testType.NormalRangeMax"
-                                    data-turnaround="@testType.TurnaroundTimeMinutes">
+                                    data-turnaround="@testType.TurnaroundTimeMinutes"
+                                    data-requirement-id="@testType.TestTypeConsumable.FirstOrDefault()?.TestTypeConsumableId"
+                                    data-consumable-id="@testType.TestTypeConsumable.FirstOrDefault()?.ConsumableId"
+                                    data-quantity-required="@testType.TestTypeConsumable.FirstOrDefault()?.QuantityRequired"
+                                    data-requirements="@string.Join(";", testType.TestTypeConsumable.Select(requirement => $"{requirement.TestTypeConsumableId},{requirement.ConsumableId},{requirement.QuantityRequired}"))">
 
                                 Edit
 
@@ -417,8 +463,8 @@
                     </label>
 
                     <input id="NormalRangeMin"
-                           type="number"
-                           step="0.0001"
+                           type="text"
+                           inputmode="decimal"
                            class="form-control"
                            name="NormalRangeMin" />
 
@@ -432,8 +478,8 @@
                     </label>
 
                     <input id="NormalRangeMax"
-                           type="number"
-                           step="0.0001"
+                           type="text"
+                           inputmode="decimal"
                            class="form-control"
                            name="NormalRangeMax" />
 
@@ -459,6 +505,25 @@
                        name="TurnaroundTimeMinutes"
                        value="60"
                        required />
+
+            </div>
+
+
+            <!-- ================================================= -->
+            <!-- CONSUMABLE REQUIREMENT -->
+            <!-- ================================================= -->
+
+            <div id="consumableRequirementSection" class="form-group border-top pt-4 mt-4">
+
+                <h6 class="mb-1">Consumable Requirement</h6>
+                <small class="text-muted d-block mb-3">
+                    Select the consumable used by this test and the quantity required per test.
+                </small>
+
+                <div id="requirementRows"></div>
+                <button type="button" class="btn btn-outline-secondary btn-sm mt-3" onclick="addRequirementRow()">
+                    Add consumable
+                </button>
 
             </div>
 
@@ -515,8 +580,8 @@
         document.getElementById("testTypeForm").reset();
 
         document.getElementById("TestTypeId").value = "0";
-
         document.getElementById("TurnaroundTimeMinutes").value = "60";
+        resetRequirementRows([]);
     }
 
 
@@ -559,6 +624,56 @@
 
         document.getElementById("TurnaroundTimeMinutes").value =
             button.dataset.turnaround;
+
+        const requirements = (button.dataset.requirements || "")
+            .split(";")
+            .filter(value => value)
+            .map(value => {
+                const parts = value.split(",");
+                return { id: parts[0], consumableId: parts[1], quantity: parts[2] };
+            });
+        resetRequirementRows(requirements);
+    }
+
+    const consumableOptions = `
+        <option value="">Select consumable</option>
+        @foreach (var consumable in consumables)
+        {
+                <option value="@consumable.ConsumableId">@consumable.Name (Stock: @consumable.QuantityOnHand)</option>
+        }
+`;
+
+    function resetRequirementRows(requirements) {
+        document.getElementById("requirementRows").innerHTML = "";
+        (requirements.length ? requirements : [{}]).forEach(requirement => addRequirementRow(requirement));
+    }
+
+    function addRequirementRow(requirement = {}) {
+        const container = document.getElementById("requirementRows");
+        const index = container.children.length;
+        const row = document.createElement("div");
+        row.className = "border rounded p-3 mb-3";
+        row.innerHTML = `
+            <input type="hidden" name="requirements[${index}].TestTypeConsumableId" value="${requirement.id || 0}" />
+            <div class="d-flex justify-content-between align-items-center mb-2"><strong>Consumable requirement</strong>
+                <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeRequirementRow(this)">Remove</button></div>
+            <label class="form-label">Consumable</label>
+            <select name="requirements[${index}].ConsumableId" class="form-control" required>${consumableOptions}</select>
+            <label class="form-label mt-3">Quantity Required per Test</label>
+            <input name="requirements[${index}].QuantityRequired" type="number" min="1" value="${requirement.quantity || 1}" class="form-control" required />`;
+        container.appendChild(row);
+        row.querySelector("select").value = requirement.consumableId || "";
+    }
+
+    function removeRequirementRow(button) {
+        const container = document.getElementById("requirementRows");
+        if (container.children.length === 1) return;
+        button.closest(".border").remove();
+        [...container.children].forEach((row, index) => {
+            row.querySelectorAll("[name]").forEach(input => {
+                input.name = input.name.replace(/requirements\[\d+\]/, `requirements[${index}]`);
+            });
+        });
     }
 
 
