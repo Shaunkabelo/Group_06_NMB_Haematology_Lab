@@ -1411,16 +1411,33 @@ var consumables =
                             ? `<button type="button" class="btn btn-sm btn-outline-danger ms-1" onclick="showCancelItemModal(${item.stockOrderItemId ?? item.stockOrderItemID ?? item.stockOrderItemId}, ${order.stockOrderId ?? order.stockOrderID ?? ''})">Cancel</button>`
                             : "";
 
-                        const tr = document.createElement("tr");
-                        tr.innerHTML = `
-                            <td><strong>${consumableName}</strong></td>
-                            <td>${qty}</td>
-                            <td><span class="badge">${itemStatus}</span></td>
-                            <td class="text-end">
-                                ${receiveBtn}
-                                ${cancelBtn}
-                            </td>`;
-                        body.appendChild(tr);
+                                const itemStatusClasses = {
+            "ordered": "bg-warning text-dark",
+            "partially complete": "bg-info text-dark",
+            "complete": "bg-success",
+            "cancelled": "bg-danger"
+        };
+
+        const itemStatusClass =
+            itemStatusClasses[itemStatus.toLowerCase()] ?? "bg-secondary";
+
+        const tr = document.createElement("tr");
+
+        tr.innerHTML = `
+            <td><strong>${consumableName}</strong></td>
+            <td>${qty}</td>
+            <td>
+                <span class="badge ${itemStatusClass}">
+                    ${itemStatus}
+                </span>
+            </td>
+            <td class="text-end">
+                ${receiveBtn}
+                ${cancelBtn}
+            </td>`;
+
+        body.appendChild(tr);
+                        
                     }
                 }
 
