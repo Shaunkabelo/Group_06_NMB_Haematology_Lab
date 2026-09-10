@@ -7,47 +7,95 @@
 <div class="page-body">
     <div class="section-header">
         <div class="section-title">Doctor Profile</div>
-        <div class="section-sub">View your personal information and manage your password.</div>
+        <div class="section-sub">Manage your profile, security settings, and notification preferences.</div>
     </div>
 
     <section class="card account-panel profile-panel">
         <div class="card-header">
-            <span class="card-title">Personal Information</span>
+            <span class="card-title">Personal information</span>
         </div>
         <div class="card-body">
             <div class="profile-summary">
-                <div class="profile-avatar" aria-hidden="true">DR</div>
+                <div class="profile-avatar" id="doctor-profile-avatar" aria-hidden="true">DR</div>
                 <div>
                     <h2 id="doctor-profile-name">Dr. Odwa Sithonga</h2>
                     <p id="doctor-profile-role">Doctor</p>
                 </div>
             </div>
 
-            <div class="profile-info-grid">
-                <div class="profile-info-item">
-                    <span>Full Name</span>
-                    <strong id="doctor-info-name">Dr. Odwa Sithonga</strong>
+            <form class="account-form" onsubmit="saveDoctorProfile(event)">
+                <div id="account-profile-message" class="auth-message" hidden></div>
+                <div class="profile-form-grid">
+                    <div class="form-group">
+                        <label class="form-label" for="doctor-account-name">Full name</label>
+                        <input class="form-control" id="doctor-account-name" type="text" autocomplete="name" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="doctor-account-email">Email address</label>
+                        <input class="form-control" id="doctor-account-email" type="email" autocomplete="email" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="doctor-account-phone">Contact number</label>
+                        <input class="form-control" id="doctor-account-phone" type="tel" autocomplete="tel" placeholder="e.g. 071 234 5678">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="doctor-account-department">Department</label>
+                        <input class="form-control" id="doctor-account-department" type="text" value="Haematology" readonly>
+                    </div>
                 </div>
-                <div class="profile-info-item">
-                    <span>E-mail Address</span>
-                    <strong id="doctor-info-email">doctor@nmbhlab.co.za</strong>
+                <div class="profile-readonly-grid">
+                    <div class="profile-info-item">
+                        <span>Role</span>
+                        <strong id="doctor-info-role">Doctor</strong>
+                    </div>
+                    <div class="profile-info-item">
+                        <span>Practice number</span>
+                        <strong>MP-HAEM-0427</strong>
+                    </div>
+                    <div class="profile-info-item">
+                        <span>Access level</span>
+                        <strong>Doctor subsystem only</strong>
+                    </div>
                 </div>
-                <div class="profile-info-item">
-                    <span>Role</span>
-                    <strong id="doctor-info-role">Doctor</strong>
+                <div class="btn-row">
+                    <button class="btn btn-primary" type="submit">Save profile</button>
+                    <button class="btn btn-secondary" type="reset" onclick="loadDoctorProfile()">Cancel</button>
                 </div>
-                <div class="profile-info-item">
-                    <span>Department</span>
-                    <strong>Haematology</strong>
-                </div>
-                <div class="profile-info-item">
-                    <span>Practice Number</span>
-                    <strong>MP-HAEM-0427</strong>
-                </div>
-                <div class="profile-info-item">
-                    <span>Access Level</span>
-                    <strong>Doctor subsystem only</strong>
-                </div>
+            </form>
+        </div>
+    </section>
+
+    <section class="card account-panel">
+        <div class="card-header">
+            <span class="card-title">Notification preferences</span>
+        </div>
+        <div class="card-body">
+            <div id="account-notification-message" class="auth-message" hidden></div>
+            <div class="preference-list">
+                <label class="preference-row">
+                    <span>
+                        <strong>Result notifications</strong>
+                        <small>Receive an alert when laboratory results are ready for review.</small>
+                    </span>
+                    <input id="preference-results" type="checkbox">
+                </label>
+                <label class="preference-row">
+                    <span>
+                        <strong>Urgent request notifications</strong>
+                        <small>Be notified when an urgent test request needs attention.</small>
+                    </span>
+                    <input id="preference-urgent" type="checkbox">
+                </label>
+                <label class="preference-row">
+                    <span>
+                        <strong>Weekly activity summary</strong>
+                        <small>Receive a weekly overview of requests, results, and alerts.</small>
+                    </span>
+                    <input id="preference-summary" type="checkbox">
+                </label>
+            </div>
+            <div class="btn-row">
+                <button class="btn btn-primary" type="button" onclick="saveDoctorPreferences()">Save preferences</button>
             </div>
         </div>
     </section>
@@ -91,7 +139,7 @@
                 </div>
 
                 <div class="btn-row">
-                    <button class="btn btn-primary" type="submit">Update Password</button>
+                    <button class="btn btn-primary" type="submit">Update password</button>
                     <button class="btn btn-secondary" type="reset" onclick="clearInlineMessage('account-password-message')">Clear</button>
                 </div>
             </form>
@@ -100,15 +148,89 @@
 </div>
 
 <script>
-    document.addEventListener('DOMContentLoaded', () => {
-        const name = sessionStorage.getItem('nmb_user_name') || 'Dr. Odwa Sithonga';
-        const email = sessionStorage.getItem('nmb_user_email') || 'doctor@nmbhlab.co.za';
-        const role = sessionStorage.getItem('nmb_user_role') || 'Doctor';
+    const doctorProfileStorageKey = 'doctorProfile';
+    const doctorPreferencesStorageKey = 'doctorPreferences';
 
-        document.getElementById('doctor-profile-name').innerText = name;
-        document.getElementById('doctor-profile-role').innerText = role;
-        document.getElementById('doctor-info-name').innerText = name;
-        document.getElementById('doctor-info-email').innerText = email;
-        document.getElementById('doctor-info-role').innerText = role;
+    function getDoctorProfile() {
+        const savedProfile = JSON.parse(sessionStorage.getItem(doctorProfileStorageKey) || 'null');
+        return savedProfile || {
+            name: sessionStorage.getItem('nmb_user_name') || 'Dr. Odwa Sithonga',
+            email: sessionStorage.getItem('nmb_user_email') || 'doctor@nmbhlab.co.za',
+            phone: sessionStorage.getItem('nmb_user_phone') || ''
+        };
+    }
+
+    function getDoctorInitials(name) {
+        return String(name || 'Doctor')
+            .replace(/^Dr\.\s*/i, '')
+            .split(/\s+/)
+            .filter(Boolean)
+            .slice(0, 2)
+            .map(part => part[0])
+            .join('')
+            .toUpperCase();
+    }
+
+    function showAccountMessage(elementId, message, type) {
+        const messageElement = document.getElementById(elementId);
+        messageElement.textContent = message;
+        messageElement.className = `auth-message ${type}`;
+        messageElement.hidden = false;
+    }
+
+    function loadDoctorProfile() {
+        const profile = getDoctorProfile();
+        document.getElementById('doctor-account-name').value = profile.name;
+        document.getElementById('doctor-account-email').value = profile.email;
+        document.getElementById('doctor-account-phone').value = profile.phone || '';
+        document.getElementById('doctor-profile-name').textContent = profile.name;
+        document.getElementById('doctor-profile-avatar').textContent = getDoctorInitials(profile.name);
+        document.getElementById('doctor-info-role').textContent = sessionStorage.getItem('nmb_user_role') || 'Doctor';
+    }
+
+    function saveDoctorProfile(event) {
+        event.preventDefault();
+        const profile = {
+            name: document.getElementById('doctor-account-name').value.trim(),
+            email: document.getElementById('doctor-account-email').value.trim(),
+            phone: document.getElementById('doctor-account-phone').value.trim()
+        };
+
+        sessionStorage.setItem(doctorProfileStorageKey, JSON.stringify(profile));
+        sessionStorage.setItem('nmb_user_name', profile.name);
+        sessionStorage.setItem('nmb_user_email', profile.email);
+        sessionStorage.setItem('nmb_user_phone', profile.phone);
+        loadDoctorProfile();
+        showAccountMessage('account-profile-message', 'Your profile has been saved.', 'success');
+    }
+
+    function loadDoctorPreferences() {
+        const preferences = JSON.parse(sessionStorage.getItem(doctorPreferencesStorageKey) || 'null') || {
+            results: true,
+            urgent: true,
+            summary: false
+        };
+
+        document.getElementById('preference-results').checked = preferences.results;
+        document.getElementById('preference-urgent').checked = preferences.urgent;
+        document.getElementById('preference-summary').checked = preferences.summary;
+    }
+
+    function saveDoctorPreferences() {
+        const preferences = {
+            results: document.getElementById('preference-results').checked,
+            urgent: document.getElementById('preference-urgent').checked,
+            summary: document.getElementById('preference-summary').checked
+        };
+
+        sessionStorage.setItem(doctorPreferencesStorageKey, JSON.stringify(preferences));
+        showAccountMessage('account-notification-message', 'Notification preferences have been saved.', 'success');
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const role = sessionStorage.getItem('nmb_user_role') || 'Doctor';
+        document.getElementById('doctor-profile-role').textContent = role;
+        loadDoctorProfile();
+        loadDoctorPreferences();
     });
 </script>

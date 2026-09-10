@@ -19,18 +19,37 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 		// LOGGED IN DOCTOR
 		// ============================================================
 
-		private int GetLoggedInDoctorId()
+		private async Task<int> GetLoggedInDoctorIdAsync()
 		{
-			var claim = User.FindFirst(
-				System.Security.Claims.ClaimTypes.NameIdentifier);
+			var userIdClaim =
+				User.FindFirst(
+					System.Security.Claims.ClaimTypes.NameIdentifier);
 
-			if (claim == null)
+			if (userIdClaim == null)
 			{
 				throw new Exception(
-					"Doctor is not logged in.");
+					"User login information was not found.");
 			}
 
-			return int.Parse(claim.Value);
+			if (!int.TryParse(
+				userIdClaim.Value,
+				out int userId))
+			{
+				throw new Exception(
+					"Invalid logged-in User ID.");
+			}
+
+			var doctor =
+				await _doctorRepository
+					.GetDoctorByUserIdAsync(userId);
+
+			if (doctor == null)
+			{
+				throw new Exception(
+					"Doctor record was not found for this user.");
+			}
+
+			return doctor.DoctorId;
 		}
 
 
@@ -71,7 +90,7 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 
 		public IActionResult Account()
 		{
-			return View();
+			return View("Accounts");
 		}
 
 		public IActionResult CreateRequest()
@@ -833,7 +852,7 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 				// ----------------------------------------------------
 
 				int doctorId =
-					GetLoggedInDoctorId();
+	             await GetLoggedInDoctorIdAsync();
 
 
 				// ----------------------------------------------------
@@ -841,14 +860,14 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 				// ----------------------------------------------------
 
 				int testRequestId =
-					await _doctorRepository
-						.CreateTestRequestAsync(
-							model.PatientId,
-							doctorId,
-							DateTime.Now,
-							model.Urgency,
-							model.ClinicalNotes,
-							model.Tests);
+					await _doctorRepository.CreateTestRequestAsync(
+						model.PatientId,
+						doctorId,
+						DateTime.Now,
+						model.Urgency,
+						model.ClinicalNotes,
+						model.Tests
+					);
 
 
 				return Ok(new

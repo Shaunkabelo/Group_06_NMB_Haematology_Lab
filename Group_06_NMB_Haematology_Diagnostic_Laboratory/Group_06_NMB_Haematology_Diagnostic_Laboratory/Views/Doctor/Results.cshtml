@@ -25,50 +25,159 @@
 </div>
 
 <div class="modal-overlay" id="modal-release">
-    <div class="modal modal-md">
+    <div class="modal modal-md release-modal" role="dialog" aria-modal="true" aria-labelledby="release-modal-title" aria-describedby="release-modal-description">
         <div class="modal-header">
-            <span class="modal-title">Release Results to Patient</span>
-            <button class="modal-close" onclick="closeModal('modal-release')">×</button>
+            <div>
+                <span class="modal-title" id="release-modal-title">Release results to patient</span>
+                <span class="modal-subtitle">Choose what the patient should receive with the report.</span>
+            </div>
+            <button class="modal-close" type="button" aria-label="Close release results dialog" onclick="closeModal('modal-release')">×</button>
         </div>
         <div class="modal-body">
-            <p style="margin-bottom: 14px; color: #4A5563;">Add a note for the patient regarding these results:</p>
+            <p class="release-description" id="release-modal-description">The patient will be notified by email when the results are released. Select an appropriate message for the patient.</p>
+            <fieldset class="release-options">
+                <legend class="form-label">Patient message</legend>
+                <label class="release-option" for="release-option-1">
+                    <input type="radio" name="release-option" id="release-option-1" value="normal" checked />
+                    <span>
+                        <strong>Results are ready to view</strong>
+                        <small>The patient can review the results online.</small>
+                    </span>
+                </label>
+                <label class="release-option" for="release-option-2">
+                    <input type="radio" name="release-option" id="release-option-2" value="appointment" />
+                    <span>
+                        <strong>Request an appointment</strong>
+                        <small>The patient should arrange an appointment to discuss the results.</small>
+                    </span>
+                </label>
+            </fieldset>
             <div class="form-group">
-                <label class="form-label"><input type="radio" name="release-option" id="release-option-1" value="normal" checked /> Results are normal - patient can view online</label>
-            </div>
-            <div class="form-group">
-                <label class="form-label"><input type="radio" name="release-option" id="release-option-2" value="appointment" /> Request appointment to discuss results</label>
-            </div>
-            <div class="form-group">
-                <textarea id="release-note" class="form-control" rows="4" placeholder="Or enter custom note..."></textarea>
+                <label class="form-label" for="release-note">Additional message <span class="form-label-hint">Optional</span></label>
+                <textarea id="release-note" class="form-control" rows="4" placeholder="Add any instructions or context for the patient..."></textarea>
             </div>
         </div>
         <div class="modal-footer">
             <button class="btn btn-secondary" type="button" onclick="closeModal('modal-release')">Cancel</button>
-            <button class="btn btn-primary" type="button" onclick="submitReleaseResult()">Release & Email Patient</button>
+            <button class="btn btn-primary" type="button" onclick="submitReleaseResult()">Send &amp; email patient</button>
         </div>
     </div>
 </div>
 
 <div class="modal-overlay" id="modal-email">
-    <div class="modal modal-md">
+    <div class="modal modal-md release-modal" role="dialog" aria-modal="true" aria-labelledby="email-modal-title" aria-describedby="email-modal-description">
         <div class="modal-header">
-            <span class="modal-title">Email Results to Patient</span>
-            <button class="modal-close" onclick="closeModal('modal-email')">×</button>
+            <div>
+                <span class="modal-title" id="email-modal-title">Email results to patient</span>
+                <span class="modal-subtitle">Send the report securely with a short message.</span>
+            </div>
+            <button class="modal-close" type="button" aria-label="Close email results dialog" onclick="closeModal('modal-email')">×</button>
         </div>
         <div class="modal-body">
-            <p style="margin-bottom: 14px; color: #4A5563;">Compose a message to send with the PDF report:</p>
+            <p class="release-description" id="email-modal-description">The patient will receive an email with the PDF report attached. Review the message before sending.</p>
             <div class="form-group">
+                <label class="form-label" for="email-message">Email message</label>
                 <textarea id="email-message" class="form-control" rows="6" placeholder="Dear patient, please find your test results attached..."></textarea>
+                <small class="form-hint">Do not include sensitive information that is not part of the report.</small>
             </div>
         </div>
         <div class="modal-footer">
             <button class="btn btn-secondary" type="button" onclick="closeModal('modal-email')">Cancel</button>
-            <button class="btn btn-primary" type="button" onclick="submitEmailResult()">Send Email with PDF</button>
+            <button class="btn btn-primary" type="button" onclick="submitEmailResult()">Send email with PDF</button>
         </div>
     </div>
 </div>
 
 <style>
+    .modal-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 1000;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        background: rgba(11, 25, 41, 0.58);
+    }
+
+    .modal-overlay.is-open {
+        display: flex;
+    }
+
+    .modal-subtitle {
+        display: block;
+        margin-top: 4px;
+        color: #7A8CA0;
+        font-size: 12px;
+        line-height: 1.4;
+    }
+
+    .release-description {
+        margin: 0 0 18px;
+        color: #4A5563;
+        font-size: 13px;
+        line-height: 1.55;
+    }
+
+    .release-options {
+        display: grid;
+        gap: 10px;
+        margin: 0 0 18px;
+        padding: 0;
+        border: 0;
+    }
+
+    .release-options legend {
+        width: 100%;
+        margin-bottom: 8px;
+    }
+
+    .release-option {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        padding: 12px 14px;
+        border: 1px solid #E3E8F0;
+        border-radius: 8px;
+        background: #FFFFFF;
+        cursor: pointer;
+        transition: border-color 0.2s ease, background 0.2s ease;
+    }
+
+    .release-option:hover,
+    .release-option:has(input:checked) {
+        border-color: #00A98D;
+        background: #F2FCFA;
+    }
+
+    .release-option input {
+        margin-top: 3px;
+        accent-color: #00A98D;
+    }
+
+    .release-option strong,
+    .release-option small {
+        display: block;
+    }
+
+    .release-option strong {
+        color: #1A2A3A;
+        font-size: 13px;
+    }
+
+    .release-option small {
+        margin-top: 3px;
+        color: #7A8CA0;
+        font-size: 12px;
+        line-height: 1.4;
+    }
+
+    .form-label-hint {
+        color: #7A8CA0;
+        font-size: 11px;
+        font-weight: 400;
+    }
+
     .result-card {
         background: #FFFFFF;
         border-radius: 12px;
@@ -238,6 +347,22 @@
     const requestsStorageKey = 'doctorRequests';
     const expandedResultCards = new Set();
     let currentActionRequestId = null;
+
+    function openModal(modalId) {
+        document.getElementById(modalId)?.classList.add('is-open');
+    }
+
+    function closeModal(modalId) {
+        document.getElementById(modalId)?.classList.remove('is-open');
+    }
+
+    document.querySelectorAll('.modal-overlay').forEach(modal => {
+        modal.addEventListener('click', event => {
+            if (event.target === modal) {
+                modal.classList.remove('is-open');
+            }
+        });
+    });
 
     const lookupTests = {
         'Full Blood Count': {

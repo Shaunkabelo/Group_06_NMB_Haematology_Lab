@@ -99,6 +99,7 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
 		//Task<IEnumerable<TestCategory>>GetTestCategoriesAsync();
 
 		Task<IEnumerable<TestTypeDto>>GetTestsByCategoryAsync(int testCategoryId);
+		Task<Doctor?> GetDoctorByUserIdAsync(int userId);
 
 		//Task<bool> AddAsync(Doctor doctor);
 		//Task<bool> UpdateAsync(Doctor doctor);

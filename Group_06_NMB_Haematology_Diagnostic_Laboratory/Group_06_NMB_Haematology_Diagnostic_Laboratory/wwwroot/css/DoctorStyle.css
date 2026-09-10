@@ -1604,6 +1604,65 @@ td {
     gap: 12px;
 }
 
+.profile-form-grid,
+.profile-readonly-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    margin-bottom: 14px;
+}
+
+.profile-readonly-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.preference-list {
+    display: grid;
+    gap: 10px;
+    margin-bottom: 16px;
+}
+
+.preference-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 13px 14px;
+    border: 1px solid #E3E8F0;
+    border-radius: 8px;
+    background: #FCFCFD;
+    cursor: pointer;
+}
+
+.preference-row:hover {
+    border-color: #B7DED7;
+    background: #F7FCFB;
+}
+
+.preference-row strong,
+.preference-row small {
+    display: block;
+}
+
+.preference-row strong {
+    color: #1A2A3A;
+    font-size: 13px;
+}
+
+.preference-row small {
+    margin-top: 4px;
+    color: #7A8CA0;
+    font-size: 12px;
+    line-height: 1.4;
+}
+
+.preference-row input {
+    width: 18px;
+    height: 18px;
+    flex: 0 0 auto;
+    accent-color: #00A98D;
+}
+
 .profile-info-item {
     border: 1px solid #E3E8F0;
     border-radius: 8px;

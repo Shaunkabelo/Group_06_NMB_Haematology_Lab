@@ -22,6 +22,21 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
 		{
 			_db = db;
 		}
+		//================================
+		// Doctorp
+		//================================
+		public async Task<Doctor?> GetDoctorByUserIdAsync(int userId)
+		{
+			var result =
+				await _db.GetData<Doctor, dynamic>(
+					"dbo.spDoctor_GetByUserId",
+					new
+					{
+						UserID = userId
+					});
+
+			return result.FirstOrDefault();
+		}
 		public async Task<IEnumerable<TestTypeDto>>
 	GetTestsByCategoryAsync(
 		int testCategoryId)
