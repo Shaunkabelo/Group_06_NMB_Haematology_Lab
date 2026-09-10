@@ -22,7 +22,19 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
 		{
 			_db = db;
 		}
-
+		public async Task<IEnumerable<TestTypeDto>>
+	GetTestsByCategoryAsync(
+		int testCategoryId)
+		{
+			return await _db
+				.GetData<TestTypeDto, dynamic>(
+					"dbo.spTestType_GetByCategory",
+					new
+					{
+						TestCategoryID =
+							testCategoryId
+					});
+		}
 		// ============================================================
 		// PATIENT
 		// ============================================================

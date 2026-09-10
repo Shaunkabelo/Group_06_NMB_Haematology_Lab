@@ -25,5 +25,11 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Models
 		public string Address { get; set; }
 
 		public string Email { get; set; }
+
+		public string? KnownMedicalConditions { get; set; }
+
+		public string? Allergies { get; set; }
+
+		public string? Medication { get; set; }
 	}
 }

@@ -18,12 +18,16 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
 
 		Task<IEnumerable<TestRequest>> GetAllAsync();
 
-		Task<TestRequest> GetByIdAsync(int testRequestId);
+		Task<TestRequest?> GetByIdAsync(int testRequestId);
 
 		Task<bool> DeleteAsync(int testRequestId);
 
 		Task<bool> GetViewByIdAsync(int testRequestId);
 
 		Task<bool> DeleteAsync(TestRequest testRequest);
+
+		//Task<IEnumerable<PatientDetailsDto>> GetPatientsAsync();
+
+		//Task<PatientDetailsDto?> GetPatientBySaIdAsync(string saIdNumber);
 	}
 }

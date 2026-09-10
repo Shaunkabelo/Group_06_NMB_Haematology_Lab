@@ -1,47 +1,65 @@
-﻿```cshtml
-@{
+﻿@{
     ViewData["Title"] = "Create Test Request";
     Layout = "~/Views/Shared/_LayoutDoctor.cshtml";
 }
 
 <div class="page-body">
 
+    <!-- ========================================================= -->
+    <!-- PAGE HEADER -->
+    <!-- ========================================================= -->
+
     <div class="section-header">
-        <div class="section-title">Create Test Request</div>
+        <div class="section-title">
+            Create Test Request
+        </div>
 
         <div class="section-sub">
-            Select a patient, review their medical details, and assign samples for each requested test.
+            Select a patient by SA ID number, review their medical details,
+            and assign samples for each requested test.
         </div>
     </div>
+
 
     <section class="grid-2">
 
         <!-- ===================================================== -->
-        <!-- REQUEST DETAILS -->
+        <!-- LEFT SIDE -->
         <!-- ===================================================== -->
 
         <div class="card">
 
             <div class="card-header">
-                <span class="card-title">Request Details</span>
+                <span class="card-title">
+                    Request Details
+                </span>
             </div>
+
 
             <div class="card-body">
 
+                <!-- ================================================= -->
                 <!-- PATIENT + URGENCY -->
+                <!-- ================================================= -->
+
                 <div class="form-row">
 
                     <div class="form-group">
 
-                        <label class="form-label" for="patient-select">
-                            Patient
+                        <label class="form-label"
+                               for="patient-select">
+
+                            Patient SA ID Number
+
                         </label>
 
                         <select id="patient-select"
                                 class="form-control">
+
                             <option value="">
-                                -- Select Patient --
+                                -- Select Patient SA ID --
                             </option>
+
                         </select>
 
                     </div>
@@ -49,16 +67,27 @@
 
                     <div class="form-group">
 
-                        <label class="form-label" for="urgency-select">
+                        <label class="form-label"
+                               for="urgency-select">
+
                             Urgency
+
                         </label>
 
-                        <select class="form-control"
-                                id="urgency-select">
+                        <select id="urgency-select"
+                                class="form-control">
 
-                            <option value="Routine">Routine</option>
-                            <option value="Urgent">Urgent</option>
-                            <option value="STAT">STAT</option>
+                            <option value="Routine">
+                                Routine
+                            </option>
+
+                            <option value="Urgent">
+                                Urgent
+                            </option>
+
+                            <option value="STAT">
+                                STAT
+                            </option>
 
                         </select>
 
@@ -77,27 +106,96 @@
 
                     <div class="info-section">
 
-                        <h4>Patient Medical Information</h4>
+                        <h4>
+                            Patient Information
+                        </h4>
+
 
                         <div class="info-grid">
 
                             <div class="info-item">
-                                <label>Name</label>
-                                <span id="patient-name"></span>
+
+                                <label>
+                                    SA ID Number
+                                </label>
+
+                                <span id="patient-sa-id">
+                                    N/A
+                                </span>
+
                             </div>
 
-                            <div class="info-item">
-                                <label>Cellphone</label>
-                                <span id="patient-cellphone"></span>
-                            </div>
 
                             <div class="info-item">
-                                <label>Email</label>
-                                <span id="patient-email"></span>
+
+                                <label>
+                                    Name
+                                </label>
+
+                                <span id="patient-name">
+                                    N/A
+                                </span>
+
+                            </div>
+
+
+                            <div class="info-item">
+
+                                <label>
+                                    Date of Birth
+                                </label>
+
+                                <span id="patient-dob">
+                                    N/A
+                                </span>
+
+                            </div>
+
+
+                            <div class="info-item">
+
+                                <label>
+                                    Cellphone
+                                </label>
+
+                                <span id="patient-cellphone">
+                                    N/A
+                                </span>
+
+                            </div>
+
+
+                            <div class="info-item">
+
+                                <label>
+                                    Email
+                                </label>
+
+                                <span id="patient-email">
+                                    N/A
+                                </span>
+
+                            </div>
+
+
+                            <div class="info-item">
+
+                                <label>
+                                    Address
+                                </label>
+
+                                <span id="patient-address">
+                                    N/A
+                                </span>
+
                             </div>
 
                         </div>
 
+
+                        <!-- ================================================= -->
+                        <!-- MEDICAL CONDITIONS -->
+                        <!-- ================================================= -->
 
                         <div class="info-section-box">
 
@@ -107,10 +205,17 @@
 
                             <div id="patient-conditions"
                                  class="info-text">
+
+                                None recorded
+
                             </div>
 
                         </div>
 
+
+                        <!-- ================================================= -->
+                        <!-- ALLERGIES -->
+                        <!-- ================================================= -->
 
                         <div class="info-section-box">
 
@@ -120,10 +225,17 @@
 
                             <div id="patient-allergies"
                                  class="info-text">
+
+                                None recorded
+
                             </div>
 
                         </div>
 
+
+                        <!-- ================================================= -->
+                        <!-- MEDICATION -->
+                        <!-- ================================================= -->
 
                         <div class="info-section-box">
 
@@ -133,6 +245,9 @@
 
                             <div id="patient-medication"
                                  class="info-text">
+
+                                None recorded
+
                             </div>
 
                         </div>
@@ -148,12 +263,16 @@
 
                 <div class="form-group">
 
-                    <label class="form-label" for="clinical-notes">
+                    <label class="form-label"
+                           for="clinical-notes">
+
                         Clinical Notes
+
                     </label>
 
                     <textarea id="clinical-notes"
                               class="form-control"
+                              rows="4"
                               placeholder="Enter relevant clinical context"></textarea>
 
                 </div>
@@ -172,13 +291,15 @@
 
                     <div class="form-row test-selection-row">
 
-                        <!-- CATEGORY -->
+                        <!-- TEST CATEGORY -->
 
                         <div class="form-group">
 
                             <label class="form-label"
                                    for="test-category-select">
+
                                 Test Category
+
                             </label>
 
                             <select id="test-category-select"
@@ -199,7 +320,9 @@
 
                             <label class="form-label"
                                    for="test-select">
+
                                 Test
+
                             </label>
 
                             <select id="test-select"
@@ -229,8 +352,11 @@
 
 
                     <small class="form-hint">
-                        Select a category, choose a test, and add it to the request.
+
+                        Select a category, choose a test,
+                        and add it to the request.
                         Each selected test requires a sample barcode.
+
                     </small>
 
                 </div>
@@ -267,7 +393,7 @@
 
 
         <!-- ===================================================== -->
-        <!-- SELECTED TESTS -->
+        <!-- RIGHT SIDE -->
         <!-- ===================================================== -->
 
         <div class="card">
@@ -284,7 +410,10 @@
             <div class="card-body sample-summary-card">
 
                 <div class="summary-help">
-                    For every selected test, enter the barcode from the sample tube used.
+
+                    For every selected test,
+                    enter the barcode from the sample tube used.
+
                 </div>
 
 
@@ -292,8 +421,10 @@
                      class="selected-tests-list">
 
                     <div class="summary-empty">
+
                         No tests selected.
                         Choose a test type to build the sample list.
+
                     </div>
 
                 </div>
@@ -314,12 +445,24 @@
     // =============================================================
 
     const routes = {
-        getPatients: '@Url.Action("GetPatients", "Doctor")',
-        getPatient: '@Url.Action("GetPatient", "Doctor")',
-        getTestCategories: '@Url.Action("GetTestCategories", "Doctor")',
-        getTestsByCategory: '@Url.Action("GetTestsByCategory", "Doctor")',
-        createTestRequest: '@Url.Action("CreateTestRequest", "Doctor")',
-        requests: '@Url.Action("Requests", "Doctor")'
+
+        getPatients:
+            '@Url.Action("GetPatients", "Doctor")',
+
+        getPatient:
+            '@Url.Action("GetPatient", "Doctor")',
+
+        getTestCategories:
+            '@Url.Action("GetTestCategories", "Doctor")',
+
+        getTestsByCategory:
+            '@Url.Action("GetTestsByCategory", "Doctor")',
+
+        createTestRequest:
+            '@Url.Action("CreateTestRequest", "Doctor")',
+
+        requests:
+            '@Url.Action("Requests", "Doctor")'
     };
 
 
@@ -327,44 +470,74 @@
     // DATA
     // =============================================================
 
-    const selectedTests = [];
-    const sampleBarcodes = {};
-
     let patientList = [];
+
+    let selectedPatient = null;
+
+    const selectedTests = [];
+
+    const sampleBarcodes = {};
 
 
     // =============================================================
     // PAGE LOAD
     // =============================================================
 
-    document.addEventListener("DOMContentLoaded", function () {
+    document.addEventListener(
+        "DOMContentLoaded",
+        async function () {
 
-        loadPatients();
-        loadTestCategories();
+            await loadPatients();
 
-        document
-            .getElementById("patient-select")
-            .addEventListener("change", loadPatientDetails);
+            await loadTestCategories();
 
-        document
-            .getElementById("test-category-select")
-            .addEventListener("change", loadTestsForCategory);
 
-        document
-            .getElementById("add-test-button")
-            .addEventListener("click", addSelectedTest);
+            document
+                .getElementById("patient-select")
+                .addEventListener(
+                    "change",
+                    loadPatientDetails
+                );
 
-        document
-            .getElementById("submit-request-button")
-            .addEventListener("click", submitRequest);
 
-        document
-            .getElementById("back-button")
-            .addEventListener("click", function () {
-                window.location.href = routes.requests;
-            });
+            document
+                .getElementById("test-category-select")
+                .addEventListener(
+                    "change",
+                    loadTestsForCategory
+                );
 
-    });
+
+            document
+                .getElementById("add-test-button")
+                .addEventListener(
+                    "click",
+                    addSelectedTest
+                );
+
+
+            document
+                .getElementById("submit-request-button")
+                .addEventListener(
+                    "click",
+                    submitRequest
+                );
+
+
+            document
+                .getElementById("back-button")
+                .addEventListener(
+                    "click",
+                    function () {
+
+                        window.location.href =
+                            routes.requests;
+
+                    }
+                );
+
+        }
+    );
 
 
     // =============================================================
@@ -373,59 +546,120 @@
 
     async function loadPatients() {
 
+        const select =
+            document.getElementById(
+                "patient-select"
+            );
+
+
+        select.innerHTML =
+            '<option value="">' +
+            '-- Select Patient SA ID --' +
+            '</option>';
+
+
         try {
 
-            const response = await fetch(routes.getPatients);
+            const response =
+                await fetch(
+                    routes.getPatients
+                );
+
+
+            console.log(
+                "GetPatients status:",
+                response.status
+            );
+
 
             if (!response.ok) {
-                throw new Error("Unable to load patients.");
+
+                const errorText =
+                    await response.text();
+
+
+                console.error(
+                    "GetPatients error:",
+                    errorText
+                );
+
+
+                throw new Error(
+                    "Unable to load patients."
+                );
+
             }
 
-            const data = await response.json();
 
-            patientList = Array.isArray(data) ? data : [];
-
-            const select =
-                document.getElementById("patient-select");
-
-            select.innerHTML =
-                '<option value="">-- Select Patient --</option>';
+            const data =
+                await response.json();
 
 
-            patientList.forEach(patient => {
+            console.log(
+                "Patients returned:",
+                data
+            );
 
-                const option =
-                    document.createElement("option");
 
-                /*
-                 * These properties must match your Patient
-                 * model returned by the controller.
-                 */
+            patientList =
+                Array.isArray(data)
+                    ? data
+                    : [];
 
-                option.value = patient.patientID;
 
-                const firstName =
-                    patient.firstName ?? "";
+            patientList.forEach(
+                patient => {
 
-                const lastName =
-                    patient.lastName ?? "";
+                    const saIdNumber =
+                        patient.saIdNumber
+                        ?? patient.SaIdNumber
+                        ?? patient.saIDNumber
+                        ?? patient.SA_ID_Number
+                        ?? "";
 
-                const saIdNumber =
-                    patient.saIdNumber ?? "";
 
-                option.textContent =
-                    `${saIdNumber} - ${firstName} ${lastName}`;
+                    if (!saIdNumber) {
 
-                select.appendChild(option);
+                        return;
 
-            });
+                    }
+
+
+                    const option =
+                        document.createElement(
+                            "option"
+                        );
+
+
+                    // User sees SA ID only
+                    option.value =
+                        saIdNumber;
+
+
+                    option.textContent =
+                        saIdNumber;
+
+
+                    select.appendChild(
+                        option
+                    );
+
+                }
+            );
 
         }
         catch (error) {
 
-            console.error(error);
+            console.error(
+                "loadPatients:",
+                error
+            );
 
-            alert("Unable to load patients.");
+
+            alert(
+                error.message ||
+                "Unable to load patient SA ID numbers."
+            );
 
         }
 
@@ -433,21 +667,37 @@
 
 
     // =============================================================
-    // LOAD PATIENT DETAILS
+    // LOAD PATIENT DETAILS BY SA ID
     // =============================================================
 
     async function loadPatientDetails() {
 
-        const patientId =
-            document.getElementById("patient-select").value;
+        const select =
+            document.getElementById(
+                "patient-select"
+            );
+
+
+        const saIdNumber =
+            select.value;
+
 
         const panel =
-            document.getElementById("patient-info-panel");
+            document.getElementById(
+                "patient-info-panel"
+            );
 
 
-        if (!patientId) {
+        selectedPatient =
+            null;
 
-            panel.style.display = "none";
+
+        if (!saIdNumber) {
+
+            clearPatientInformation();
+
+            panel.style.display =
+                "none";
 
             return;
 
@@ -457,15 +707,51 @@
         try {
 
             const url =
-                `${routes.getPatient}?patientId=${encodeURIComponent(patientId)}`;
+                `${routes.getPatient}` +
+                `?saIdNumber=` +
+                `${encodeURIComponent(saIdNumber)}`;
+
+
+            console.log(
+                "Loading patient:",
+                url
+            );
+
 
             const response =
                 await fetch(url);
 
 
+            console.log(
+                "GetPatient status:",
+                response.status
+            );
+
+
             if (!response.ok) {
 
-                throw new Error("Patient not found.");
+                let message =
+                    "Unable to load patient information.";
+
+
+                try {
+
+                    const errorData =
+                        await response.json();
+
+
+                    message =
+                        errorData.message
+                        ?? message;
+
+                }
+                catch {
+                }
+
+
+                throw new Error(
+                    message
+                );
 
             }
 
@@ -474,46 +760,517 @@
                 await response.json();
 
 
-            document.getElementById("patient-name").textContent =
-                `${data.firstName ?? ""} ${data.lastName ?? ""}`.trim()
-                || "N/A";
+            console.log(
+                "Patient returned:",
+                data
+            );
 
 
-            document.getElementById("patient-cellphone").textContent =
-                data.cellphone ?? "N/A";
+            // =====================================================
+            // INTERNAL PATIENT ID
+            // =====================================================
+
+            const patientId =
+                Number(
+                    data.patientId
+                    ?? data.patientID
+                    ?? data.PatientId
+                    ?? data.PatientID
+                    ?? 0
+                );
 
 
-            document.getElementById("patient-email").textContent =
-                data.email ?? "N/A";
+            // Store full patient
+            selectedPatient = {
+
+                ...data,
+
+                patientId:
+                    patientId,
+
+                saIdNumber:
+                    data.saIdNumber
+                    ?? data.SaIdNumber
+                    ?? saIdNumber
+
+            };
 
 
-            document.getElementById("patient-conditions").textContent =
+            console.log(
+                "Selected Patient:",
+                selectedPatient
+            );
+
+
+            // =====================================================
+            // NAME
+            // =====================================================
+
+            const name =
+                data.name
+                ?? data.Name
+                ?? data.firstName
+                ?? "";
+
+
+            const surname =
+                data.surname
+                ?? data.Surname
+                ?? data.lastName
+                ?? "";
+
+
+            document
+                .getElementById(
+                    "patient-name"
+                )
+                .textContent =
+                    `${name} ${surname}`.trim()
+                    || "N/A";
+
+
+            // =====================================================
+            // SA ID
+            // =====================================================
+
+            document
+                .getElementById(
+                    "patient-sa-id"
+                )
+                .textContent =
+                    selectedPatient.saIdNumber
+                    || "N/A";
+
+
+            // =====================================================
+            // DATE OF BIRTH
+            // =====================================================
+
+            const dob =
+                data.dateOfBirth
+                ?? data.DateOfBirth;
+
+
+            document
+                .getElementById(
+                    "patient-dob"
+                )
+                .textContent =
+                    formatDate(dob);
+
+
+            // =====================================================
+            // CELLPHONE
+            // =====================================================
+
+            const cellphone =
+                data.cellphone
+                ?? data.Cellphone
+                ?? data.contactNumber
+                ?? data.ContactNumber;
+
+
+            document
+                .getElementById(
+                    "patient-cellphone"
+                )
+                .textContent =
+                    cellphone || "N/A";
+
+
+            // =====================================================
+            // EMAIL
+            // =====================================================
+
+            const email =
+                data.email
+                ?? data.Email;
+
+
+            document
+                .getElementById(
+                    "patient-email"
+                )
+                .textContent =
+                    email || "N/A";
+
+
+            // =====================================================
+            // ADDRESS
+            // =====================================================
+
+            const address =
+                data.address
+                ?? data.Address
+                ?? data.homeAddress
+                ?? data.HomeAddress;
+
+
+            document
+                .getElementById(
+                    "patient-address"
+                )
+                .textContent =
+                    address || "N/A";
+
+
+            // =====================================================
+            // MEDICAL CONDITIONS
+            // =====================================================
+
+            const conditions =
                 data.knownMedicalConditions
-                ?? "None recorded";
+                ?? data.KnownMedicalConditions
+                ?? data.medicalConditions
+                ?? data.MedicalConditions
+                ?? data.conditions;
 
 
-            document.getElementById("patient-allergies").textContent =
+            document
+                .getElementById(
+                    "patient-conditions"
+                )
+                .textContent =
+                    formatMedicalValue(
+                        conditions,
+                        [
+                            "conditionName",
+                            "medicalConditionName",
+                            "name"
+                        ]
+                    );
+
+
+            // =====================================================
+            // ALLERGIES
+            // =====================================================
+
+            const allergies =
                 data.allergies
-                ?? "None recorded";
+                ?? data.Allergies;
 
 
-            document.getElementById("patient-medication").textContent =
+            document
+                .getElementById(
+                    "patient-allergies"
+                )
+                .textContent =
+                    formatMedicalValue(
+                        allergies,
+                        [
+                            "allergyName",
+                            "name"
+                        ]
+                    );
+
+
+            // =====================================================
+            // MEDICATION
+            // =====================================================
+
+            const medication =
                 data.medication
-                ?? "None recorded";
+                ?? data.Medication
+                ?? data.medications
+                ?? data.Medications
+                ?? data.currentMedications;
 
 
-            panel.style.display = "block";
+            document
+                .getElementById(
+                    "patient-medication"
+                )
+                .textContent =
+                    formatMedicalValue(
+                        medication,
+                        [
+                            "medicationName",
+                            "name"
+                        ]
+                    );
+
+
+            panel.style.display =
+                "block";
+
+
+            if (
+                !selectedPatient.patientId ||
+                selectedPatient.patientId <= 0
+            ) {
+
+                console.error(
+                    "PatientID was not returned by GetPatient.",
+                    data
+                );
+
+            }
 
         }
         catch (error) {
 
-            console.error(error);
+            console.error(
+                "loadPatientDetails:",
+                error
+            );
 
-            alert("Unable to load patient information.");
 
-            panel.style.display = "none";
+            selectedPatient =
+                null;
+
+
+            clearPatientInformation();
+
+
+            panel.style.display =
+                "none";
+
+
+            alert(
+                error.message ||
+                "Unable to load patient information."
+            );
 
         }
+
+    }
+
+
+    // =============================================================
+    // FORMAT MEDICAL VALUES
+    // =============================================================
+
+    function formatMedicalValue(
+        value,
+        nameProperties = []
+    ) {
+
+        if (
+            value === null ||
+            value === undefined ||
+            value === ""
+        ) {
+
+            return "None recorded";
+
+        }
+
+
+        // STRING_AGG from SQL
+        if (
+            typeof value === "string"
+        ) {
+
+            return value.trim()
+                || "None recorded";
+
+        }
+
+
+        // List returned from API
+        if (
+            Array.isArray(value)
+        ) {
+
+            if (
+                value.length === 0
+            ) {
+
+                return "None recorded";
+
+            }
+
+
+            const names =
+                value.map(
+                    item => {
+
+                        if (
+                            typeof item ===
+                            "string"
+                        ) {
+
+                            return item;
+
+                        }
+
+
+                        for (
+                            const property
+                            of nameProperties
+                        ) {
+
+                            if (
+                                item[property]
+                            ) {
+
+                                return item[property];
+
+                            }
+
+
+                            const pascal =
+                                property
+                                    .charAt(0)
+                                    .toUpperCase()
+                                +
+                                property.slice(1);
+
+
+                            if (
+                                item[pascal]
+                            ) {
+
+                                return item[
+                                    pascal
+                                ];
+
+                            }
+
+                        }
+
+
+                        return "";
+
+                    }
+                )
+                .filter(
+                    item =>
+                        item &&
+                        String(item).trim()
+                );
+
+
+            if (
+                names.length === 0
+            ) {
+
+                return "None recorded";
+
+            }
+
+
+            return names.join(", ");
+
+        }
+
+
+        return String(value);
+
+    }
+
+
+    // =============================================================
+    // FORMAT DATE
+    // =============================================================
+
+    function formatDate(value) {
+
+        if (!value) {
+
+            return "N/A";
+
+        }
+
+
+        const date =
+            new Date(value);
+
+
+        if (
+            Number.isNaN(
+                date.getTime()
+            )
+        ) {
+
+            return value;
+
+        }
+
+
+        return date.toLocaleDateString(
+            "en-ZA"
+        );
+
+    }
+
+
+    // =============================================================
+    // CLEAR PATIENT INFORMATION
+    // =============================================================
+
+    function clearPatientInformation() {
+
+        document
+            .getElementById(
+                "patient-sa-id"
+            )
+            .textContent =
+                "N/A";
+
+
+        document
+            .getElementById(
+                "patient-name"
+            )
+            .textContent =
+                "N/A";
+
+
+        document
+            .getElementById(
+                "patient-dob"
+            )
+            .textContent =
+                "N/A";
+
+
+        document
+            .getElementById(
+                "patient-cellphone"
+            )
+            .textContent =
+                "N/A";
+
+
+        document
+            .getElementById(
+                "patient-email"
+            )
+            .textContent =
+                "N/A";
+
+
+        document
+            .getElementById(
+                "patient-address"
+            )
+            .textContent =
+                "N/A";
+
+
+        document
+            .getElementById(
+                "patient-conditions"
+            )
+            .textContent =
+                "None recorded";
+
+
+        document
+            .getElementById(
+                "patient-allergies"
+            )
+            .textContent =
+                "None recorded";
+
+
+        document
+            .getElementById(
+                "patient-medication"
+            )
+            .textContent =
+                "None recorded";
 
     }
 
@@ -524,13 +1281,43 @@
 
     async function loadTestCategories() {
 
+        const select =
+            document.getElementById(
+                "test-category-select"
+            );
+
+
+        select.innerHTML =
+            '<option value="">' +
+            '-- Select Category --' +
+            '</option>';
+
+
         try {
 
             const response =
-                await fetch(routes.getTestCategories);
+                await fetch(
+                    routes.getTestCategories
+                );
+
+
+            console.log(
+                "GetTestCategories status:",
+                response.status
+            );
 
 
             if (!response.ok) {
+
+                const errorText =
+                    await response.text();
+
+
+                console.error(
+                    "GetTestCategories error:",
+                    errorText
+                );
+
 
                 throw new Error(
                     "Unable to load test categories."
@@ -543,45 +1330,89 @@
                 await response.json();
 
 
-            const select =
-                document.getElementById(
-                    "test-category-select"
-                );
-
-
-            select.innerHTML =
-                '<option value="">-- Select Category --</option>';
+            console.log(
+                "Categories returned:",
+                data
+            );
 
 
             if (!Array.isArray(data)) {
-                return;
+
+                throw new Error(
+                    "Invalid category data returned."
+                );
+
             }
 
 
-            data.forEach(category => {
+            data.forEach(
+                category => {
 
-                const option =
-                    document.createElement("option");
+                    const categoryId =
+                        Number(
+                            category.testCategoryId
+                            ?? category.testCategoryID
+                            ?? category.TestCategoryId
+                            ?? category.TestCategoryID
+                            ?? 0
+                        );
 
 
-                option.value =
-                    category.testCategoryID;
+                    const categoryName =
+                        category.categoryName
+                        ?? category.CategoryName
+                        ?? "";
 
 
-                option.textContent =
-                    category.categoryName;
+                    if (
+                        categoryId <= 0 ||
+                        !categoryName
+                    ) {
+
+                        console.warn(
+                            "Invalid category:",
+                            category
+                        );
+
+                        return;
+
+                    }
 
 
-                select.appendChild(option);
+                    const option =
+                        document.createElement(
+                            "option"
+                        );
 
-            });
+
+                    option.value =
+                        categoryId;
+
+
+                    option.textContent =
+                        categoryName;
+
+
+                    select.appendChild(
+                        option
+                    );
+
+                }
+            );
 
         }
         catch (error) {
 
-            console.error(error);
+            console.error(
+                "loadTestCategories:",
+                error
+            );
 
-            alert("Unable to load test categories.");
+
+            alert(
+                error.message ||
+                "Unable to load test categories."
+            );
 
         }
 
@@ -595,38 +1426,81 @@
     async function loadTestsForCategory() {
 
         const categoryId =
-            document.getElementById(
-                "test-category-select"
-            ).value;
+            document
+                .getElementById(
+                    "test-category-select"
+                )
+                .value;
 
 
         const testSelect =
-            document.getElementById("test-select");
+            document.getElementById(
+                "test-select"
+            );
 
 
         if (!categoryId) {
 
             testSelect.innerHTML =
-                '<option value="">-- Select a category first --</option>';
+                '<option value="">' +
+                '-- Select a category first --' +
+                '</option>';
 
-            testSelect.disabled = true;
+
+            testSelect.disabled =
+                true;
+
 
             return;
 
         }
 
 
+        testSelect.disabled =
+            true;
+
+
+        testSelect.innerHTML =
+            '<option value="">' +
+            '-- Loading Tests --' +
+            '</option>';
+
+
         try {
 
             const url =
-                `${routes.getTestsByCategory}?testCategoryId=${encodeURIComponent(categoryId)}`;
+                `${routes.getTestsByCategory}` +
+                `?testCategoryId=` +
+                `${encodeURIComponent(categoryId)}`;
+
+
+            console.log(
+                "Loading tests:",
+                url
+            );
 
 
             const response =
                 await fetch(url);
 
 
+            console.log(
+                "GetTestsByCategory status:",
+                response.status
+            );
+
+
             if (!response.ok) {
+
+                const errorText =
+                    await response.text();
+
+
+                console.error(
+                    "GetTestsByCategory error:",
+                    errorText
+                );
+
 
                 throw new Error(
                     "Unable to load tests."
@@ -639,77 +1513,188 @@
                 await response.json();
 
 
+            console.log(
+                "Tests returned:",
+                data
+            );
+
+
             testSelect.innerHTML =
-                '<option value="">-- Select Test --</option>';
+                '<option value="">' +
+                '-- Select Test --' +
+                '</option>';
 
 
-            if (!Array.isArray(data) || data.length === 0) {
+            if (
+                !Array.isArray(data) ||
+                data.length === 0
+            ) {
 
-                testSelect.disabled = true;
+                testSelect.innerHTML =
+                    '<option value="">' +
+                    '-- No tests found --' +
+                    '</option>';
+
+
+                testSelect.disabled =
+                    true;
+
 
                 return;
 
             }
 
 
-            data.forEach(test => {
+            data.forEach(
+                test => {
 
-                const option =
-                    document.createElement("option");
+                    // =================================================
+                    // TEST TYPE ID
+                    // =================================================
 
-
-                option.value =
-                    test.testTypeID;
-
-
-                option.textContent =
-                    test.testName;
-
-
-                /*
-                 * These values come from the backend.
-                 */
-
-                option.dataset.sampleTypeId =
-                    test.sampleTypeID ?? "";
+                    const testTypeId =
+                        Number(
+                            test.testTypeId
+                            ?? test.testTypeID
+                            ?? test.TestTypeId
+                            ?? test.TestTypeID
+                            ?? 0
+                        );
 
 
-                option.dataset.sampleTypeName =
-                    test.sampleTypeName ?? "Sample";
+                    // =================================================
+                    // TEST NAME
+                    // =================================================
+
+                    const testName =
+                        test.testName
+                        ?? test.TestName
+                        ?? "";
 
 
-                /*
-                 * Disable tests already selected.
-                 */
+                    // =================================================
+                    // SAMPLE TYPE ID
+                    // =================================================
 
-                if (
-                    selectedTests.some(
-                        selected =>
-                            selected.testTypeId ===
-                            Number(test.testTypeID)
-                    )
-                ) {
+                    const sampleTypeId =
+                        Number(
+                            test.sampleTypeId
+                            ?? test.sampleTypeID
+                            ?? test.SampleTypeId
+                            ?? test.SampleTypeID
+                            ?? 0
+                        );
 
-                    option.disabled = true;
+
+                    // =================================================
+                    // SAMPLE TYPE NAME
+                    // =================================================
+
+                    const sampleTypeName =
+                        test.sampleTypeName
+                        ?? test.SampleTypeName
+                        ?? "Sample";
+
+
+                    console.log(
+                        "Mapped test:",
+                        {
+                            testTypeId,
+                            testName,
+                            sampleTypeId,
+                            sampleTypeName
+                        }
+                    );
+
+
+                    if (
+                        testTypeId <= 0 ||
+                        !testName
+                    ) {
+
+                        console.warn(
+                            "Invalid test returned:",
+                            test
+                        );
+
+                        return;
+
+                    }
+
+
+                    const option =
+                        document.createElement(
+                            "option"
+                        );
+
+
+                    option.value =
+                        testTypeId;
+
+
+                    option.textContent =
+                        testName;
+
+
+                    option.dataset.sampleTypeId =
+                        sampleTypeId;
+
+
+                    option.dataset.sampleTypeName =
+                        sampleTypeName;
+
+
+                    // Disable already-added tests
+                    const alreadySelected =
+                        selectedTests.some(
+                            item =>
+                                item.testTypeId ===
+                                testTypeId
+                        );
+
+
+                    if (alreadySelected) {
+
+                        option.disabled =
+                            true;
+
+                    }
+
+
+                    testSelect.appendChild(
+                        option
+                    );
 
                 }
+            );
 
 
-                testSelect.appendChild(option);
-
-            });
-
-
-            testSelect.disabled = false;
+            testSelect.disabled =
+                false;
 
         }
         catch (error) {
 
-            console.error(error);
+            console.error(
+                "loadTestsForCategory:",
+                error
+            );
 
-            alert("Unable to load tests.");
 
-            testSelect.disabled = true;
+            testSelect.innerHTML =
+                '<option value="">' +
+                '-- Unable to load tests --' +
+                '</option>';
+
+
+            testSelect.disabled =
+                true;
+
+
+            alert(
+                error.message ||
+                "Unable to load tests."
+            );
 
         }
 
@@ -723,11 +1708,15 @@
     function addSelectedTest() {
 
         const testSelect =
-            document.getElementById("test-select");
+            document.getElementById(
+                "test-select"
+            );
 
 
         const selectedOption =
-            testSelect.options[testSelect.selectedIndex];
+            testSelect.options[
+                testSelect.selectedIndex
+            ];
 
 
         if (
@@ -735,7 +1724,9 @@
             !selectedOption.value
         ) {
 
-            alert("Please select a test.");
+            alert(
+                "Please select a test."
+            );
 
             return;
 
@@ -743,28 +1734,75 @@
 
 
         const testTypeId =
-            Number(selectedOption.value);
+            Number(
+                selectedOption.value
+            );
 
 
         const testName =
-            selectedOption.textContent.trim();
+            selectedOption
+                .textContent
+                .trim();
 
 
         const sampleTypeId =
-            Number(selectedOption.dataset.sampleTypeId);
+            Number(
+                selectedOption
+                    .dataset
+                    .sampleTypeId
+            );
 
 
         const sampleTypeName =
-            selectedOption.dataset.sampleTypeName
+            selectedOption
+                .dataset
+                .sampleTypeName
             || "Sample";
 
 
-        /*
-         * Make sure a valid sample type was supplied
-         * by the backend.
-         */
+        console.log(
+            "Adding selected test:",
+            {
+                testTypeId,
+                testName,
+                sampleTypeId,
+                sampleTypeName
+            }
+        );
 
-        if (!sampleTypeId || sampleTypeId <= 0) {
+
+        // =========================================================
+        // VALID TEST
+        // =========================================================
+
+        if (
+            !testTypeId ||
+            testTypeId <= 0
+        ) {
+
+            alert(
+                "Invalid test selected."
+            );
+
+            return;
+
+        }
+
+
+        // =========================================================
+        // VALID SAMPLE TYPE
+        // =========================================================
+
+        if (
+            !sampleTypeId ||
+            sampleTypeId <= 0
+        ) {
+
+            console.error(
+                "SampleTypeID missing from selected test:",
+                selectedOption.dataset
+            );
+
 
             alert(
                 "This test does not have a valid sample type."
@@ -775,15 +1813,19 @@
         }
 
 
-        /*
-         * Prevent duplicate tests.
-         */
+        // =========================================================
+        // PREVENT DUPLICATES
+        // =========================================================
 
-        if (
+        const alreadySelected =
             selectedTests.some(
-                test => test.testTypeId === testTypeId
-            )
-        ) {
+                item =>
+                    item.testTypeId ===
+                    testTypeId
+            );
+
+
+        if (alreadySelected) {
 
             alert(
                 "This test has already been selected."
@@ -794,34 +1836,39 @@
         }
 
 
-        selectedTests.push({
+        // =========================================================
+        // ADD TEST
+        // =========================================================
 
-            testTypeId: testTypeId,
+        selectedTests.push(
+            {
 
-            testName: testName,
+                testTypeId:
+                    testTypeId,
 
-            sampleTypeId: sampleTypeId,
+                testName:
+                    testName,
 
-            sampleTypeName: sampleTypeName
+                sampleTypeId:
+                    sampleTypeId,
 
-        });
+                sampleTypeName:
+                    sampleTypeName
+
+            }
+        );
 
 
-        sampleBarcodes[testTypeId] = "";
+        sampleBarcodes[
+            testTypeId
+        ] = "";
 
 
         updateRequestSummary();
 
 
-        /*
-         * Refresh the test dropdown so the selected
-         * test becomes disabled.
-         */
-
+        // Reload dropdown so selected test becomes disabled
         loadTestsForCategory();
-
-
-        testSelect.value = "";
 
     }
 
@@ -838,152 +1885,232 @@
             );
 
 
-        list.innerHTML = "";
+        list.innerHTML =
+            "";
 
 
-        if (selectedTests.length === 0) {
+        if (
+            selectedTests.length === 0
+        ) {
 
             list.innerHTML =
                 '<div class="summary-empty">' +
-                'No tests selected. Choose a test type to build the sample list.' +
+                'No tests selected. ' +
+                'Choose a test type to build the sample list.' +
                 '</div>';
+
 
             return;
 
         }
 
 
-        selectedTests.forEach(test => {
+        selectedTests.forEach(
+            test => {
 
-            const row =
-                document.createElement("div");
-
-
-            row.className =
-                "sample-summary-row";
-
-
-            /*
-             * Build the row without trusting backend
-             * HTML directly.
-             */
-
-            const meta =
-                document.createElement("div");
-
-            meta.className =
-                "sample-summary-meta";
-
-
-            const nameContainer =
-                document.createElement("div");
-
-
-            const name =
-                document.createElement("div");
-
-            name.className =
-                "sample-summary-label";
-
-            name.textContent =
-                test.testName;
-
-
-            const sample =
-                document.createElement("small");
-
-            sample.textContent =
-                `${test.sampleTypeName} sample`;
-
-
-            nameContainer.appendChild(name);
-            nameContainer.appendChild(sample);
-            meta.appendChild(nameContainer);
-
-
-            const barcodeContainer =
-                document.createElement("div");
-
-            barcodeContainer.className =
-                "sample-summary-barcode";
-
-
-            const label =
-                document.createElement("label");
-
-            label.className =
-                "section-label";
-
-            label.textContent =
-                "Barcode";
-
-
-            const input =
-                document.createElement("input");
-
-            input.type =
-                "text";
-
-            input.className =
-                "form-control";
-
-            input.placeholder =
-                "Enter sample barcode";
-
-            input.value =
-                sampleBarcodes[test.testTypeId] || "";
-
-
-            input.addEventListener(
-                "input",
-                function () {
-
-                    updateSampleBarcode(
-                        test.testTypeId,
-                        this.value
+                const row =
+                    document.createElement(
+                        "div"
                     );
 
-                }
-            );
+
+                row.className =
+                    "sample-summary-row";
 
 
-            barcodeContainer.appendChild(label);
-            barcodeContainer.appendChild(input);
+                // =================================================
+                // TEST DETAILS
+                // =================================================
+
+                const meta =
+                    document.createElement(
+                        "div"
+                    );
 
 
-            const removeButton =
-                document.createElement("button");
-
-            removeButton.type =
-                "button";
-
-            removeButton.className =
-                "btn btn-secondary";
-
-            removeButton.textContent =
-                "Remove";
+                meta.className =
+                    "sample-summary-meta";
 
 
-            removeButton.addEventListener(
-                "click",
-                function () {
+                const nameContainer =
+                    document.createElement(
+                        "div"
+                    );
 
-                    removeSelectedTest(
+
+                const name =
+                    document.createElement(
+                        "div"
+                    );
+
+
+                name.className =
+                    "sample-summary-label";
+
+
+                name.textContent =
+                    test.testName;
+
+
+                const sample =
+                    document.createElement(
+                        "small"
+                    );
+
+
+                sample.textContent =
+                    `${test.sampleTypeName} sample`;
+
+
+                nameContainer.appendChild(
+                    name
+                );
+
+
+                nameContainer.appendChild(
+                    sample
+                );
+
+
+                meta.appendChild(
+                    nameContainer
+                );
+
+
+                // =================================================
+                // BARCODE
+                // =================================================
+
+                const barcodeContainer =
+                    document.createElement(
+                        "div"
+                    );
+
+
+                barcodeContainer.className =
+                    "sample-summary-barcode";
+
+
+                const barcodeLabel =
+                    document.createElement(
+                        "label"
+                    );
+
+
+                barcodeLabel.className =
+                    "section-label";
+
+
+                barcodeLabel.textContent =
+                    "Barcode";
+
+
+                const input =
+                    document.createElement(
+                        "input"
+                    );
+
+
+                input.type =
+                    "text";
+
+
+                input.className =
+                    "form-control";
+
+
+                input.placeholder =
+                    "Enter sample barcode";
+
+
+                input.value =
+                    sampleBarcodes[
                         test.testTypeId
+                    ] || "";
+
+
+                input.addEventListener(
+                    "input",
+                    function () {
+
+                        updateSampleBarcode(
+                            test.testTypeId,
+                            this.value
+                        );
+
+                    }
+                );
+
+
+                barcodeContainer.appendChild(
+                    barcodeLabel
+                );
+
+
+                barcodeContainer.appendChild(
+                    input
+                );
+
+
+                // =================================================
+                // REMOVE BUTTON
+                // =================================================
+
+                const removeButton =
+                    document.createElement(
+                        "button"
                     );
 
-                }
-            );
+
+                removeButton.type =
+                    "button";
 
 
-            row.appendChild(meta);
-            row.appendChild(barcodeContainer);
-            row.appendChild(removeButton);
+                removeButton.className =
+                    "btn btn-secondary";
 
 
-            list.appendChild(row);
+                removeButton.textContent =
+                    "Remove";
 
-        });
+
+                removeButton.addEventListener(
+                    "click",
+                    function () {
+
+                        removeSelectedTest(
+                            test.testTypeId
+                        );
+
+                    }
+                );
+
+
+                // =================================================
+                // BUILD ROW
+                // =================================================
+
+                row.appendChild(
+                    meta
+                );
+
+
+                row.appendChild(
+                    barcodeContainer
+                );
+
+
+                row.appendChild(
+                    removeButton
+                );
+
+
+                list.appendChild(
+                    row
+                );
+
+            }
+        );
 
     }
 
@@ -997,8 +2124,9 @@
         value
     ) {
 
-        sampleBarcodes[testTypeId] =
-            value;
+        sampleBarcodes[
+            testTypeId
+        ] = value;
 
     }
 
@@ -1007,16 +2135,21 @@
     // REMOVE TEST
     // =============================================================
 
-    function removeSelectedTest(testTypeId) {
+    function removeSelectedTest(
+        testTypeId
+    ) {
 
         const index =
             selectedTests.findIndex(
                 test =>
-                    test.testTypeId === testTypeId
+                    test.testTypeId ===
+                    testTypeId
             );
 
 
-        if (index !== -1) {
+        if (
+            index !== -1
+        ) {
 
             selectedTests.splice(
                 index,
@@ -1026,7 +2159,9 @@
         }
 
 
-        delete sampleBarcodes[testTypeId];
+        delete sampleBarcodes[
+            testTypeId
+        ];
 
 
         updateRequestSummary();
@@ -1043,33 +2178,11 @@
 
     async function submitRequest() {
 
-        const patientValue =
-            document.getElementById(
-                "patient-select"
-            ).value;
+        // =========================================================
+        // PATIENT VALIDATION
+        // =========================================================
 
-
-        const patientId =
-            Number(patientValue);
-
-
-        const urgency =
-            document.getElementById(
-                "urgency-select"
-            ).value;
-
-
-        const clinicalNotes =
-            document.getElementById(
-                "clinical-notes"
-            ).value.trim();
-
-
-        // ---------------------------------------------------------
-        // VALIDATION
-        // ---------------------------------------------------------
-
-        if (!patientId || patientId <= 0) {
+        if (!selectedPatient) {
 
             alert(
                 "Please select a patient."
@@ -1080,7 +2193,60 @@
         }
 
 
-        if (selectedTests.length === 0) {
+        const patientId =
+            Number(
+                selectedPatient.patientId
+            );
+
+
+        if (
+            !patientId ||
+            patientId <= 0
+        ) {
+
+            console.error(
+                "Invalid selected patient:",
+                selectedPatient
+            );
+
+
+            alert(
+                "Selected patient does not have a valid Patient ID."
+            );
+
+            return;
+
+        }
+
+
+        // =========================================================
+        // REQUEST DETAILS
+        // =========================================================
+
+        const urgency =
+            document
+                .getElementById(
+                    "urgency-select"
+                )
+                .value;
+
+
+        const clinicalNotes =
+            document
+                .getElementById(
+                    "clinical-notes"
+                )
+                .value
+                .trim();
+
+
+        // =========================================================
+        // TEST VALIDATION
+        // =========================================================
+
+        if (
+            selectedTests.length === 0
+        ) {
 
             alert(
                 "Please select at least one test."
@@ -1091,11 +2257,17 @@
         }
 
 
+        // =========================================================
+        // BARCODE VALIDATION
+        // =========================================================
+
         const missingBarcode =
             selectedTests.find(
                 test =>
                     !String(
-                        sampleBarcodes[test.testTypeId] || ""
+                        sampleBarcodes[
+                            test.testTypeId
+                        ] || ""
                     ).trim()
             );
 
@@ -1111,39 +2283,53 @@
         }
 
 
-        // ---------------------------------------------------------
-        // BUILD REQUEST
-        // ---------------------------------------------------------
+        // =========================================================
+        // CREATE REQUEST OBJECT
+        // =========================================================
 
         const requestData = {
 
-            patientId: patientId,
+            patientId:
+                patientId,
 
-            urgency: urgency,
+            urgency:
+                urgency,
 
-            clinicalNotes: clinicalNotes,
+            clinicalNotes:
+                clinicalNotes,
 
-            tests: selectedTests.map(test => ({
+            tests:
+                selectedTests.map(
+                    test => ({
 
-                testTypeId:
-                    test.testTypeId,
+                        testTypeId:
+                            test.testTypeId,
 
-                sampleTypeId:
-                    test.sampleTypeId,
+                        sampleTypeId:
+                            test.sampleTypeId,
 
-                barcodeNumber:
-                    String(
-                        sampleBarcodes[test.testTypeId]
-                    ).trim()
+                        barcodeNumber:
+                            String(
+                                sampleBarcodes[
+                                    test.testTypeId
+                                ]
+                            ).trim()
 
-            }))
+                    })
+                )
 
         };
 
 
-        // ---------------------------------------------------------
-        // SUBMIT
-        // ---------------------------------------------------------
+        console.log(
+            "Request being submitted:",
+            requestData
+        );
+
+
+        // =========================================================
+        // SUBMIT TO CONTROLLER
+        // =========================================================
 
         try {
 
@@ -1151,22 +2337,29 @@
                 await fetch(
                     routes.createTestRequest,
                     {
-                        method: "POST",
+
+                        method:
+                            "POST",
 
                         headers: {
+
                             "Content-Type":
                                 "application/json"
+
                         },
 
                         body:
                             JSON.stringify(
                                 requestData
                             )
+
                     }
                 );
 
 
-            let result = null;
+            let result =
+                null;
+
 
             try {
 
@@ -1175,26 +2368,34 @@
 
             }
             catch {
-
-                result = null;
-
             }
+
+
+            console.log(
+                "Create request response:",
+                result
+            );
 
 
             if (!response.ok) {
 
                 throw new Error(
-                    result?.message ||
+                    result?.message
+                    ||
                     "Unable to create test request."
                 );
 
             }
 
 
-            if (!result?.success) {
+            if (
+                !result ||
+                result.success !== true
+            ) {
 
                 throw new Error(
-                    result?.message ||
+                    result?.message
+                    ||
                     "Unable to create test request."
                 );
 
@@ -1202,7 +2403,8 @@
 
 
             alert(
-                result.message ||
+                result.message
+                ||
                 "Test request created successfully."
             );
 
@@ -1220,7 +2422,8 @@
 
 
             alert(
-                error.message ||
+                error.message
+                ||
                 "An error occurred while creating the test request."
             );
 
@@ -1229,4 +2432,3 @@
     }
 
 </script>
-```

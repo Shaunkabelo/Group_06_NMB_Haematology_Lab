@@ -6,16 +6,18 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 {
 	public class DoctorController : Controller
 	{
-		
-
 		private readonly IDoctorRepository _doctorRepository;
 
-		public DoctorController(IDoctorRepository doctorRepository)
+		public DoctorController(
+			IDoctorRepository doctorRepository)
 		{
 			_doctorRepository = doctorRepository;
 		}
-		[HttpGet]
-	
+
+
+		// ============================================================
+		// LOGGED IN DOCTOR
+		// ============================================================
 
 		private int GetLoggedInDoctorId()
 		{
@@ -23,23 +25,65 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 				System.Security.Claims.ClaimTypes.NameIdentifier);
 
 			if (claim == null)
-				throw new Exception("Doctor is not logged in.");
+			{
+				throw new Exception(
+					"Doctor is not logged in.");
+			}
 
 			return int.Parse(claim.Value);
 		}
 
 
-
-		public IActionResult Dashboard() => View();
-
-
 		// ============================================================
-		// PATIENT PAGE
+		// PAGES
 		// ============================================================
+
+		public IActionResult Dashboard()
+		{
+			return View();
+		}
 
 		[HttpGet]
 		public IActionResult Patients()
 		{
+			return View();
+		}
+
+		public IActionResult Requests()
+		{
+			return View();
+		}
+
+		public IActionResult Results()
+		{
+			return View();
+		}
+
+		public IActionResult Alerts()
+		{
+			return View();
+		}
+
+		public IActionResult Reports()
+		{
+			return View();
+		}
+
+		public IActionResult Account()
+		{
+			return View();
+		}
+
+		public IActionResult CreateRequest()
+		{
+			return View();
+		}
+
+		[HttpGet]
+		public IActionResult RequestDetails(string id)
+		{
+			ViewData["RequestId"] = id;
+
 			return View();
 		}
 
@@ -53,7 +97,9 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 		{
 			try
 			{
-				var patients = await _doctorRepository.GetPatientsAsync();
+				var patients =
+					await _doctorRepository
+						.GetPatientsAsync();
 
 				return Json(patients);
 			}
@@ -62,7 +108,8 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 				return StatusCode(500, new
 				{
 					success = false,
-					message = "An error occurred while loading patients.",
+					message =
+						"An error occurred while loading patients.",
 					error = ex.Message
 				});
 			}
@@ -70,36 +117,38 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 
 
 		// ============================================================
-		// GET PATIENT BY ID
-		// ============================================================
-
-		// ============================================================
-		// GET PATIENT BY SA ID NUMBER
+		// GET PATIENT BY SA ID
 		// ============================================================
 
 		[HttpGet]
-		public async Task<IActionResult> GetPatient(string saIdNumber)
+		public async Task<IActionResult> GetPatient(
+			string saIdNumber)
 		{
 			try
 			{
-				if (string.IsNullOrWhiteSpace(saIdNumber))
+				if (string.IsNullOrWhiteSpace(
+					saIdNumber))
 				{
 					return BadRequest(new
 					{
 						success = false,
-						message = "Invalid SA ID number."
+						message =
+							"Invalid SA ID number."
 					});
 				}
 
 				var patient =
-					await _doctorRepository.GetPatientBySaIdAsync(saIdNumber);
+					await _doctorRepository
+						.GetPatientBySaIdAsync(
+							saIdNumber);
 
 				if (patient == null)
 				{
 					return NotFound(new
 					{
 						success = false,
-						message = "Patient not found."
+						message =
+							"Patient not found."
 					});
 				}
 
@@ -110,7 +159,8 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 				return StatusCode(500, new
 				{
 					success = false,
-					message = "An error occurred while loading the patient.",
+					message =
+						"An error occurred while loading the patient.",
 					error = ex.Message
 				});
 			}
@@ -122,12 +172,14 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 		// ============================================================
 
 		[HttpGet]
-		public async Task<IActionResult> GetConditionCategories()
+		public async Task<IActionResult>
+			GetConditionCategories()
 		{
 			try
 			{
 				var categories =
-					await _doctorRepository.GetConditionCategoriesAsync();
+					await _doctorRepository
+						.GetConditionCategoriesAsync();
 
 				return Json(categories);
 			}
@@ -136,7 +188,8 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 				return StatusCode(500, new
 				{
 					success = false,
-					message = "An error occurred while loading condition categories.",
+					message =
+						"An error occurred while loading condition categories.",
 					error = ex.Message
 				});
 			}
@@ -148,23 +201,27 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 		// ============================================================
 
 		[HttpGet]
-		public async Task<IActionResult> GetConditionsByCategory(
-			string category)
+		public async Task<IActionResult>
+			GetConditionsByCategory(
+				string category)
 		{
 			try
 			{
-				if (string.IsNullOrWhiteSpace(category))
+				if (string.IsNullOrWhiteSpace(
+					category))
 				{
 					return BadRequest(new
 					{
 						success = false,
-						message = "Category is required."
+						message =
+							"Category is required."
 					});
 				}
 
 				var conditions =
 					await _doctorRepository
-						.GetConditionsByCategoryAsync(category);
+						.GetConditionsByCategoryAsync(
+							category);
 
 				return Json(conditions);
 			}
@@ -173,7 +230,8 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 				return StatusCode(500, new
 				{
 					success = false,
-					message = "An error occurred while loading conditions.",
+					message =
+						"An error occurred while loading conditions.",
 					error = ex.Message
 				});
 			}
@@ -185,31 +243,38 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 		// ============================================================
 
 		[HttpPost]
-		public async Task<IActionResult> AddPatientCondition(
-			int patientId,
-			int medicalConditionId)
+		public async Task<IActionResult>
+			AddPatientCondition(
+				int patientId,
+				int medicalConditionId)
 		{
 			try
 			{
-				if (patientId <= 0 || medicalConditionId <= 0)
+				if (
+					patientId <= 0 ||
+					medicalConditionId <= 0
+				)
 				{
 					return BadRequest(new
 					{
 						success = false,
-						message = "Invalid patient or medical condition."
+						message =
+							"Invalid patient or medical condition."
 					});
 				}
 
 				var id =
-					await _doctorRepository.AddPatientConditionAsync(
-						patientId,
-						medicalConditionId);
+					await _doctorRepository
+						.AddPatientConditionAsync(
+							patientId,
+							medicalConditionId);
 
 				return Json(new
 				{
 					success = true,
 					patientConditionId = id,
-					message = "Medical condition added successfully."
+					message =
+						"Medical condition added successfully."
 				});
 			}
 			catch (Exception ex)
@@ -217,7 +282,8 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 				return StatusCode(500, new
 				{
 					success = false,
-					message = "An error occurred while adding the medical condition.",
+					message =
+						"An error occurred while adding the medical condition.",
 					error = ex.Message
 				});
 			}
@@ -229,8 +295,9 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 		// ============================================================
 
 		[HttpPost]
-		public async Task<IActionResult> DeletePatientCondition(
-			int patientConditionId)
+		public async Task<IActionResult>
+			DeletePatientCondition(
+				int patientConditionId)
 		{
 			try
 			{
@@ -239,17 +306,20 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 					return BadRequest(new
 					{
 						success = false,
-						message = "Invalid patient condition ID."
+						message =
+							"Invalid patient condition ID."
 					});
 				}
 
 				await _doctorRepository
-					.DeletePatientConditionAsync(patientConditionId);
+					.DeletePatientConditionAsync(
+						patientConditionId);
 
 				return Json(new
 				{
 					success = true,
-					message = "Medical condition removed successfully."
+					message =
+						"Medical condition removed successfully."
 				});
 			}
 			catch (Exception ex)
@@ -257,7 +327,8 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 				return StatusCode(500, new
 				{
 					success = false,
-					message = "An error occurred while removing the medical condition.",
+					message =
+						"An error occurred while removing the medical condition.",
 					error = ex.Message
 				});
 			}
@@ -269,12 +340,14 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 		// ============================================================
 
 		[HttpGet]
-		public async Task<IActionResult> GetAllergyCategories()
+		public async Task<IActionResult>
+			GetAllergyCategories()
 		{
 			try
 			{
 				var categories =
-					await _doctorRepository.GetAllergyCategoriesAsync();
+					await _doctorRepository
+						.GetAllergyCategoriesAsync();
 
 				return Json(categories);
 			}
@@ -283,7 +356,8 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 				return StatusCode(500, new
 				{
 					success = false,
-					message = "An error occurred while loading allergy categories.",
+					message =
+						"An error occurred while loading allergy categories.",
 					error = ex.Message
 				});
 			}
@@ -295,23 +369,27 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 		// ============================================================
 
 		[HttpGet]
-		public async Task<IActionResult> GetAllergiesByCategory(
-			string category)
+		public async Task<IActionResult>
+			GetAllergiesByCategory(
+				string category)
 		{
 			try
 			{
-				if (string.IsNullOrWhiteSpace(category))
+				if (string.IsNullOrWhiteSpace(
+					category))
 				{
 					return BadRequest(new
 					{
 						success = false,
-						message = "Category is required."
+						message =
+							"Category is required."
 					});
 				}
 
 				var allergies =
 					await _doctorRepository
-						.GetAllergiesByCategoryAsync(category);
+						.GetAllergiesByCategoryAsync(
+							category);
 
 				return Json(allergies);
 			}
@@ -320,7 +398,8 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 				return StatusCode(500, new
 				{
 					success = false,
-					message = "An error occurred while loading allergies.",
+					message =
+						"An error occurred while loading allergies.",
 					error = ex.Message
 				});
 			}
@@ -332,31 +411,38 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 		// ============================================================
 
 		[HttpPost]
-		public async Task<IActionResult> AddPatientAllergy(
-			int patientId,
-			int allergyId)
+		public async Task<IActionResult>
+			AddPatientAllergy(
+				int patientId,
+				int allergyId)
 		{
 			try
 			{
-				if (patientId <= 0 || allergyId <= 0)
+				if (
+					patientId <= 0 ||
+					allergyId <= 0
+				)
 				{
 					return BadRequest(new
 					{
 						success = false,
-						message = "Invalid patient or allergy."
+						message =
+							"Invalid patient or allergy."
 					});
 				}
 
 				var id =
-					await _doctorRepository.AddPatientAllergyAsync(
-						patientId,
-						allergyId);
+					await _doctorRepository
+						.AddPatientAllergyAsync(
+							patientId,
+							allergyId);
 
 				return Json(new
 				{
 					success = true,
 					patientAllergyId = id,
-					message = "Allergy added successfully."
+					message =
+						"Allergy added successfully."
 				});
 			}
 			catch (Exception ex)
@@ -364,7 +450,8 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 				return StatusCode(500, new
 				{
 					success = false,
-					message = "An error occurred while adding the allergy.",
+					message =
+						"An error occurred while adding the allergy.",
 					error = ex.Message
 				});
 			}
@@ -376,8 +463,9 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 		// ============================================================
 
 		[HttpPost]
-		public async Task<IActionResult> DeletePatientAllergy(
-			int patientAllergyId)
+		public async Task<IActionResult>
+			DeletePatientAllergy(
+				int patientAllergyId)
 		{
 			try
 			{
@@ -386,17 +474,20 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 					return BadRequest(new
 					{
 						success = false,
-						message = "Invalid patient allergy ID."
+						message =
+							"Invalid patient allergy ID."
 					});
 				}
 
 				await _doctorRepository
-					.DeletePatientAllergyAsync(patientAllergyId);
+					.DeletePatientAllergyAsync(
+						patientAllergyId);
 
 				return Json(new
 				{
 					success = true,
-					message = "Allergy removed successfully."
+					message =
+						"Allergy removed successfully."
 				});
 			}
 			catch (Exception ex)
@@ -404,7 +495,8 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 				return StatusCode(500, new
 				{
 					success = false,
-					message = "An error occurred while removing the allergy.",
+					message =
+						"An error occurred while removing the allergy.",
 					error = ex.Message
 				});
 			}
@@ -416,12 +508,14 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 		// ============================================================
 
 		[HttpGet]
-		public async Task<IActionResult> GetMedicationCategories()
+		public async Task<IActionResult>
+			GetMedicationCategories()
 		{
 			try
 			{
 				var categories =
-					await _doctorRepository.GetMedicationCategoriesAsync();
+					await _doctorRepository
+						.GetMedicationCategoriesAsync();
 
 				return Json(categories);
 			}
@@ -430,7 +524,8 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 				return StatusCode(500, new
 				{
 					success = false,
-					message = "An error occurred while loading medication categories.",
+					message =
+						"An error occurred while loading medication categories.",
 					error = ex.Message
 				});
 			}
@@ -442,23 +537,27 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 		// ============================================================
 
 		[HttpGet]
-		public async Task<IActionResult> GetMedicationsByCategory(
-			string category)
+		public async Task<IActionResult>
+			GetMedicationsByCategory(
+				string category)
 		{
 			try
 			{
-				if (string.IsNullOrWhiteSpace(category))
+				if (string.IsNullOrWhiteSpace(
+					category))
 				{
 					return BadRequest(new
 					{
 						success = false,
-						message = "Category is required."
+						message =
+							"Category is required."
 					});
 				}
 
 				var medications =
 					await _doctorRepository
-						.GetMedicationsByCategoryAsync(category);
+						.GetMedicationsByCategoryAsync(
+							category);
 
 				return Json(medications);
 			}
@@ -467,7 +566,8 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 				return StatusCode(500, new
 				{
 					success = false,
-					message = "An error occurred while loading medications.",
+					message =
+						"An error occurred while loading medications.",
 					error = ex.Message
 				});
 			}
@@ -479,31 +579,38 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 		// ============================================================
 
 		[HttpPost]
-		public async Task<IActionResult> AddPatientMedication(
-			int patientId,
-			int medicationId)
+		public async Task<IActionResult>
+			AddPatientMedication(
+				int patientId,
+				int medicationId)
 		{
 			try
 			{
-				if (patientId <= 0 || medicationId <= 0)
+				if (
+					patientId <= 0 ||
+					medicationId <= 0
+				)
 				{
 					return BadRequest(new
 					{
 						success = false,
-						message = "Invalid patient or medication."
+						message =
+							"Invalid patient or medication."
 					});
 				}
 
 				var id =
-					await _doctorRepository.AddPatientMedicationAsync(
-						patientId,
-						medicationId);
+					await _doctorRepository
+						.AddPatientMedicationAsync(
+							patientId,
+							medicationId);
 
 				return Json(new
 				{
 					success = true,
 					patientMedicationId = id,
-					message = "Medication added successfully."
+					message =
+						"Medication added successfully."
 				});
 			}
 			catch (Exception ex)
@@ -511,7 +618,8 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 				return StatusCode(500, new
 				{
 					success = false,
-					message = "An error occurred while adding medication.",
+					message =
+						"An error occurred while adding medication.",
 					error = ex.Message
 				});
 			}
@@ -523,8 +631,9 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 		// ============================================================
 
 		[HttpPost]
-		public async Task<IActionResult> DeletePatientMedication(
-			int patientMedicationId)
+		public async Task<IActionResult>
+			DeletePatientMedication(
+				int patientMedicationId)
 		{
 			try
 			{
@@ -533,17 +642,20 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 					return BadRequest(new
 					{
 						success = false,
-						message = "Invalid patient medication ID."
+						message =
+							"Invalid patient medication ID."
 					});
 				}
 
 				await _doctorRepository
-					.DeletePatientMedicationAsync(patientMedicationId);
+					.DeletePatientMedicationAsync(
+						patientMedicationId);
 
 				return Json(new
 				{
 					success = true,
-					message = "Medication removed successfully."
+					message =
+						"Medication removed successfully."
 				});
 			}
 			catch (Exception ex)
@@ -551,34 +663,93 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 				return StatusCode(500, new
 				{
 					success = false,
-					message = "An error occurred while removing medication.",
+					message =
+						"An error occurred while removing medication.",
 					error = ex.Message
 				});
 			}
 		}
 
-		public IActionResult Requests() => View();
 
-		public IActionResult Results() => View();
-
-		public IActionResult Alerts() => View();
-
-		public IActionResult Reports() => View();
-
-		public IActionResult Account() => View();
-
-		public IActionResult CreateRequest() => View();
+		// ============================================================
+		// TEST CATEGORIES
+		// ============================================================
 
 		[HttpGet]
-		public IActionResult RequestDetails(string id)
+		public async Task<IActionResult>
+			GetTestCategories()
 		{
-			ViewData["RequestId"] = id;
-			return View();
+			try
+			{
+				var categories =
+					await _doctorRepository
+						.GetTestCategoriesAsync();
+
+				return Json(categories);
+			}
+			catch (Exception ex)
+			{
+				return StatusCode(500, new
+				{
+					success = false,
+					message =
+						"An error occurred while loading test categories.",
+					error = ex.Message
+				});
+			}
 		}
 
+
+		// ============================================================
+		// TESTS BY CATEGORY
+		// ============================================================
+
+		[HttpGet]
+		public async Task<IActionResult>
+			GetTestsByCategory(
+				int testCategoryId)
+		{
+			try
+			{
+				if (testCategoryId <= 0)
+				{
+					return BadRequest(new
+					{
+						success = false,
+						message =
+							"Invalid test category."
+					});
+				}
+
+				var tests =
+					await _doctorRepository
+						.GetTestsByCategoryAsync(
+							testCategoryId);
+
+				return Json(tests);
+			}
+			catch (Exception ex)
+			{
+				return StatusCode(500, new
+				{
+					success = false,
+					message =
+						"An error occurred while loading tests.",
+					error = ex.Message
+				});
+			}
+		}
+
+
+		// ============================================================
+		// CREATE TEST REQUEST
+		// ============================================================
+
 		[HttpPost]
-		public async Task<IActionResult> CreateTestRequest(
-	[FromBody] CreateTestRequestModel model)
+		public async Task<IActionResult>
+			CreateTestRequest(
+				[FromBody]
+				CreateTestRequestModel model)
 		{
 			try
 			{
@@ -587,66 +758,106 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 					return BadRequest(new
 					{
 						success = false,
-						message = "Invalid request."
+						message =
+							"Invalid request."
 					});
 				}
+
+
+				// ----------------------------------------------------
+				// PATIENT
+				// ----------------------------------------------------
 
 				if (model.PatientId <= 0)
 				{
 					return BadRequest(new
 					{
 						success = false,
-						message = "Please select a patient."
+						message =
+							"Please select a patient."
 					});
 				}
 
-				if (model.Tests == null || model.Tests.Count == 0)
+
+				// ----------------------------------------------------
+				// TESTS
+				// ----------------------------------------------------
+
+				if (
+					model.Tests == null ||
+					model.Tests.Count == 0
+				)
 				{
 					return BadRequest(new
 					{
 						success = false,
-						message = "Please select at least one test."
+						message =
+							"Please select at least one test."
 					});
 				}
 
+
 				foreach (var test in model.Tests)
 				{
-					if (test.TestTypeId <= 0 ||
-						test.SampleTypeId <= 0)
+					if (
+						test.TestTypeId <= 0 ||
+						test.SampleTypeId <= 0
+					)
 					{
 						return BadRequest(new
 						{
 							success = false,
-							message = "Invalid test selected."
+							message =
+								"Invalid test selected."
 						});
 					}
 
-					if (string.IsNullOrWhiteSpace(test.BarcodeNumber))
+
+					if (
+						string.IsNullOrWhiteSpace(
+							test.BarcodeNumber)
+					)
 					{
 						return BadRequest(new
 						{
 							success = false,
-							message = "Every test requires a barcode."
+							message =
+								"Every test requires a barcode."
 						});
 					}
 				}
 
-				int doctorId = GetLoggedInDoctorId();
+
+				// ----------------------------------------------------
+				// LOGGED IN DOCTOR
+				// ----------------------------------------------------
+
+				int doctorId =
+					GetLoggedInDoctorId();
+
+
+				// ----------------------------------------------------
+				// CREATE REQUEST
+				// ----------------------------------------------------
 
 				int testRequestId =
-					await _doctorRepository.CreateTestRequestAsync(
-						model.PatientId,
-						doctorId,
-						DateTime.Now,
-						model.Urgency,
-						model.ClinicalNotes,
-						model.Tests);
+					await _doctorRepository
+						.CreateTestRequestAsync(
+							model.PatientId,
+							doctorId,
+							DateTime.Now,
+							model.Urgency,
+							model.ClinicalNotes,
+							model.Tests);
+
 
 				return Ok(new
 				{
 					success = true,
-					testRequestId = testRequestId,
-					message = "Test request created successfully."
+					testRequestId =
+						testRequestId,
+					message =
+						"Test request created successfully."
 				});
 			}
 			catch (Exception ex)
@@ -654,11 +865,10 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 				return StatusCode(500, new
 				{
 					success = false,
-					message = ex.Message
+					message =
+						ex.Message
 				});
 			}
 		}
-
-
 	}
 }

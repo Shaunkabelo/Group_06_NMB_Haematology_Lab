@@ -14,7 +14,7 @@ public partial class Patient
     public string  Name { get; set; }
     public string Surname { get; set; }
 	public DateTime DateOfBirth { get; set; }
-	//public string SaIdNumber { get; set; }
+	public string SaIdNumber { get; set; }
 	public string Gender { get; set; }
 	public int Age { get; set; }
 	public int Cellphone { get; set; }

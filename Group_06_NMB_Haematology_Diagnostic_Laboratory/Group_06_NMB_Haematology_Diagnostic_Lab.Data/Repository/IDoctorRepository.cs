@@ -96,9 +96,10 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
 			int sampleTypeId,
 			string barcodeNumber);
 
-		
+		//Task<IEnumerable<TestCategory>>GetTestCategoriesAsync();
 
-		
+		Task<IEnumerable<TestTypeDto>>GetTestsByCategoryAsync(int testCategoryId);
+
 		//Task<bool> AddAsync(Doctor doctor);
 		//Task<bool> UpdateAsync(Doctor doctor);
 		//Task<Doctor> GetByIdAsync(int doctorId);
