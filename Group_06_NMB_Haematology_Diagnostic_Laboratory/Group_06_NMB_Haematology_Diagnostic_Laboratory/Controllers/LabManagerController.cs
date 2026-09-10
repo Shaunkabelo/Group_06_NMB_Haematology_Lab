@@ -2,6 +2,7 @@
 using Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository;
 using Microsoft.AspNetCore.Mvc;
 using Group_06_NMB_Haematology_Diagnostic_Lab.Data.Helpers;
+using Group_06_NMB_Haematology_Diagnostic_Laboratory.Models;
 
 namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 {
@@ -13,7 +14,26 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
         {
             _repository = repository;
         }
-        public IActionResult Dashboard() => View();
+        [HttpGet]
+        public async Task<IActionResult> Dashboard()
+        {
+            var model = new DashboardViewModel
+            {
+                TestTypeCount = (await _repository.GetTestTypes("Active")).Count(),
+                CategoryCount = (await _repository.GetTestCategories("Active")).Count(),
+                DoctorCount = (await _repository.GetDoctors("Active")).Count(),
+                TechnicianCount = (await _repository.GetTechnicians("Active")).Count(),
+                ManagerCount = (await _repository.GetManagers("Active")).Count(),
+                ConsumableCount = (await _repository.GetConsumables("Active")).Count(),
+                LowStockConsumables = (await _repository.GetLowStockConsumables()).ToList(),
+                RecentOrders = (await _repository.GetStockOrders("All"))
+                    .OrderByDescending(order => order.OrderDate)
+                    .Take(5)
+                    .ToList()
+            };
+
+            return View(model);
+        }
 
 
         [HttpGet]
