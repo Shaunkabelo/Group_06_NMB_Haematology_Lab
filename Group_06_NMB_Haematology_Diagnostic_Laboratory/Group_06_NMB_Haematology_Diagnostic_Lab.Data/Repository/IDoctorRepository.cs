@@ -9,8 +9,101 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
 {
 	public interface IDoctorRepository
 	{
-		Task<bool> AddAsync(Doctor doctor);
-		Task<bool> UpdateAsync(Doctor doctor);
-		Task<Doctor> GetByIdAsync(int doctorId);
+		// =========================
+		// PATIENT
+		// =========================
+
+		Task<IEnumerable<Patient>> GetPatientsAsync();
+
+		Task<Patient?> GetPatientByIdAsync(int patientId);
+		Task<PatientDetailsDto?> GetPatientBySaIdAsync(string saIdNumber);
+
+
+		// =========================
+		// MEDICAL CONDITIONS
+		// =========================
+
+		Task<IEnumerable<MedicalCondition>> GetConditionCategoriesAsync();
+
+		Task<IEnumerable<MedicalCondition>> GetConditionsByCategoryAsync(
+			string category);
+
+		Task<int> AddPatientConditionAsync(
+			int patientId,
+			int medicalConditionId);
+
+		Task DeletePatientConditionAsync(
+			int patientConditionId);
+
+
+		// =========================
+		// ALLERGIES
+		// =========================
+
+		Task<IEnumerable<Allergy>> GetAllergyCategoriesAsync();
+
+		Task<IEnumerable<Allergy>> GetAllergiesByCategoryAsync(
+			string category);
+
+		Task<int> AddPatientAllergyAsync(
+			int patientId,
+			int allergyId);
+
+		Task DeletePatientAllergyAsync(
+			int patientAllergyId);
+
+
+		// =========================
+		// MEDICATION
+		// =========================
+
+		Task<IEnumerable<Medication>> GetMedicationCategoriesAsync();
+
+		Task<IEnumerable<Medication>> GetMedicationsByCategoryAsync(
+			string category);
+
+		Task<int> AddPatientMedicationAsync(
+			int patientId,
+			int medicationId);
+
+		Task DeletePatientMedicationAsync(
+			int patientMedicationId);
+
+		// =========================
+		// TEST REQUEST
+		// =========================
+
+		Task<IEnumerable<TestCategory>> GetTestCategoriesAsync();
+
+		Task<IEnumerable<TestType>> GetTestTypesByCategoryAsync(
+			int testCategoryId);
+
+		
+			
+		Task<int> CreateTestRequestAsync(
+			int patientId,
+			int doctorId,
+			DateTime requestDate,
+			string urgency,
+			string clinicalNotes,
+			List<CreateTestRequestItem> tests);
+		Task<int> AddTestRequestTestTypeAsync(
+			int testRequestId,
+			int testTypeId);
+
+		Task<int> AddSampleAsync(
+			int testRequestId,
+			int sampleTypeId,
+			string barcodeNumber);
+
+		
+
+		
+		//Task<bool> AddAsync(Doctor doctor);
+		//Task<bool> UpdateAsync(Doctor doctor);
+		//Task<Doctor> GetByIdAsync(int doctorId);
+
+
+
 	}
 }

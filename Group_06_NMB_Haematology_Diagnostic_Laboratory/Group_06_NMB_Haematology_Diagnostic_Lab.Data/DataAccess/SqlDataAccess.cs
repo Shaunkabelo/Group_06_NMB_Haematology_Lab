@@ -87,12 +87,24 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.DataAccess
                 commandType: CommandType.StoredProcedure);
         }
 
-        // ==========================================================================================
+		// ==========================================================================================
 
 
+		public async Task<T> SaveDataAndReturnWithTable<T>(
+	string spName,
+	DynamicParameters parameters,
+	string connectionId = "conn")
+		{
+			using IDbConnection connection =
+				new SqlConnection(_config.GetConnectionString(connectionId));
 
+			return await connection.ExecuteScalarAsync<T>(
+				spName,
+				parameters,
+				commandType: CommandType.StoredProcedure);
+		}
 
-        public async Task SaveData<T>(string spName, T parameters, string connectionId = "conn")
+		public async Task SaveData<T>(string spName, T parameters, string connectionId = "conn")
         {
             using IDbConnection connection = new SqlConnection(_config.GetConnectionString(connectionId));
             await connection.ExecuteAsync(spName, parameters, commandType: CommandType.StoredProcedure);

@@ -15,86 +15,144 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
 		{
 			_db = db;
 		}
-		public async Task<bool> AddAsync(Patient patient)
+		// =========================
+		// ALLERGIES
+		// =========================
+
+		public async Task<IEnumerable<Allergy>> GetAllergiesAsync()
 		{
-			try
-			{
-				await _db.SaveData("dbo.spPatient_Insert", new { patient.Name, patient.Age, patient.Gender, patient.Address, patient.ContactNumber, patient.DateOfBirth, patient.email, patient.PatientId, patient.PatientCondition, patient.PatientAllergy, patient.PatientMedication });
-				return true;
-			}
-			catch (Exception
-			ex)
-			{
-				return false;
-			}
+			return await _db.GetData<Allergy, dynamic>(
+				"dbo.spAllergy_GetAll",
+				new { }
+			);
 		}
 
-		public async Task<IEnumerable<Patient>> GetAllAsync()
+		public async Task AddPatientAllergyAsync(
+			int patientId,
+			int allergyId)
 		{
-			try
-			{
-				string sql = "SELECT * FROM Patients";
-				return await _db.GetData<Patient, dynamic>(sql, new { });
-			}
-			catch (Exception ex)
-			{
-				return null;
-			}
+			await _db.SaveData(
+				"dbo.spPatientAllergy_Add",
+				new
+				{
+					PatientID = patientId,
+					AllergyID = allergyId
+				}
+			);
 		}
 
-		public async Task<bool> GetByIdAsync(int patientId)
+		public async Task DeletePatientAllergyAsync(
+			int patientId,
+			int allergyId)
 		{
-			try
-			{
-				string sql = "SELECT * FROM Patients WHERE PatientId = @PatientId";
-				var result = await _db.GetData<Patient, dynamic>(sql, new { PatientId = patientId });
-				return result.Any();
-			}
-			catch (Exception ex)
-			{
-				return false;
-			}
+			await _db.SaveData(
+				"dbo.spPatientAllergy_Delete",
+				new
+				{
+					PatientID = patientId,
+					AllergyID = allergyId
+				}
+			);
 		}
 
-		/*public async Task<bool> UpdateAsync(Patient patient)
-		{
-			try
-			{
-				await _db.SaveData("dbo.spPatient_Update", new { patient.PatientId, patient.Name, patient.Age, patient.Gender, patient.Address, patient.ContactNumber, patient.DateOfBirth, patient.email, patient.PatientCondition, patient.PatientAllergy, patient.PatientMedication });
-				return true;
-			}
-			catch (Exception ex)
-			{
-				return false;
-			}
-		}*/
-		public async Task<bool> UpdateAsync(Patient patient)
-		{
-			try
-			{
-				await _db.SaveData(
-					"dbo.spPatient_Update",
-					new
-					{
-						patient.PatientId,
-						patient.Name,
-						patient.Age,
-						patient.Gender,
-						patient.Address,
-						patient.ContactNumber,
-						patient.DateOfBirth,
-						patient.email,
-						patient.PatientCondition,
-						patient.PatientAllergy,
-						patient.PatientMedication
-					});
 
-				return true;
-			}
-			catch (Exception ex)
-			{
-				return false;
-			}
+		// =========================
+		// MEDICAL CONDITIONS
+		// =========================
+
+		public async Task<IEnumerable<MedicalCondition>> GetMedicalConditionsAsync()
+		{
+			return await _db.GetData<MedicalCondition, dynamic>(
+				"dbo.spMedicalCondition_GetAll",
+				new { }
+			);
+		}
+
+		public async Task AddPatientConditionAsync(
+			int patientId,
+			int medicalConditionId)
+		{
+			await _db.SaveData(
+				"dbo.spPatientCondition_Add",
+				new
+				{
+					PatientID = patientId,
+					MedicalConditionID = medicalConditionId
+				}
+			);
+		}
+
+		public async Task DeletePatientConditionAsync(
+			int patientId,
+			int medicalConditionId)
+		{
+			await _db.SaveData(
+				"dbo.spPatientCondition_Delete",
+				new
+				{
+					PatientID = patientId,
+					MedicalConditionID = medicalConditionId
+				}
+			);
+		}
+
+
+		// =========================
+		// MEDICATION
+		// =========================
+
+		public async Task<IEnumerable<Medication>> GetMedicationsAsync()
+		{
+			return await _db.GetData<Medication, dynamic>(
+				"dbo.spMedication_GetAll",
+				new { }
+			);
+		}
+
+		public async Task AddPatientMedicationAsync(
+			int patientId,
+			int medicationId)
+		{
+			await _db.SaveData(
+				"dbo.spPatientMedication_Add",
+				new
+				{
+					PatientID = patientId,
+					MedicationID = medicationId
+				}
+			);
+		}
+
+		public async Task DeletePatientMedicationAsync(
+			int patientId,
+			int medicationId)
+		{
+			await _db.SaveData(
+				"dbo.spPatientMedication_Delete",
+				new
+				{
+					PatientID = patientId,
+					MedicationID = medicationId
+				}
+			);
+		}
+
+		public async Task<IEnumerable<PatientDetailsDto>> GetPatientsAsync()
+		{
+			return await _db.GetData<PatientDetailsDto, dynamic>(
+				"dbo.spPatient_GetAll",
+				new { }
+			);
+		}
+
+		public async Task<PatientDetailsDto> GetPatientBySaIdAsync(string saIdNumber)
+		{
+			var result = await _db.GetData<PatientDetailsDto, dynamic>(
+				"dbo.spPatient_GetBySaId",
+				new { SA_ID_Number = saIdNumber }
+			);
+
+			return result.FirstOrDefault();
 		}
 	}
 }

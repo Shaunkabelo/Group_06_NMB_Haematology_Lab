@@ -10,8 +10,8 @@ public partial class TestRequest
     public int TestRequestId { get; set; }
 
     public int PatientId { get; set; }
-
-    public int DoctorId { get; set; }
+	public int DoctorId { get; set; }
+	
 
     public DateTime RequestDate { get; set; }
 

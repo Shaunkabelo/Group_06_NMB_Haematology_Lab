@@ -9,11 +9,27 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
 {
 	public interface IPatientRepository
 	{
-		public Task<bool> AddAsync(Patient patient);
-		public Task<bool> UpdateAsync(Patient patient);
+		// Allergies
+		Task<IEnumerable<Allergy>> GetAllergiesAsync();
+		//Task<IEnumerable<AllergyCategory>> GetAllergyCategoriesAsync();
+		Task AddPatientAllergyAsync(int patientId, int allergyId);
+		Task DeletePatientAllergyAsync(int patientId, int allergyId);
 
-		public Task<bool> GetByIdAsync(int patientId);
-		public Task<IEnumerable<Patient>> GetAllAsync();
+		// Medical Conditions
+		Task<IEnumerable<MedicalCondition>> GetMedicalConditionsAsync();
+		//Task<IEnumerable<MedicalConditionCategory>> GetMedicalConditionCategoriesAsync();
+		Task AddPatientConditionAsync(int patientId, int medicalConditionId);
+		Task DeletePatientConditionAsync(int patientId, int medicalConditionId);
+
+		// Medication
+		Task<IEnumerable<Medication>> GetMedicationsAsync();
+		//Task<IEnumerable<MedicationCategory>> GetMedicationCategoriesAsync();
+		Task AddPatientMedicationAsync(int patientId, int medicationId);
+		Task DeletePatientMedicationAsync(int patientId, int medicationId);
+
+		// Patient dropdown and details
+		Task<IEnumerable<PatientDetailsDto>> GetPatientsAsync();
+		Task<PatientDetailsDto> GetPatientBySaIdAsync(string saIdNumber);
 
 	}
 }

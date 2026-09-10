@@ -12,6 +12,7 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.DataAccess
 
     public interface ISqlDataAccess
     {
+
         Task<IEnumerable<T>> GetData<T, P>(string spName, P parameters, string connectionId = "conn");
 
 
@@ -42,13 +43,16 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.DataAccess
         string splitOn = "Id",
         string connectionId = "conn");
 
-        //     ==============================================================================
+		//     ==============================================================================
+
+		Task<T> SaveDataAndReturnWithTable<T>(
+	string spName,
+	DynamicParameters parameters,
+	string connectionId = "conn");
 
 
 
-
-
-        Task SaveData<T>(string spName, T parameters, string connectionId = "conn");
+		Task SaveData<T>(string spName, T parameters, string connectionId = "conn");
         // ===============================================================================
         //  SAVE DATA OVERLOAD METHODS
         Task<T> SaveDataAndReturn<T, P>(string spName, P parameters, string connectionId = "conn");

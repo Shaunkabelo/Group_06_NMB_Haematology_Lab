@@ -1,9 +1,16 @@
+using Group_06_NMB_Haematology_Diagnostic_Lab.Data.DataAccess;
+using Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
 //builder.Services.AddTransient<ISqlDataAccess, SqlDataAccess>();
 //builder.Services.AddTransient<IDoctorRepository, DoctorRepository>();
+builder.Services.AddScoped<ISqlDataAccess, SqlDataAccess>();
+builder.Services.AddScoped<IDoctorRepository, DoctorRepository>();
+//Patient Service
+
 
 var app = builder.Build();
 

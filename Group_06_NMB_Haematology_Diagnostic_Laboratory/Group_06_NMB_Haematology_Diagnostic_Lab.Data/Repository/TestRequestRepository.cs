@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Dapper;
+using System.Data;
 using Group_06_NMB_Haematology_Diagnostic_Lab.Data.Models;
 using Group_06_NMB_Haematology_Diagnostic_Lab.Data.DataAccess;
 
@@ -16,7 +18,61 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
 		{
 			_db = db;
 		}
+		public async Task<int> CreateAsync(
+	int patientId,
+	int doctorId,
+	string urgency,
+	string clinicalNotes,
+	List<CreateTestRequestItem> tests)
+		{
+			if (tests == null || tests.Count == 0)
+				throw new ArgumentException("At least one test is required.");
 
+			var table = new DataTable();
+
+			table.Columns.Add("TestTypeID", typeof(int));
+			table.Columns.Add("SampleTypeID", typeof(int));
+			table.Columns.Add("BarcodeNumber", typeof(string));
+
+			foreach (var test in tests)
+			{
+				if (test.TestTypeId <= 0)
+					throw new ArgumentException("Invalid test type.");
+
+				if (test.SampleTypeId <= 0)
+					throw new ArgumentException("Invalid sample type.");
+
+				if (string.IsNullOrWhiteSpace(test.BarcodeNumber))
+					throw new ArgumentException("Every test must have a barcode.");
+
+				table.Rows.Add(
+					test.TestTypeId,
+					test.SampleTypeId,
+					test.BarcodeNumber.Trim()
+				);
+			}
+
+			var parameters = new DynamicParameters();
+
+			parameters.Add("@PatientID", patientId);
+			parameters.Add("@DoctorID", doctorId);
+			parameters.Add("@RequestDate", DateTime.Now);
+			parameters.Add("@Urgency", urgency);
+			parameters.Add("@ClinicalNotes", clinicalNotes);
+			parameters.Add("@Status", "Submitted");
+
+			parameters.Add(
+				"@Tests",
+				table.AsTableValuedParameter(
+					"dbo.TestRequestTestTypeTableType"
+				)
+			);
+
+			return await _db.SaveDataAndReturnWithTable<int>(
+				"dbo.spTestRequest_Create",
+				parameters
+			);
+		}
 		public async Task<bool> AddAsync(TestRequest testRequest, Sample sample, Patient patient )
 		{
 			try

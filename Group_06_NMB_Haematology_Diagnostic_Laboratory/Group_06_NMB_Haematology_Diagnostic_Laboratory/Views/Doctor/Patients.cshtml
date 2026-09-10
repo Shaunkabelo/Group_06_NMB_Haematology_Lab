@@ -4,654 +4,2230 @@
 }
 
 <div class="page-body">
+
+    ```
     <div class="section-header">
         <div class="section-title">Patient Records</div>
-        <div class="section-sub">Register new patients and maintain medical details used during test requests.</div>
+        <div class="section-sub">
+            Register new patients and maintain medical details used during test requests.
+        </div>
     </div>
 
     <section class="page-stack">
+
+        <!-- ============================================================
+             PATIENT INFORMATION
+        ============================================================= -->
+
         <div class="card">
-            <div class="card-header"><span class="card-title">Register Patient</span></div>
+
+            <div class="card-header">
+                <span class="card-title">Patient Information</span>
+            </div>
+
             <div class="card-body">
+
                 <div class="form-group">
-                    <label class="form-label">Select Patient by ID</label>
-                    <select id="doc-pat-id" class="form-control" onchange="loadSelectedPatientSummary()">
-                        <option value="">-- Select patient ID --</option>
+
+                    <label class="form-label">
+                        Select Patient by SA ID
+                    </label>
+
+                    <select id="doc-pat-id"
+                            class="form-control">
+
+                        <option value="">
+                            -- Select patient SA ID --
+                        </option>
+
                     </select>
+
                 </div>
 
-                <div id="selected-patient-summary" class="patient-info-panel" style="display:none; margin-bottom: 18px;">
+
+                <!-- Selected Patient -->
+
+                <div id="selected-patient-summary"
+                     class="patient-info-panel"
+                     style="display:none; margin-bottom:18px;">
+
                     <div class="info-section">
+
                         <h4>Selected Patient</h4>
+
                         <div class="info-grid">
+
                             <div class="info-item">
                                 <label>Name</label>
                                 <span id="selected-patient-name"></span>
                             </div>
+
                             <div class="info-item">
                                 <label>ID Number</label>
                                 <span id="selected-patient-id"></span>
                             </div>
+
+                            <div class="info-item">
+                                <label>Date of Birth</label>
+                                <span id="selected-patient-dob"></span>
+                            </div>
+
                             <div class="info-item">
                                 <label>Address</label>
                                 <span id="selected-patient-address"></span>
                             </div>
+
+                            <div class="info-item">
+                                <label>Contact Number</label>
+                                <span id="selected-patient-contact"></span>
+                            </div>
+
+                            <div class="info-item">
+                                <label>Email</label>
+                                <span id="selected-patient-email"></span>
+                            </div>
+
                         </div>
+
                     </div>
+
                 </div>
 
+
+                <!-- ====================================================
+                     MEDICAL CONDITIONS
+                ===================================================== -->
+
                 <div class="form-group">
-                    <label class="form-label">Known Medical Conditions</label>
-                    <div class="form-row" style="gap: 10px; align-items:flex-end;">
-                        <div class="form-group" style="flex:2; margin-bottom:0;">
-                            <label class="form-label">Category</label>
-                            <select id="doc-pat-condition-category" class="form-control"></select>
+
+                    <label class="form-label">
+                        Known Medical Conditions
+                    </label>
+
+                    <div class="form-row"
+                         style="gap:10px; align-items:flex-end;">
+
+                        <div class="form-group"
+                             style="flex:2; margin-bottom:0;">
+
+                            <label class="form-label">
+                                Category
+                            </label>
+
+                            <select id="doc-pat-condition-category"
+                                    class="form-control">
+
+                                <option value="">
+                                    -- Select Category --
+                                </option>
+
+                            </select>
+
                         </div>
-                        <div class="form-group" style="flex:3; margin-bottom:0;">
-                            <label class="form-label">Condition</label>
-                            <select id="doc-pat-condition-name" class="form-control"></select>
+
+
+                        <div class="form-group"
+                             style="flex:3; margin-bottom:0;">
+
+                            <label class="form-label">
+                                Condition
+                            </label>
+
+                            <select id="doc-pat-condition-name"
+                                    class="form-control"
+                                    disabled>
+
+                                <option value="">
+                                    -- Select Condition --
+                                </option>
+
+                            </select>
+
                         </div>
-                        <div class="form-group" style="flex:1; margin-bottom:0;">
-                            <button class="btn btn-primary" type="button" onclick="addPatientCondition()">Add Condition</button>
+
+
+                        <div class="form-group"
+                             style="flex:1; margin-bottom:0;">
+
+                            <button class="btn btn-primary"
+                                    type="button"
+                                    onclick="addPatientCondition()">
+
+                                Add Condition
+
+                            </button>
+
                         </div>
+
                     </div>
-                    <div class="pills-container" id="condition-pills" style="margin-top: 10px;"></div>
-                    <input type="hidden" id="doc-pat-conditions" value="Hypertension (Cardiovascular)">
+
+
+                    <div class="pills-container"
+                         id="condition-pills"
+                         style="margin-top:10px;">
+                    </div>
+
                 </div>
+
+
+                <!-- ====================================================
+                     ALLERGIES
+                ===================================================== -->
+
                 <div class="form-row">
+
                     <div class="form-group">
-                        <label class="form-label">Allergies</label>
-                        <div class="form-row" style="gap: 10px; align-items:flex-end;">
-                            <div class="form-group" style="flex:2; margin-bottom:0;">
-                                <label class="form-label">Category</label>
-                                <select id="doc-pat-allergy-category" class="form-control"></select>
+
+                        <label class="form-label">
+                            Allergies
+                        </label>
+
+                        <div class="form-row"
+                             style="gap:10px; align-items:flex-end;">
+
+                            <div class="form-group"
+                                 style="flex:2; margin-bottom:0;">
+
+                                <label class="form-label">
+                                    Category
+                                </label>
+
+                                <select id="doc-pat-allergy-category"
+                                        class="form-control">
+
+                                    <option value="">
+                                        -- Select Category --
+                                    </option>
+
+                                </select>
+
                             </div>
-                            <div class="form-group" style="flex:3; margin-bottom:0;">
-                                <label class="form-label">Allergy</label>
-                                <select id="doc-pat-allergy-name" class="form-control"></select>
+
+
+                            <div class="form-group"
+                                 style="flex:3; margin-bottom:0;">
+
+                                <label class="form-label">
+                                    Allergy
+                                </label>
+
+                                <select id="doc-pat-allergy-name"
+                                        class="form-control"
+                                        disabled>
+
+                                    <option value="">
+                                        -- Select Allergy --
+                                    </option>
+
+                                </select>
+
                             </div>
-                            <div class="form-group" style="flex:1; margin-bottom:0;">
-                                <button class="btn btn-primary" type="button" onclick="addPatientAllergy()">Add Allergy</button>
+
+
+                            <div class="form-group"
+                                 style="flex:1; margin-bottom:0;">
+
+                                <button class="btn btn-primary"
+                                        type="button"
+                                        onclick="addPatientAllergy()">
+
+                                    Add Allergy
+
+                                </button>
+
                             </div>
+
                         </div>
-                        <div class="pills-container" id="allergies-pills" style="margin-top:10px;"></div>
-                        <input type="hidden" id="doc-pat-allergies" value="">
+
+
+                        <div class="pills-container"
+                             id="allergies-pills"
+                             style="margin-top:10px;">
+                        </div>
+
                     </div>
+
                 </div>
+
+
+                <!-- ====================================================
+                     MEDICATION
+                ===================================================== -->
+
                 <div class="form-group">
-                    <label class="form-label">Current Medication</label>
-                    <div class="form-row" style="gap: 10px; align-items:flex-end;">
-                        <div class="form-group" style="flex:2; margin-bottom:0;">
-                            <label class="form-label">Category</label>
-                            <select id="doc-pat-medication-category" class="form-control"></select>
+
+                    <label class="form-label">
+                        Current Medication
+                    </label>
+
+                    <div class="form-row"
+                         style="gap:10px; align-items:flex-end;">
+
+                        <div class="form-group"
+                             style="flex:2; margin-bottom:0;">
+
+                            <label class="form-label">
+                                Category
+                            </label>
+
+                            <select id="doc-pat-medication-category"
+                                    class="form-control">
+
+                                <option value="">
+                                    -- Select Category --
+                                </option>
+
+                            </select>
+
                         </div>
-                        <div class="form-group" style="flex:3; margin-bottom:0;">
-                            <label class="form-label">Medication</label>
-                            <select id="doc-pat-medication-name" class="form-control"></select>
+
+
+                        <div class="form-group"
+                             style="flex:3; margin-bottom:0;">
+
+                            <label class="form-label">
+                                Medication
+                            </label>
+
+                            <select id="doc-pat-medication-name"
+                                    class="form-control"
+                                    disabled>
+
+                                <option value="">
+                                    -- Select Medication --
+                                </option>
+
+                            </select>
+
                         </div>
-                        <div class="form-group" style="flex:1; margin-bottom:0;">
-                            <button class="btn btn-primary" type="button" onclick="addPatientMedication()">Add Medication</button>
+
+
+                        <div class="form-group"
+                             style="flex:1; margin-bottom:0;">
+
+                            <button class="btn btn-primary"
+                                    type="button"
+                                    onclick="addPatientMedication()">
+
+                                Add Medication
+
+                            </button>
+
                         </div>
+
                     </div>
-                    <div class="pills-container" id="medication-pills" style="margin-top:10px;"></div>
-                    <input type="hidden" id="doc-pat-medication" value="">
+
+
+                    <div class="pills-container"
+                         id="medication-pills"
+                         style="margin-top:10px;">
+                    </div>
+
                 </div>
-                <button class="btn btn-primary" type="button" onclick="savePatientFromDoctor()">Save Patient</button>
+
+
+                <button class="btn btn-primary"
+                        type="button"
+                        onclick="refreshPatientData()">
+
+                    Refresh Patient Data
+
+                </button>
+
             </div>
+
         </div>
 
-        <div class="card" style="margin-top: 20px;">
-            <div class="card-header"><span class="card-title">Existing Patients</span></div>
+
+        <!-- ============================================================
+             EXISTING PATIENTS
+        ============================================================= -->
+
+        <div class="card"
+             style="margin-top:20px;">
+
+            <div class="card-header">
+
+                <span class="card-title">
+                    Existing Patients
+                </span>
+
+            </div>
+
+
             <div class="table-wrap">
+
                 <table class="doctor-patients-table">
+
                     <thead>
+
                         <tr>
+
                             <th>Patient</th>
+
                             <th>ID Number</th>
+
                             <th>Physical Address</th>
+
                             <th>Conditions</th>
+
                             <th>Allergies</th>
+
                             <th>Medication</th>
-                            <th>Consent</th>
+
+                            <th>Action</th>
+
                         </tr>
+
                     </thead>
+
+
                     <tbody id="doctor-patients-tbody">
-                        <!-- populated by script -->
+
+                        <tr>
+
+                            <td colspan="7">
+                                Loading patients...
+                            </td>
+
+                        </tr>
+
                     </tbody>
+
                 </table>
+
             </div>
+
         </div>
+
     </section>
+    ```
+
 </div>
+
 <script>
-    const doctorPatientsStorageKey = 'doctorPatients';
-    const patientCreateUrl = '@Url.Action("Create", "Patient")';
-    const patientListUrl = '@Url.Action("List", "Patient")';
 
-    function toast(msg){ alert(msg); }
+    // ================================================================
+    // CONTROLLER URLS
+    // ================================================================
 
-    function toggleDropdown(event, dropdownId) {
-        event.preventDefault();
-        const dropdown = document.getElementById(dropdownId);
-        dropdown.classList.toggle('show');
+    const doctorUrls = {
+
+        getPatients:
+            '@Url.Action("GetPatients", "Doctor")',
+
+        getPatient:
+            '@Url.Action("GetPatient", "Doctor")',
+
+        getConditionCategories:
+            '@Url.Action("GetConditionCategories", "Doctor")',
+
+        getConditionsByCategory:
+            '@Url.Action("GetConditionsByCategory", "Doctor")',
+
+        addPatientCondition:
+            '@Url.Action("AddPatientCondition", "Doctor")',
+
+        deletePatientCondition:
+            '@Url.Action("DeletePatientCondition", "Doctor")',
+
+        getAllergyCategories:
+            '@Url.Action("GetAllergyCategories", "Doctor")',
+
+        getAllergiesByCategory:
+            '@Url.Action("GetAllergiesByCategory", "Doctor")',
+
+        addPatientAllergy:
+            '@Url.Action("AddPatientAllergy", "Doctor")',
+
+        deletePatientAllergy:
+            '@Url.Action("DeletePatientAllergy", "Doctor")',
+
+        getMedicationCategories:
+            '@Url.Action("GetMedicationCategories", "Doctor")',
+
+        getMedicationsByCategory:
+            '@Url.Action("GetMedicationsByCategory", "Doctor")',
+
+        addPatientMedication:
+            '@Url.Action("AddPatientMedication", "Doctor")',
+
+        deletePatientMedication:
+            '@Url.Action("DeletePatientMedication", "Doctor")'
+
+    };
+
+
+    // ================================================================
+    // GLOBAL STATE
+    // ================================================================
+
+    let selectedPatient = null;
+
+
+    // ================================================================
+    // TOAST / MESSAGE
+    // ================================================================
+
+    function toast(message) {
+
+        alert(message);
+
     }
 
-        const patientConditionCategories = {
-            'Haematological': ['Anaemia', 'Leukaemia', 'Sickle Cell Anaemia', 'Iron Deficiency Anaemia'],
-            'Cardiovascular': ['Hypertension', 'Coronary Artery Disease', 'Heart Failure', 'Arrhythmia'],
-            'Metabolic': ['Type 2 Diabetes', 'Hyperlipidaemia', 'Hypothyroidism', 'Metabolic Syndrome'],
-            'Autoimmune': ['Rheumatoid Arthritis', 'Lupus (SLE)', 'Multiple Sclerosis', 'Type 1 Diabetes'],
-            'Respiratory': ['Asthma', 'Chronic Obstructive Pulmonary Disease', 'Pneumonia', 'Bronchiectasis'],
-            'Other': ['Chronic Kidney Disease', 'Migraine', 'Epilepsy', 'No known condition']
-        };
 
-        const patientAllergyCategories = {
-            'Drug Allergy': ['Penicillin', 'Aspirin', 'Sulfa drugs', 'Iodine contrast', 'Latex', 'Amoxicillin'],
-            'Food Allergy': ['Peanuts', 'Shellfish', 'Milk', 'Eggs', 'Soy', 'Wheat'],
-            'Environmental Allergy': ['Pollen', 'Dust mite', 'Mold', 'Animal dander'],
-            'Contact Allergy': ['Nickel', 'Fragrances', 'Hair dye'],
-            'Other': ['No known allergy']
-        };
+    // ================================================================
+    // LOAD PATIENTS
+    // ================================================================
 
-        const patientMedicationCategories = {
-            'Antihypertensive': ['Atenolol', 'Lisinopril', 'Losartan', 'Hydrochlorothiazide'],
-            'Antidiabetic': ['Metformin', 'Glipizide', 'Insulin', 'Empagliflozin'],
-            'Anticoagulant': ['Warfarin', 'Enoxaparin', 'Rivaroxaban', 'Heparin'],
-            'Lipid-lowering': ['Simvastatin', 'Atorvastatin', 'Fenofibrate'],
-            'Analgesic': ['Paracetamol', 'Aspirin', 'Ibuprofen'],
-            'Other': ['Vitamin D', 'Calcium', 'Omeprazole']
-        };
+     async function loadPatients() {
 
-        function populateConditionNames() {
-            const category = document.getElementById('doc-pat-condition-category').value;
-            const nameSelect = document.getElementById('doc-pat-condition-name');
-            nameSelect.innerHTML = '';
-            const conditions = patientConditionCategories[category] || [];
-            conditions.forEach(condition => {
-                const option = document.createElement('option');
-                option.value = condition;
-                option.textContent = condition;
-                nameSelect.appendChild(option);
-            });
-        }
+        const select =
+            document.getElementById('doc-pat-id');
 
-        function addPatientCondition() {
-            const categoryElement = document.getElementById('doc-pat-condition-category');
-            const nameElement = document.getElementById('doc-pat-condition-name');
-            const category = categoryElement.value;
-            const condition = nameElement.value;
-            if (!condition) return;
-            const value = `${condition} (${category})`;
-            const existing = Array.from(document.getElementById('condition-pills').children).some(pill => pill.dataset.value === value);
-            if (existing) return;
-            const pill = document.createElement('span');
-            pill.className = 'pill';
-            pill.dataset.value = value;
-            pill.textContent = value;
-            const closeButton = document.createElement('button');
-            closeButton.type = 'button';
-            closeButton.className = 'pill-close';
-            closeButton.textContent = '×';
-            closeButton.onclick = () => removePatientCondition(pill);
-            pill.appendChild(closeButton);
-            document.getElementById('condition-pills').appendChild(pill);
-            updateConditionHidden();
-        }
+        const tbody =
+            document.getElementById('doctor-patients-tbody');
 
-        function removePatientCondition(pill) {
-            pill.remove();
-            updateConditionHidden();
-        }
-
-        function updateConditionHidden() {
-            const values = Array.from(document.getElementById('condition-pills').children).map(pill => pill.dataset.value);
-            document.getElementById('doc-pat-conditions').value = values.join('; ');
-        }
-
-        function renderConditionPillsFromValue(value) {
-            const container = document.getElementById('condition-pills');
-            container.innerHTML = '';
-            (value || '').split(';').map(s => s.trim()).filter(Boolean).forEach(item => {
-                const pill = document.createElement('span');
-                pill.className = 'pill';
-                pill.dataset.value = item;
-                pill.textContent = item;
-                const closeButton = document.createElement('button');
-                closeButton.type = 'button';
-                closeButton.className = 'pill-close';
-                closeButton.textContent = '×';
-                closeButton.onclick = () => removePatientCondition(pill);
-                pill.appendChild(closeButton);
-                container.appendChild(pill);
-            });
-        }
-
-        function populateAllergyNames() {
-            const category = document.getElementById('doc-pat-allergy-category').value;
-            const nameSelect = document.getElementById('doc-pat-allergy-name');
-            nameSelect.innerHTML = '';
-            const allergies = patientAllergyCategories[category] || [];
-            allergies.forEach(allergy => {
-                const option = document.createElement('option');
-                option.value = allergy;
-                option.textContent = allergy;
-                nameSelect.appendChild(option);
-            });
-        }
-
-        function addPatientAllergy() {
-            const category = document.getElementById('doc-pat-allergy-category').value;
-            const allergy = document.getElementById('doc-pat-allergy-name').value;
-            if (!allergy) return;
-            const value = `${allergy} (${category})`;
-            const existing = Array.from(document.getElementById('allergies-pills').children).some(pill => pill.dataset.value === value);
-            if (existing) return;
-            const pill = document.createElement('span');
-            pill.className = 'pill';
-            pill.dataset.value = value;
-            pill.textContent = value;
-            const closeButton = document.createElement('button');
-            closeButton.type = 'button';
-            closeButton.className = 'pill-close';
-            closeButton.textContent = '×';
-            closeButton.onclick = () => removePatientAllergy(pill);
-            pill.appendChild(closeButton);
-            document.getElementById('allergies-pills').appendChild(pill);
-            updateAllergyHidden();
-        }
-
-        function removePatientAllergy(pill) {
-            pill.remove();
-            updateAllergyHidden();
-        }
-
-        function updateAllergyHidden() {
-            const values = Array.from(document.getElementById('allergies-pills').children).map(pill => pill.dataset.value);
-            document.getElementById('doc-pat-allergies').value = values.join('; ');
-        }
-
-        function renderAllergyPillsFromValue(value) {
-            const container = document.getElementById('allergies-pills');
-            container.innerHTML = '';
-            (value || '').split(';').map(s => s.trim()).filter(Boolean).forEach(item => {
-                const pill = document.createElement('span');
-                pill.className = 'pill';
-                pill.dataset.value = item;
-                pill.textContent = item;
-                const closeButton = document.createElement('button');
-                closeButton.type = 'button';
-                closeButton.className = 'pill-close';
-                closeButton.textContent = '×';
-                closeButton.onclick = () => removePatientAllergy(pill);
-                pill.appendChild(closeButton);
-                container.appendChild(pill);
-            });
-        }
-
-        function populateMedicationNames() {
-            const category = document.getElementById('doc-pat-medication-category').value;
-            const nameSelect = document.getElementById('doc-pat-medication-name');
-            nameSelect.innerHTML = '';
-            const medications = patientMedicationCategories[category] || [];
-            medications.forEach(medication => {
-                const option = document.createElement('option');
-                option.value = medication;
-                option.textContent = medication;
-                nameSelect.appendChild(option);
-            });
-        }
-
-        function addPatientMedication() {
-            const category = document.getElementById('doc-pat-medication-category').value;
-            const medication = document.getElementById('doc-pat-medication-name').value;
-            if (!medication) return;
-            const value = `${medication} (${category})`;
-            const existing = Array.from(document.getElementById('medication-pills').children).some(pill => pill.dataset.value === value);
-            if (existing) return;
-            const pill = document.createElement('span');
-            pill.className = 'pill';
-            pill.dataset.value = value;
-            pill.textContent = value;
-            const closeButton = document.createElement('button');
-            closeButton.type = 'button';
-            closeButton.className = 'pill-close';
-            closeButton.textContent = '×';
-            closeButton.onclick = () => removePatientMedication(pill);
-            pill.appendChild(closeButton);
-            document.getElementById('medication-pills').appendChild(pill);
-            updateMedicationHidden();
-        }
-
-        function removePatientMedication(pill) {
-            pill.remove();
-            updateMedicationHidden();
-        }
-
-        function updateMedicationHidden() {
-            const values = Array.from(document.getElementById('medication-pills').children).map(pill => pill.dataset.value);
-            document.getElementById('doc-pat-medication').value = values.join('; ');
-        }
-
-        function renderMedicationPillsFromValue(value) {
-            const container = document.getElementById('medication-pills');
-            container.innerHTML = '';
-            (value || '').split(';').map(s => s.trim()).filter(Boolean).forEach(item => {
-                const pill = document.createElement('span');
-                pill.className = 'pill';
-                pill.dataset.value = item;
-                pill.textContent = item;
-                const closeButton = document.createElement('button');
-                closeButton.type = 'button';
-                closeButton.className = 'pill-close';
-                closeButton.textContent = '×';
-                closeButton.onclick = () => removePatientMedication(pill);
-                pill.appendChild(closeButton);
-                container.appendChild(pill);
-            });
-        }
-
-        document.getElementById('doc-pat-condition-category').addEventListener('change', populateConditionNames);
-        document.getElementById('doc-pat-allergy-category').addEventListener('change', populateAllergyNames);
-        document.getElementById('doc-pat-medication-category').addEventListener('change', populateMedicationNames);
-
-        function setDefaultConditionSelection() {
-            const categorySelect = document.getElementById('doc-pat-condition-category');
-            if (!categorySelect.options.length) {
-                Object.keys(patientConditionCategories).forEach(category => {
-                    const option = document.createElement('option');
-                    option.value = category;
-                    option.textContent = category;
-                    categorySelect.appendChild(option);
-                });
-            }
-            categorySelect.value = 'Cardiovascular';
-            populateConditionNames();
-            document.getElementById('doc-pat-condition-name').value = 'Hypertension';
-            renderConditionPillsFromValue(document.getElementById('doc-pat-conditions').value);
-        }
-
-        function setDefaultAllergySelection() {
-            const categorySelect = document.getElementById('doc-pat-allergy-category');
-            if (!categorySelect.options.length) {
-                Object.keys(patientAllergyCategories).forEach(category => {
-                    const option = document.createElement('option');
-                    option.value = category;
-                    option.textContent = category;
-                    categorySelect.appendChild(option);
-                });
-            }
-            categorySelect.value = 'Drug Allergy';
-            populateAllergyNames();
-            document.getElementById('doc-pat-allergy-name').value = 'Penicillin';
-            renderAllergyPillsFromValue(document.getElementById('doc-pat-allergies').value);
-        }
-
-        function setDefaultMedicationSelection() {
-            const categorySelect = document.getElementById('doc-pat-medication-category');
-            if (!categorySelect.options.length) {
-                Object.keys(patientMedicationCategories).forEach(category => {
-                    const option = document.createElement('option');
-                    option.value = category;
-                    option.textContent = category;
-                    categorySelect.appendChild(option);
-                });
-            }
-            categorySelect.value = 'Antihypertensive';
-            populateMedicationNames();
-            document.getElementById('doc-pat-medication-name').value = 'Atenolol';
-            renderMedicationPillsFromValue(document.getElementById('doc-pat-medication').value);
-        }
-
-        function updatePills(checkbox, pillsContainerId) {
-            const container = document.getElementById(pillsContainerId);
-            const value = checkbox.value;
-            if (checkbox.checked) {
-                const pill = document.createElement('span');
-                pill.className = 'pill';
-                pill.innerHTML = `${value} <button type="button" class="pill-close" onclick="removePill(this, '${pillsContainerId}', '${value}')">&times;</button>`;
-                container.appendChild(pill);
-            } else {
-                const pills = container.querySelectorAll('.pill');
-                pills.forEach(pill => {
-                    if (pill.textContent.trim().startsWith(value)) {
-                        pill.remove();
-                    }
-                });
-            }
-            updateHiddenInput(pillsContainerId);
-        }
-
-    function removePill(button, pillsContainerId, value) {
-        button.parentElement.remove();
-        const dropdownId = pillsContainerId === 'allergies-pills' ? 'allergies-dropdown' : 'medication-dropdown';
-        const checkbox = document.querySelector(`#${dropdownId} input[value="${value}"]`);
-        if (checkbox) checkbox.checked = false;
-        updateHiddenInput(pillsContainerId);
-    }
-
-    function updateHiddenInput(pillsContainerId) {
-        const container = document.getElementById(pillsContainerId);
-        const pills = Array.from(container.querySelectorAll('.pill')).map(p => p.textContent.trim().replace(' ×', ''));
-        const hiddenInput = pillsContainerId === 'allergies-pills' ?
-            document.getElementById('doc-pat-allergies') :
-            document.getElementById('doc-pat-medication');
-        hiddenInput.value = pills.join('; ');
-    }
-
-    document.addEventListener('click', function(event) {
-        if (!event.target.closest('.custom-dropdown')) {
-            document.querySelectorAll('.dropdown-menu').forEach(m => m.classList.remove('show'));
-        }
-    });
-
-    function getSelectedPatientProfile() {
-        const id = document.getElementById('doc-pat-id').value;
-        const list = getLocalDoctorPatients();
-        return list.find(patient => (patient.southAfricanId || patient.SouthAfricanId) === id) || null;
-    }
-
-    function loadSelectedPatientSummary() {
-        const patient = getSelectedPatientProfile();
-        const panel = document.getElementById('selected-patient-summary');
-
-        if (!patient) {
-            panel.style.display = 'none';
-            return;
-        }
-
-        const fullName = `${patient.firstName || patient.FirstName || ''} ${patient.lastName || patient.LastName || ''}`.trim();
-        document.getElementById('selected-patient-name').textContent = fullName || 'Unknown patient';
-        document.getElementById('selected-patient-id').textContent = patient.southAfricanId || patient.SouthAfricanId || '';
-        document.getElementById('selected-patient-address').textContent = patient.physicalAddress || patient.PhysicalAddress || 'N/A';
-        panel.style.display = 'block';
-    }
-
-    function savePatientFromDoctor(){
-        const selectedPatientId = document.getElementById('doc-pat-id').value;
-        const selectedPatient = getSelectedPatientProfile();
-
-        if (!selectedPatientId) {
-            return toast('Please select a patient by ID number.');
-        }
-
-        const dto = {
-            firstName: selectedPatient ? (selectedPatient.firstName || selectedPatient.FirstName || '') : '',
-            lastName: selectedPatient ? (selectedPatient.lastName || selectedPatient.LastName || '') : '',
-            southAfricanId: selectedPatientId,
-            dateOfBirth: selectedPatient ? (selectedPatient.dateOfBirth || selectedPatient.DateOfBirth || null) : null,
-            physicalAddress: selectedPatient ? (selectedPatient.physicalAddress || selectedPatient.PhysicalAddress || '') : '',
-            cellphone: selectedPatient ? (selectedPatient.cellphone || selectedPatient.Cellphone || '') : '',
-            email: selectedPatient ? (selectedPatient.email || selectedPatient.Email || '') : '',
-            knownMedicalConditions: document.getElementById('doc-pat-conditions').value,
-            allergies: document.getElementById('doc-pat-allergies').value,
-            medication: document.getElementById('doc-pat-medication').value
-        };
-
-        if(!dto.southAfricanId){
-            return toast('Please select a registered patient first.');
-        }
-
-        fetch(patientCreateUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(dto)
-        }).then(r => {
-            if(!r.ok) return r.text().then(t => { throw new Error(t || r.statusText); });
-            return r.json();
-        }).then(obj => {
-            saveDoctorPatientLocally(obj);
-            toast('Patient medical history saved.');
-            loadDoctorPatients();
-        }).catch(err => {
-            saveDoctorPatientLocally(dto);
-            toast('Patient medical history saved locally.');
-            loadDoctorPatients();
-        });
-    }
-
-    function loadDoctorPatients(){
-        fetch(patientListUrl).then(r => r.json()).then(list => {
-            const merged = mergePatients(list, getLocalDoctorPatients());
-            const tbody = document.getElementById('doctor-patients-tbody');
-            tbody.innerHTML = '';
-            merged.forEach(p => {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                            <td data-label="Patient">${p.firstName} ${p.lastName}</td>
-                    <td data-label="ID Number">${p.southAfricanId || ''}</td>
-                    <td data-label="Physical Address">${p.physicalAddress || ''}</td>
-                    <td data-label="Medication">${p.medication || ''}</td>
-                    <td data-label="Consent"><span class="badge ${p.mustChangePassword? 'amber':'green'}">${p.mustChangePassword? 'Require PW change':'Granted'}</span></td>
-                `;
-                const conditionCell = document.createElement('td');
-                conditionCell.dataset.label = 'Conditions';
-                const conditions = (p.knownMedicalConditions || '').split(';').map(c => c.trim()).filter(Boolean);
-                conditions.forEach(cond => {
-                    const pill = document.createElement('span');
-                    pill.className = 'pill';
-                    pill.textContent = cond;
-                    conditionCell.appendChild(pill);
-                });
-                tr.insertBefore(conditionCell, tr.children[3]);
-
-                const allergyCell = document.createElement('td');
-                allergyCell.dataset.label = 'Allergies';
-                const allergies = (p.allergies || '').split(';').map(a => a.trim()).filter(Boolean);
-                allergies.forEach(allergy => {
-                    const pill = document.createElement('span');
-                    pill.className = 'pill';
-                    pill.textContent = allergy;
-                    allergyCell.appendChild(pill);
-                });
-                tr.insertBefore(allergyCell, tr.children[4]);
-
-                const medicationCell = tr.children[5];
-                medicationCell.dataset.label = 'Medication';
-                medicationCell.innerHTML = '';
-                const medications = (p.medication || '').split(';').map(m => m.trim()).filter(Boolean);
-                medications.forEach(medication => {
-                    const pill = document.createElement('span');
-                    pill.className = 'pill';
-                    pill.textContent = medication;
-                    medicationCell.appendChild(pill);
-                });
-                tbody.appendChild(tr);
-            });
-            localStorage.setItem(doctorPatientsStorageKey, JSON.stringify(merged));
-        }).catch(err => console.error(err));
-    }
-
-    function saveDoctorPatientLocally(patient) {
-        const patients = mergePatients(getLocalDoctorPatients(), [patient]);
-        localStorage.setItem(doctorPatientsStorageKey, JSON.stringify(patients));
-    }
-
-    function seedDoctorPatients() {
-        const existing = getLocalDoctorPatients();
-        if (existing.length > 0) {
-            return existing;
-        }
-
-        const seededPatients = [
-            {
-                firstName: 'Mpho',
-                lastName: 'Thabo',
-                southAfricanId: '8001015009087',
-                dateOfBirth: '1980-01-01',
-                physicalAddress: '123 Main Road, Johannesburg',
-                cellphone: '081 234 5678',
-                email: 'mpho.thabo@email.co.za',
-                knownMedicalConditions: 'Hypertension (Cardiovascular)',
-                allergies: '',
-                medication: ''
-            },
-            {
-                firstName: 'Nandi',
-                lastName: 'Louw',
-                southAfricanId: '9203301234086',
-                dateOfBirth: '1992-03-30',
-                physicalAddress: '45 Oak Avenue, Cape Town',
-                cellphone: '082 555 9876',
-                email: 'nandi.louw@email.co.za',
-                knownMedicalConditions: '',
-                allergies: '',
-                medication: ''
-            }
-        ];
-
-        localStorage.setItem(doctorPatientsStorageKey, JSON.stringify(seededPatients));
-        return seededPatients;
-    }
-
-    function populatePatientSelector() {
-        const select = document.getElementById('doc-pat-id');
-        const patients = seedDoctorPatients();
-        select.innerHTML = '<option value="">-- Select patient ID --</option>';
-
-        patients.forEach(patient => {
-            const option = document.createElement('option');
-            const value = patient.southAfricanId || patient.SouthAfricanId;
-            option.value = value;
-            option.textContent = `${value} - ${patient.firstName || patient.FirstName || ''} ${patient.lastName || patient.LastName || ''}`.trim();
-            select.appendChild(option);
-        });
-    }
-
-    function getLocalDoctorPatients() {
         try {
-            return JSON.parse(localStorage.getItem(doctorPatientsStorageKey) || '[]');
-        } catch {
-            return [];
+
+            const response =
+                await fetch(doctorUrls.getPatients);
+
+            console.log("GetPatients status:", response.status);
+
+            if (!response.ok) {
+
+                const errorText = await response.text();
+
+                console.error(
+                    "GetPatients error:",
+                    errorText
+                );
+
+                throw new Error(
+                    'Unable to load patients.'
+                );
+            }
+
+            const patients =
+                await response.json();
+
+            console.log("Patients returned:", patients);
+
+            select.innerHTML = `
+                <option value="">
+                    -- Select patient SA ID --
+                </option>
+            `;
+
+            tbody.innerHTML = '';
+
+            if (!patients || patients.length === 0) {
+
+                console.log("No patients returned from controller.");
+
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="7">
+                            No patients found.
+                        </td>
+                    </tr>
+                `;
+
+                return;
+            }
+
+            patients.forEach(patient => {
+
+                console.log(
+                    "Patient:",
+                    patient
+                );
+
+                const option =
+                    document.createElement('option');
+
+                option.value =
+                    patient.saIdNumber;
+
+                option.textContent =
+                    patient.saIdNumber;
+
+                select.appendChild(option);
+
+
+                const row =
+                    document.createElement('tr');
+
+                row.innerHTML = `
+
+                    <td data-label="Patient">
+                        ${escapeHtml(patient.name || '')}
+                        ${escapeHtml(patient.surname || '')}
+                    </td>
+
+                    <td data-label="ID Number">
+                        ${escapeHtml(patient.saIdNumber || '')}
+                    </td>
+
+                    <td data-label="Physical Address">
+                        ${escapeHtml(
+                            patient.address ||
+                            patient.homeAddress ||
+                            ''
+                        )}
+                    </td>
+
+                    <td data-label="Conditions">
+                        <span class="muted-text">
+                            Select patient to view
+                        </span>
+                    </td>
+
+                    <td data-label="Allergies">
+                        <span class="muted-text">
+                            Select patient to view
+                        </span>
+                    </td>
+
+                    <td data-label="Medication">
+                        <span class="muted-text">
+                            Select patient to view
+                        </span>
+                    </td>
+
+                    <td data-label="Action">
+
+                        <button
+                            type="button"
+                            class="btn btn-primary"
+                            onclick="selectPatientFromTable('${escapeHtml(patient.saIdNumber || '')}')">
+
+                            View
+
+                        </button>
+
+                    </td>
+
+                `;
+
+                tbody.appendChild(row);
+            });
+        }
+        catch (error) {
+
+            console.error(
+                "loadPatients error:",
+                error
+            );
+
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="7">
+                        Unable to load patients.
+                    </td>
+                </tr>
+            `;
+
+            toast(
+                'Unable to load patients from the database.'
+            );
         }
     }
 
-    function mergePatients(primary, secondary) {
-        const map = new Map();
-        [...primary, ...secondary].forEach(patient => {
-            const id = patient.southAfricanId || patient.SouthAfricanId;
-            if (!id) return;
-            map.set(id, {
-                firstName: patient.firstName || patient.FirstName || '',
-                lastName: patient.lastName || patient.LastName || '',
-                southAfricanId: id,
-                dateOfBirth: patient.dateOfBirth || patient.DateOfBirth || null,
-                physicalAddress: patient.physicalAddress || patient.PhysicalAddress || '',
-                cellphone: patient.cellphone || patient.Cellphone || '',
-                email: patient.email || patient.Email || '',
-                knownMedicalConditions: patient.knownMedicalConditions || patient.KnownMedicalConditions || '',
-                allergies: patient.allergies || patient.Allergies || '',
-                medication: patient.medication || patient.Medication || '',
-                mustChangePassword: patient.mustChangePassword ?? patient.MustChangePassword ?? true
-            });
-        });
-        return [...map.values()].sort((a, b) => `${a.lastName} ${a.firstName}`.localeCompare(`${b.lastName} ${b.firstName}`));
+
+    // ================================================================
+    // SELECT PATIENT
+    // ================================================================
+
+    async function loadSelectedPatientSummary() {
+
+        const saIdNumber =
+            document.getElementById('doc-pat-id').value;
+
+
+        const panel =
+            document.getElementById(
+                'selected-patient-summary'
+            );
+
+
+        if (!saIdNumber) {
+
+            selectedPatient = null;
+
+            panel.style.display = 'none';
+
+            clearPatientDetails();
+
+            return;
+
+        }
+
+
+        try {
+
+            const response =
+                await fetch(
+                    `${doctorUrls.getPatient}?saIdNumber=${encodeURIComponent(saIdNumber)}`
+                );
+
+
+            if (!response.ok) {
+
+                throw new Error(
+                    'Patient could not be loaded.'
+                );
+
+            }
+
+
+            const patient =
+                await response.json();
+
+
+            selectedPatient = patient;
+
+
+            displayPatientDetails(patient);
+
+
+            panel.style.display = 'block';
+
+
+            clearMedicalHistoryPills();
+
+        }
+        catch (error) {
+
+            console.error(error);
+
+            selectedPatient = null;
+
+            panel.style.display = 'none';
+
+            toast(
+                'Unable to load the selected patient.'
+            );
+
+        }
+
     }
 
-    document.addEventListener('DOMContentLoaded', () => {
-        populatePatientSelector();
-        setDefaultConditionSelection();
-        setDefaultAllergySelection();
-        setDefaultMedicationSelection();
-        loadDoctorPatients();
-    });
+
+    // ================================================================
+    // DISPLAY PATIENT DETAILS
+    // ================================================================
+
+    function displayPatientDetails(patient) {
+
+        document.getElementById(
+            'selected-patient-name'
+        ).textContent =
+            `${patient.name || ''} ${patient.surname || ''}`.trim();
+
+
+        document.getElementById(
+            'selected-patient-id'
+        ).textContent =
+            patient.saIdNumber || 'N/A';
+
+
+        document.getElementById(
+            'selected-patient-dob'
+        ).textContent =
+            formatDate(patient.dateOfBirth);
+
+
+        document.getElementById(
+            'selected-patient-address'
+        ).textContent =
+            patient.address ||
+            patient.homeAddress ||
+            'N/A';
+
+
+        document.getElementById(
+            'selected-patient-contact'
+        ).textContent =
+            patient.contactNumber ||
+            patient.cellphone ||
+            'N/A';
+
+
+        document.getElementById(
+            'selected-patient-email'
+        ).textContent =
+            patient.email ||
+            patient.Email ||
+            'N/A';
+
+    }
+
+
+    // ================================================================
+    // CLEAR PATIENT DETAILS
+    // ================================================================
+
+    function clearPatientDetails() {
+
+        document.getElementById(
+            'selected-patient-name'
+        ).textContent = '';
+
+
+        document.getElementById(
+            'selected-patient-id'
+        ).textContent = '';
+
+
+        document.getElementById(
+            'selected-patient-dob'
+        ).textContent = '';
+
+
+        document.getElementById(
+            'selected-patient-address'
+        ).textContent = '';
+
+
+        document.getElementById(
+            'selected-patient-contact'
+        ).textContent = '';
+
+
+        document.getElementById(
+            'selected-patient-email'
+        ).textContent = '';
+
+    }
+
+
+    // ================================================================
+    // SELECT PATIENT FROM TABLE
+    // ================================================================
+
+    function selectPatientFromTable(saIdNumber) {
+
+        const select =
+            document.getElementById('doc-pat-id');
+
+
+        select.value = saIdNumber;
+
+
+        loadSelectedPatientSummary();
+
+    }
+
+
+    // ================================================================
+    // CONDITION CATEGORIES
+    // ================================================================
+
+    async function loadConditionCategories() {
+
+        const select =
+            document.getElementById(
+                'doc-pat-condition-category'
+            );
+
+
+        try {
+
+            const response =
+                await fetch(
+                    doctorUrls.getConditionCategories
+                );
+
+
+            if (!response.ok) {
+
+                throw new Error(
+                    'Unable to load condition categories.'
+                );
+
+            }
+
+
+            const categories =
+                await response.json();
+
+
+            select.innerHTML = `
+                <option value="">
+                    -- Select Category --
+                </option>
+            `;
+
+
+            const uniqueCategories =
+                [...new Map(
+                    categories.map(item => [
+                        item.category,
+                        item
+                    ])
+                ).values()];
+
+
+            uniqueCategories.forEach(item => {
+
+                const option =
+                    document.createElement('option');
+
+
+                option.value =
+                    item.category;
+
+
+                option.textContent =
+                    item.category;
+
+
+                select.appendChild(option);
+
+            });
+
+        }
+        catch (error) {
+
+            console.error(error);
+
+            toast(
+                'Unable to load medical condition categories.'
+            );
+
+        }
+
+    }
+
+
+    // ================================================================
+    // CONDITIONS BY CATEGORY
+    // ================================================================
+
+    async function populateConditionNames() {
+
+        const category =
+            document.getElementById(
+                'doc-pat-condition-category'
+            ).value;
+
+
+        const nameSelect =
+            document.getElementById(
+                'doc-pat-condition-name'
+            );
+
+
+        nameSelect.innerHTML = `
+            <option value="">
+                -- Select Condition --
+            </option>
+        `;
+
+
+        nameSelect.disabled = true;
+
+
+        if (!category) {
+
+            return;
+
+        }
+
+
+        try {
+
+            const response =
+                await fetch(
+                    `${doctorUrls.getConditionsByCategory}?category=${encodeURIComponent(category)}`
+                );
+
+
+            if (!response.ok) {
+
+                throw new Error(
+                    'Unable to load conditions.'
+                );
+
+            }
+
+
+            const conditions =
+                await response.json();
+
+
+            conditions.forEach(condition => {
+
+                const option =
+                    document.createElement('option');
+
+
+                option.value =
+                    condition.medicalConditionId;
+
+
+                option.textContent =
+                    condition.conditionName;
+
+
+                nameSelect.appendChild(option);
+
+            });
+
+
+            nameSelect.disabled =
+                conditions.length === 0;
+
+        }
+        catch (error) {
+
+            console.error(error);
+
+            toast(
+                'Unable to load medical conditions.'
+            );
+
+        }
+
+    }
+
+
+    // ================================================================
+    // ADD PATIENT CONDITION
+    // ================================================================
+
+    async function addPatientCondition() {
+
+        if (!selectedPatient) {
+
+            toast(
+                'Please select a patient first.'
+            );
+
+            return;
+
+        }
+
+
+        const conditionId =
+            document.getElementById(
+                'doc-pat-condition-name'
+            ).value;
+
+
+        const conditionSelect =
+            document.getElementById(
+                'doc-pat-condition-name'
+            );
+
+
+        const conditionName =
+            conditionSelect.options[
+                conditionSelect.selectedIndex
+            ]?.textContent;
+
+
+        if (!conditionId) {
+
+            toast(
+                'Please select a medical condition.'
+            );
+
+            return;
+
+        }
+
+
+        try {
+
+            const body =
+                new URLSearchParams();
+
+
+            body.append(
+                'patientId',
+                selectedPatient.patientId
+            );
+
+
+            body.append(
+                'medicalConditionId',
+                conditionId
+            );
+
+
+            const response =
+                await fetch(
+                    doctorUrls.addPatientCondition,
+                    {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type':
+                                'application/x-www-form-urlencoded'
+                        },
+                        body: body.toString()
+                    }
+                );
+
+
+            const result =
+                await response.json();
+
+
+            if (!response.ok || !result.success) {
+
+                throw new Error(
+                    result.message ||
+                    'Unable to add condition.'
+                );
+
+            }
+
+
+            addPill(
+                'condition-pills',
+                conditionName,
+                result.patientConditionId,
+                'condition'
+            );
+
+
+            toast(
+                result.message ||
+                'Medical condition added successfully.'
+            );
+
+        }
+        catch (error) {
+
+            console.error(error);
+
+            toast(
+                error.message ||
+                'Unable to add medical condition.'
+            );
+
+        }
+
+    }
+
+
+    // ================================================================
+    // DELETE PATIENT CONDITION
+    // ================================================================
+
+    async function deletePatientCondition(
+        patientConditionId,
+        pill
+    ) {
+
+        if (!confirm(
+            'Are you sure you want to remove this medical condition?'
+        )) {
+
+            return;
+
+        }
+
+
+        try {
+
+            const body =
+                new URLSearchParams();
+
+
+            body.append(
+                'patientConditionId',
+                patientConditionId
+            );
+
+
+            const response =
+                await fetch(
+                    doctorUrls.deletePatientCondition,
+                    {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type':
+                                'application/x-www-form-urlencoded'
+                        },
+                        body: body.toString()
+                    }
+                );
+
+
+            const result =
+                await response.json();
+
+
+            if (!response.ok || !result.success) {
+
+                throw new Error(
+                    result.message ||
+                    'Unable to remove condition.'
+                );
+
+            }
+
+
+            pill.remove();
+
+
+            toast(
+                result.message ||
+                'Medical condition removed successfully.'
+            );
+
+        }
+        catch (error) {
+
+            console.error(error);
+
+            toast(
+                error.message ||
+                'Unable to remove medical condition.'
+            );
+
+        }
+
+    }
+
+
+    // ================================================================
+    // ALLERGY CATEGORIES
+    // ================================================================
+
+    async function loadAllergyCategories() {
+
+        const select =
+            document.getElementById(
+                'doc-pat-allergy-category'
+            );
+
+
+        try {
+
+            const response =
+                await fetch(
+                    doctorUrls.getAllergyCategories
+                );
+
+
+            if (!response.ok) {
+
+                throw new Error(
+                    'Unable to load allergy categories.'
+                );
+
+            }
+
+
+            const categories =
+                await response.json();
+
+
+            select.innerHTML = `
+                <option value="">
+                    -- Select Category --
+                </option>
+            `;
+
+
+            const uniqueCategories =
+                [...new Map(
+                    categories.map(item => [
+                        item.category,
+                        item
+                    ])
+                ).values()];
+
+
+            uniqueCategories.forEach(item => {
+
+                const option =
+                    document.createElement('option');
+
+
+                option.value =
+                    item.category;
+
+
+                option.textContent =
+                    item.category;
+
+
+                select.appendChild(option);
+
+            });
+
+        }
+        catch (error) {
+
+            console.error(error);
+
+            toast(
+                'Unable to load allergy categories.'
+            );
+
+        }
+
+    }
+
+
+    // ================================================================
+    // ALLERGIES BY CATEGORY
+    // ================================================================
+
+    async function populateAllergyNames() {
+
+        const category =
+            document.getElementById(
+                'doc-pat-allergy-category'
+            ).value;
+
+
+        const nameSelect =
+            document.getElementById(
+                'doc-pat-allergy-name'
+            );
+
+
+        nameSelect.innerHTML = `
+            <option value="">
+                -- Select Allergy --
+            </option>
+        `;
+
+
+        nameSelect.disabled = true;
+
+
+        if (!category) {
+
+            return;
+
+        }
+
+
+        try {
+
+            const response =
+                await fetch(
+                    `${doctorUrls.getAllergiesByCategory}?category=${encodeURIComponent(category)}`
+                );
+
+
+            if (!response.ok) {
+
+                throw new Error(
+                    'Unable to load allergies.'
+                );
+
+            }
+
+
+            const allergies =
+                await response.json();
+
+
+            allergies.forEach(allergy => {
+
+                const option =
+                    document.createElement('option');
+
+
+                option.value =
+                    allergy.allergyId;
+
+
+                option.textContent =
+                    allergy.allergyName;
+
+
+                nameSelect.appendChild(option);
+
+            });
+
+
+            nameSelect.disabled =
+                allergies.length === 0;
+
+        }
+        catch (error) {
+
+            console.error(error);
+
+            toast(
+                'Unable to load allergies.'
+            );
+
+        }
+
+    }
+
+
+    // ================================================================
+    // ADD PATIENT ALLERGY
+    // ================================================================
+
+    async function addPatientAllergy() {
+
+        if (!selectedPatient) {
+
+            toast(
+                'Please select a patient first.'
+            );
+
+            return;
+
+        }
+
+
+        const allergySelect =
+            document.getElementById(
+                'doc-pat-allergy-name'
+            );
+
+
+        const allergyId =
+            allergySelect.value;
+
+
+        const allergyName =
+            allergySelect.options[
+                allergySelect.selectedIndex
+            ]?.textContent;
+
+
+        if (!allergyId) {
+
+            toast(
+                'Please select an allergy.'
+            );
+
+            return;
+
+        }
+
+
+        try {
+
+            const body =
+                new URLSearchParams();
+
+
+            body.append(
+                'patientId',
+                selectedPatient.patientId
+            );
+
+
+            body.append(
+                'allergyId',
+                allergyId
+            );
+
+
+            const response =
+                await fetch(
+                    doctorUrls.addPatientAllergy,
+                    {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type':
+                                'application/x-www-form-urlencoded'
+                        },
+                        body: body.toString()
+                    }
+                );
+
+
+            const result =
+                await response.json();
+
+
+            if (!response.ok || !result.success) {
+
+                throw new Error(
+                    result.message ||
+                    'Unable to add allergy.'
+                );
+
+            }
+
+
+            addPill(
+                'allergies-pills',
+                allergyName,
+                result.patientAllergyId,
+                'allergy'
+            );
+
+
+            toast(
+                result.message ||
+                'Allergy added successfully.'
+            );
+
+        }
+        catch (error) {
+
+            console.error(error);
+
+            toast(
+                error.message ||
+                'Unable to add allergy.'
+            );
+
+        }
+
+    }
+
+
+    // ================================================================
+    // DELETE PATIENT ALLERGY
+    // ================================================================
+
+    async function deletePatientAllergy(
+        patientAllergyId,
+        pill
+    ) {
+
+        if (!confirm(
+            'Are you sure you want to remove this allergy?'
+        )) {
+
+            return;
+
+        }
+
+
+        try {
+
+            const body =
+                new URLSearchParams();
+
+
+            body.append(
+                'patientAllergyId',
+                patientAllergyId
+            );
+
+
+            const response =
+                await fetch(
+                    doctorUrls.deletePatientAllergy,
+                    {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type':
+                                'application/x-www-form-urlencoded'
+                        },
+                        body: body.toString()
+                    }
+                );
+
+
+            const result =
+                await response.json();
+
+
+            if (!response.ok || !result.success) {
+
+                throw new Error(
+                    result.message ||
+                    'Unable to remove allergy.'
+                );
+
+            }
+
+
+            pill.remove();
+
+
+            toast(
+                result.message ||
+                'Allergy removed successfully.'
+            );
+
+        }
+        catch (error) {
+
+            console.error(error);
+
+            toast(
+                error.message ||
+                'Unable to remove allergy.'
+            );
+
+        }
+
+    }
+
+
+    // ================================================================
+    // MEDICATION CATEGORIES
+    // ================================================================
+
+    async function loadMedicationCategories() {
+
+        const select =
+            document.getElementById(
+                'doc-pat-medication-category'
+            );
+
+
+        try {
+
+            const response =
+                await fetch(
+                    doctorUrls.getMedicationCategories
+                );
+
+
+            if (!response.ok) {
+
+                throw new Error(
+                    'Unable to load medication categories.'
+                );
+
+            }
+
+
+            const categories =
+                await response.json();
+
+
+            select.innerHTML = `
+                <option value="">
+                    -- Select Category --
+                </option>
+            `;
+
+
+            const uniqueCategories =
+                [...new Map(
+                    categories.map(item => [
+                        item.category,
+                        item
+                    ])
+                ).values()];
+
+
+            uniqueCategories.forEach(item => {
+
+                const option =
+                    document.createElement('option');
+
+
+                option.value =
+                    item.category;
+
+
+                option.textContent =
+                    item.category;
+
+
+                select.appendChild(option);
+
+            });
+
+        }
+        catch (error) {
+
+            console.error(error);
+
+            toast(
+                'Unable to load medication categories.'
+            );
+
+        }
+
+    }
+
+
+    // ================================================================
+    // MEDICATION BY CATEGORY
+    // ================================================================
+
+    async function populateMedicationNames() {
+
+        const category =
+            document.getElementById(
+                'doc-pat-medication-category'
+            ).value;
+
+
+        const nameSelect =
+            document.getElementById(
+                'doc-pat-medication-name'
+            );
+
+
+        nameSelect.innerHTML = `
+            <option value="">
+                -- Select Medication --
+            </option>
+        `;
+
+
+        nameSelect.disabled = true;
+
+
+        if (!category) {
+
+            return;
+
+        }
+
+
+        try {
+
+            const response =
+                await fetch(
+                    `${doctorUrls.getMedicationsByCategory}?category=${encodeURIComponent(category)}`
+                );
+
+
+            if (!response.ok) {
+
+                throw new Error(
+                    'Unable to load medications.'
+                );
+
+            }
+
+
+            const medications =
+                await response.json();
+
+
+            medications.forEach(medication => {
+
+                const option =
+                    document.createElement('option');
+
+
+                option.value =
+                    medication.medicationId;
+
+
+                option.textContent =
+                    medication.medicationName;
+
+
+                nameSelect.appendChild(option);
+
+            });
+
+
+            nameSelect.disabled =
+                medications.length === 0;
+
+        }
+        catch (error) {
+
+            console.error(error);
+
+            toast(
+                'Unable to load medications.'
+            );
+
+        }
+
+    }
+
+
+    // ================================================================
+    // ADD PATIENT MEDICATION
+    // ================================================================
+
+    async function addPatientMedication() {
+
+        if (!selectedPatient) {
+
+            toast(
+                'Please select a patient first.'
+            );
+
+            return;
+
+        }
+
+
+        const medicationSelect =
+            document.getElementById(
+                'doc-pat-medication-name'
+            );
+
+
+        const medicationId =
+            medicationSelect.value;
+
+
+        const medicationName =
+            medicationSelect.options[
+                medicationSelect.selectedIndex
+            ]?.textContent;
+
+
+        if (!medicationId) {
+
+            toast(
+                'Please select a medication.'
+            );
+
+            return;
+
+        }
+
+
+        try {
+
+            const body =
+                new URLSearchParams();
+
+
+            body.append(
+                'patientId',
+                selectedPatient.patientId
+            );
+
+
+            body.append(
+                'medicationId',
+                medicationId
+            );
+
+
+            const response =
+                await fetch(
+                    doctorUrls.addPatientMedication,
+                    {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type':
+                                'application/x-www-form-urlencoded'
+                        },
+                        body: body.toString()
+                    }
+                );
+
+
+            const result =
+                await response.json();
+
+
+            if (!response.ok || !result.success) {
+
+                throw new Error(
+                    result.message ||
+                    'Unable to add medication.'
+                );
+
+            }
+
+
+            addPill(
+                'medication-pills',
+                medicationName,
+                result.patientMedicationId,
+                'medication'
+            );
+
+
+            toast(
+                result.message ||
+                'Medication added successfully.'
+            );
+
+        }
+        catch (error) {
+
+            console.error(error);
+
+            toast(
+                error.message ||
+                'Unable to add medication.'
+            );
+
+        }
+
+    }
+
+
+    // ================================================================
+    // DELETE PATIENT MEDICATION
+    // ================================================================
+
+    async function deletePatientMedication(
+        patientMedicationId,
+        pill
+    ) {
+
+        if (!confirm(
+            'Are you sure you want to remove this medication?'
+        )) {
+
+            return;
+
+        }
+
+
+        try {
+
+            const body =
+                new URLSearchParams();
+
+
+            body.append(
+                'patientMedicationId',
+                patientMedicationId
+            );
+
+
+            const response =
+                await fetch(
+                    doctorUrls.deletePatientMedication,
+                    {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type':
+                                'application/x-www-form-urlencoded'
+                        },
+                        body: body.toString()
+                    }
+                );
+
+
+            const result =
+                await response.json();
+
+
+            if (!response.ok || !result.success) {
+
+                throw new Error(
+                    result.message ||
+                    'Unable to remove medication.'
+                );
+
+            }
+
+
+            pill.remove();
+
+
+            toast(
+                result.message ||
+                'Medication removed successfully.'
+            );
+
+        }
+        catch (error) {
+
+            console.error(error);
+
+            toast(
+                error.message ||
+                'Unable to remove medication.'
+            );
+
+        }
+
+    }
+
+
+    // ================================================================
+    // CREATE PILL
+    // ================================================================
+
+    function addPill(
+        containerId,
+        text,
+        relationshipId,
+        type
+    ) {
+
+        const container =
+            document.getElementById(containerId);
+
+
+        // Prevent duplicate display
+
+        const existing =
+            Array.from(
+                container.children
+            ).some(
+                pill =>
+                    pill.dataset.value === text
+            );
+
+
+        if (existing) {
+
+            return;
+
+        }
+
+
+        const pill =
+            document.createElement('span');
+
+
+        pill.className = 'pill';
+
+
+        pill.dataset.value =
+            text;
+
+
+        pill.dataset.id =
+            relationshipId;
+
+
+        pill.textContent =
+            text;
+
+
+        const closeButton =
+            document.createElement('button');
+
+
+        closeButton.type =
+            'button';
+
+
+        closeButton.className =
+            'pill-close';
+
+
+        closeButton.textContent =
+            '×';
+
+
+        closeButton.addEventListener(
+            'click',
+            function () {
+
+                if (type === 'condition') {
+
+                    deletePatientCondition(
+                        relationshipId,
+                        pill
+                    );
+
+                }
+
+                else if (type === 'allergy') {
+
+                    deletePatientAllergy(
+                        relationshipId,
+                        pill
+                    );
+
+                }
+
+                else if (type === 'medication') {
+
+                    deletePatientMedication(
+                        relationshipId,
+                        pill
+                    );
+
+                }
+
+            }
+        );
+
+
+        pill.appendChild(
+            closeButton
+        );
+
+
+        container.appendChild(
+            pill
+        );
+
+    }
+
+
+    // ================================================================
+    // CLEAR MEDICAL HISTORY DISPLAY
+    // ================================================================
+
+    function clearMedicalHistoryPills() {
+
+        document.getElementById(
+            'condition-pills'
+        ).innerHTML = '';
+
+
+        document.getElementById(
+            'allergies-pills'
+        ).innerHTML = '';
+
+
+        document.getElementById(
+            'medication-pills'
+        ).innerHTML = '';
+
+    }
+
+
+    // ================================================================
+    // REFRESH
+    // ================================================================
+
+    async function refreshPatientData() {
+
+        const selectedSaId = selectedPatient
+            ? selectedPatient.saIdNumber
+            : null;
+
+        await loadPatients();
+
+        await loadConditionCategories();
+
+        await loadAllergyCategories();
+
+        await loadMedicationCategories();
+
+
+        if (selectedSaId) {
+
+            document.getElementById(
+                'doc-pat-id'
+            ).value = selectedSaId;
+
+
+            await loadSelectedPatientSummary();
+
+        }
+
+
+        toast(
+            'Patient data refreshed.'
+        );
+
+    }
+
+
+    // ================================================================
+    // DATE FORMATTER
+    // ================================================================
+
+    function formatDate(value) {
+
+        if (!value) {
+
+            return 'N/A';
+
+        }
+
+
+        const date =
+            new Date(value);
+
+
+        if (isNaN(date.getTime())) {
+
+            return value;
+
+        }
+
+
+        return date.toLocaleDateString();
+
+    }
+
+
+    // ================================================================
+    // HTML ENCODING
+    // ================================================================
+
+    function escapeHtml(value) {
+
+        if (value === null ||
+            value === undefined) {
+
+            return '';
+
+        }
+
+
+        return String(value)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+
+    }
+
+
+    // ================================================================
+    // EVENT LISTENERS
+    // ================================================================
+
+    document
+        .getElementById(
+            'doc-pat-id'
+        )
+        .addEventListener(
+            'change',
+            loadSelectedPatientSummary
+        );
+
+
+    document
+        .getElementById(
+            'doc-pat-condition-category'
+        )
+        .addEventListener(
+            'change',
+            populateConditionNames
+        );
+
+
+    document
+        .getElementById(
+            'doc-pat-allergy-category'
+        )
+        .addEventListener(
+            'change',
+            populateAllergyNames
+        );
+
+
+    document
+        .getElementById(
+            'doc-pat-medication-category'
+        )
+        .addEventListener(
+            'change',
+            populateMedicationNames
+        );
+
+
+    // ================================================================
+    // PAGE INITIALIZATION
+    // ================================================================
+
+    document.addEventListener(
+        'DOMContentLoaded',
+        async function () {
+
+            await Promise.all([
+                loadPatients(),
+                loadConditionCategories(),
+                loadAllergyCategories(),
+                loadMedicationCategories()
+            ]);
+
+        }
+    );
+
 </script>
