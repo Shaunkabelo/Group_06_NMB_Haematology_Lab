@@ -1,0 +1,34 @@
+﻿@model IReadOnlyList<Group_06_NMB_Haematology_Diagnostic_Lab.Data.Models.PatientRequestDetail>
+@if (Model.Count > 0 && Model.All(test => test.IsReleased))
+{
+    <div style="overflow-x:auto">
+        <table>
+            <thead>
+                <tr><th>Test</th><th>Result</th><th>Reference Range</th><th>Units</th><th>Flag</th></tr>
+            </thead>
+            <tbody>
+                @foreach (var test in Model)
+                {
+                    var abnormal = test.ResultFlag is "Low" or "High";
+                    var flagClass = test.ResultFlag switch
+                    {
+                        "Low" or "High" => "badge-red",
+                        "Normal" => "badge-green",
+                        _ => "badge-gray"
+                    };
+                    <tr class="@(abnormal ? "abnormal-row" : "")">
+                        <td>@test.TestName</td>
+                        <td>@(test.ResultValue?.ToString("0.############################") ?? "Pending")</td>
+                        <td>@test.ReferenceRange</td>
+                        <td>@test.UnitOfMeasurement</td>
+                        <td><span class="badge @flagClass">@test.ResultFlag</span></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+else
+{
+    <div class="card-body td-muted">Results will be available once released by your doctor.</div>
+}

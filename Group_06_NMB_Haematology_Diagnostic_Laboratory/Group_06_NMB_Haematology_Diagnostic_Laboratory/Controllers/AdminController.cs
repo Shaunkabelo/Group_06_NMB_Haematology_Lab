@@ -13,21 +13,61 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
             _patientRepository = patientRepository;
         }
 
-        public async Task<IActionResult> Dashboard()
+        private async Task LoadNavigationCounts()
         {
             ViewBag.MedicalConditionCount = await _patientRepository.GetMedicalConditionCount();
             ViewBag.AllergyCount = await _patientRepository.GetAllergyCount();
             ViewBag.MedicationCount = await _patientRepository.GetMedicationCount();
             ViewBag.UserCount = await _patientRepository.GetUserCount();
+        }
+
+        public async Task<IActionResult> Dashboard()
+        {
+            await LoadNavigationCounts();
             return View();
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SetMedicationStatus([FromForm] string medicationName, [FromForm] int isActive)
+        {
+            if (string.IsNullOrWhiteSpace(medicationName) || (isActive != 0 && isActive != 1))
+                return BadRequest(new { message = "A name and valid status are required." });
+            try
+            {
+                await _patientRepository.SetMedicationStatus(medicationName, isActive);
+                return Ok(new { message = isActive == 1 ? "Medication activated." : "Medication deactivated." });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.GetBaseException().Message });
+            }
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SetAllergyStatus([FromForm] string allergyName, [FromForm] int isActive)
+        {
+            if (string.IsNullOrWhiteSpace(allergyName) || (isActive != 0 && isActive != 1))
+                return BadRequest(new { message = "A name and valid status are required." });
+            try
+            {
+                await _patientRepository.SetAllergyStatus(allergyName, isActive);
+                return Ok(new { message = isActive == 1 ? "Allergy activated." : "Allergy deactivated." });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.GetBaseException().Message });
+            }
         }
 
         public async Task<IActionResult> Allergies()
         {
-            ViewBag.AllergyCount = await _patientRepository.GetAllergyCount();
+            var allergies = (await _patientRepository.GetAllAllergiesByCategory()).ToList();
+            ViewBag.AllergyCount = allergies.Count;
             ViewBag.AllergyCategories = await _patientRepository.GetAllergyCategories();
-            ViewBag.Allergies = await _patientRepository.GetAllAllergiesByCategory();
-            ViewBag.MedicationCount = await _patientRepository.GetMedicationCount();
+            ViewBag.Allergies = allergies;
+            await LoadNavigationCounts();
             return View();
         }
 
@@ -37,7 +77,7 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
             var conditions = await _patientRepository.GetMedicalConditionsWithPatientCount();
             ViewBag.ConditionCategories = categories;
             ViewBag.MedicalConditions = conditions;
-            ViewBag.MedicationCount = await _patientRepository.GetMedicationCount();
+            await LoadNavigationCounts();
             return View();
         }
 
@@ -45,7 +85,7 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
         {
             ViewBag.MedicationCategories = await _patientRepository.GetMedicationCategories();
             ViewBag.Medications = await _patientRepository.GetMedicationsWithPatientCount();
-            ViewBag.MedicationCount = await _patientRepository.GetMedicationCount();
+            await LoadNavigationCounts();
             return View();
         }
 
@@ -57,20 +97,20 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
                 MedicationCategories = await _patientRepository.GetCategoryDetails("medication"),
                 MedicalConditionCategories = await _patientRepository.GetCategoryDetails("condition")
             };
-            ViewBag.MedicationCount = await _patientRepository.GetMedicationCount();
+            await LoadNavigationCounts();
             return View(model);
         }
 
         public async Task<IActionResult> Users()
         {
-            ViewBag.MedicationCount = await _patientRepository.GetMedicationCount();
+            await LoadNavigationCounts();
             var users = await _patientRepository.GetAllUsers();
             return View(users);
         }
 
         public async Task<IActionResult> Profile()
         {
-            ViewBag.MedicationCount = await _patientRepository.GetMedicationCount();
+            await LoadNavigationCounts();
             var users = await _patientRepository.GetAllUsers();
             var admin = users.FirstOrDefault(user =>
                 string.Equals(user.Role, "Admin", StringComparison.OrdinalIgnoreCase));

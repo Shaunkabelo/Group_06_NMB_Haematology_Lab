@@ -5,6 +5,8 @@
 <div class="text-center">
     <h1 class="display-4">Welcome</h1>
     <a asp-controller="Admin" asp-action="Dashboard" class="btn btn-primary">Open Admin Dashboard</a>
+    <a asp-controller="Patient" asp-action="Dashboard" class="btn btn-primary">Open Patient Dashboard</a>
+    <a asp-controller="Patient" asp-action="Register" class="btn btn-primary">Register Patient</a>
     @*asp-route-id="@Model.PatientId"
            class="btn btn-primary">*@
 
@@ -15,4 +17,5 @@
     <a asp-controller="Patient" asp-action="Update">Update My Profile </a>
     
     <a asp-controller="Patient" asp-action="MedicalHistory">Medical History</a>
+    <a asp-controller="Patient" asp-action="Consent">Doctor Consent</a>
 </li>

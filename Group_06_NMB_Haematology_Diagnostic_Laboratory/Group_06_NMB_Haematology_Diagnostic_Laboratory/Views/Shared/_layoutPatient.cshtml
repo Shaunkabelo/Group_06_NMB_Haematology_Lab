@@ -28,10 +28,10 @@
             <a asp-controller="Patient" asp-action="Consent" class="nav-item@(IsActive("Consent"))"><span>🔐</span> Doctor Consent</a>
             <a asp-controller="Patient" asp-action="Trends" class="nav-item@(IsActive("Trends"))"><span>📊</span> Track Results</a>
             <a asp-controller="Patient" asp-action="Reports" class="nav-item@(IsActive("Reports"))"><span>📄</span> Reports</a>
-            <a asp-controller="Patient" asp-action="Profile" class="nav-item@(IsActive("Profile"))"><span>👤</span> My Profile</a>
+            <a asp-controller="Patient" asp-action="Update" class="nav-item@(IsActive("Update"))"><span>👤</span> My Profile</a>
             <div class="sidebar-footer">
                 <div class="user-info">
-                    <strong id="sidebar-user-name">Guest User</strong>
+                    <strong id="sidebar-patient-name">@(ViewData["PatientDisplayName"] as string ?? "Patient")</strong>
                     <small id="sidebar-user-role">Patient</small>
                 </div>
             </div>

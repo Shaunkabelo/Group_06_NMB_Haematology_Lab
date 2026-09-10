@@ -5,6 +5,8 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Models;
 /// </summary>
 public class MedicationWithPatientCount
 {
+    public bool IsActive { get; set; } = true;
+
     public string MedicationName { get; set; } = string.Empty;
 
     public string Category { get; set; } = string.Empty;

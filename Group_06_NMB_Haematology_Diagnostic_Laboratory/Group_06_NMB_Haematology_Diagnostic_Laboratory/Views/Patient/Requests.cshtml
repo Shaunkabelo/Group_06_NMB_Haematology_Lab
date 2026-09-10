@@ -1,0 +1,153 @@
+@model IReadOnlyList<Group_06_NMB_Haematology_Diagnostic_Lab.Data.Models.PatientRequest>
+@{
+    Layout = "~/Views/Shared/_layoutPatient.cshtml";
+    ViewData["Title"] = "Test Requests & Results";
+}
+
+<div class="page-body">
+    <div class="section-header">
+        <div class="section-sub">Track all requests linked to you.</div>
+    </div>
+    <div class="card" style="margin-bottom:20px;">
+        <div class="card-body" style="display:flex;flex-wrap:wrap;gap:16px;align-items:end;">
+            <div style="flex:1;min-width:180px;">
+                <label class="form-label" for="request-status">Request status</label>
+                <select id="request-status" class="form-control" onchange="filterRequests()">
+                    <option value="">All statuses</option>
+                    @foreach (var status in Model.Select(request => request.Status?.Trim()).Where(status => !string.IsNullOrEmpty(status)).Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(status => status))
+                    {
+                        <option value="@status">@status</option>
+                    }
+                </select>
+            </div>
+            <div style="flex:1;min-width:160px;">
+                <label class="form-label" for="request-urgency">Urgency</label>
+                <select id="request-urgency" class="form-control" onchange="filterRequests()">
+                    <option value="">All urgencies</option>
+                    <option value="routine">Routine</option>
+                    <option value="urgent">Urgent</option>
+                    <option value="stat">STAT</option>
+                </select>
+            </div>
+            <div style="flex:1;min-width:180px;">
+                <label class="form-label" for="request-date">Request date</label>
+                <input id="request-date" type="date" class="form-control" onchange="filterRequests()" />
+            </div>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-header">
+            <span class="card-title">All Requests</span>
+            <span class="td-muted" id="request-count" aria-live="polite">@Model.Count @(Model.Count == 1 ? "record" : "records")</span>
+        </div>
+        <table>
+            <thead>
+                <tr><th>Ref #</th><th>Tests Requested</th><th>Doctor</th><th>Date</th><th>Urgency</th><th>Status</th><th>Actions</th></tr>
+            </thead>
+            <tbody>
+                @if (Model.Count == 0)
+                {
+                    <tr><td colspan="7" class="td-muted">No test requests found.</td></tr>
+                }
+                @foreach (var request in Model)
+                {
+                    var urgencyClass = request.Urgency?.Trim().ToLowerInvariant() switch
+                    {
+                        "stat" => "badge-red",
+                        "urgent" => "badge-amber",
+                        _ => "badge-gray"
+                    };
+                    var statusClass = request.Status?.Trim().ToLowerInvariant() switch
+                    {
+                        "submitted" => "badge-amber",
+                        "samples received" or "sample(s) received" or "in progress" => "badge-blue",
+                        "completed" or "released" or "released by doctor" or "released by the doctor" => "badge-green",
+                        "cancelled" => "badge-red",
+                        _ => "badge-gray"
+                    };
+                    var released = request.IsReleased;
+                    <tr data-request-row data-searchable data-status="@request.Status?.Trim()" data-urgency="@request.Urgency?.Trim()" data-date="@request.RequestDate.ToString("yyyy-MM-dd")">
+                        <td><strong>@request.RequestNumber</strong></td>
+                        <td>@request.TestsRequested</td>
+                        <td>@request.DoctorName</td>
+                        <td>@request.RequestDate.ToString("dd MMM yyyy")</td>
+                        <td><span class="badge @urgencyClass">@request.Urgency</span></td>
+                        <td><span class="badge @statusClass">@request.Status</span></td>
+                        <td>
+                            @if (released)
+                            {
+                            <button type="button" class="btn btn-primary btn-sm" onclick="openDetail(this)"
+                                    data-released="true" data-details-url="@Url.Action("RequestDetails", "Patient", new { testRequestId = request.TestRequestID })" data-ref="@request.RequestNumber" data-notes="@request.ClinicalNotes"
+                                    data-status="@request.Status"
+                                    data-release-note="@(released ? request.DoctorReleaseNote : null)"
+                                    data-release-date="@(released ? request.ReleaseDate?.ToString("dd MMM yyyy HH:mm") : null)">View Results</button>
+                            }
+                            else
+                            {
+                                <button type="button" class="btn btn-secondary btn-sm" onclick="openDetail(this)"
+                                        data-details-url="@Url.Action("RequestDetails", "Patient", new { testRequestId = request.TestRequestID })" data-ref="@request.RequestNumber" data-status="@request.Status"
+                                        data-doctor="@request.DoctorName" data-tests="@request.TestsRequested"
+                                        data-notes="@request.ClinicalNotes">View</button>
+                            }
+                        </td>
+                    </tr>
+                }
+                <tr id="requests-no-matches" style="display:none;"><td colspan="7" class="td-muted">No requests match the selected filters.</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div id="detail-panel" class="card section-gap hidden">
+        <div class="card-header">
+            <span class="card-title" id="detail-title">Request Detail</span>
+            <button type="button" class="btn btn-secondary btn-sm" onclick="document.getElementById('detail-panel').classList.add('hidden')">Close</button>
+        </div>
+        <div id="request-tests" aria-live="polite"></div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function filterRequests() {
+            const status = document.getElementById('request-status').value.toLowerCase();
+            const urgency = document.getElementById('request-urgency').value.toLowerCase();
+            const date = document.getElementById('request-date').value;
+            const query = document.querySelector('.topbar input[type="search"]')?.value.trim().toLowerCase() || '';
+            const rows = document.querySelectorAll('[data-request-row]');
+            let count = 0;
+            rows.forEach(row => {
+                const matches = (!status || row.dataset.status.toLowerCase() === status)
+                    && (!urgency || row.dataset.urgency.toLowerCase() === urgency)
+                    && (!date || row.dataset.date === date)
+                    && (!query || row.textContent.toLowerCase().includes(query));
+                row.style.display = matches ? '' : 'none';
+                if (matches) count++;
+            });
+            document.getElementById('request-count').textContent = `${count} of ${rows.length} records`;
+            document.getElementById('requests-no-matches').style.display = !count && rows.length ? '' : 'none';
+        }
+        const requestSearch = document.querySelector('.topbar input[type="search"]');
+        if (requestSearch) requestSearch.oninput = filterRequests;
+        let detailLoadVersion = 0;
+        async function openDetail(button) {
+            const version = ++detailLoadVersion;
+            const panel = document.getElementById('detail-panel');
+            const content = document.getElementById('request-tests');
+            panel.classList.remove('hidden');
+            document.getElementById('detail-title').textContent = (button.dataset.released === 'true' ? 'Released Results - ' : 'Request Detail - ') + button.dataset.ref;
+            content.textContent = 'Loading tests...';
+            panel.scrollIntoView({ behavior: 'smooth' });
+            try {
+                const response = await fetch(button.dataset.detailsUrl, { cache: 'no-store' });
+                if (!response.ok) throw new Error(response.status === 404
+                    ? 'No tests were found for this request.'
+                    : 'Unable to load tests. Please click View again to retry.');
+                const html = await response.text();
+                if (version === detailLoadVersion) content.innerHTML = html;
+            } catch (error) {
+                if (version === detailLoadVersion)
+                    content.textContent = error.message || 'Unable to load tests. Please try again.';
+            }
+        }
+    </script>
+}

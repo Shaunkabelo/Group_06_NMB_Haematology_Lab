@@ -14,6 +14,69 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
             private readonly ISqlDataAccess _db;
 
         private readonly IPasswordService _pass;
+        public async Task<int> GetPatientAbnormalResultCount(int patientId)
+        {
+            var counts = await _db.LoadData<int, object>(
+                """
+                SELECT COUNT(DISTINCT r.TestResultID)
+                FROM dbo.TestRequest tr
+                INNER JOIN dbo.TestRequestTestType t ON t.TestRequestID = tr.TestRequestID
+                INNER JOIN dbo.TestType tt ON tt.TestTypeID = t.TestTypeID
+                INNER JOIN dbo.LabTest l ON l.TestRequestTestTypeID = t.TestRequestTestTypeID
+                INNER JOIN dbo.TestResult r ON r.LabTestID = l.LabTestID
+                WHERE tr.PatientID = @PatientID
+                  AND LOWER(LTRIM(RTRIM(tr.Status))) IN ('released by doctor', 'released by the doctor')
+                  AND (r.IsAbnormal = 1 OR r.ResultValue < tt.NormalRangeMin OR r.ResultValue > tt.NormalRangeMax);
+                """, new { PatientID = patientId });
+            return counts.Single();
+        }
+        public async Task<string?> GetPatientDisplayName(int patientId)
+        {
+            var names = await _db.LoadData<string, object>(
+                "SELECT LTRIM(RTRIM(CONCAT(u.Name, ' ', u.Surname))) FROM dbo.Patient p INNER JOIN dbo.[User] u ON u.UserID = p.UserID WHERE p.PatientID = @PatientID;",
+                new { PatientID = patientId });
+            return names.FirstOrDefault();
+        }
+        public Task<IEnumerable<SavedPatientConsent>> GetSavedPatientConsents(int patientId) =>
+            _db.GetData<SavedPatientConsent, object>("dbo.sp_GetPatientConsents", new { PatientID = patientId });
+        public Task RevokePatientConsents(int patientId, int doctorId, int[] testIds) =>
+            _db.SaveData("dbo.sp_RevokePatientConsents", new {
+                PatientID = patientId, DoctorID = doctorId,
+                TestIDs = System.Text.Json.JsonSerializer.Serialize(testIds)
+            });
+        public Task SavePatientConsents(int patientId, int doctorId, int[] testIds) =>
+            _db.SaveData("dbo.sp_SavePatientConsents", new {
+                PatientID = patientId, DoctorID = doctorId,
+                TestIDs = System.Text.Json.JsonSerializer.Serialize(testIds)
+            });
+
+        public Task<IEnumerable<ReleasedConsentRequest>> GetReleasedConsentRequests(int patientId) =>
+            _db.GetData<ReleasedConsentRequest, object>(
+                "dbo.sp_Patient_GetReleasedTestRequests", new { PatientID = patientId });
+
+        public Task<IEnumerable<PatientRequestDetail>> GetConsentRequestTests(int patientId, int testRequestId) =>
+            _db.GetData<PatientRequestDetail, object>(
+                "dbo.sp_Patient_GetConsentRequestTests", new { PatientID = patientId, TestRequestID = testRequestId });
+
+        public Task<IEnumerable<PatientRequestDetail>> GetPatientRequestDetails(int patientId, int testRequestId)
+        {
+            return _db.GetData<PatientRequestDetail, object>(
+                "dbo.sp_Patient_GetTestRequestDetails",
+                new { PatientID = patientId, TestRequestID = testRequestId });
+        }
+
+        public Task<IEnumerable<PatientRequestDetail>> GetPatientRequestProgress(int patientId, int testRequestId)
+        {
+            return _db.GetData<PatientRequestDetail, object>(
+                "dbo.sp_Patient_GetTestRequestProgress",
+                new { PatientID = patientId, TestRequestID = testRequestId });
+        }
+
+        public Task<IEnumerable<PatientRequest>> GetPatientRequests(int patientId)
+        {
+            return _db.GetData<PatientRequest, object>(
+                "dbo.sp_GetPatientRequests", new { PatientID = patientId });
+        }
 
         public PatientRepository(ISqlDataAccess db, IPasswordService pass)
         {
@@ -146,9 +209,18 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
 
         public async Task<IEnumerable<AllergyOption>> GetAllAllergiesByCategory()
         {
-            return await _db.GetData<AllergyOption, object>(
-                "dbo.sp_GetAllAllergies",
-                new { });
+            // The admin list must include inactive allergies so they can be reactivated.
+            // Patient selection continues to use the existing stored procedure.
+            const string sql = """
+                SELECT a.*, c.CategoryName AS AllergyCategory, c.CategoryName,
+                       (SELECT COUNT(DISTINCT pa.PatientID)
+                        FROM dbo.PatientAllergy pa
+                        WHERE pa.AllergyID = a.AllergyID) AS TotalPatients
+                FROM dbo.Allergy a
+                LEFT JOIN dbo.AllergyCategory c ON c.AllergyCategoryID = a.AllergyCategoryID
+                ORDER BY c.CategoryName, a.AllergyName;
+                """;
+            return await _db.LoadData<AllergyOption, object>(sql, new { });
         }
 
         public async Task UpdateAllergy(AllergyUpdate model)
@@ -318,9 +390,16 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
 
         public async Task<IEnumerable<MedicationWithPatientCount>> GetMedicationsWithPatientCount()
         {
-            return await _db.GetData<MedicationWithPatientCount, object>(
+            var items = (await _db.GetData<MedicationWithPatientCount, object>(
                 "dbo.sp_GetAllMedicationsWithPatientCount",
-                new { });
+                new { })).ToList();
+            var statuses = (await _db.LoadData<MedicationWithPatientCount, object>(
+                "SELECT MedicationName, IsActive FROM dbo.Medication;", new { }))
+                .ToDictionary(item => item.MedicationName, item => item.IsActive, StringComparer.OrdinalIgnoreCase);
+            foreach (var item in items)
+                if (statuses.TryGetValue(item.MedicationName, out var isActive))
+                    item.IsActive = isActive;
+            return items;
         }
 
         public async Task<int> GetMedicationCount()
@@ -617,6 +696,43 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
         {
             var users = await GetAllUsers();
             return users.Count();
+        }
+
+        public async Task<IEnumerable<ConsentDoctorOption>> GetActiveConsentDoctors()
+        {
+            var doctors = await _db.GetData<ConsentDoctorOption, object>(
+                "dbo.sp_GetAllDoctors", new { });
+            // Also enforce active status when the installed procedure has no status filter.
+            var activeEmails = (await _db.LoadData<string, object>(
+                """
+                SELECT U.Email
+                FROM dbo.Doctor D
+                INNER JOIN dbo.[User] U ON D.UserID = U.UserID
+                WHERE U.IsActive = 1;
+                """, new { })).ToHashSet(StringComparer.OrdinalIgnoreCase);
+            return doctors.Where(doctor => activeEmails.Contains(doctor.Email));
+        }
+
+        public async Task SetMedicationStatus(string name, int isActive)
+        {
+            if (string.IsNullOrWhiteSpace(name) || (isActive != 0 && isActive != 1))
+                throw new ArgumentException("A name and valid status are required.");
+            var affected = await _db.Save(
+                "UPDATE dbo.Medication SET IsActive = @IsActive WHERE MedicationName = @Name;",
+                new { Name = name, IsActive = isActive });
+            if (affected == 0)
+                throw new InvalidOperationException("Medication not found.");
+        }
+
+        public async Task SetAllergyStatus(string name, int isActive)
+        {
+            if (string.IsNullOrWhiteSpace(name) || (isActive != 0 && isActive != 1))
+                throw new ArgumentException("A name and valid status are required.");
+            var affected = await _db.Save(
+                "UPDATE dbo.Allergy SET IsActive = @IsActive WHERE AllergyName = @Name;",
+                new { Name = name, IsActive = isActive });
+            if (affected == 0)
+                throw new InvalidOperationException("Allergy not found.");
         }
 
         public Task SetUserStatus(int userId, int isActive)

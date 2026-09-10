@@ -1,32 +1,6 @@
-﻿@{
-    Layout = "~/Views/Shared/_LayoutAdmin.cshtml";
+@{
     ViewData["Title"] = "Allergies";
 }
-<nav class="sidebar">
-  <div class="sidebar-brand">
-    <div class="brand-badge">
-      <div class="brand-text">🧬 NMB-HLabSys</div>
-    </div>
-  </div>
-  <div class="sidebar-section">Overview</div>
-  <a class="nav-item" asp-controller="Admin" asp-action="Dashboard"><span class="nav-icon">&#9700;</span> Dashboard</a>
-  <div class="sidebar-section">Reference Data</div>
-  <a class="nav-item" asp-controller="Admin" asp-action="Condition"><span class="nav-icon">&#129497;</span> Medical Conditions <span class="nav-badge" style="background:var(--blue)">9</span></a>
-  <a class="nav-item active" asp-controller="Admin" asp-action="Allergies"><span class="nav-icon">&#9888;&#65039;</span> Allergies <span class="nav-badge" style="background:var(--blue)">@ViewBag.AllergyCount</span></a>
-  <a class="nav-item" asp-controller="Admin" asp-action="Medication"><span class="nav-icon">&#128138;</span> Medications <span class="nav-badge" style="background:var(--blue)">@ViewBag.MedicationCount</span></a>
-  <div class="sidebar-section">System</div>
-  <a class="nav-item" asp-controller="Admin" asp-action="Users"><span class="nav-icon">&#128101;</span> System Users</a>
-  <a class="nav-item" asp-controller="Admin" asp-action="Audit"><span class="nav-icon">&#128203;</span> Audit Log</a>
-  <div class="sidebar-footer">
-    <div class="user-card">
-      <div class="avatar avatar-lg admin-avatar">SA</div>
-      <div class="user-info">
-        <div class="user-name">System Admin</div>
-        <div class="user-role">Administrator</div>
-      </div>
-    </div>
-  </div>
-</nav>
 <div class="main">
   
   <div class="page-body">
@@ -53,16 +27,17 @@
       </div>
       <div style="overflow-x:auto;">
         <table id="allergy-tbl">
-          <thead><tr><th>Allergy Name</th><th>Category</th><th>Description</th><th>Patients</th><th>Actions</th></tr></thead>
+          <thead><tr><th>Allergy Name</th><th>Category</th><th>Description</th><th>Patients</th><th>Status</th><th>Actions</th></tr></thead>
           <tbody>
             @foreach (var allergy in ViewBag.Allergies as IEnumerable<Group_06_NMB_Haematology_Diagnostic_Lab.Data.Models.AllergyOption> ?? Enumerable.Empty<Group_06_NMB_Haematology_Diagnostic_Lab.Data.Models.AllergyOption>())
             {
-              <tr data-is-active="true">
+              <tr data-is-active="@allergy.IsActive.ToString().ToLowerInvariant()">
                 <td><strong>@allergy.AllergyName</strong></td>
                 <td><span class="pill-a">@allergy.AllergyCategory</span></td>
                 <td class="td-muted">@allergy.Description</td>
                 <td>@allergy.TotalPatients</td>
-                <td><div style="display:flex;gap:6px;"><button class="btn btn-secondary btn-sm" onclick="editAllergy(this)">Edit</button><button class="btn btn-secondary btn-sm" onclick="toggleAllergyStatus(this)">Deactivate</button></div></td>
+<td><span class="badge @(allergy.IsActive ? "badge-green" : "badge-gray")">@(allergy.IsActive ? "Active" : "Inactive")</span></td>
+                <td><div style="display:flex;gap:6px;"><button class="btn btn-secondary btn-sm" onclick="editAllergy(this)">Edit</button><button class="btn btn-secondary btn-sm" type="button" onclick="toggleAllergyStatus(this)">@(allergy.IsActive ? "Deactivate" : "Activate")</button></div></td>
               </tr>
             }
           </tbody>
@@ -107,9 +82,37 @@
   function filterTable(tableId,q){updateAllergyFilter(tableId,q);}
   function openAddAllergy(){currentAllergyEditRow = null;document.getElementById('inp-name').value='';const categorySelect=document.getElementById('inp-category');if(categorySelect.options.length)categorySelect.selectedIndex=0;document.getElementById('inp-desc').value='';document.querySelector('#modal-add .modal-title').textContent='Add Allergy';document.querySelector('#modal-add .modal-footer .btn-amber').textContent='Save Allergy';openModal('modal-add');}
   function editAllergy(btn){currentAllergyEditRow = btn.closest('tr');if(!currentAllergyEditRow) return;const cells=currentAllergyEditRow.cells;document.getElementById('inp-name').value=cells[0].textContent.trim();document.getElementById('inp-category').value=cells[1].textContent.trim();document.getElementById('inp-desc').value=cells[2].textContent.trim();document.querySelector('#modal-add .modal-title').textContent='Edit Allergy';document.querySelector('#modal-add .modal-footer .btn-amber').textContent='Update Allergy';openModal('modal-add');}
-  function toggleAllergyStatus(button){const row=button.closest('tr');if(!row)return;const isActive=row.dataset.isActive!=='true';row.dataset.isActive=String(isActive);button.textContent=isActive?'Deactivate':'Activate';row.style.opacity=isActive?'1':'0.55';toast(isActive?'Allergy activated.':'Allergy deactivated.');}
   async function saveAllergy(){const n=document.getElementById('inp-name').value.trim();const nameOk=validateText('inp-name','Allergy name',3,60,/^[A-Za-z0-9 /()'.,-]+$/);const descOk=validateOptionalText('inp-desc','Description',500,/^[A-Za-z0-9 /()'.,;:-]+$/);if(!nameOk.ok||!descOk.ok)return;if(hasDuplicateName('allergy-tbl',n,currentAllergyEditRow)){setFieldError(document.getElementById('inp-name'),'Allergy name must be unique.');return;}const category=document.getElementById('inp-category').value;const description=document.getElementById('inp-desc').value.trim();const token=document.querySelector('input[name="__RequestVerificationToken"]').value;let url;let data;if(currentAllergyEditRow){const originalAllergyName=currentAllergyEditRow.cells[0].textContent.trim();url='@Url.Action("UpdateAllergy", "Admin")';data=new URLSearchParams({originalAllergyName,allergyName:n,categoryName:category,allergyDescription:description,__RequestVerificationToken:token});}else{url='@Url.Action("AddAllergy", "Admin")';data=new URLSearchParams({allergyName:n,categoryName:category,allergyDescription:description,__RequestVerificationToken:token});}const response=await fetch(url,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded; charset=UTF-8'},body:data});const result=await response.json().catch(()=>({}));if(!response.ok){toast(result.message||'Unable to save allergy.');return;}toast(result.message||(currentAllergyEditRow?'Allergy updated.':'Allergy added.'));window.location.reload();
     document.getElementById('inp-name').value='';document.getElementById('inp-desc').value='';updateAllergyFilter('allergy-tbl', document.querySelector('#allergy-tbl').closest('.card').querySelector('.tbl-search input').value);closeModal('modal-add');}
   document.addEventListener('DOMContentLoaded',()=>{});
+        async function toggleAllergyStatus(button) {
+            const row = button.closest('tr');
+            if (!row) return;
+            const allergyName = row.cells[0].textContent.trim();
+            const activate = row.dataset.isActive !== 'true';
+            const action = activate ? 'Activate' : 'Deactivate';
+            if (!confirm(`${action} the allergy ${allergyName}?`)) return;
+            const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+            const data = new URLSearchParams({allergyName, isActive: String(activate ? 1 : 0), __RequestVerificationToken: token});
+            button.disabled = true;
+            try {
+                const response = await fetch('@Url.Action("SetAllergyStatus", "Admin")', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'},
+                    body: data
+                });
+                const result = await response.json().catch(() => ({}));
+                if (!response.ok) {
+                    toast(result.message || 'Unable to update allergy status.');
+                    button.disabled = false;
+                    return;
+                }
+                toast(result.message);
+                window.location.reload();
+            } catch {
+                toast('Unable to reach the server.');
+                button.disabled = false;
+            }
+        }
 </script>
 }

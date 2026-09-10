@@ -1,11 +1,13 @@
-﻿@{
+@model Group_06_NMB_Haematology_Diagnostic_Lab.Data.Models.PatientDashboard
+@{
+    Layout = "~/Views/Shared/_LayoutPatient.cshtml";
     ViewData["Title"] = "Patient Dashboard";
 }
 
 <div class="page-body patient-dashboard">
     <div class="section-header">
         <div>
-            <div class="section-title">Good morning, Sabelo</div>
+            <div class="section-title">Welcome to your patient dashboard, @(ViewData["PatientDisplayName"] as string ?? "Patient").</div>
             <div class="section-sub">Overview of your test requests, released results and health history.</div>
         </div>
     </div>
@@ -13,22 +15,22 @@
     <div class="stats-grid">
         <a asp-controller="Patient" asp-action="Requests" class="stat-card clickable teal">
             <div class="stat-label">Total Requests</div>
-            <div class="stat-value">8</div>
+            <div class="stat-value">@Model.TotalRequests</div>
             <div class="stat-sub">Linked to your patient profile</div>
         </a>
         <a asp-controller="Patient" asp-action="Requests" class="stat-card clickable blue">
             <div class="stat-label">In Progress</div>
-            <div class="stat-value">2</div>
+            <div class="stat-value">@Model.InProgress</div>
             <div class="stat-sub">Samples being processed</div>
         </a>
         <a asp-controller="Patient" asp-action="Requests" class="stat-card clickable amber">
             <div class="stat-label">Submitted</div>
-            <div class="stat-value">1</div>
+            <div class="stat-value">@Model.Submitted</div>
             <div class="stat-sub">Awaiting sample receipt</div>
         </a>
         <a asp-controller="Patient" asp-action="Reports" class="stat-card clickable red">
             <div class="stat-label">Abnormal Flags</div>
-            <div class="stat-value">1</div>
+            <div class="stat-value">@Model.AbnormalFlags</div>
             <div class="stat-sub">Released by your doctor</div>
         </a>
     </div>
@@ -56,13 +58,13 @@
         <div class="card">
             <div class="card-header">
                 <span class="card-title">Personalisation Summary</span>
-                <a asp-controller="Patient" asp-action="Profile" class="card-link">Edit profile</a>
+                <a asp-controller="Patient" asp-action="Update" class="card-link">Edit profile</a>
             </div>
             <div class="card-body patient-summary">
-                <div><strong>Email username:</strong> sabelokwandile@gmail.com</div>
-                <div><strong>Conditions:</strong> Type 2 Diabetes, Hypertension</div>
-                <div><strong>Allergies:</strong> Penicillin, Latex</div>
-                <div><strong>Medication:</strong> Metformin 500mg, Amlodipine 5mg</div>
+                <div><strong>Email username:</strong> @Model.Email</div>
+                <div><strong>Conditions:</strong> @Model.Conditions</div>
+                <div><strong>Allergies:</strong> @Model.Allergies</div>
+                <div><strong>Medication:</strong> @Model.Medication</div>
             </div>
         </div>
     </div>

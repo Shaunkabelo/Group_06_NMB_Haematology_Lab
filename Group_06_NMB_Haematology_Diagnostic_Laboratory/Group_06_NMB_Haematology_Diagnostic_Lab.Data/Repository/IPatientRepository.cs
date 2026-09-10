@@ -5,6 +5,19 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
 {
     public interface IPatientRepository
     {
+        Task<int> GetPatientAbnormalResultCount(int patientId);
+        Task<string?> GetPatientDisplayName(int patientId);
+        Task<IEnumerable<SavedPatientConsent>> GetSavedPatientConsents(int patientId);
+        Task SavePatientConsents(int patientId, int doctorId, int[] testIds);
+        Task RevokePatientConsents(int patientId, int doctorId, int[] testIds);
+        Task<IEnumerable<ReleasedConsentRequest>> GetReleasedConsentRequests(int patientId);
+        Task<IEnumerable<PatientRequestDetail>> GetConsentRequestTests(int patientId, int testRequestId);
+        Task<IEnumerable<PatientRequest>> GetPatientRequests(int patientId);
+        Task<IEnumerable<PatientRequestDetail>> GetPatientRequestDetails(int patientId, int testRequestId);
+        Task<IEnumerable<PatientRequestDetail>> GetPatientRequestProgress(int patientId, int testRequestId);
+        Task<IEnumerable<ConsentDoctorOption>> GetActiveConsentDoctors();
+        Task SetMedicationStatus(string name, int isActive);
+        Task SetAllergyStatus(string name, int isActive);
         //Task RegisterPatient(User user);
          Task<PatientRegistrationResult> RegisterPatient(PatientRegistrationViewModel model);
 

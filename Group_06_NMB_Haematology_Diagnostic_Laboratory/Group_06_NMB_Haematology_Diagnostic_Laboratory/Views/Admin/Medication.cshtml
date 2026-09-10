@@ -1,32 +1,6 @@
-﻿@{
-    Layout = "~/Views/Shared/_LayoutAdmin.cshtml";
+@{
     ViewData["Title"] = "Medications";
 }
-<nav class="sidebar">
-    <div class="sidebar-brand">
-        <div class="brand-badge">
-            <div class="brand-text">🧬 NMB-HLabSys</div>
-        </div>
-    </div>
-    <div class="sidebar-section">Overview</div>
-    <a class="nav-item" asp-controller="Admin" asp-action="Dashboard"><span class="nav-icon">&#9700;</span> Dashboard</a>
-    <div class="sidebar-section">Reference Data</div>
-    <a class="nav-item" asp-controller="Admin" asp-action="Condition"><span class="nav-icon">&#129497;</span> Medical Conditions <span class="nav-badge" style="background:var(--blue)">9</span></a>
-    <a class="nav-item" asp-controller="Admin" asp-action="Allergies"><span class="nav-icon">&#9888;&#65039;</span> Allergies <span class="nav-badge" style="background:var(--blue)">9</span></a>
-    <a class="nav-item active" asp-controller="Admin" asp-action="Medication"><span class="nav-icon">&#128138;</span> Medications <span class="nav-badge" style="background:var(--blue)">@ViewBag.MedicationCount</span></a>
-    <div class="sidebar-section">System</div>
-    <a class="nav-item" asp-controller="Admin" asp-action="Users"><span class="nav-icon">&#128101;</span> System Users</a>
-    <a class="nav-item" asp-controller="Admin" asp-action="Audit"><span class="nav-icon">&#128203;</span> Audit Log</a>
-    <div class="sidebar-footer">
-        <div class="user-card">
-            <div class="avatar avatar-lg admin-avatar">SA</div>
-            <div class="user-info">
-                <div class="user-name">System Admin</div>
-                <div class="user-role">Administrator</div>
-            </div>
-        </div>
-    </div>
-</nav>
 <div class="main">
     @* <div class="topbar">
     <div class="topbar-title">Medications</div>
@@ -59,16 +33,17 @@
     </div>
     <div style="overflow-x:auto;">
         <table id="med-tbl">
-            <thead><tr><th>Medication Name</th><th>Category</th><th>Description</th><th>Patients</th><th>Actions</th></tr></thead>
+            <thead><tr><th>Medication Name</th><th>Category</th><th>Description</th><th>Patients</th><th>Status</th><th>Actions</th></tr></thead>
             <tbody>
                 @foreach (var medication in ViewBag.Medications as IEnumerable<Group_06_NMB_Haematology_Diagnostic_Lab.Data.Models.MedicationWithPatientCount> ?? Enumerable.Empty<Group_06_NMB_Haematology_Diagnostic_Lab.Data.Models.MedicationWithPatientCount>())
                 {
-                    <tr data-description="@medication.MedicationDescription">
+                    <tr data-is-active="@medication.IsActive.ToString().ToLowerInvariant()" data-description="@medication.MedicationDescription">
                         <td><strong>@medication.MedicationName</strong></td>
                         <td><span class="pill-m">@medication.Category</span></td>
                         <td class="td-muted">@medication.MedicationDescription</td>
                         <td>@medication.TotalPatients</td>
-                        <td><div style="display:flex;gap:6px;"><button class="btn btn-secondary btn-sm" onclick="editMedication(this)">Edit</button></div></td>
+<td><span class="badge @(medication.IsActive ? "badge-green" : "badge-gray")">@(medication.IsActive ? "Active" : "Inactive")</span></td>
+                        <td><div style="display:flex;gap:6px;"><button class="btn btn-secondary btn-sm" onclick="editMedication(this)">Edit</button><button class="btn btn-secondary btn-sm" type="button" onclick="toggleMedicationStatus(this)">@(medication.IsActive ? "Deactivate" : "Activate")</button></div></td>
                     </tr>
                 }
             </tbody>
@@ -118,6 +93,34 @@
             const n = document.getElementById('inp-name').value.trim(); const nameOk = validateText('inp-name', 'Medication name', 3, 150, /^[A-Za-z0-9 /()'.,-]+$/); const descOk = validateOptionalText('inp-desc', 'Description', 500, /^[A-Za-z0-9 /()'.,;:-]+$/); if (!nameOk.ok || !descOk.ok) return; if (hasDuplicateName('med-tbl', n, currentMedicationEditRow)) { setFieldError(document.getElementById('inp-name'), 'Medication name must be unique.'); return; } const category = document.getElementById('inp-category').value; const description = document.getElementById('inp-desc').value.trim(); const token = document.querySelector('input[name="__RequestVerificationToken"]').value; if (currentMedicationEditRow) { const oldMedicationName = currentMedicationEditRow.cells[0].textContent.trim(); const data = new URLSearchParams({ oldMedicationName, medicationName: n, categoryName: category, description, __RequestVerificationToken: token }); const response = await fetch('@Url.Action("UpdateMedication", "Admin")', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' }, body: data }); const result = await response.json().catch(() => ({})); if (!response.ok) { toast(result.message || 'Unable to update medication.'); return; } toast(result.message || 'Medication updated.'); window.location.reload(); return; } else { const data = new URLSearchParams({ medicationName: n, categoryName: category, description, __RequestVerificationToken: token }); const response = await fetch('@Url.Action("AddMedication", "Admin")', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' }, body: data }); const result = await response.json().catch(() => ({})); if (!response.ok) { toast(result.message || 'Unable to add medication.'); return; } toast(result.message || 'Medication added.'); window.location.reload(); return; }
             document.getElementById('inp-name').value = ''; document.getElementById('inp-desc').value = ''; updateMedicationFilter('med-tbl', document.querySelector('#med-tbl').closest('.card').querySelector('.tbl-search input').value); closeModal('modal-add');
         }
-        document.addEventListener('DOMContentLoaded', () => { ensureStatusColumn('med-tbl'); document.querySelectorAll('#med-tbl tbody tr').forEach(row => setActions(row, 'editMedication')); });
-    </script>
+            async function toggleMedicationStatus(button) {
+            const row = button.closest('tr');
+            if (!row) return;
+            const medicationName = row.cells[0].textContent.trim();
+            const activate = row.dataset.isActive !== 'true';
+            const action = activate ? 'Activate' : 'Deactivate';
+            if (!confirm(`${action} the medication ${medicationName}?`)) return;
+            const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+            const data = new URLSearchParams({medicationName, isActive: String(activate ? 1 : 0), __RequestVerificationToken: token});
+            button.disabled = true;
+            try {
+                const response = await fetch('@Url.Action("SetMedicationStatus", "Admin")', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'},
+                    body: data
+                });
+                const result = await response.json().catch(() => ({}));
+                if (!response.ok) {
+                    toast(result.message || 'Unable to update medication status.');
+                    button.disabled = false;
+                    return;
+                }
+                toast(result.message);
+                window.location.reload();
+            } catch {
+                toast('Unable to reach the server.');
+                button.disabled = false;
+            }
+        }
+</script>
 }

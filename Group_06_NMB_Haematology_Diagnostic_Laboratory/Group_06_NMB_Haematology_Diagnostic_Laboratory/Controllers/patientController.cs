@@ -1,6 +1,7 @@
-﻿using Group_06_NMB_Haematology_Diagnostic_Lab.Data.Models;
+using Group_06_NMB_Haematology_Diagnostic_Lab.Data.Models;
 using Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Data.SqlClient;
 using System.Security.Cryptography;
 
 using System.Text;
@@ -9,21 +10,220 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
     public class PatientController : Controller
     {
         // Temporary patient context until authentication supplies the patient identity.
-        private const int CurrentPatientId = 9977;
+        private const int CurrentPatientId = 9978;
+
+        public override async Task OnActionExecutionAsync(
+            Microsoft.AspNetCore.Mvc.Filters.ActionExecutingContext context,
+            Microsoft.AspNetCore.Mvc.Filters.ActionExecutionDelegate next)
+        {
+            var executed = await next();
+            if (executed.Result is ViewResult view)
+                view.ViewData["PatientDisplayName"] = await _patientRepository.GetPatientDisplayName(CurrentPatientId);
+        }
 
         public IActionResult Index()
         {
             return View();
         }
+
+        [HttpGet]
+        public async Task<IActionResult> Dashboard()
+        {
+            var requests = (await _patientRepository.GetPatientRequests(CurrentPatientId)).ToList();
+            var profile = await _patientRepository.GetPatientForUpdate(CurrentPatientId);
+            var history = (await _patientRepository.GetPatientMedicalInformation(CurrentPatientId)).ToList();
+            string Summary(string type)
+            {
+                var names = history.Where(item => item.ItemType == type)
+                    .Select(item => item.SelectedItem.Trim())
+                    .Where(name => !string.IsNullOrWhiteSpace(name))
+                    .Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(name => name).ToList();
+                return names.Count > 0 ? string.Join(", ", names) : "Not recorded";
+            }
+            return View(new PatientDashboard {
+                Email = string.IsNullOrWhiteSpace(profile?.Email) ? "Not recorded" : profile.Email,
+                Conditions = Summary("Condition"),
+                Allergies = Summary("Allergy"),
+                Medication = Summary("Medication"),
+                TotalRequests = requests.Count,
+                InProgress = requests.Count(r => string.Equals(r.Status?.Trim(), "In progress", StringComparison.OrdinalIgnoreCase)),
+                Submitted = requests.Count(r => string.Equals(r.Status?.Trim(), "Submitted", StringComparison.OrdinalIgnoreCase)),
+                AbnormalFlags = await _patientRepository.GetPatientAbnormalResultCount(CurrentPatientId)
+            });
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> Requests()
+        {
+            var requests = await _patientRepository.GetPatientRequests(CurrentPatientId);
+            return View(requests.ToList());
+        }
+
+        [HttpGet]
+        [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
+        public async Task<IActionResult> RequestDetails(int testRequestId)
+        {
+            if (testRequestId <= 0) return BadRequest();
+            var request = (await _patientRepository.GetPatientRequests(CurrentPatientId))
+                .FirstOrDefault(request => request.TestRequestID == testRequestId);
+            if (request == null) return NotFound();
+            if (!request.IsReleased)
+            {
+                var progress = (await _patientRepository.GetPatientRequestProgress(CurrentPatientId, testRequestId))
+                    .OrderBy(test => test.TestName, StringComparer.OrdinalIgnoreCase).ToList();
+                if (progress.Count == 0) return NotFound();
+                return PartialView("_RequestProgress", progress);
+            }
+
+            var details = (await _patientRepository.GetPatientRequestDetails(CurrentPatientId, testRequestId))
+                .OrderBy(test => test.TestName, StringComparer.OrdinalIgnoreCase).ToList();
+            if (details.Count == 0) return NotFound();
+            // The results procedure returns test values, not the request status.
+            // Use the patient-owned request checked above to authorize the view.
+            foreach (var detail in details)
+                detail.Status = request.Status;
+            return PartialView("_RequestTests", details);
+        }
+
+        [HttpGet]
+        public IActionResult Consent()
+        {
+            return View();
+        }
+
+        [HttpGet]
+        [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
+        public async Task<IActionResult> SavedConsents()
+        {
+            var rows = await _patientRepository.GetSavedPatientConsents(CurrentPatientId);
+            return Json(rows.GroupBy(row => row.DoctorID).Select(group => new {
+                id = group.Key, name = group.First().DoctorName, email = group.First().Email,
+                hpcsaNumber = group.First().HPCSANumber, specialisation = group.First().Specialisation,
+                isActive = group.Any(row => row.IsActive),
+                requests = group.GroupBy(row => row.TestRequestID).Select(request => new {
+                    id = request.Key, reference = request.First().RequestNumber,
+                    selectedTestIds = request.Select(row => row.TestRequestTestTypeID).Distinct().ToArray()
+                }).ToArray()
+            }));
+        }
+
+        [HttpGet]
+        [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
+        public async Task<IActionResult> ConsentRequests()
+        {
+            var requests = await _patientRepository.GetReleasedConsentRequests(CurrentPatientId);
+            return Json(requests.Select(request => new { id = request.RequestID, reference = request.TestRequestID }));
+        }
+
+        [HttpGet]
+        [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
+        public async Task<IActionResult> ConsentResults(int testRequestId, string? reference, [FromQuery] int[] selectedTestIds)
+        {
+            if (selectedTestIds.Length == 0 || selectedTestIds.Any(id => id <= 0))
+                return BadRequest("Select at least one test to view shared results.");
+            var requests = await _patientRepository.GetPatientRequests(CurrentPatientId);
+            var request = requests.FirstOrDefault(item => testRequestId > 0
+                ? item.TestRequestID == testRequestId
+                : item.RequestNumber == reference);
+            if (request == null) return NotFound();
+            if (!request.IsReleased) return StatusCode(403);
+
+            var results = await _patientRepository.GetPatientRequestDetails(CurrentPatientId, request.TestRequestID);
+            return Json(results.Where(test => selectedTestIds.Contains(test.TestRequestTestTypeID))
+                .OrderBy(test => test.TestName, StringComparer.OrdinalIgnoreCase).Select(test => new
+            {
+                test = test.TestName,
+                result = test.ResultValue?.ToString("0.############################") ?? "Pending",
+                range = test.ReferenceRange,
+                units = test.UnitOfMeasurement,
+                flag = test.ResultFlag
+            }));
+        }
+
+        [HttpGet]
+        [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
+        public async Task<IActionResult> ConsentRequestTests(int testRequestId)
+        {
+            if (testRequestId <= 0) return BadRequest();
+            var tests = (await _patientRepository.GetConsentRequestTests(CurrentPatientId, testRequestId))
+                .OrderBy(test => test.TestName).ToList();
+            if (tests.Count == 0) return NotFound();
+            return Json(tests.Select(test => new { id = test.TestRequestTestTypeID, name = test.TestName }));
+        }
+
+        [HttpGet]
+        [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
+        public async Task<IActionResult> ConsentDoctors()
+        {
+            try
+            {
+                var doctors = await _patientRepository.GetActiveConsentDoctors();
+                return Json(doctors.Select(doctor => new
+                {
+                    id = doctor.DoctorID,
+                    name = $"Dr. {doctor.FirstLetter.Trim()}. {doctor.Surname.Trim()}",
+                    email = doctor.Email
+                }));
+            }
+            catch (Exception)
+            {
+                return StatusCode(500, new { message = "Unable to load doctors. Please try again." });
+            }
+        }
         private readonly IPatientRepository _patientRepository;
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> RevokeConsent([FromBody] GrantConsentInput input)
+        {
+            if (input == null || input.DoctorID <= 0 || input.TestRequestTestTypeIDs == null
+                || input.TestRequestTestTypeIDs.Length == 0 || input.TestRequestTestTypeIDs.Any(id => id <= 0))
+                return BadRequest();
+            try
+            {
+                await _patientRepository.RevokePatientConsents(CurrentPatientId, input.DoctorID,
+                    input.TestRequestTestTypeIDs.Distinct().ToArray());
+                return Ok();
+            }
+            catch (SqlException exception) when (exception.Number == 2812)
+            {
+                _logger.LogError(exception, "A stored procedure required for consent revocation is missing.");
+                return StatusCode(500, new { message = "Revocation is not configured in the database. Run the full RevokePatientConsent.sql script, including both procedures." });
+            }
+            catch (Exception exception)
+            {
+                _logger.LogError(exception, "Failed to revoke patient consent.");
+                return StatusCode(500, new { message = "Access could not be revoked. Please try again." });
+            }
+        }
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> GrantConsent([FromBody] GrantConsentInput input)
+        {
+            if (input == null || input.DoctorID <= 0 || input.TestRequestTestTypeIDs == null
+                || input.TestRequestTestTypeIDs.Length == 0 || input.TestRequestTestTypeIDs.Any(id => id <= 0))
+                return BadRequest(new { message = "Select a doctor and at least one test." });
+            try
+            {
+                await _patientRepository.SavePatientConsents(CurrentPatientId, input.DoctorID,
+                    input.TestRequestTestTypeIDs.Distinct().ToArray());
+                return Ok();
+            }
+            catch (Exception)
+            {
+                return StatusCode(500, new { message = "Consent could not be saved. Please try again." });
+            }
+        }
         private readonly IWebHostEnvironment _environment;
+        private readonly ILogger<PatientController> _logger;
 
             public PatientController(
                 IPatientRepository patientRepository,
-                IWebHostEnvironment environment)
+                IWebHostEnvironment environment,
+                ILogger<PatientController> logger)
             {
                 _patientRepository = patientRepository;
                 _environment = environment;
+                _logger = logger;
             }
 
             // GET: Patient/Register
@@ -38,7 +238,7 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
         public async Task<IActionResult> Update()
         {
             var patient =
-                await _patientRepository.GetPatientForUpdate(9977);
+                await _patientRepository.GetPatientForUpdate(CurrentPatientId);
 
             if (patient == null)
             {
