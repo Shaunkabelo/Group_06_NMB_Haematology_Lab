@@ -1,0 +1,40 @@
+@{
+    ViewData["Title"] = "Management Reports";
+    Layout = "~/Views/Shared/_LabManager_Layout.cshtml";
+    var endDate = DateTime.Today;
+    var startDate = endDate.AddMonths(-1);
+}
+
+<div class="page-body report-page">
+    <div class="section-header">
+        <div>
+            <h2>Management Reports</h2>
+            <small>Generate operational reports for a selected date range.</small>
+        </div>
+    </div>
+
+    @if (TempData["ReportError"] != null)
+    {
+        <div class="alert alert-danger" role="alert">@TempData["ReportError"]</div>
+    }
+
+    <div class="report-card">
+        <div class="report-card-icon">▥</div>
+        <div class="report-card-content">
+            <p class="panel-kicker">PDF report</p>
+            <h3>Tests performed by category</h3>
+            <p>View the total number of completed laboratory tests, grouped by test category.</p>
+            <form asp-controller="LabManager" asp-action="TestsPerformedReport" method="get" class="report-form">
+                <div>
+                    <label for="startDate">From</label>
+                    <input id="startDate" name="startDate" type="date" value="@startDate.ToString("yyyy-MM-dd")" required />
+                </div>
+                <div>
+                    <label for="endDate">To</label>
+                    <input id="endDate" name="endDate" type="date" value="@endDate.ToString("yyyy-MM-dd")" required />
+                </div>
+                <button class="btn btn-primary" type="submit">Download PDF <span aria-hidden="true">↓</span></button>
+            </form>
+        </div>
+    </div>
+</div>

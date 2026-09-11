@@ -43,9 +43,6 @@
                         class="form-select @(ViewBag.Filter == "Active" ? "filter-active" : ViewBag.Filter == "Inactive" ? "filter-inactive" : "filter-all")"
                         onchange="this.form.submit()">
 
-                    )"
-                    onchange="this.form.submit()">
-
                     @if (ViewBag.Filter == "Active")
                     {
                         <option value="Active" selected>Active</option>
@@ -180,26 +177,12 @@
                                     data-dob="@technician.User.DateOfBirth?.ToString("yyyy-MM-dd")"
                                     data-said="@technician.User.SaIdNumber"
                                     data-address="@technician.User.HomeAddress"
-                                    data-employee="@technician.EmployeeNumber">
+                                    data-employee="@technician.EmployeeNumber"
+                                    data-assigned="@string.Join(",", assignedIds)">
 
                                 Edit
 
                             </button>
-
-                            @if (technician.User.IsActive)
-                            {
-                                <button type="button"
-                                        class="btn btn-primary btn-sm"
-                                        data-bs-toggle="offcanvas"
-                                        data-bs-target="#testTypeAssignmentPanel"
-                                        onclick="openTestTypeAssignment(this)"
-                                        data-id="@technician.LabTechnicianId"
-                                        data-name="@($"{technician.User.Name} {technician.User.Surname}")"
-                                        data-assigned="@string.Join(",", assignedIds)">
-                                    Assign Tests
-                                </button>
-                            }
-
 
                             <!-- ================= ACTIVE TECHNICIAN ================= -->
                             @if (technician.User.IsActive)
@@ -270,37 +253,6 @@
 
 </div>
 
-<div class="offcanvas offcanvas-end" tabindex="-1" id="testTypeAssignmentPanel" style="width:500px;">
-    <div class="offcanvas-header">
-        <h4 id="assignmentPanelTitle">Assign Test Types</h4>
-        <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
-    </div>
-    <div class="offcanvas-body">
-        <form asp-controller="LabManager" asp-action="UpdateTechnicianTestTypes" method="post">
-            <input type="hidden" id="assignmentTechnicianId" name="technicianId" />
-            <input type="hidden" name="filter" value="@ViewBag.Filter" />
-            <p class="text-muted">Select every test type this technician may perform.</p>
-            <div id="testTypeAssignmentList">
-                @foreach (var testType in testTypes)
-                {
-                    <div class="form-check mb-2">
-                        <input class="form-check-input assignment-test-type"
-                               type="checkbox"
-                               name="testTypeIds"
-                               value="@testType.TestTypeId"
-                               id="assignment-test-@testType.TestTypeId" />
-                        <label class="form-check-label" for="assignment-test-@testType.TestTypeId">
-                            @testType.TestName
-                        </label>
-                    </div>
-                }
-            </div>
-            <button type="submit" class="btn btn-primary mt-3">Save Assignments</button>
-            <button type="button" class="btn btn-secondary mt-3" data-bs-dismiss="offcanvas">Cancel</button>
-        </form>
-    </div>
-</div>
-
 <!-- ========================================================= -->
 <!-- ADD / EDIT TECHNICIAN PANEL -->
 <!-- ========================================================= -->
@@ -352,6 +304,14 @@
                        name="User.Name"
                        required />
 
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Employee Number</label>
+                <input id="TechnicianEmployeeNumber"
+                       class="form-control"
+                       name="EmployeeNumber"
+                       required />
             </div>
 
 
@@ -458,20 +418,20 @@
 
             </div>
 
-            <div id="createTestTypeAssignmentSection" class="form-group border-top pt-4 mt-4">
-                <h6 class="mb-1">Assign Test Types</h6>
+            <div id="testTypeAssignmentSection" class="form-group border-top pt-4 mt-4">
+                <h6 class="mb-1">Test Types</h6>
                 <small class="text-muted d-block mb-3">
-                    Optionally select the tests this technician is authorised to perform.
+                    Select at least one test type. The same test type can be assigned to multiple technicians.
                 </small>
                 @foreach (var testType in testTypes)
                 {
                     <div class="form-check mb-2">
-                        <input class="form-check-input create-assignment-test-type"
+                        <input class="form-check-input technician-test-type"
                                type="checkbox"
                                name="testTypeIds"
                                value="@testType.TestTypeId"
-                               id="create-assignment-test-@testType.TestTypeId" />
-                        <label class="form-check-label" for="create-assignment-test-@testType.TestTypeId">
+                               id="technician-test-@testType.TestTypeId" />
+                           <label class="form-check-label" for="technician-test-@testType.TestTypeId">
                             @testType.TestName
                         </label>
                     </div>
@@ -528,8 +488,7 @@
         document.getElementById("technicianForm").reset();
 
         document.getElementById("LabTechnicianId").value = "0";
-        document.getElementById("createTestTypeAssignmentSection").style.display = "block";
-        document.querySelectorAll(".create-assignment-test-type").forEach(checkbox => checkbox.checked = false);
+        document.querySelectorAll(".technician-test-type").forEach(checkbox => checkbox.checked = false);
 
         document.getElementById("idValidation").innerText = "";
     }
@@ -575,23 +534,18 @@
         document.getElementById("TechnicianHomeAddress").value =
             button.dataset.address;
 
-        document.getElementById("createTestTypeAssignmentSection").style.display = "none";
+        document.getElementById("TechnicianEmployeeNumber").value =
+            button.dataset.employee;
 
-        document.getElementById("idValidation").innerText = "";
-    }
-
-    function openTestTypeAssignment(button)
-    {
         const assignedIds = (button.dataset.assigned || "")
             .split(",")
             .filter(id => id)
             .map(id => Number(id));
-
-        document.getElementById("assignmentTechnicianId").value = button.dataset.id;
-        document.getElementById("assignmentPanelTitle").innerText = `Assign Test Types — ${button.dataset.name}`;
-        document.querySelectorAll(".assignment-test-type").forEach(checkbox => {
+        document.querySelectorAll(".technician-test-type").forEach(checkbox => {
             checkbox.checked = assignedIds.includes(Number(checkbox.value));
         });
+
+        document.getElementById("idValidation").innerText = "";
     }
 
 

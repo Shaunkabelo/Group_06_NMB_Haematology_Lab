@@ -1,11 +1,16 @@
 ﻿using Group_06_NMB_Haematology_Diagnostic_Lab.Data.Models;
 using Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using Group_06_NMB_Haematology_Diagnostic_Lab.Data.Helpers;
 using Group_06_NMB_Haematology_Diagnostic_Laboratory.Models;
+using QuestPDF.Fluent;
+using QuestPDF.Helpers;
+using QuestPDF.Infrastructure;
 
 namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 {
+    [Authorize(Roles = "LabManager,Admin")]
     public class LabManagerController : Controller
     {
         private readonly ILabManagerRepository _repository;
@@ -968,9 +973,14 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
                 return RedirectToAction(nameof(Technicians));
             }
 
+            if (selectedIds.Length == 0)
+            {
+                TempData["Error"] = "Assign at least one test type to the technician.";
+                return RedirectToAction(nameof(Technicians));
+            }
+
             var technicianId = await _repository.CreateTechnician(technician);
-            if (selectedIds.Any())
-                await _repository.ReplaceTechnicianTestTypes(technicianId, selectedIds);
+            await _repository.ReplaceTechnicianTestTypes(technicianId, selectedIds);
 
             TempData["Success"] = "Technician created and test-type assignments saved.";
 
@@ -992,7 +1002,7 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 
         // ==================== UPDATE TECHNICIAN ====================
         [HttpPost]
-        public async Task<IActionResult> EditTechnician(LabTechnician technician)
+        public async Task<IActionResult> EditTechnician(LabTechnician technician, int[] testTypeIds)
         {
             if (!ModelState.IsValid)
             {
@@ -1007,7 +1017,23 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
                 return RedirectToAction(nameof(Technicians));
             }
 
+            var selectedIds = (testTypeIds ?? Array.Empty<int>()).Where(id => id > 0).Distinct().ToArray();
+            var activeIds = (await _repository.GetTestTypes("Active"))
+                .Select(testType => testType.TestTypeId)
+                .ToHashSet();
+            if (selectedIds.Length == 0)
+            {
+                TempData["Error"] = "Assign at least one test type to the technician.";
+                return RedirectToAction(nameof(Technicians));
+            }
+            if (selectedIds.Any(id => !activeIds.Contains(id)))
+            {
+                TempData["Error"] = "One or more selected test types are not active.";
+                return RedirectToAction(nameof(Technicians));
+            }
+
             await _repository.UpdateTechnician(technician);
+            await _repository.ReplaceTechnicianTestTypes(technician.LabTechnicianId, selectedIds);
 
             return RedirectToAction(nameof(Technicians));
         }
@@ -1062,7 +1088,69 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
         }
         //================================================================================================================
 
+        [HttpGet]
         public IActionResult ManagerReports() => View();
+
+        [HttpGet]
+        public async Task<IActionResult> TestsPerformedReport(DateTime startDate, DateTime endDate)
+        {
+            if (startDate == default || endDate == default || startDate.Date > endDate.Date)
+            {
+                TempData["ReportError"] = "Select a valid start and end date.";
+                return RedirectToAction(nameof(ManagerReports));
+            }
+
+            var categories = (await _repository.GetTestsPerformedByCategory(
+                startDate.Date,
+                endDate.Date.AddDays(1)))
+                .OrderByDescending(row => row.TotalTests)
+                .ThenBy(row => row.CategoryName)
+                .ToList();
+
+            var document = Document.Create(container =>
+            {
+                container.Page(page =>
+                {
+                    page.Margin(45);
+                    page.Header().Column(column =>
+                    {
+                        column.Item().Text("NMB-HLabSys").FontSize(18).Bold().FontColor(Colors.Blue.Medium);
+                        column.Item().Text("Tests Performed by Category").FontSize(24).Bold();
+                        column.Item().Text($"Reporting period: {startDate:dd MMM yyyy} to {endDate:dd MMM yyyy}").FontSize(10).FontColor(Colors.Grey.Darken1);
+                    });
+                    page.Content().PaddingTop(24).Column(column =>
+                    {
+                        column.Item().Table(table =>
+                        {
+                            table.ColumnsDefinition(columns =>
+                            {
+                                columns.RelativeColumn(3);
+                                columns.RelativeColumn(1);
+                            });
+                            table.Header(header =>
+                            {
+                                header.Cell().Background(Colors.Blue.Medium).Padding(8).Text("Test category").FontColor(Colors.White).Bold();
+                                header.Cell().Background(Colors.Blue.Medium).Padding(8).AlignRight().Text("Total tests").FontColor(Colors.White).Bold();
+                            });
+                            foreach (var category in categories)
+                            {
+                                table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten2).Padding(8).Text(category.CategoryName);
+                                table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten2).Padding(8).AlignRight().Text(category.TotalTests.ToString());
+                            }
+                        });
+                        column.Item().PaddingTop(18).Text($"Total tests performed: {categories.Sum(row => row.TotalTests)}").Bold();
+                    });
+                    page.Footer().AlignCenter().Text(text =>
+                    {
+                        text.Span("Generated ");
+                        text.Span(DateTime.Now.ToString("dd MMM yyyy HH:mm"));
+                    });
+                });
+            });
+
+            return File(document.GeneratePdf(), "application/pdf",
+                $"tests-performed-{startDate:yyyyMMdd}-{endDate:yyyyMMdd}.pdf");
+        }
 
         public IActionResult Profile() => View();
 

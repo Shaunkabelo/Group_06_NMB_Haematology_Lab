@@ -204,6 +204,8 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
 
                     technician.User.DateOfBirth,
 
+                    technician.EmployeeNumber,
+
                 });
         }
 
@@ -225,6 +227,8 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
                     SA_ID_Number = technician.User.SaIdNumber,
 
                     technician.User.DateOfBirth,
+
+                    technician.EmployeeNumber,
 
 
                 });
@@ -1121,5 +1125,16 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
                     SampleTypeID = id
                 });
         }
-    }
+
+        public Task<IEnumerable<TestsPerformedByCategory>> GetTestsPerformedByCategory(
+            DateTime startDate,
+            DateTime endDateExclusive) =>
+            _db.GetData<TestsPerformedByCategory, object>(
+                "sp_ManagerReport_TestsPerformedByCategory",
+                new
+                {
+                    StartDate = startDate,
+                    EndDateExclusive = endDateExclusive
+                });
+}
 }

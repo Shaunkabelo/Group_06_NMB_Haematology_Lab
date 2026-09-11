@@ -160,5 +160,9 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
         Task DeleteSampleType(int id);
 
         Task ReactivateSampleType(int id);
+
+        Task<IEnumerable<TestsPerformedByCategory>> GetTestsPerformedByCategory(
+            DateTime startDate,
+            DateTime endDateExclusive);
     }
 }
