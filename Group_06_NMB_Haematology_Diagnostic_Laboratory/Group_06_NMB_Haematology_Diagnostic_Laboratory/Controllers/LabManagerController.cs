@@ -11,6 +11,7 @@ using QuestPDF.Infrastructure;
 namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 {
     [Authorize(Roles = "LabManager,Admin")]
+    [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
     public class LabManagerController : Controller
     {
         private readonly ILabManagerRepository _repository;

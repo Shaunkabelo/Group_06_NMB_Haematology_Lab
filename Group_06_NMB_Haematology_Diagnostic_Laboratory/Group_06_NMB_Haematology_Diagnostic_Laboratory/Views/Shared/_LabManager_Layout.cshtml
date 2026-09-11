@@ -338,14 +338,15 @@
                     <div class="account-dropdown-divider"></div>
 
 
-                    <a asp-controller="Account"
-                       asp-action="Logout"
-                       class="account-dropdown-item logout-item">
-
-                        <span>🚪</span>
-                        Logout
-
-                    </a>
+                    <form asp-controller="Account"
+                          asp-action="Logout"
+                          method="post">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="account-dropdown-item logout-item">
+                            <span>🚪</span>
+                            Logout
+                        </button>
+                    </form>
 
                 </div>
 
