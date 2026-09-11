@@ -1,0 +1,54 @@
+@model Group_06_NMB_Haematology_Diagnostic_Laboratory.Models.LoginViewModel
+
+@{
+    ViewData["Title"] = "Sign in";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="auth-shell">
+    <nav class="auth-nav">
+        <a class="landing-brand" asp-controller="Home" asp-action="Index"><span class="brand-mark">HL</span> NMB-HLabSys</a>
+        <span class="auth-nav-label">Secure laboratory access</span>
+    </nav>
+    <div class="auth-main">
+    <section class="auth-intro">
+        <p class="auth-eyebrow">Welcome to the workspace</p>
+        <h1>Continue where the laboratory work begins.</h1>
+        <p>Sign in to manage diagnostic test catalogues, laboratory staff and consumable stock.</p>
+        <div class="auth-contact">
+            <strong>Having trouble signing in?</strong>
+            <span>Contact your laboratory administrator for account support.</span>
+        </div>
+    </section>
+
+    <section class="auth-card">
+        <p class="auth-eyebrow">Secure access</p>
+        <h2>Welcome back</h2>
+        <p class="auth-muted">Use your laboratory account to continue.</p>
+
+        <form asp-action="Login" asp-route-returnUrl="@ViewData["ReturnUrl"]" method="post">
+            <div asp-validation-summary="ModelOnly" class="auth-error" role="alert"></div>
+            <div class="auth-field">
+                <label asp-for="Email"></label>
+                <input asp-for="Email" autocomplete="username" autofocus />
+                <span asp-validation-for="Email"></span>
+            </div>
+            <div class="auth-field">
+                <label asp-for="Password"></label>
+                <input asp-for="Password" autocomplete="current-password" />
+                <span asp-validation-for="Password"></span>
+            </div>
+            <label class="auth-check">
+                <input asp-for="RememberMe" />
+                <span>Keep me signed in</span>
+            </label>
+            <button class="auth-submit" type="submit">Sign in <span aria-hidden="true">→</span></button>
+        </form>
+    </section>
+    </div>
+    <footer class="auth-footer"><strong>Nelson Mandela Bay Haematology Diagnostic Laboratory</strong><span>Group 06 · NMB-HLabSys</span></footer>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
