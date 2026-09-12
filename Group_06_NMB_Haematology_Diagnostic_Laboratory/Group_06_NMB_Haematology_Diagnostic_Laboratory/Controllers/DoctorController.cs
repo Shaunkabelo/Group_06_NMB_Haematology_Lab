@@ -1,9 +1,13 @@
 ﻿using Group_06_NMB_Haematology_Diagnostic_Lab.Data.Models;
 using Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Cryptography;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 {
+	[Authorize(Roles = "Doctor")]
 	public class DoctorController : Controller
 	{
 		private readonly IDoctorRepository _doctorRepository;
@@ -14,12 +18,387 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 			_doctorRepository = doctorRepository;
 		}
 
+		private bool VerifyPassword(string password,string storedHash,string storedSalt)
+				{
+					byte[] saltBytes =
+						Convert.FromBase64String(
+							storedSalt);
 
+					using var pbkdf2 =
+						new Rfc2898DeriveBytes(
+							password,
+							saltBytes,
+							100000,
+							HashAlgorithmName.SHA256);
+
+					byte[] hash =
+						pbkdf2.GetBytes(32);
+
+					string calculatedHash =
+						Convert.ToBase64String(hash);
+
+					return calculatedHash ==
+						   storedHash;
+				}
+		private (string Hash, string Salt)
+	HashPassword(
+		string password)
+		{
+			byte[] salt =
+				RandomNumberGenerator
+					.GetBytes(16);
+
+			using var pbkdf2 =
+				new Rfc2898DeriveBytes(
+					password,
+					salt,
+					100000,
+					HashAlgorithmName.SHA256);
+
+			byte[] hash =
+				pbkdf2.GetBytes(32);
+
+			return
+			(
+				Convert.ToBase64String(hash),
+				Convert.ToBase64String(salt)
+			);
+		}
+		[HttpPost]
+		public async Task<IActionResult>
+	ChangeDoctorPassword(
+		[FromBody]
+		ChangePasswordDto model)
+		{
+			try
+			{
+				if (model == null)
+				{
+					return BadRequest(new
+					{
+						success = false,
+						message =
+							"Password information is required."
+					});
+				}
+
+
+				if (string.IsNullOrWhiteSpace(
+					model.CurrentPassword))
+				{
+					return BadRequest(new
+					{
+						success = false,
+						message =
+							"Current password is required."
+					});
+				}
+
+
+				if (string.IsNullOrWhiteSpace(
+					model.NewPassword))
+				{
+					return BadRequest(new
+					{
+						success = false,
+						message =
+							"New password is required."
+					});
+				}
+
+
+				if (model.NewPassword !=
+					model.ConfirmPassword)
+				{
+					return BadRequest(new
+					{
+						success = false,
+						message =
+							"New password and confirm password do not match."
+					});
+				}
+
+
+				if (model.NewPassword.Length < 8)
+				{
+					return BadRequest(new
+					{
+						success = false,
+						message =
+							"Password must be at least 8 characters long."
+					});
+				}
+
+
+				int userId =
+					GetLoggedInUserId();
+
+
+				var user =
+					await _doctorRepository
+						.GetUserByIdAsync(
+							userId);
+
+
+				if (user == null)
+				{
+					return NotFound(new
+					{
+						success = false,
+						message =
+							"User account was not found."
+					});
+				}
+
+
+				bool currentPasswordCorrect =
+					VerifyPassword(
+						model.CurrentPassword,
+						user.PasswordHash,
+						user.PasswordSalt);
+
+
+				if (!currentPasswordCorrect)
+				{
+					return BadRequest(new
+					{
+						success = false,
+						message =
+							"Current password is incorrect."
+					});
+				}
+
+
+				var passwordData =
+					HashPassword(
+						model.NewPassword);
+
+
+				bool updated =
+					await _doctorRepository
+						.UpdatePasswordAsync(
+							userId,
+							passwordData.Hash,
+							passwordData.Salt);
+
+
+				if (!updated)
+				{
+					return BadRequest(new
+					{
+						success = false,
+						message =
+							"Password could not be updated."
+					});
+				}
+
+
+				return Json(new
+				{
+					success = true,
+					message =
+						"Password updated successfully."
+				});
+			}
+			catch (Exception ex)
+			{
+				return StatusCode(
+					500,
+					new
+					{
+						success = false,
+						message = ex.Message
+					});
+			}
+		}
+		private int GetLoggedInUserId()
+		{
+			var userIdClaim =
+				User.FindFirst(
+					System.Security.Claims
+						.ClaimTypes.NameIdentifier);
+
+			if (userIdClaim == null)
+			{
+				throw new Exception(
+					"Logged-in User ID was not found."
+				);
+			}
+
+
+			if (!int.TryParse(
+				userIdClaim.Value,
+				out int userId))
+			{
+				throw new Exception(
+					"Invalid logged-in User ID."
+				);
+			}
+
+
+			return userId;
+		}
+		[HttpPost]
+		public async Task<IActionResult> UpdateDoctorAccount(
+	[FromBody] UpdateDoctorAccountDto model)
+		{
+			try
+			{
+				if (model == null)
+				{
+					return BadRequest(new
+					{
+						success = false,
+						message = "Profile information is required."
+					});
+				}
+
+				if (string.IsNullOrWhiteSpace(model.Name))
+				{
+					return BadRequest(new
+					{
+						success = false,
+						message = "Name is required."
+					});
+				}
+
+				if (string.IsNullOrWhiteSpace(model.Surname))
+				{
+					return BadRequest(new
+					{
+						success = false,
+						message = "Surname is required."
+					});
+				}
+
+				if (string.IsNullOrWhiteSpace(model.Email))
+				{
+					return BadRequest(new
+					{
+						success = false,
+						message = "Email is required."
+					});
+				}
+
+
+				int userId =
+					GetLoggedInUserId();
+
+
+				bool updated =
+					await _doctorRepository
+						.UpdateDoctorAccountAsync(
+							userId,
+							model);
+
+
+				if (!updated)
+				{
+					return BadRequest(new
+					{
+						success = false,
+						message = "Profile could not be updated."
+					});
+				}
+
+
+				return Json(new
+				{
+					success = true,
+					message = "Profile updated successfully."
+				});
+			}
+			catch (Exception ex)
+			{
+				return StatusCode(500, new
+				{
+					success = false,
+					message = ex.Message
+				});
+			}
+		}
+		[HttpGet]
+		public async Task<IActionResult> GetDoctorAccount()
+		{
+			try
+			{
+				int userId =
+					GetLoggedInUserId();
+
+				var doctor =
+					await _doctorRepository
+						.GetDoctorAccountAsync(
+							userId);
+
+				if (doctor == null)
+				{
+					return NotFound(new
+					{
+						success = false,
+						message = "Doctor account was not found."
+					});
+				}
+
+				return Json(doctor);
+			}
+			catch (Exception ex)
+			{
+				return StatusCode(500, new
+				{
+					success = false,
+					message = ex.Message
+				});
+			}
+		}
+		[HttpGet]
+		public async Task<IActionResult> GetReportRequests(
+			DateTime startDate,
+			DateTime endDate)
+		{
+			try
+			{
+				if (startDate == default || endDate == default)
+				{
+					return BadRequest(new
+					{
+						success = false,
+						message = "Please select both a start date and an end date."
+					});
+				}
+
+				if (startDate.Date > endDate.Date)
+				{
+					return BadRequest(new
+					{
+						success = false,
+						message = "Start date cannot be after end date."
+					});
+				}
+
+				int doctorId = GetLoggedInDoctorId();
+
+				var requests =
+					await _doctorRepository.GetDoctorReportAsync(
+						doctorId,
+						startDate,
+						endDate);
+
+				return Json(requests);
+			}
+			catch (Exception ex)
+			{
+				return StatusCode(500, new
+				{
+					success = false,
+					message = ex.Message
+				});
+			}
+		}
 		// ============================================================
 		// LOGGED IN DOCTOR
 		// ============================================================
 
-		private async Task<int> GetLoggedInDoctorIdAsync()
+		private int GetLoggedInDoctorId()
 		{
 			var userIdClaim =
 				User.FindFirst(
@@ -28,7 +407,7 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 			if (userIdClaim == null)
 			{
 				throw new Exception(
-					"User login information was not found.");
+					"Logged-in User ID was not found. Please log out and log in again.");
 			}
 
 			if (!int.TryParse(
@@ -39,17 +418,15 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 					"Invalid logged-in User ID.");
 			}
 
-			var doctor =
-				await _doctorRepository
-					.GetDoctorByUserIdAsync(userId);
-
-			if (doctor == null)
+			if (!User.IsInRole("Doctor"))
 			{
 				throw new Exception(
-					"Doctor record was not found for this user.");
+					"The logged-in user is not a doctor.");
 			}
 
-			return doctor.DoctorId;
+			// In the current database design doctors are stored in dbo.[User].
+			// TestRequest.DoctorID therefore uses the logged-in doctor's UserID.
+			return userId;
 		}
 
 
@@ -852,7 +1229,7 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 				// ----------------------------------------------------
 
 				int doctorId =
-	             await GetLoggedInDoctorIdAsync();
+					GetLoggedInDoctorId();
 
 
 				// ----------------------------------------------------

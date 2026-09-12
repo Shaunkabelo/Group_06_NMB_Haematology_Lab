@@ -364,81 +364,13 @@
         });
     });
 
-    const lookupTests = {
-        'Full Blood Count': {
-            performedBy: 'Lab Tech - James Wilson',
-            result: '12.9 g/dL',
-            normalRange: '13.0 - 17.0 g/dL',
-            verifiedBy: 'Dr. Michael Chen',
-            notes: 'Review red cell mass and correlate with patient hydration.',
-            abnormal: true
-        },
-        'Coagulation Profile': {
-            performedBy: 'Lab Tech - Sarah Patel',
-            result: 'PT 14.0 sec',
-            normalRange: '11.0 - 13.5 sec',
-            verifiedBy: 'Dr. Michael Chen',
-            notes: 'Slight prolongation is within clinical tolerance.',
-            abnormal: true
-        },
-        'Peripheral Blood Film': {
-            performedBy: 'Lab Tech - James Wilson',
-            result: 'Normal morphology',
-            normalRange: 'Normal',
-            verifiedBy: 'Dr. Michael Chen',
-            notes: 'No significant abnormalities detected.',
-            abnormal: false
-        },
-        'Differential Count': {
-            performedBy: 'Lab Tech - Sarah Patel',
-            result: 'Neutrophils 60%',
-            normalRange: '40 - 70%',
-            verifiedBy: 'Dr. Michael Chen',
-            notes: 'Differential count within normal limits.',
-            abnormal: false
-        },
-        'Basic Metabolic Panel': {
-            performedBy: 'Lab Tech - James Wilson',
-            result: 'All electrolytes within range',
-            normalRange: 'Refer lab-specific ranges',
-            verifiedBy: 'Dr. Michael Chen',
-            notes: 'Metabolic panel indicates stable renal function.',
-            abnormal: false
-        },
-        'Liver Function Test': {
-            performedBy: 'Lab Tech - Sarah Patel',
-            result: 'ALT 28 U/L',
-            normalRange: '7 - 56 U/L',
-            verifiedBy: 'Dr. Michael Chen',
-            notes: 'Liver enzymes are within normal limits.',
-            abnormal: false
-        }
-    };
-
-    const defaultRequests = [
-        {
-            id: 'REQ-2026-0182',
-            patientName: 'Anele Mbeki',
-            tests: ['Full Blood Count', 'Coagulation Profile'],
-            status: 'Submitted',
-            createdAt: '2026-05-12T09:12:00',
-            released: false
-        },
-        {
-            id: 'REQ-2026-0179',
-            patientName: 'Priya Naidoo',
-            tests: ['Peripheral Blood Film'],
-            status: 'Released by doctor',
-            createdAt: '2026-05-09T11:40:00',
-            released: true
-        }
-    ];
-
     function getStoredRequests() {
         try {
-            return JSON.parse(localStorage.getItem(requestsStorageKey) || 'null');
+            const stored = localStorage.getItem(requestsStorageKey);
+            const parsed = stored ? JSON.parse(stored) : [];
+            return Array.isArray(parsed) ? parsed : [];
         } catch {
-            return null;
+            return [];
         }
     }
 
@@ -448,20 +380,17 @@
 
     function ensureStoredRequests() {
         const stored = getStoredRequests();
-        if (!stored || !Array.isArray(stored) || stored.length === 0) {
-            saveStoredRequests(defaultRequests);
-            return [...defaultRequests];
-        }
+        saveStoredRequests(stored);
         return stored;
     }
 
     function getTestDetails(testName) {
-        return lookupTests[testName] || {
-            performedBy: 'Lab Tech - Unknown',
-            result: 'Pending review',
-            normalRange: 'Refer lab range',
+        return {
+            performedBy: 'Pending lab review',
+            result: 'Awaiting result entry',
+            normalRange: 'Pending',
             verifiedBy: 'Pending verification',
-            notes: 'Result available once technician captures the sample.',
+            notes: 'No result details are available yet for this test.',
             abnormal: false
         };
     }
@@ -500,8 +429,8 @@
             const tests = Array.isArray(item.tests) ? item.tests : [];
             const testsHtml = tests.map(test => {
                 const isString = typeof test === 'string';
-                const testName = isString ? test : test.testName;
-                const data = isString ? getTestDetails(testName) : test;
+                const testName = isString ? test : (test && test.testName ? test.testName : 'Unnamed test');
+                const data = isString ? getTestDetails(testName) : { ...getTestDetails(testName), ...test };
                 return `
                     <div class="result-item">
                         <div class="result-item-title"><strong>${testName}</strong><span class="badge ${data.abnormal ? 'red' : 'green'}">${data.abnormal ? 'Abnormal' : 'Normal'}</span></div>

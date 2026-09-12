@@ -90,162 +90,19 @@
         return next;
     }
 
-    function getSeedRequests() {
-        const today = atLocalMidday(new Date());
-        return [
-            {
-                id: 'REQ-2026-0188',
-                patientName: 'Thando Jacobs',
-                createdAt: addDays(today, -1).toISOString(),
-                urgency: 'STAT',
-                status: 'Completed',
-                tests: ['Full Blood Count']
-            },
-            {
-                id: 'REQ-2026-0187',
-                patientName: 'Priya Naidoo',
-                createdAt: addDays(today, -3).toISOString(),
-                urgency: 'Urgent',
-                status: 'Completed',
-                tests: ['Haemoglobin']
-            },
-            {
-                id: 'REQ-2026-0172',
-                patientName: 'Anele Mbeki',
-                createdAt: addDays(today, -12).toISOString(),
-                urgency: 'Routine',
-                status: 'Released',
-                tests: ['INR']
-            },
-            {
-                id: 'REQ-2026-0186',
-                patientName: 'Johan Smit',
-                createdAt: addDays(today, -4).toISOString(),
-                urgency: 'Urgent',
-                status: 'Completed',
-                tests: ['White Cell Count']
-            },
-            {
-                id: 'REQ-2026-0185',
-                patientName: 'Lindiwe Maseko',
-                createdAt: addDays(today, -5).toISOString(),
-                urgency: 'Routine',
-                status: 'Completed',
-                tests: ['Coagulation Profile']
-            },
-            {
-                id: 'REQ-2026-0184',
-                patientName: 'Sipho Dlamini',
-                createdAt: addDays(today, -2).toISOString(),
-                urgency: 'STAT',
-                status: 'Completed',
-                tests: ['Neutrophil Count']
-            }
-        ];
-    }
-
-    function getSeedResults() {
-        const today = atLocalMidday(new Date());
-        return [
-            {
-                requestId: 'REQ-2026-0188',
-                testName: 'Full Blood Count',
-                summary: 'Platelets 42 x10^9/L - critical low',
-                result: '42 x10^9/L',
-                normalRange: '150 - 450 x10^9/L',
-                flag: 'Critical low',
-                priority: 'critical',
-                abnormal: true,
-                acknowledged: false,
-                verified: true,
-                created: addDays(today, -1).toISOString()
-            },
-            {
-                requestId: 'REQ-2026-0187',
-                testName: 'Haemoglobin',
-                summary: 'Haemoglobin 8.4 g/dL - below minimum',
-                result: '8.4 g/dL',
-                normalRange: '12.0 - 16.0 g/dL',
-                flag: 'Below min',
-                priority: 'high',
-                abnormal: true,
-                acknowledged: false,
-                verified: true,
-                created: addDays(today, -3).toISOString()
-            },
-            {
-                requestId: 'REQ-2026-0172',
-                testName: 'INR',
-                summary: 'INR 3.4 - borderline high',
-                result: '3.4',
-                normalRange: '0.8 - 1.2',
-                flag: 'Borderline',
-                priority: 'medium',
-                abnormal: true,
-                acknowledged: true,
-                verified: true,
-                created: addDays(today, -12).toISOString()
-            },
-            {
-                requestId: 'REQ-2026-0186',
-                testName: 'White Cell Count',
-                summary: 'White cell count 18.7 x10^9/L - high',
-                result: '18.7 x10^9/L',
-                normalRange: '4.0 - 11.0 x10^9/L',
-                flag: 'Above max',
-                priority: 'high',
-                abnormal: true,
-                acknowledged: false,
-                verified: true,
-                created: addDays(today, -4).toISOString()
-            },
-            {
-                requestId: 'REQ-2026-0185',
-                testName: 'Coagulation Profile',
-                summary: 'PT 16.2 sec - prolonged',
-                result: '16.2 sec',
-                normalRange: '11.0 - 13.5 sec',
-                flag: 'Prolonged',
-                priority: 'low',
-                abnormal: true,
-                acknowledged: false,
-                verified: true,
-                created: addDays(today, -5).toISOString()
-            },
-            {
-                requestId: 'REQ-2026-0184',
-                testName: 'Neutrophil Count',
-                summary: 'Neutrophils 0.7 x10^9/L - critical low',
-                result: '0.7 x10^9/L',
-                normalRange: '2.0 - 7.5 x10^9/L',
-                flag: 'Critical low',
-                priority: 'critical',
-                abnormal: true,
-                acknowledged: false,
-                verified: true,
-                created: addDays(today, -2).toISOString()
-            }
-        ];
-    }
-
     function readStorage(key) {
         try {
             const value = localStorage.getItem(key);
-            return value ? JSON.parse(value) : [];
+            const parsed = value ? JSON.parse(value) : [];
+            return Array.isArray(parsed) ? parsed : [];
         } catch {
             return [];
         }
     }
 
-    function mergeBy(items, additions, keySelector) {
-        const existingKeys = new Set(items.map(keySelector));
-        const missing = additions.filter(item => !existingKeys.has(keySelector(item)));
-        return [...items, ...missing];
-    }
-
     function ensureAlertData() {
-        const requests = mergeBy(readStorage(alertRequestsKey), getSeedRequests(), item => item.id);
-        const results = mergeBy(readStorage(alertResultsKey), getSeedResults(), item => `${item.requestId}|${item.testName}|${item.created}`);
+        const requests = readStorage(alertRequestsKey);
+        const results = readStorage(alertResultsKey);
         localStorage.setItem(alertRequestsKey, JSON.stringify(requests));
         localStorage.setItem(alertResultsKey, JSON.stringify(results));
         return { requests, results };
@@ -302,7 +159,10 @@
         const requestMap = new Map(requests.map(request => [request.id, request]));
 
         const alerts = results
-            .filter(result => result.abnormal)
+            .filter(result => {
+                const abnormal = result.abnormal === true || String(result.flag || '').toLowerCase().includes('abnormal') || String(result.flag || '').toLowerCase().includes('critical') || String(result.flag || '').toLowerCase().includes('high') || String(result.flag || '').toLowerCase().includes('low');
+                return abnormal;
+            })
             .filter(result => showAcknowledged || !result.acknowledged)
             .filter(result => {
                 const resultDate = toDateInputValue(new Date(result.created));

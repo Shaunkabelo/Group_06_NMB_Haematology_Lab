@@ -152,40 +152,14 @@
     const requestStorageKey = 'doctorRequests';
     let pendingCancelRequestId = null;
 
-    const defaultRequests = [
-        {
-            id: 'REQ-2026-0182',
-            patientName: 'Anele Mbeki',
-            createdAt: '2026-04-10T09:12:00',
-            urgency: 'Routine',
-            status: 'Submitted',
-            tests: ['Full Blood Count', 'Coagulation Profile']
-        },
-        {
-            id: 'REQ-2026-0181',
-            patientName: 'Johan Smit',
-            createdAt: '2026-04-09T11:35:00',
-            urgency: 'Urgent',
-            status: 'In progress',
-            tests: ['Differential Count']
-        },
-        {
-            id: 'REQ-2026-0179',
-            patientName: 'Priya Naidoo',
-            createdAt: '2026-04-08T14:20:00',
-            urgency: 'Routine',
-            status: 'Completed',
-            tests: ['Peripheral Blood Film']
-        }
-    ];
-
     function getStoredRequests() {
         try {
             const stored = localStorage.getItem(requestStorageKey);
-            if (!stored) return null;
-            return JSON.parse(stored);
+            if (!stored) return [];
+            const parsed = JSON.parse(stored);
+            return Array.isArray(parsed) ? parsed : [];
         } catch {
-            return null;
+            return [];
         }
     }
 
@@ -193,12 +167,9 @@
         localStorage.setItem(requestStorageKey, JSON.stringify(requests));
     }
 
-    function ensureInitialRequests() {
+    function ensureStoredRequests() {
         const stored = getStoredRequests();
-        if (!stored || !Array.isArray(stored) || stored.length === 0) {
-            saveStoredRequests(defaultRequests);
-            return defaultRequests;
-        }
+        saveStoredRequests(stored);
         return stored;
     }
 
@@ -275,7 +246,7 @@
     }
 
     function renderRequests() {
-        const allRequests = ensureInitialRequests();
+        const allRequests = ensureStoredRequests();
         const search = (document.getElementById('requests-search')?.value || '').toLowerCase().trim();
         const statusFilter = (document.getElementById('requests-filter-status')?.value || '').toLowerCase();
         const urgencyFilter = (document.getElementById('requests-filter-urgency')?.value || '').toLowerCase();
@@ -382,7 +353,7 @@
     }
 
     document.addEventListener('DOMContentLoaded', () => {
-        ensureInitialRequests();
+        ensureStoredRequests();
         renderRequests();
         document.getElementById('requests-search')?.addEventListener('input', renderRequests);
         document.getElementById('requests-filter-status')?.addEventListener('change', renderRequests);

@@ -22,6 +22,105 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
 		{
 			_db = db;
 		}
+		public async Task<User?>
+	GetUserByEmailAsync(
+		string email)
+		{
+			var result =
+				await _db.GetData<User, dynamic>(
+					"dbo.spUser_GetByEmail",
+					new
+					{
+						Email = email
+					});
+
+			return result.FirstOrDefault();
+		}
+		public async Task<DoctorAccountDto?>GetDoctorAccountAsync(int userId)
+				{
+					var result =
+						await _db.GetData<DoctorAccountDto, dynamic>(
+							"dbo.spDoctorAccount_GetByUserId",
+							new
+							{
+								UserID = userId
+							});
+
+					return result.FirstOrDefault();
+				}
+		public async Task<bool>UpdateDoctorAccountAsync(int userId,UpdateDoctorAccountDto model)
+		{
+			try
+			{
+				await _db.GetData<dynamic, dynamic>(
+					"dbo.spDoctorAccount_Update",
+					new
+					{
+						UserID = userId,
+						Name = model.Name,
+						Surname = model.Surname,
+						Email = model.Email,
+						Cellphone = model.Cellphone
+					});
+
+				return true;
+			}
+			catch
+			{
+				return false;
+			}
+		}
+		public async Task<User?>
+	GetUserByIdAsync(
+		int userId)
+		{
+			var result =
+				await _db.GetData<User, dynamic>(
+					"dbo.spUser_GetById",
+					new
+					{
+						UserID = userId
+					});
+
+			return result.FirstOrDefault();
+		}
+
+		public async Task<bool>
+	UpdatePasswordAsync(
+		int userId,
+		string passwordHash,
+		string passwordSalt)
+		{
+			try
+			{
+				await _db.GetData<dynamic, dynamic>(
+					"dbo.spUser_UpdatePassword",
+					new
+					{
+						UserID = userId,
+						PasswordHash = passwordHash,
+						PasswordSalt = passwordSalt
+					});
+
+				return true;
+			}
+			catch
+			{
+				return false;
+			}
+		}
+		//===============================
+		public async Task<IEnumerable<DoctorReportDto>>GetDoctorReportAsync(int doctorId,DateTime startDate,DateTime endDate)
+				{
+					return await _db.GetData<DoctorReportDto, dynamic>(
+						"dbo.spDoctorReport_GetRequests",
+						new
+						{
+							DoctorID = doctorId,
+							StartDate = startDate,
+							EndDate = endDate
+						});
+				}
 		//================================
 		// Doctorp
 		//================================

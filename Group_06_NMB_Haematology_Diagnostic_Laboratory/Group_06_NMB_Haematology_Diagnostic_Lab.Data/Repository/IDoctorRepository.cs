@@ -9,10 +9,35 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
 {
 	public interface IDoctorRepository
 	{
+		//================
+		//Login
+		//=============
+		Task<User?> GetUserByEmailAsync(string email);
+		//=========================
+		// Account
+		//==========================
+		Task<DoctorAccountDto?> GetDoctorAccountAsync(
+	int userId);
+
+		Task<bool> UpdateDoctorAccountAsync(
+			int userId,
+			UpdateDoctorAccountDto model);
+
+		Task<User?> GetUserByIdAsync(int userId);
+
+		Task<bool> UpdatePasswordAsync(
+			int userId,
+			string passwordHash,
+			string passwordSalt);
 		// =========================
 		// PATIENT
 		// =========================
 
+		Task<IEnumerable<DoctorReportDto>>
+	GetDoctorReportAsync(
+		int doctorId,
+		DateTime startDate,
+		DateTime endDate);
 		Task<IEnumerable<Patient>> GetPatientsAsync();
 
 		Task<Patient?> GetPatientByIdAsync(int patientId);

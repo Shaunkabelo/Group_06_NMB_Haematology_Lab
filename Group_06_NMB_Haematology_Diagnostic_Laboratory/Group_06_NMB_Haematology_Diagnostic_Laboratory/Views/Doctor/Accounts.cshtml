@@ -18,8 +18,8 @@
             <div class="profile-summary">
                 <div class="profile-avatar" id="doctor-profile-avatar" aria-hidden="true">DR</div>
                 <div>
-                    <h2 id="doctor-profile-name">Dr. Odwa Sithonga</h2>
-                    <p id="doctor-profile-role">Doctor</p>
+                    <h2 id="doctor-profile-name">Loading...</h2>
+                    <p id="doctor-profile-role">Loading...</p>
                 </div>
             </div>
 
@@ -27,8 +27,12 @@
                 <div id="account-profile-message" class="auth-message" hidden></div>
                 <div class="profile-form-grid">
                     <div class="form-group">
-                        <label class="form-label" for="doctor-account-name">Full name</label>
-                        <input class="form-control" id="doctor-account-name" type="text" autocomplete="name" required>
+                        <label class="form-label" for="doctor-account-name">Name</label>
+                        <input class="form-control" id="doctor-account-name" type="text" autocomplete="given-name" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="doctor-account-surname">Surname</label>
+                        <input class="form-control" id="doctor-account-surname" type="text" autocomplete="family-name" required>
                     </div>
                     <div class="form-group">
                         <label class="form-label" for="doctor-account-email">Email address</label>
@@ -36,25 +40,17 @@
                     </div>
                     <div class="form-group">
                         <label class="form-label" for="doctor-account-phone">Contact number</label>
-                        <input class="form-control" id="doctor-account-phone" type="tel" autocomplete="tel" placeholder="e.g. 071 234 5678">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label" for="doctor-account-department">Department</label>
-                        <input class="form-control" id="doctor-account-department" type="text" value="Haematology" readonly>
+                        <input class="form-control" id="doctor-account-phone" type="tel" autocomplete="tel">
                     </div>
                 </div>
                 <div class="profile-readonly-grid">
                     <div class="profile-info-item">
                         <span>Role</span>
-                        <strong id="doctor-info-role">Doctor</strong>
+                        <strong id="doctor-info-role">-</strong>
                     </div>
                     <div class="profile-info-item">
-                        <span>Practice number</span>
-                        <strong>MP-HAEM-0427</strong>
-                    </div>
-                    <div class="profile-info-item">
-                        <span>Access level</span>
-                        <strong>Doctor subsystem only</strong>
+                        <span>HPCSA Number</span>
+                        <strong id="doctor-info-hpcsa">-</strong>
                     </div>
                 </div>
                 <div class="btn-row">
@@ -148,89 +144,461 @@
 </div>
 
 <script>
-    const doctorProfileStorageKey = 'doctorProfile';
-    const doctorPreferencesStorageKey = 'doctorPreferences';
+    const getDoctorAccountUrl =
+        '@Url.Action("GetDoctorAccount", "Doctor")';
 
-    function getDoctorProfile() {
-        const savedProfile = JSON.parse(sessionStorage.getItem(doctorProfileStorageKey) || 'null');
-        return savedProfile || {
-            name: sessionStorage.getItem('nmb_user_name') || 'Dr. Odwa Sithonga',
-            email: sessionStorage.getItem('nmb_user_email') || 'doctor@nmbhlab.co.za',
-            phone: sessionStorage.getItem('nmb_user_phone') || ''
-        };
-    }
+    const updateDoctorAccountUrl =
+        '@Url.Action("UpdateDoctorAccount", "Doctor")';
 
-    function getDoctorInitials(name) {
-        return String(name || 'Doctor')
-            .replace(/^Dr\.\s*/i, '')
-            .split(/\s+/)
-            .filter(Boolean)
-            .slice(0, 2)
-            .map(part => part[0])
-            .join('')
-            .toUpperCase();
-    }
+    const changeDoctorPasswordUrl =
+        '@Url.Action("ChangeDoctorPassword", "Doctor")';
+
+    const doctorPreferencesStorageKey =
+        'doctorPreferences';
+
 
     function showAccountMessage(elementId, message, type) {
-        const messageElement = document.getElementById(elementId);
+        const messageElement =
+            document.getElementById(elementId);
+
+        if (!messageElement) {
+            return;
+        }
+
         messageElement.textContent = message;
-        messageElement.className = `auth-message ${type}`;
+        messageElement.className = 'auth-message ' + type;
         messageElement.hidden = false;
     }
 
-    function loadDoctorProfile() {
-        const profile = getDoctorProfile();
-        document.getElementById('doctor-account-name').value = profile.name;
-        document.getElementById('doctor-account-email').value = profile.email;
-        document.getElementById('doctor-account-phone').value = profile.phone || '';
-        document.getElementById('doctor-profile-name').textContent = profile.name;
-        document.getElementById('doctor-profile-avatar').textContent = getDoctorInitials(profile.name);
-        document.getElementById('doctor-info-role').textContent = sessionStorage.getItem('nmb_user_role') || 'Doctor';
+
+    function clearInlineMessage(elementId) {
+        const messageElement =
+            document.getElementById(elementId);
+
+        if (!messageElement) {
+            return;
+        }
+
+        messageElement.textContent = '';
+        messageElement.className = 'auth-message';
+        messageElement.hidden = true;
     }
 
-    function saveDoctorProfile(event) {
+
+    function getDoctorInitials(name, surname) {
+        const firstInitial =
+            name ? name.charAt(0) : '';
+
+        const secondInitial =
+            surname ? surname.charAt(0) : '';
+
+        const initials =
+            (firstInitial + secondInitial).toUpperCase();
+
+        return initials || 'DR';
+    }
+
+
+    async function loadDoctorProfile() {
+        clearInlineMessage('account-profile-message');
+
+        try {
+            const response =
+                await fetch(
+                    getDoctorAccountUrl,
+                    {
+                        method: 'GET',
+                        headers: {
+                            'Accept': 'application/json'
+                        }
+                    }
+                );
+
+            const data =
+                await response.json();
+
+            if (!response.ok) {
+                throw new Error(
+                    data.message ||
+                    'Could not load doctor profile.'
+                );
+            }
+
+            const name =
+                data.name ?? data.Name ?? '';
+
+            const surname =
+                data.surname ?? data.Surname ?? '';
+
+            const email =
+                data.email ?? data.Email ?? '';
+
+            const cellphone =
+                data.cellphone ?? data.Cellphone ?? '';
+
+            const role =
+                data.role ?? data.Role ?? '';
+
+            const hpcsaNumber =
+                data.hpcsaNumber ??
+                data.HpcsaNumber ??
+                '';
+
+            document.getElementById(
+                'doctor-account-name'
+            ).value = name;
+
+            document.getElementById(
+                'doctor-account-surname'
+            ).value = surname;
+
+            document.getElementById(
+                'doctor-account-email'
+            ).value = email;
+
+            document.getElementById(
+                'doctor-account-phone'
+            ).value = cellphone;
+
+            const fullName =
+                (name + ' ' + surname).trim();
+
+            document.getElementById(
+                'doctor-profile-name'
+            ).textContent =
+                fullName
+                    ? 'Dr. ' + fullName
+                    : 'Doctor';
+
+            document.getElementById(
+                'doctor-profile-role'
+            ).textContent =
+                role || '-';
+
+            document.getElementById(
+                'doctor-info-role'
+            ).textContent =
+                role || '-';
+
+            document.getElementById(
+                'doctor-info-hpcsa'
+            ).textContent =
+                hpcsaNumber || '-';
+
+            document.getElementById(
+                'doctor-profile-avatar'
+            ).textContent =
+                getDoctorInitials(
+                    name,
+                    surname
+                );
+        }
+        catch (error) {
+            console.error(
+                'Doctor profile load error:',
+                error
+            );
+
+            showAccountMessage(
+                'account-profile-message',
+                error.message ||
+                'Could not load doctor profile.',
+                'error'
+            );
+        }
+    }
+
+
+    async function saveDoctorProfile(event) {
         event.preventDefault();
-        const profile = {
-            name: document.getElementById('doctor-account-name').value.trim(),
-            email: document.getElementById('doctor-account-email').value.trim(),
-            phone: document.getElementById('doctor-account-phone').value.trim()
+
+        clearInlineMessage(
+            'account-profile-message'
+        );
+
+        const model = {
+            name:
+                document.getElementById(
+                    'doctor-account-name'
+                ).value.trim(),
+
+            surname:
+                document.getElementById(
+                    'doctor-account-surname'
+                ).value.trim(),
+
+            email:
+                document.getElementById(
+                    'doctor-account-email'
+                ).value.trim(),
+
+            cellphone:
+                document.getElementById(
+                    'doctor-account-phone'
+                ).value.trim()
         };
 
-        sessionStorage.setItem(doctorProfileStorageKey, JSON.stringify(profile));
-        sessionStorage.setItem('nmb_user_name', profile.name);
-        sessionStorage.setItem('nmb_user_email', profile.email);
-        sessionStorage.setItem('nmb_user_phone', profile.phone);
-        loadDoctorProfile();
-        showAccountMessage('account-profile-message', 'Your profile has been saved.', 'success');
+        try {
+            const response =
+                await fetch(
+                    updateDoctorAccountUrl,
+                    {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type':
+                                'application/json'
+                        },
+                        body:
+                            JSON.stringify(model)
+                    }
+                );
+
+            const result =
+                await response.json();
+
+            if (!response.ok) {
+                throw new Error(
+                    result.message ||
+                    'Could not update profile.'
+                );
+            }
+
+            showAccountMessage(
+                'account-profile-message',
+                result.message ||
+                'Profile updated successfully.',
+                'success'
+            );
+
+            await loadDoctorProfile();
+        }
+        catch (error) {
+            console.error(
+                'Doctor profile update error:',
+                error
+            );
+
+            showAccountMessage(
+                'account-profile-message',
+                error.message ||
+                'Could not update profile.',
+                'error'
+            );
+        }
     }
+
 
     function loadDoctorPreferences() {
-        const preferences = JSON.parse(sessionStorage.getItem(doctorPreferencesStorageKey) || 'null') || {
-            results: true,
-            urgent: true,
-            summary: false
-        };
+        let preferences = null;
 
-        document.getElementById('preference-results').checked = preferences.results;
-        document.getElementById('preference-urgent').checked = preferences.urgent;
-        document.getElementById('preference-summary').checked = preferences.summary;
+        try {
+            preferences =
+                JSON.parse(
+                    localStorage.getItem(
+                        doctorPreferencesStorageKey
+                    )
+                );
+        }
+        catch {
+            preferences = null;
+        }
+
+        if (!preferences) {
+            preferences = {
+                results: false,
+                urgent: false,
+                summary: false
+            };
+        }
+
+        document.getElementById(
+            'preference-results'
+        ).checked =
+            Boolean(preferences.results);
+
+        document.getElementById(
+            'preference-urgent'
+        ).checked =
+            Boolean(preferences.urgent);
+
+        document.getElementById(
+            'preference-summary'
+        ).checked =
+            Boolean(preferences.summary);
     }
+
 
     function saveDoctorPreferences() {
         const preferences = {
-            results: document.getElementById('preference-results').checked,
-            urgent: document.getElementById('preference-urgent').checked,
-            summary: document.getElementById('preference-summary').checked
+            results:
+                document.getElementById(
+                    'preference-results'
+                ).checked,
+
+            urgent:
+                document.getElementById(
+                    'preference-urgent'
+                ).checked,
+
+            summary:
+                document.getElementById(
+                    'preference-summary'
+                ).checked
         };
 
-        sessionStorage.setItem(doctorPreferencesStorageKey, JSON.stringify(preferences));
-        showAccountMessage('account-notification-message', 'Notification preferences have been saved.', 'success');
+        localStorage.setItem(
+            doctorPreferencesStorageKey,
+            JSON.stringify(preferences)
+        );
+
+        showAccountMessage(
+            'account-notification-message',
+            'Notification preferences have been saved.',
+            'success'
+        );
     }
 
-    document.addEventListener('DOMContentLoaded', () => {
-        const role = sessionStorage.getItem('nmb_user_role') || 'Doctor';
-        document.getElementById('doctor-profile-role').textContent = role;
-        loadDoctorProfile();
-        loadDoctorPreferences();
-    });
+
+    async function changeLoggedInDoctorPassword(event) {
+        event.preventDefault();
+
+        clearInlineMessage(
+            'account-password-message'
+        );
+
+        const currentPassword =
+            document.getElementById(
+                'doctor-current-password'
+            ).value;
+
+        const newPassword =
+            document.getElementById(
+                'doctor-account-new-password'
+            ).value;
+
+        const confirmPassword =
+            document.getElementById(
+                'doctor-account-confirm-password'
+            ).value;
+
+        if (newPassword !== confirmPassword) {
+            showAccountMessage(
+                'account-password-message',
+                'New password and confirm password do not match.',
+                'error'
+            );
+
+            return;
+        }
+
+        const passwordPattern =
+            /^(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
+
+        if (!passwordPattern.test(newPassword)) {
+            showAccountMessage(
+                'account-password-message',
+                'Password must contain at least 8 characters, 1 uppercase letter, 1 number, and 1 special character.',
+                'error'
+            );
+
+            return;
+        }
+
+        const model = {
+            currentPassword:
+                currentPassword,
+
+            newPassword:
+                newPassword,
+
+            confirmPassword:
+                confirmPassword
+        };
+
+        try {
+            const response =
+                await fetch(
+                    changeDoctorPasswordUrl,
+                    {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type':
+                                'application/json'
+                        },
+                        body:
+                            JSON.stringify(model)
+                    }
+                );
+
+            const result =
+                await response.json();
+
+            if (!response.ok) {
+                throw new Error(
+                    result.message ||
+                    'Could not update password.'
+                );
+            }
+
+            showAccountMessage(
+                'account-password-message',
+                result.message ||
+                'Password updated successfully.',
+                'success'
+            );
+
+            document.getElementById(
+                'doctor-current-password'
+            ).value = '';
+
+            document.getElementById(
+                'doctor-account-new-password'
+            ).value = '';
+
+            document.getElementById(
+                'doctor-account-confirm-password'
+            ).value = '';
+        }
+        catch (error) {
+            console.error(
+                'Password update error:',
+                error
+            );
+
+            showAccountMessage(
+                'account-password-message',
+                error.message ||
+                'Could not update password.',
+                'error'
+            );
+        }
+    }
+
+
+    function togglePassword(inputId, button) {
+        const input =
+            document.getElementById(inputId);
+
+        if (!input) {
+            return;
+        }
+
+        if (input.type === 'password') {
+            input.type = 'text';
+            button.textContent = 'Hide';
+        }
+        else {
+            input.type = 'password';
+            button.textContent = 'Show';
+        }
+    }
+
+
+    document.addEventListener(
+        'DOMContentLoaded',
+        function () {
+            loadDoctorProfile();
+            loadDoctorPreferences();
+        }
+    );
 </script>
