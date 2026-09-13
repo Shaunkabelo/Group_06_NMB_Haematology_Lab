@@ -1,0 +1,172 @@
+﻿@{
+    Layout = "_TechLayout";
+}
+@model TechReceiveIndexModel
+@{
+    ViewData["Title"] = "Receive Samples";
+}
+
+<div class="topbar">
+    <h1 class="page-title">Receive Samples</h1>
+    <div class="topbar-actions">
+        <input type="search" class="form-control search-control" placeholder="Search requests..." />
+        
+    </div>
+</div>
+
+<div class="page-body">
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success">@TempData["Success"]</div>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger">@TempData["Error"]</div>
+    }
+
+    <!-- Pending Requests -->
+    <section>
+        <div class="card">
+            <div class="card-header">
+                <span class="card-title">📋 Submitted Requests — Awaiting Sample Receipt</span>
+                <span class="badge amber">@Model.PendingRequests.Count pending</span>
+            </div>
+            <p style="font-size:12px;color:#7A8CA0;padding:8px 16px 0;margin:0">
+                ▶ Click a request row to expand and receive its samples.
+            </p>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width:170px">Request No.</th>
+                            <th>Patient</th>
+                            <th>Doctor</th>
+                            <th>Urgency</th>
+                            <th>Tests</th>
+                            <th>Overall Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var req in Model.PendingRequests)
+                        {
+                            var subId = $"sub-{req.TestRequestId}";
+                            var urgencyBadge = req.Urgency switch { "STAT" => "red", "Urgent" => "amber", _ => "gray" };
+                            var statusBadge = req.Status == "Partial Receipt" ? "amber" : "blue";
+
+                            <tr class="req-row" onclick="toggleReqRow('@subId',this)">
+                                <td class="td-bold"><span class="expand-icon">▶</span>@req.RequestNumber</td>
+                                <td>@req.PatientName</td>
+                                <td>@req.DoctorName</td>
+                                <td><span class="badge @urgencyBadge">@req.Urgency</span></td>
+                                <td><span class="badge gray">@req.Tests.Count test@(req.Tests.Count == 1 ? "" : "s")</span></td>
+                                <td><span class="badge @statusBadge">@req.Status</span></td>
+                            </tr>
+                            <tr class="tests-subrow" id="@subId">
+                                <td colspan="6">
+                                    <table class="sub-tests-table">
+                                        <thead>
+                                            <tr>
+                                                <th style="padding-left:36px">Sample Type</th>
+                                                <th>Tests Requiring It</th>
+                                                <th>Status</th>
+                                                <th style="width:320px">Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach (var s in req.DistinctSamples)
+                                            {
+                                                var testsForThisSample = req.Tests.Where(t => t.SampleTypeId == s.SampleTypeId).Select(t => t.TestName);
+
+                                                <tr>
+                                                    <td style="padding-left:36px" class="td-bold">@s.SampleTypeName</td>
+                                                    <td>@string.Join(", ", testsForThisSample)</td>
+                                                    <td>
+                                                        @if (s.SampleReceived)
+                                                        {
+                                                            <span class="badge teal">Received</span>
+                                                        }
+                                                        else
+                                                        {
+                                                            <span class="badge amber">Pending</span>
+                                                        }
+                                                    </td>
+                                                    <td>
+                                                        @if (!s.SampleReceived)
+                                                        {
+                                                            <form asp-controller="TechReceive" asp-action="ReceiveSample" method="post"
+                                                                  style="display:flex;gap:8px;align-items:center" onclick="event.stopPropagation()">
+                                                                <input type="hidden" name="testRequestId" value="@req.TestRequestId" />
+                                                                <input type="hidden" name="sampleTypeId" value="@s.SampleTypeId" />
+                                                                <input type="text" name="barcodeNumber" class="form-control form-control-sm"
+                                                                       placeholder="Scan or enter barcode" required style="max-width:220px" />
+                                                                <button type="submit" class="btn btn-sm btn-success">✔ Receive</button>
+                                                            </form>
+                                                        }
+                                                        else
+                                                        {
+                                                            <span style="font-size:12px;color:#7A8CA0">Already received</span>
+                                                        }
+                                                    </td>
+                                                </tr>
+                                            }
+                                        </tbody>
+                                    </table>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    <!-- Recently Received -->
+    <section>
+        <div class="card">
+            <div class="card-header"><span class="card-title">✅ Recently Received (Today)</span></div>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width:170px">Request No.</th>
+                            <th>Patient</th>
+                            <th>Barcode</th>
+                            <th>Sample Type</th>
+                            <th>Received At</th>
+                            <th>By</th>
+                            <th>Request Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var r in Model.RecentlyReceived)
+                        {
+                            <tr>
+                                <td class="td-bold">@r.RequestNumber</td>
+                                <td>@r.PatientName</td>
+                                <td><span class="badge gray">@r.BarcodeNumber</span></td>
+                                <td>@r.SampleTypeName</td>
+                                <td>@r.DateTimeReceived?.ToString("HH:mm")</td>
+                                <td>@r.ReceivedByName</td>
+                                <td><span class="badge blue">@r.Status</span></td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+</div>
+
+@section Scripts {
+    <script>
+        function toggleReqRow(subId, rowEl) {
+            const sub = document.getElementById(subId);
+            if (!sub) return;
+            const isOpen = sub.classList.contains('open');
+            sub.classList.toggle('open', !isOpen);
+            rowEl.classList.toggle('expanded', !isOpen);
+        }
+    </script>
+}

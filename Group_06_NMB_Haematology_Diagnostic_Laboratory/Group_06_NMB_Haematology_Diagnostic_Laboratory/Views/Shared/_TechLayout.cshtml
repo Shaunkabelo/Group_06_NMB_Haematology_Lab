@@ -1,0 +1,66 @@
+﻿@using Group_06_NMB_Haematology_Diagnostic_Lab.Data.Services
+@inject ICurrentTechnicianService CurrentTech
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] — NMB-HLabSys</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    @await RenderSectionAsync("Styles", required: false)
+</head>
+<body>
+
+    <aside class="sidebar">
+        <div class="sidebar-brand"><span class="brand-icon">🧬</span> NMB-HLabSys</div>
+        <nav class="nav-menu">
+            <div class="sidebar-section">Main</div>
+            <a asp-controller="TechDashboard" asp-action="Index" class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "TechDashboard" ? "active" : "")">
+                <span>🏠</span> Dashboard
+            </a>
+            <div class="sidebar-section">Workflow</div>
+            <a asp-controller="TechReceive" asp-action="Index" class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "TechReceive" ? "active" : "")">
+                <span>📥</span> Receive Samples
+            </a>
+            <a asp-controller="TechProcess" asp-action="Index" class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "TechProcess" ? "active" : "")">
+                <span>🔬</span> Process Tests
+            </a>
+            <a asp-controller="TechResults" asp-action="Index" class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "TechResults" ? "active" : "")">
+                <span>📋</span> Capture Results
+            </a>
+            <a asp-controller="TechVerify" asp-action="Index" class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "TechVerify" ? "active" : "")">
+                <span>✅</span> Verify Results
+            </a>
+            <div class="sidebar-section">Other</div>
+            <a asp-controller="TechReports" asp-action="Index" class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "TechReports" ? "active" : "")">
+                <span>📄</span> Reports
+            </a>
+            <a asp-controller="TechProfile" asp-action="Index" class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "TechProfile" ? "active" : "")">
+                <span>👤</span> My Profile
+            </a>
+        </nav>
+        <div class="sidebar-footer">
+            @if (User.Identity?.IsAuthenticated == true && User.IsInRole("LabTechnician"))
+            {
+                var employeeNumber = await CurrentTech.GetEmployeeNumberAsync();
+                <div class="user-info">
+                    <strong>@User.Identity.Name</strong>
+                    <small>Lab Technician · @employeeNumber</small>
+                </div>
+            }
+        </div>
+    </aside>
+
+    <div class="main-content">
+        @RenderBody()
+    </div>
+
+    <div id="toast"></div>
+
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+
+</body>
+</html>

@@ -24,7 +24,7 @@ public class AccountController : Controller
     {
         if (User.Identity?.IsAuthenticated == true)
         {
-            return RedirectToAction("Dashboard", "LabManager");
+            return RedirectToAction(nameof(RoleRedirect));
         }
 
         ViewData["ReturnUrl"] = returnUrl;
@@ -82,7 +82,7 @@ public class AccountController : Controller
             return Redirect(returnUrl);
         }
 
-        return RedirectToAction("Dashboard", "LabManager");
+        return RedirectToRole(user.Role);
     }
 
     [Authorize]
@@ -97,4 +97,22 @@ public class AccountController : Controller
     [AllowAnonymous]
     [HttpGet]
     public IActionResult AccessDenied() => View();
+
+    // Central "where does this role land after login" rule — used by both the
+    // GET Login short-circuit (already signed in) and the POST Login success path,
+    // so the two can never drift out of sync again.
+    [Authorize]
+    [HttpGet]
+    public IActionResult RoleRedirect()
+    {
+        var role = User.FindFirst(ClaimTypes.Role)?.Value ?? string.Empty;
+        return RedirectToRole(role);
+    }
+
+    private IActionResult RedirectToRole(string role) => role switch
+    {
+        "LabTechnician" => RedirectToAction("Index", "TechDashboard"),
+        "LabManager" => RedirectToAction("Dashboard", "LabManager"),
+        _ => RedirectToAction("Index", "Home") // TODO: add real landing pages for Doctor/Patient/Admin as they're built
+    };
 }
