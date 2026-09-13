@@ -1,53 +1,32 @@
 ﻿@{
-    Layout = null; /* landing page must be clean and independent */
+    ViewData["Title"] = "NMB-HLabSys";
+    Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8" />
-    <title>NMB-HLabSys</title>
-    <base href="@Url.Content("~/")" />
-    <link rel="stylesheet" href="~/css/landing.css" />
-</head>
+<div class="landing-shell">
+    <nav class="landing-nav">
+        <a class="landing-brand" asp-controller="Home" asp-action="Index"><span class="brand-mark">HL</span> NMB-HLabSys</a>
+        <a class="landing-login" data-auth-transition asp-controller="Account" asp-action="Login">Sign in <span aria-hidden="true">→</span></a>
+    </nav>
 
-<body>
-
-    <div class="landing-wrapper">
-
-        <!-- LEFT SIDE — HERO AREA -->
-        <div class="landing-hero">
-            <h1 class="hero-title">
-                Modern Haematology<br />
-                <span class="hero-accent">Diagnostic Platform</span>
-            </h1>
-
-            <p class="hero-text">
-                Streamlining laboratory workflows with improved accuracy,
-                efficiency, and seamless communication between doctors,
-                lab technicians, and patients.
-            </p>
-
-            <button class="btn-hero" id="openLoginBtn">
-                Login / Sign Up
-            </button>
+    <main class="landing-content">
+        <div class="landing-copy">
+            <p class="auth-eyebrow">Nelson Mandela Bay Haematology Diagnostic Laboratory</p>
+            <h1>One clear place for the work behind every result.</h1>
+            <p class="landing-lede">NMB-HLabSys brings test catalogues, staff management and consumable control into one focused laboratory workspace.</p>
+            <a class="landing-cta" data-auth-transition asp-controller="Account" asp-action="Login">Enter the workspace <span aria-hidden="true">↗</span></a>
         </div>
-
-        <!-- RIGHT SIDE — LOGIN PANEL (SLIDES IN) -->
-        <div class="login-panel" id="loginPanel">
-            @Html.Partial("~/Views/Login/_LoginPanel.cshtml")
+        <div class="landing-visual" aria-hidden="true">
+            <div class="visual-line visual-line-one"></div>
+            <div class="visual-line visual-line-two"></div>
+            <div class="visual-label visual-label-one">CATALOGUE</div>
+            <div class="visual-label visual-label-two">PEOPLE</div>
+            <div class="visual-label visual-label-three">STOCK</div>
         </div>
+    </main>
 
-    </div>
-
-    <script>
-            const loginPanel = document.getElementById("loginPanel");
-            const openBtn = document.getElementById("openLoginBtn");
-
-            openBtn.addEventListener("click", () => {
-                loginPanel.classList.add("open");
-            });
-    </script>
-
-</body>
-</html>
+    <footer class="landing-footer">
+        <div><strong>NMB-HLabSys</strong><span>Laboratory management system · Group 06</span></div>
+        <div class="support-inline"><strong>Need help?</strong><span>Contact your laboratory administrator</span></div>
+    </footer>
+</div>

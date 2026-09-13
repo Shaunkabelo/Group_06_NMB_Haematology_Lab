@@ -1,201 +1,33 @@
-﻿@* @{
-    var currentAction = ViewContext.RouteData.Values["action"]?.ToString() ?? "";
-    var currentController = ViewContext.RouteData.Values["controller"]?.ToString() ?? "";
-    var title = ViewData["Title"]?.ToString() ?? "NMB-HLabSys";
-    var roleLabel = currentController switch
-    {
-        "Doctor" => "Doctor",
-        "Technician" => "Lab Technician",
-        "Patient" => "Patient",
-        "Admin" => "Admin",
-        _ => "Lab Manager"
-    };
-    string IsActive(string action) => string.Equals(currentAction, action, StringComparison.OrdinalIgnoreCase) ? " active" : "";
-}
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@title - NMB-HLabSys</title>
-    <base href="@Url.Content("~/")" />
-    <link rel="stylesheet" href="~/css/style.css" asp-append-version="true" />
+    <title>@ViewData["Title"] - Group_06_NMB_Haematology_Diagnostic_Laboratory</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/Group_06_NMB_Haematology_Diagnostic_Laboratory.styles.css" asp-append-version="true" />
 </head>
-<body>
-    <aside class="sidebar">
-        <div class="sidebar-brand">
-            <span class="brand-icon">🧬</span> NMB-HLabSys
-        </div>
-
-        <nav class="nav-menu">
-            @if (currentController == "Doctor")
-            {
-                <div class="sidebar-section">Doctor</div>
-                <a asp-controller="Doctor" asp-action="Dashboard" class="nav-item@(IsActive("Dashboard"))">
-                    <span class="nav-icon" aria-hidden="true">
-                        <svg viewBox="0 0 24 24" focusable="false">
-                            <path d="M4 13h6V4H4v9Zm0 7h6v-5H4v5Zm10 0h6v-9h-6v9Zm0-16v5h6V4h-6Z" />
-                        </svg>
-                    </span>
-                    Dashboard
-                </a>
-                <a asp-controller="Doctor" asp-action="Patients" class="nav-item@(IsActive("Patients"))">
-                    <span class="nav-icon" aria-hidden="true">
-                        <svg viewBox="0 0 24 24" focusable="false">
-                            <path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4Zm0 2c-3.31 0-6 1.79-6 4v1.25c0 .41.34.75.75.75h10.5c.41 0 .75-.34.75-.75V18c0-2.21-2.69-4-6-4Zm7.25-2.25h-1.5v-1.5a.75.75 0 0 0-1.5 0v1.5h-1.5a.75.75 0 0 0 0 1.5h1.5v1.5a.75.75 0 0 0 1.5 0v-1.5h1.5a.75.75 0 0 0 0-1.5Z" />
-                        </svg>
-                    </span>
-                    Patients
-                </a>
-                <a asp-controller="Doctor" asp-action="Requests" class="nav-item@(IsActive("Requests"))">
-                    <span class="nav-icon" aria-hidden="true">
-                        <svg viewBox="0 0 24 24" focusable="false">
-                            <path d="M7 3.5A2.5 2.5 0 0 0 4.5 6v12A2.5 2.5 0 0 0 7 20.5h10A2.5 2.5 0 0 0 19.5 18V8.75a.75.75 0 0 0-.22-.53l-4.5-4.5a.75.75 0 0 0-.53-.22H7Zm6.5 1.75 4.25 4.25H15a1.5 1.5 0 0 1-1.5-1.5V5.25ZM8 12h8a.75.75 0 0 1 0 1.5H8A.75.75 0 0 1 8 12Zm0 3h5a.75.75 0 0 1 0 1.5H8A.75.75 0 0 1 8 15Z" />
-                        </svg>
-                    </span>
-                    Test Requests
-                </a>
-                <a asp-controller="Doctor" asp-action="Results" class="nav-item@(IsActive("Results"))">
-                    <span class="nav-icon" aria-hidden="true">
-                        <svg viewBox="0 0 24 24" focusable="false">
-                            <path d="M6.5 3.5A1.5 1.5 0 0 0 5 5v14a1.5 1.5 0 0 0 1.5 1.5h11A1.5 1.5 0 0 0 19 19V5a1.5 1.5 0 0 0-1.5-1.5h-11ZM8 8.25A.75.75 0 0 1 8.75 7h6.5a.75.75 0 0 1 0 1.5h-6.5A.75.75 0 0 1 8 8.25Zm0 4A.75.75 0 0 1 8.75 11h3.5a.75.75 0 0 1 0 1.5h-3.5A.75.75 0 0 1 8 12.25Zm7.78 2.28-3 3a.75.75 0 0 1-1.06 0l-1.5-1.5a.75.75 0 1 1 1.06-1.06l.97.97 2.47-2.47a.75.75 0 1 1 1.06 1.06Z" />
-                        </svg>
-                    </span>
-                    Results
-                </a>
-                <a asp-controller="Doctor" asp-action="Alerts" class="nav-item@(IsActive("Alerts"))">
-                    <span class="nav-icon" aria-hidden="true">
-                        <svg viewBox="0 0 24 24" focusable="false">
-                            <path d="M12 3.5a6 6 0 0 0-6 6v2.98c0 .52-.17 1.03-.48 1.45L4.2 15.69A1.75 1.75 0 0 0 5.6 18.5h12.8a1.75 1.75 0 0 0 1.4-2.81l-1.32-1.76a2.4 2.4 0 0 1-.48-1.45V9.5a6 6 0 0 0-6-6Zm0 18a2.75 2.75 0 0 0 2.55-1.75h-5.1A2.75 2.75 0 0 0 12 21.5Zm-.75-14.25a.75.75 0 0 1 1.5 0v4.25a.75.75 0 0 1-1.5 0V7.25Zm.75 7.75a.9.9 0 1 1 0-1.8.9.9 0 0 1 0 1.8Z" />
-                        </svg>
-                    </span>
-                    Alerts
-                </a>
-                <a asp-controller="Doctor" asp-action="Reports" class="nav-item@(IsActive("Reports"))">
-                    <span class="nav-icon" aria-hidden="true">
-                        <svg viewBox="0 0 24 24" focusable="false">
-                            <path d="M7 3.5A2.5 2.5 0 0 0 4.5 6v12A2.5 2.5 0 0 0 7 20.5h10A2.5 2.5 0 0 0 19.5 18V8.75a.75.75 0 0 0-.22-.53l-4.5-4.5a.75.75 0 0 0-.53-.22H7Zm7 1.75 3.75 3.75H15.5A1.5 1.5 0 0 1 14 7.5V5.25ZM8 12.75A.75.75 0 0 1 8.75 12h6.5a.75.75 0 0 1 0 1.5h-6.5A.75.75 0 0 1 8 12.75Zm0 3A.75.75 0 0 1 8.75 15h6.5a.75.75 0 0 1 0 1.5h-6.5A.75.75 0 0 1 8 15.75Z" />
-                        </svg>
-                    </span>
-                    Reports
-                </a>
-                <div class="sidebar-footer">
-                    <div class="user-info">
-                        <strong id="sidebar-user-name">Guest User</strong>
-                        <small id="sidebar-user-role">@roleLabel</small>
-                    </div>
-                </div>
-            }
-
-            else if (currentController.StartsWith("Tech"))
-            {
-                <a href="/TechDashboard/Index" class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "TechDashboard" ? "active" : "")">
-                    <span>🏠</span> Dashboard
-                </a>
-                <div class="sidebar-section">Workflow</div>
-                <a href="/TechReceive/Index" class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "TechReceive" ? "active" : "")">
-                    <span>📥</span> Receive Samples
-                </a>
-                <a href="/TechProcess/Index" class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "TechProcess" ? "active" : "")">
-                    <span>🔬</span> Process Tests
-                </a>
-                <a href="/TechResults/Index" class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "TechResults" ? "active" : "")">
-                    <span>📋</span> Capture Results
-                </a>
-                <a href="/TechVerify/Index" class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "TechVerify" ? "active" : "")">
-                    <span>✅</span> Verify Results
-                </a>
-                <div class="sidebar-section">Other</div>
-                <a href="/TechReports/Index" class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "TechReports" ? "active" : "")">
-                    <span>📄</span> Reports
-                </a>
-                <a href="/TechProfile/Index" class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "TechProfile" ? "active" : "")">
-                    <span>👤</span> My Profile
-                </a>
-            }
-            else if (currentController == "Patient")
-            {
-                <a asp-controller="Patient" asp-action="Dashboard" class="nav-item@(IsActive("Dashboard"))"><span>⊞</span> Dashboard</a>
-                <div class="sidebar-section">My Health</div>
-                <!-- <a asp-controller="Patient" asp-action="Registration" class="nav-item@(IsActive("Registration"))"><span>RG</span> Registration</a>-->
-                <a asp-controller="Patient" asp-action="Requests" class="nav-item@(IsActive("Requests"))"><span>📋</span> Test Requests & Results</a>
-                <a asp-controller="Patient" asp-action="MedicalHistory" class="nav-item@(IsActive("MedicalHistory"))"><span>🫀</span> Medical History</a>
-                <div class="sidebar-section">Account</div>
-                <a asp-controller="Patient" asp-action="Consent" class="nav-item@(IsActive("Consent"))"><span>🔐</span> Doctor Consent</a>
-                <a asp-controller="Patient" asp-action="Trends" class="nav-item@(IsActive("Trends"))"><span>📊</span> Track Results</a>
-                <a asp-controller="Patient" asp-action="Reports" class="nav-item@(IsActive("Reports"))"><span>📄</span> Reports</a>
-                <a asp-controller="Patient" asp-action="Profile" class="nav-item@(IsActive("Profile"))"><span>👤</span> My Profile</a>
-            }
-            else if (currentController == "Admin")
-            {
-                <div class="sidebar-section">Admin</div>
-                <a asp-controller="Admin" asp-action="Dashboard" class="nav-item@(IsActive("Dashboard"))"><span>AD</span> Dashboard</a>
-                <a asp-controller="Admin" asp-action="Users" class="nav-item@(IsActive("Users"))"><span>US</span> Users</a>
-                <a asp-controller="Admin" asp-action="Security" class="nav-item@(IsActive("Security"))"><span>SC</span> Security</a>
-                <a asp-controller="Admin" asp-action="AuditLog" class="nav-item@(IsActive("AuditLog"))"><span>AU</span> Audit Log</a>
-                <div class="sidebar-footer">
-                    <div class="user-info">
-                        <strong id="sidebar-user-name">Guest User</strong>
-                        <small id="sidebar-user-role">@roleLabel</small>
-                    </div>
-                </div>
-            }
-            else if (currentController == "LabManager")
-            {
-                <div class="sidebar-section">Overview</div>
-                <a asp-controller="LabManager" asp-action="Dashboard" class="nav-item@(IsActive("Dashboard"))"><span>📊</span> Dashboard</a>
-                <a asp-controller="LabManager" asp-action="ManagerReports" class="nav-item@(IsActive("ManagerReports"))"><span>📄</span> Reports</a>
-
-                <div class="sidebar-section">Catalogue</div>
-                <a asp-controller="LabManager" asp-action="Categories" class="nav-item@(IsActive("Categories"))"><span>🗂️</span> Categories</a>
-                <a asp-controller="LabManager" asp-action="TestTypes" class="nav-item@(IsActive("TestTypes"))"><span>🔬</span> Test Types</a>
-
-                <div class="sidebar-section">Inventory</div>
-                <a asp-controller="LabManager" asp-action="Consumables" class="nav-item@(IsActive("Consumables"))"><span>📦</span> Consumables</a>
-                <a asp-controller="LabManager" asp-action="Orders" class="nav-item@(IsActive("Orders"))"><span>🛒</span> Orders</a>
-                <a asp-controller="LabManager" asp-action="Suppliers" class="nav-item@(IsActive("Suppliers"))"><span>🏭</span> Suppliers</a>
-
-                <div class="sidebar-section">Staff</div>
-                <a asp-controller="LabManager" asp-action="Doctors" class="nav-item@(IsActive("Doctors"))"><span>👨‍⚕️</span> Doctors</a>
-                <a asp-controller="LabManager" asp-action="Technicians" class="nav-item@(IsActive("Technicians"))"><span>🧪</span> Technicians</a>
-                <a asp-controller="LabManager" asp-action="ManageManagers" class="nav-item@(IsActive("ManageManagers"))"><span>👥</span> Manage Managers</a>
-
-                <div class="sidebar-section">Account</div>
-                <a asp-controller="LabManager" asp-action="Profile" class="nav-item@(IsActive("Profile"))"><span>👤</span> My Profile</a>
-
-                <div class="sidebar-footer">
-                    <div class="user-info">
-                        <strong id="sidebar-user-name">Guest User</strong>
-                        <small id="sidebar-user-role">@roleLabel</small>
-                    </div>
-                </div>
-
-
-            }
-            else
-            {
-                <a asp-controller="Account" asp-action="Login" class="nav-item"><span>🔑</span> Login</a>
-            }
-        </nav>
-
-
-    </aside>
-
-    <main class="main-content">
-        <header class="topbar">
-            <h1 class="page-title">@title</h1>
-            <div class="topbar-actions">
-                <input type="search" class="form-control search-control" placeholder="Search..." oninput="handleSearch(this.value)" aria-label="Search this page">
-                <button class="btn" type="button" onclick="showNotifications()">🔔</button>
-                <button class="btn btn-secondary" type="button" onclick="logoutUser()">Logout</button>
-            </div>
-        </header>
-
+<body class="public-page">
+    <main role="main">
         @RenderBody()
     </main>
-
-    <script src="~/js/script.js" asp-append-version="true"></script>
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            document.body.classList.add("page-ready");
+            document.querySelectorAll("a[data-auth-transition]").forEach(function (link) {
+                link.addEventListener("click", function (event) {
+                    if (link.target === "_blank" || event.metaKey || event.ctrlKey) return;
+                    event.preventDefault();
+                    document.body.classList.add("page-leaving");
+                    window.setTimeout(function () { window.location.href = link.href; }, 260);
+                });
+            });
+        });
+    </script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>
- *@
