@@ -14,6 +14,11 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.DataAccess
     {
         private readonly IConfiguration _config;
 
+        static SqlDataAccess()
+        {
+            SqlMapper.AddTypeHandler(new DateOnlyTypeHandler());
+        }
+
         public SqlDataAccess(IConfiguration config)
         {
             _config = config;

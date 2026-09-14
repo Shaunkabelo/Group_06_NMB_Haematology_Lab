@@ -5,19 +5,33 @@ using Microsoft.Data.SqlClient;
 using System.Security.Cryptography;
 
 using System.Text;
+using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
 namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 {
+    [Authorize(Roles = "Patient")]
     public class PatientController : Controller
     {
-        // Temporary patient context until authentication supplies the patient identity.
-        private const int CurrentPatientId = 9978;
+        private int CurrentPatientId => int.Parse(User.FindFirstValue("PatientID")!);
 
         public override async Task OnActionExecutionAsync(
             Microsoft.AspNetCore.Mvc.Filters.ActionExecutingContext context,
             Microsoft.AspNetCore.Mvc.Filters.ActionExecutionDelegate next)
         {
+            var isRegistration = string.Equals(
+                context.ActionDescriptor.RouteValues["action"], nameof(Register),
+                StringComparison.OrdinalIgnoreCase);
+            if (!isRegistration &&
+                (!int.TryParse(User.FindFirstValue("PatientID"), out var patientId) || patientId <= 0))
+            {
+                await Microsoft.AspNetCore.Authentication.AuthenticationHttpContextExtensions.SignOutAsync(
+                    HttpContext, Microsoft.AspNetCore.Authentication.Cookies.CookieAuthenticationDefaults.AuthenticationScheme);
+                context.Result = RedirectToAction("Login", "Account");
+                return;
+            }
+
             var executed = await next();
-            if (executed.Result is ViewResult view)
+            if (!isRegistration && executed.Result is ViewResult view)
                 view.ViewData["PatientDisplayName"] = await _patientRepository.GetPatientDisplayName(CurrentPatientId);
         }
 
@@ -227,6 +241,7 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
             }
 
             // GET: Patient/Register
+            [AllowAnonymous]
             [HttpGet]
             public IActionResult Register()
             {
@@ -292,6 +307,7 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
             }
         }
         // POST: Patient/Register
+        [AllowAnonymous]
         [HttpPost]
         public async Task<IActionResult> Register(PatientRegistrationViewModel model)
         {
@@ -305,16 +321,10 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
                 var result =
                     await _patientRepository.RegisterPatient(model);
 
-                TempData["SuccessMessage"] =
-                    "Patient registered successfully.";
+                TempData["RegistrationSuccess"] =
+                    "Patient registered successfully. Please sign in.";
 
-                TempData["PatientId"] =
-                    result.PatientId;
-
-                TempData["UserId"] =
-                    result.UserId;
-
-                return RedirectToAction("Register");
+                return RedirectToAction("Login", "Account");
             }
             catch (Exception ex)
             {

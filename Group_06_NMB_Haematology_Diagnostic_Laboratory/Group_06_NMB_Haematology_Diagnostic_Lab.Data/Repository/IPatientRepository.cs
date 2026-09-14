@@ -93,9 +93,10 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
 
         Task SetUserStatus(int userId, int isActive);
 
-        Task UpdateAdminProfile(AdminProfileUpdate model);
+        Task<UserListItem?> GetAdminProfile(int adminId);
+        Task UpdateAdminProfile(int adminId, AdminProfileUpdate model);
 
-        Task ChangeAdminPassword(AdminPasswordChange model);
+        Task ChangeAdminPassword(int adminId, AdminPasswordChange model);
 
     }
 }

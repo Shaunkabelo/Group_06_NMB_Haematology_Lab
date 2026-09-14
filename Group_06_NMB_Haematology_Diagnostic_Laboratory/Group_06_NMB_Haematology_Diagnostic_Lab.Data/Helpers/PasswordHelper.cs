@@ -41,9 +41,23 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Helpers
 
             try
             {
-                var expectedHash = HashPassword(password, salt);
-                var expectedBytes = Convert.FromBase64String(expectedHash);
                 var actualBytes = Convert.FromBase64String(passwordHash);
+                byte[] expectedBytes;
+                if (actualBytes.Length == 64)
+                {
+                    // Patient registration stores HMAC-SHA512 with a Base64 key.
+                    using var hmac = new HMACSHA512(Convert.FromBase64String(salt));
+                    expectedBytes = hmac.ComputeHash(Encoding.UTF8.GetBytes(password));
+                }
+                else if (actualBytes.Length == 32)
+                {
+                    // Preserve support for accounts created with the SHA256 helper.
+                    expectedBytes = Convert.FromBase64String(HashPassword(password, salt));
+                }
+                else
+                {
+                    return false;
+                }
 
                 return CryptographicOperations.FixedTimeEquals(expectedBytes, actualBytes);
             }

@@ -28,22 +28,8 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Services
             string storedHash,
             string storedSalt)
         {
-            byte[] saltBytes =
-                Convert.FromBase64String(storedSalt);
-
-            using var hmac =
-                new HMACSHA512(saltBytes);
-
-            byte[] passwordBytes =
-                Encoding.UTF8.GetBytes(password);
-
-            byte[] hashBytes =
-                hmac.ComputeHash(passwordBytes);
-
-            string hash =
-                Convert.ToBase64String(hashBytes);
-
-            return hash == storedHash;
+            return Group_06_NMB_Haematology_Diagnostic_Lab.Data.Helpers.PasswordHelper
+                .VerifyPassword(password, storedHash, storedSalt);
         }
     }
 }

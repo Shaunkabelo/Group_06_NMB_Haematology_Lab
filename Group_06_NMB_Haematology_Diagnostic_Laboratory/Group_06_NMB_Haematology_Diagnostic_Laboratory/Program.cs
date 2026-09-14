@@ -1,6 +1,7 @@
 using Group_06_NMB_Haematology_Diagnostic_Lab.Data.DataAccess;
 using Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository;
 using Group_06_NMB_Haematology_Diagnostic_Laboratory.Services;
+using Microsoft.AspNetCore.Authentication.Cookies;
 
 
 
@@ -8,15 +9,19 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddScoped<IPasswordService, PasswordService>();
 builder.Services.AddControllersWithViews();
 
-builder.Services.AddScoped<IPatientRepository, PatientRepository>();
 // Data access
 builder.Services.AddScoped<ISqlDataAccess, SqlDataAccess>();
 
 // Patient repository
 builder.Services.AddScoped<IPatientRepository, PatientRepository>();
+builder.Services.AddScoped<IAuthenticationRepository, AuthenticationRepository>();
 
-// Add services to the container.
-builder.Services.AddControllersWithViews();
+builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+    .AddCookie(options =>
+    {
+        options.LoginPath = "/Account/Login";
+        options.AccessDeniedPath = "/Account/AccessDenied";
+    });
 
 var app = builder.Build();
 
@@ -33,6 +38,7 @@ app.UseStaticFiles();
 
 app.UseRouting();
 
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllerRoute(

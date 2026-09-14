@@ -742,7 +742,12 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
                 new { UserID = userId, IsActive = isActive });
         }
 
-        public Task UpdateAdminProfile(AdminProfileUpdate model)
+        public Task<UserListItem?> GetAdminProfile(int adminId) =>
+            _db.QueryFirstOrDefaultAsync<UserListItem>(
+                "SELECT u.UserID, u.Name, u.Surname, u.Email, u.Role, u.CreatedAt, u.IsActive FROM dbo.[User] u INNER JOIN dbo.Admin a ON a.UserID = u.UserID WHERE a.AdminID = @AdminID AND u.Role = 'Admin';",
+                new { AdminID = adminId });
+
+        public Task UpdateAdminProfile(int adminId, AdminProfileUpdate model)
         {
             const string sql = """
                 UPDATE dbo.[User]
@@ -750,18 +755,18 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
                     Surname = @Surname,
                     Email = @Email,
                     UpdatedAt = SYSUTCDATETIME()
-                WHERE Email = @OriginalEmail
+                WHERE UserID = (SELECT UserID FROM dbo.Admin WHERE AdminID = @AdminID)
                   AND Role = 'Admin';
                 """;
-            return _db.Save(sql, model);
+            return _db.Save(sql, new { AdminID = adminId, model.Name, model.Surname, model.Email });
         }
 
-        public async Task ChangeAdminPassword(AdminPasswordChange model)
+        public async Task ChangeAdminPassword(int adminId, AdminPasswordChange model)
         {
-            const string credentialSql = "SELECT PasswordHash, PasswordSalt FROM dbo.[User] WHERE Email = @Email AND Role = 'Admin';";
+            const string credentialSql = "SELECT PasswordHash, PasswordSalt FROM dbo.[User] WHERE UserID = (SELECT UserID FROM dbo.Admin WHERE AdminID = @AdminID) AND Role = 'Admin';";
             var credential = await _db.QueryFirstOrDefaultAsync<PasswordCredential>(
                 credentialSql,
-                new { model.Email });
+                new { AdminID = adminId });
 
             if (credential == null)
                 throw new InvalidOperationException("Admin account not found.");
@@ -775,11 +780,11 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
                     PasswordSalt = @PasswordSalt,
                     MustChangePassword = 0,
                     UpdatedAt = SYSUTCDATETIME()
-                WHERE Email = @Email AND Role = 'Admin';
+                WHERE UserID = (SELECT UserID FROM dbo.Admin WHERE AdminID = @AdminID) AND Role = 'Admin';
                 """;
             await _db.Save(updateSql, new
             {
-                model.Email,
+                AdminID = adminId,
                 PasswordHash = password.Hash,
                 PasswordSalt = password.Salt
             });

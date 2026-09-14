@@ -33,10 +33,9 @@
         <a class="nav-item" asp-controller="Admin" asp-action="Audit"><span class="nav-icon">&#128203;</span> Audit Log</a>
         <div class="sidebar-footer">
             <a class="user-card" asp-controller="Admin" asp-action="Profile" style="text-decoration:none;color:inherit;">
-                <div class="avatar avatar-lg admin-avatar">SA</div>
                 <div class="user-info">
-                    <div class="user-name">System Admin</div>
-                    <div class="user-role">Administrator</div>
+                    <strong>@ViewData["AdminDisplayName"]</strong>
+                    <small>@User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value</small>
                 </div>
             </a>
         </div>
@@ -48,7 +47,9 @@
             <div class="topbar-actions">
                 <input type="search" class="form-control search-control" placeholder="Search..." oninput="handleSearch(this.value)" aria-label="Search this page">
                 <button class="btn" type="button" onclick="showNotifications()">🔔</button>
-                <button class="btn btn-secondary" type="button" onclick="logoutUser()">Logout</button>
+                <form asp-controller="Account" asp-action="Logout" method="post">
+                    <button class="btn btn-secondary" type="submit">Logout</button>
+                </form>
             </div>
         </header>
 

@@ -1,12 +1,38 @@
 using Group_06_NMB_Haematology_Diagnostic_Lab.Data.Models;
 using Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
 
 namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 {
+    [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Admin")]
     public class AdminController : Controller
     {
         private readonly IPatientRepository _patientRepository;
+        private int CurrentAdminId => int.Parse(User.FindFirstValue("AdminID")!);
+
+        public override async Task OnActionExecutionAsync(
+            Microsoft.AspNetCore.Mvc.Filters.ActionExecutingContext context,
+            Microsoft.AspNetCore.Mvc.Filters.ActionExecutionDelegate next)
+        {
+            if (!int.TryParse(User.FindFirstValue("AdminID"), out var adminId) || adminId <= 0)
+            {
+                await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+                context.Result = RedirectToAction("Login", "Account");
+                return;
+            }
+            var executed = await next();
+            if (executed.Result is ViewResult view)
+            {
+                var admin = await _patientRepository.GetAdminProfile(adminId);
+                view.ViewData["AdminFirstName"] = admin?.Name?.Trim() ?? "Admin";
+                view.ViewData["AdminDisplayName"] = admin == null
+                    ? User.Identity?.Name
+                    : $"{admin.Name} {admin.Surname}".Trim();
+            }
+        }
 
         public AdminController(IPatientRepository patientRepository)
         {
@@ -111,9 +137,7 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
         public async Task<IActionResult> Profile()
         {
             await LoadNavigationCounts();
-            var users = await _patientRepository.GetAllUsers();
-            var admin = users.FirstOrDefault(user =>
-                string.Equals(user.Role, "Admin", StringComparison.OrdinalIgnoreCase));
+            var admin = await _patientRepository.GetAdminProfile(CurrentAdminId);
             return View(admin);
         }
 
@@ -121,8 +145,7 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> UpdateProfile([FromForm] AdminProfileUpdate model)
         {
-            if (string.IsNullOrWhiteSpace(model.OriginalEmail) ||
-                string.IsNullOrWhiteSpace(model.Name) ||
+            if (string.IsNullOrWhiteSpace(model.Name) ||
                 string.IsNullOrWhiteSpace(model.Surname) ||
                 string.IsNullOrWhiteSpace(model.Email))
             {
@@ -143,7 +166,7 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 
             try
             {
-                await _patientRepository.UpdateAdminProfile(model);
+                await _patientRepository.UpdateAdminProfile(CurrentAdminId, model);
                 TempData["ProfileSuccess"] = "Admin profile updated successfully.";
             }
             catch (Exception ex)
@@ -158,7 +181,7 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ChangePassword([FromForm] AdminPasswordChange model)
         {
-            if (string.IsNullOrWhiteSpace(model.Email) || string.IsNullOrWhiteSpace(model.CurrentPassword) ||
+            if (string.IsNullOrWhiteSpace(model.CurrentPassword) ||
                 string.IsNullOrWhiteSpace(model.NewPassword) || string.IsNullOrWhiteSpace(model.ConfirmPassword))
             {
                 TempData["ProfileError"] = "Complete all password fields.";
@@ -177,7 +200,7 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 
             try
             {
-                await _patientRepository.ChangeAdminPassword(model);
+                await _patientRepository.ChangeAdminPassword(CurrentAdminId, model);
                 TempData["ProfileSuccess"] = "Password changed successfully.";
             }
             catch (Exception ex)

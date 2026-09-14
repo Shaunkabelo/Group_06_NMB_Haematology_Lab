@@ -25,6 +25,10 @@
         <p class="auth-eyebrow">Secure access</p>
         <h2>Welcome back</h2>
         <p class="auth-muted">Use your laboratory account to continue.</p>
+        @if (TempData["RegistrationSuccess"] is string registrationMessage)
+        {
+            <div class="alert alert-success" role="status" id="registrationSuccessMessage">@registrationMessage</div>
+        }
 
         <form asp-action="Login" asp-route-returnUrl="@ViewData["ReturnUrl"]" method="post">
             <div asp-validation-summary="ModelOnly" class="auth-error" role="alert"></div>
@@ -44,6 +48,7 @@
             </label>
             <button class="auth-submit" type="submit">Sign in <span aria-hidden="true">→</span></button>
         </form>
+        <button class="auth-submit mt-3" type="button" data-bs-toggle="modal" data-bs-target="#patientRegistrationModal">Register Patient <span aria-hidden="true">&rarr;</span></button>
     </section>
     </div>
     <footer class="auth-footer"><strong>Nelson Mandela Bay Haematology Diagnostic Laboratory</strong><span>Group 06 · NMB-HLabSys</span></footer>
@@ -51,4 +56,42 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script>
+        if (window.self !== window.top) {
+            window.top.location.replace(window.location.href);
+        }
+        document.getElementById('patientRegistrationModal').addEventListener('show.bs.modal', function () {
+            const frame = document.getElementById('patientRegistrationFrame');
+            if (!frame.getAttribute('src')) {
+                frame.src = frame.dataset.registrationUrl;
+            }
+        });
+        window.addEventListener('message', function (event) {
+            const frame = document.getElementById('patientRegistrationFrame');
+            if (event.origin === window.location.origin && event.source === frame.contentWindow && event.data?.type === 'close-patient-registration') {
+                bootstrap.Modal.getInstance(document.getElementById('patientRegistrationModal')).hide();
+            }
+        });
+    </script>
 }
+
+<div class="modal fade" id="patientRegistrationModal" tabindex="-1" aria-labelledby="patientRegistrationTitle" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title fs-5" id="patientRegistrationTitle">Create Patient Account</h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-0">
+                <iframe id="patientRegistrationFrame" title="Patient registration form" data-registration-url="@Url.Action("Register", "Patient")" class="w-100 border-0 d-block" style="height: min(590px, calc(100dvh - 130px));"></iframe>
+            </div>
+        </div>
+    </div>
+</div>
+<style>
+    #patientRegistrationModal .modal-dialog { max-width: 1000px; margin: 30px auto; width: calc(100% - 40px); min-height: calc(100% - 60px); }
+    #patientRegistrationModal .modal-content { border: 0; border-radius: 16px; overflow: hidden; box-shadow: 0 20px 60px rgba(20, 43, 60, .3); }
+    #patientRegistrationModal .modal-header { padding: 20px; min-height: 68px; border-bottom: 1px solid #e0e2e5; }
+    #patientRegistrationTitle { font-family: Arial, sans-serif; font-size: 18px !important; font-weight: 700; color: #333; }
+    body.modal-open .auth-shell { filter: blur(4px); }
+</style>
