@@ -55,5 +55,17 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Services
 
             return int.Parse(userIdClaim.Value);
         }
+        public Task<int> GetUserIdAsync()
+        {
+            var user = _httpContextAccessor.HttpContext?.User;
+            if (user?.Identity?.IsAuthenticated != true)
+                throw new InvalidOperationException("No authenticated user found.");
+
+            var userIdClaim = user.FindFirst(ClaimTypes.NameIdentifier);
+            if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out var userId))
+                throw new InvalidOperationException("No authenticated user found.");
+
+            return Task.FromResult(userId);
+        }
     }
 }

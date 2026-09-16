@@ -204,13 +204,13 @@
                 <button type="button" onclick="closeSelectModal()" style="background:none;border:none;font-size:20px;cursor:pointer;color:#7A8CA0">×</button>
             </div>
             <div id="modal-body" style="padding:20px">Loading...</div>
-            <div style="padding:16px 20px;border-top:1px solid #EAEEF2;display:flex;justify-content:flex-end;gap:10px">
-                <button type="button" class="btn btn-secondary" onclick="closeSelectModal()">Cancel</button>
-                <form id="modal-start-form" asp-controller="TechProcess" asp-action="StartTest" method="post" style="display:inline">
-                    <input type="hidden" name="testRequestTestTypeId" id="modal-trtt-id" />
-                    <button type="submit" class="btn btn-primary" id="modal-confirm-btn">✔ Confirm & Start Test</button>
-                </form>
-            </div>
+            <form id="modal-start-form" asp-controller="TechProcess" asp-action="StartTest" method="post">
+                <input type="hidden" name="testRequestTestTypeId" id="modal-trtt-id" />
+                <div style="padding:16px 20px;border-top:1px solid #EAEEF2;display:flex;justify-content:flex-end;gap:10px">
+                    <button type="button" class="btn btn-secondary" onclick="closeSelectModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="modal-confirm-btn">✔ Confirm &amp; Start Test</button>
+                </div>
+            </form>
         </div>
     </div>
 </div>

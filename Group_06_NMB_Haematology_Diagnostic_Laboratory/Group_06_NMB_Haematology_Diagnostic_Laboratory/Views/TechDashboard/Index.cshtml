@@ -21,7 +21,13 @@
     <!-- Stat cards -->
     <section>
         <div class="stats-grid">
-            
+
+            <a asp-controller="TechProcess" asp-action="Index" class="stat-card blue" style="text-decoration:none;color:inherit">
+                <span class="stat-emoji">📥</span>
+                <div class="stat-label">Requests Awaiting Selection</div>
+                <div class="stat-value">@Model.AvailableRequests.Count</div>
+                <div class="stat-sub">@Model.AvailableTestsCount individual tests available →</div>
+            </a>
             <a asp-controller="TechProcess" asp-action="Index" class="stat-card amber" style="text-decoration:none;color:inherit">
                 <span class="stat-emoji">🔬</span>
                 <div class="stat-label">Tests In Progress</div>

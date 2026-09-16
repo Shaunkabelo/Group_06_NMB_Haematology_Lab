@@ -10,5 +10,6 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Services
     {
         Task<int> GetLabTechnicianIdAsync();
         Task<string?> GetEmployeeNumberAsync();
+        Task<int> GetUserIdAsync();
     }
 }

@@ -16,6 +16,7 @@ builder.Services.AddScoped<ITechVerifyRepository, TechVerifyRepository>();
 builder.Services.AddScoped<ITechDashboardRepository, TechDashboardRepository>();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentTechnicianService, CurrentTechnicianService>();
+builder.Services.AddScoped<ITechProfileRepository, TechProfileRepository>();
 
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
