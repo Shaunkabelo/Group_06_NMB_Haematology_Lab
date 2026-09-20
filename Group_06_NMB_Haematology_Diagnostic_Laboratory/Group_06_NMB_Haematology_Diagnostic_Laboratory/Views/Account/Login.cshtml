@@ -1,85 +1,54 @@
-﻿@{
-    Layout = null;
-    ViewData["Title"] = "Login";
+@model Group_06_NMB_Haematology_Diagnostic_Laboratory.Models.LoginViewModel
+
+@{
+    ViewData["Title"] = "Sign in";
+    Layout = "~/Views/Shared/_Layout.cshtml";
 }
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - NMB-HLabSys</title>
-    <base href="@Url.Content("~/")" />
-    <link rel="stylesheet" href="~/css/style.css" asp-append-version="true" />
-</head>
-<body class="login-page">
-    <main class="login-shell">
-        <div class="login-container">
-            <section class="landing-panel">
-                <div class="landing-brand">Lab Intelligence for every care team</div>
-                <h2>Welcome to NMB-Haematology Lab System</h2>
-                <p>Modern laboratory test request management with secure patient access, streamlined clinician workflows, and instant reporting.</p>
-                <ul class="landing-features">
-                    <li>Fast request intake and sample tracking</li>
-                    <li>Clinical reference data and patient history</li>
-                    <li>Secure access for doctors, nurses and lab staff</li>
-                    <br />
-                    <li>For more info/Help: <a href="mailto:support@nmbhlab.co.za">support@nmbhlab.co.za</a> |  0821234000</li>
-                </ul>
-                <button class="btn btn-primary btn-full landing-action" type="button" onclick="activateLoginSplit()">Login or Register</button>
 
-            </section>
-
-            <section class="login-panel">
-                <div class="login-brand">
-                    <span class="brand-icon">🧬</span>
-                    <div>
-                        <h1>NMB-HLabSys</h1>
-                        <p>Laboratory Test Request Management System</p>
-                    </div>
-                </div>
-
-                <form class="login-form" onsubmit="loginUser(event)">
-                    <div class="form-group">
-                        <label class="form-label" for="login-email">Email Address</label>
-                        <input class="form-control" id="login-email" type="email" value="manager@nmbhlab.co.za" required>
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label" for="login-password">Password</label>
-                        <div class="password-field">
-                            <input class="form-control" id="login-password" type="password" value="Manager@123" required>
-                            <button class="btn btn-secondary btn-icon" type="button" onclick="togglePassword('login-password', this)" aria-label="Toggle password visibility">👁</button>
-                        </div>
-                    </div>
-
-                    <div class="login-demo-list" aria-label="Demo login accounts">
-                        <button class="btn btn-secondary btn-sm" type="button" onclick="fillDemoLogin('manager@nmbhlab.co.za')">Manager</button>
-                        <button class="btn btn-secondary btn-sm" type="button" onclick="fillDemoLogin('doctor@nmbhlab.co.za')">Doctor</button>
-                        <button class="btn btn-secondary btn-sm" type="button" onclick="fillDemoLogin('technician@nmbhlab.co.za')">Technician</button>
-                        <button class="btn btn-secondary btn-sm" type="button" onclick="fillDemoLogin('patient@nmbhlab.co.za')">Patient</button>
-                        <button class="btn btn-secondary btn-sm" type="button" onclick="fillDemoLogin('admin@nmbhlab.co.za')">Admin</button>
-                    </div>
-
-                    <button class="btn btn-primary btn-full" type="submit">Login</button>
-                    <button class="btn btn-secondary btn-full" type="button" onclick="openResetPage()">Reset Password</button>
-                    <button class="btn btn-link btn-full" type="button" onclick="openRegistrationPanel()">Create Patient Account</button>
-                </form>
-            </section>
+<div class="auth-shell">
+    <nav class="auth-nav">
+        <a class="landing-brand" asp-controller="Home" asp-action="Index"><span class="brand-mark">HL</span> NMB-HLabSys</a>
+        <span class="auth-nav-label">Secure laboratory access</span>
+    </nav>
+    <div class="auth-main">
+    <section class="auth-intro">
+        <p class="auth-eyebrow">Welcome to the workspace</p>
+        <h1>Continue where the laboratory work begins.</h1>
+        <p>Sign in to manage diagnostic test catalogues, laboratory staff and consumable stock.</p>
+        <div class="auth-contact">
+            <strong>Having trouble signing in?</strong>
+            <span>Contact your laboratory administrator for account support.</span>
         </div>
-    </main>
+    </section>
 
-    <div id="toast"></div>
+    <section class="auth-card">
+        <p class="auth-eyebrow">Secure access</p>
+        <h2>Welcome back</h2>
+        <p class="auth-muted">Use your laboratory account to continue.</p>
 
-    <script src="~/js/script.js" asp-append-version="true"></script>
-    <script>
-            function activateLoginSplit() {
-                const container = document.querySelector('.login-container');
-                if (!container) return;
-                container.classList.add('split');
-                document.body.classList.add('login-split');
-                document.querySelector('.landing-action')?.blur();
-            }
-    </script>
-</body>
-</html>
+        <form asp-action="Login" asp-route-returnUrl="@ViewData["ReturnUrl"]" method="post">
+            <div asp-validation-summary="ModelOnly" class="auth-error" role="alert"></div>
+            <div class="auth-field">
+                <label asp-for="Email"></label>
+                <input asp-for="Email" autocomplete="username" autofocus />
+                <span asp-validation-for="Email"></span>
+            </div>
+            <div class="auth-field">
+                <label asp-for="Password"></label>
+                <input asp-for="Password" autocomplete="current-password" />
+                <span asp-validation-for="Password"></span>
+            </div>
+            <label class="auth-check">
+                <input asp-for="RememberMe" />
+                <span>Keep me signed in</span>
+            </label>
+            <button class="auth-submit" type="submit">Sign in <span aria-hidden="true">→</span></button>
+        </form>
+    </section>
+    </div>
+    <footer class="auth-footer"><strong>Nelson Mandela Bay Haematology Diagnostic Laboratory</strong><span>Group 06 · NMB-HLabSys</span></footer>
+</div>
 
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
