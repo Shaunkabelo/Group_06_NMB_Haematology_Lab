@@ -31,27 +31,5 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Helpers
 
             return Convert.ToBase64String(hash);
         }
-
-        public static bool VerifyPassword(string password, string passwordHash, string salt)
-        {
-            if (string.IsNullOrWhiteSpace(passwordHash) || string.IsNullOrWhiteSpace(salt))
-            {
-                return false;
-            }
-
-            try
-            {
-                var expectedHash = HashPassword(password, salt);
-                var expectedBytes = Convert.FromBase64String(expectedHash);
-                var actualBytes = Convert.FromBase64String(passwordHash);
-
-                return CryptographicOperations.FixedTimeEquals(expectedBytes, actualBytes);
-            }
-            catch (FormatException)
-            {
-                // Older seed accounts may contain non-Base64 placeholder values.
-                return false;
-            }
-        }
     }
 }
