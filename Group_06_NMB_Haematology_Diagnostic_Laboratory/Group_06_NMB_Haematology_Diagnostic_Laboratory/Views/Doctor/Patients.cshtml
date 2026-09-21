@@ -363,8 +363,6 @@
 
                         <tr>
 
-                            <th>Patient</th>
-
                             <th>ID Number</th>
 
                             <th>Physical Address</th>
@@ -386,7 +384,7 @@
 
                         <tr>
 
-                            <td colspan="7">
+                            <td colspan="6">
                                 Loading patients...
                             </td>
 
@@ -406,6 +404,195 @@
 </div>
 
 <script>
+        async function viewPatientFromTable(button) {
+
+        const saIdNumber =
+            button.dataset.saId;
+
+        if (!saIdNumber) {
+
+            toast(
+                'Patient SA ID number was not found.'
+            );
+
+            return;
+        }
+
+
+        const originalText =
+            button.textContent;
+
+
+        try {
+
+            // ==============================================
+            // BUTTON LOADING STATE
+            // ==============================================
+
+            button.disabled = true;
+
+            button.textContent =
+                'Loading...';
+
+
+            // ==============================================
+            // GET COMPLETE PATIENT
+            // ==============================================
+
+            const response =
+                await fetch(
+                    `${doctorUrls.getPatient}?saIdNumber=${encodeURIComponent(saIdNumber)}`
+                );
+
+
+            if (!response.ok) {
+
+                throw new Error(
+                    'Unable to load patient details.'
+                );
+            }
+
+
+            const patient =
+                await response.json();
+
+
+            // ==============================================
+            // UPDATE SELECTED PATIENT
+            // ==============================================
+
+            selectedPatient =
+                patient;
+
+
+            const select =
+                document.getElementById(
+                    'doc-pat-id'
+                );
+
+            select.value =
+                saIdNumber;
+
+
+            // ==============================================
+            // DISPLAY PATIENT INFORMATION ABOVE
+            // ==============================================
+
+            displayPatientDetails(
+                patient
+            );
+
+
+            document.getElementById(
+                'selected-patient-summary'
+            ).style.display =
+                'block';
+
+
+            // ==============================================
+            // FIND TABLE ROW
+            // ==============================================
+
+            const row =
+                button.closest('tr');
+
+
+            if (!row) {
+
+                throw new Error(
+                    'Patient table row was not found.'
+                );
+            }
+
+
+            // ==============================================
+            // CONDITIONS
+            // ==============================================
+
+            const conditions =
+                patient.knownMedicalConditions ||
+                patient.medicalConditions ||
+                patient.conditions ||
+                'None recorded';
+
+
+            row.querySelector(
+                '.patient-conditions'
+            ).innerHTML = `
+
+                <span class="medical-cell">
+                    ${escapeHtml(conditions)}
+                </span>
+            `;
+
+
+            // ==============================================
+            // ALLERGIES
+            // ==============================================
+
+            const allergies =
+                patient.allergies ||
+                'None recorded';
+
+
+            row.querySelector(
+                '.patient-allergies'
+            ).innerHTML = `
+
+                <span class="medical-cell">
+                    ${escapeHtml(allergies)}
+                </span>
+            `;
+
+
+            // ==============================================
+            // MEDICATION
+            // ==============================================
+
+            const medication =
+                patient.medication ||
+                patient.medications ||
+                'None recorded';
+
+
+            row.querySelector(
+                '.patient-medication'
+            ).innerHTML = `
+
+                <span class="medical-cell">
+                    ${escapeHtml(medication)}
+                </span>
+            `;
+
+
+            // Scroll patient details into view
+            document.getElementById(
+                'selected-patient-summary'
+            ).scrollIntoView({
+                behavior: 'smooth',
+                block: 'start'
+            });
+
+        }
+        catch (error) {
+
+            console.error(error);
+
+            toast(
+                error.message ||
+                'Unable to load patient details.'
+            );
+
+        }
+        finally {
+
+            button.disabled =
+                false;
+
+            button.textContent =
+                originalText;
+        }
+    }
 
     // ================================================================
     // CONTROLLER URLS
@@ -480,7 +667,7 @@
     // LOAD PATIENTS
     // ================================================================
 
-     async function loadPatients() {
+        async function loadPatients() {
 
         const select =
             document.getElementById('doc-pat-id');
@@ -493,16 +680,7 @@
             const response =
                 await fetch(doctorUrls.getPatients);
 
-            console.log("GetPatients status:", response.status);
-
             if (!response.ok) {
-
-                const errorText = await response.text();
-
-                console.error(
-                    "GetPatients error:",
-                    errorText
-                );
 
                 throw new Error(
                     'Unable to load patients.'
@@ -512,23 +690,24 @@
             const patients =
                 await response.json();
 
-            console.log("Patients returned:", patients);
 
+            // Reset patient dropdown
             select.innerHTML = `
                 <option value="">
                     -- Select patient SA ID --
                 </option>
             `;
 
+
+            // Reset table
             tbody.innerHTML = '';
+
 
             if (!patients || patients.length === 0) {
 
-                console.log("No patients returned from controller.");
-
                 tbody.innerHTML = `
                     <tr>
-                        <td colspan="7">
+                        <td colspan="6">
                             No patients found.
                         </td>
                     </tr>
@@ -537,12 +716,12 @@
                 return;
             }
 
+
             patients.forEach(patient => {
 
-                console.log(
-                    "Patient:",
-                    patient
-                );
+                // ==============================================
+                // ADD PATIENT TO SA ID DROPDOWN
+                // ==============================================
 
                 const option =
                     document.createElement('option');
@@ -556,78 +735,103 @@
                 select.appendChild(option);
 
 
+                // ==============================================
+                // CREATE PATIENT TABLE ROW
+                // ==============================================
+
                 const row =
                     document.createElement('tr');
 
+                row.id =
+                    `patient-row-${patient.patientId}`;
+
+
                 row.innerHTML = `
 
-                    <td data-label="Patient">
-                        ${escapeHtml(patient.name || '')}
-                        ${escapeHtml(patient.surname || '')}
+                    <td data-label="ID Number">
+                        ${escapeHtml(
+                            patient.saIdNumber || 'N/A'
+                        )}
                     </td>
 
-                    <td data-label="ID Number">
-                        ${escapeHtml(patient.saIdNumber || '')}
-                    </td>
 
                     <td data-label="Physical Address">
                         ${escapeHtml(
                             patient.address ||
                             patient.homeAddress ||
-                            ''
+                            'N/A'
                         )}
                     </td>
 
-                    <td data-label="Conditions">
-                        <span class="muted-text">
-                            Select patient to view
+
+                    <td data-label="Conditions"
+                        class="patient-conditions">
+
+                        <span class="medical-empty">
+                            Click View
                         </span>
+
                     </td>
 
-                    <td data-label="Allergies">
-                        <span class="muted-text">
-                            Select patient to view
+
+                    <td data-label="Allergies"
+                        class="patient-allergies">
+
+                        <span class="medical-empty">
+                            Click View
                         </span>
+
                     </td>
 
-                    <td data-label="Medication">
-                        <span class="muted-text">
-                            Select patient to view
+
+                    <td data-label="Medication"
+                        class="patient-medication">
+
+                        <span class="medical-empty">
+                            Click View
                         </span>
+
                     </td>
+
 
                     <td data-label="Action">
 
                         <button
                             type="button"
-                            class="btn btn-primary"
-                            onclick="selectPatientFromTable('${escapeHtml(patient.saIdNumber || '')}')">
+                            class="btn btn-primary patient-view-btn"
+                            data-sa-id="${escapeHtml(
+                                patient.saIdNumber || ''
+                            )}"
+                            onclick="viewPatientFromTable(this)">
 
                             View
 
                         </button>
 
                     </td>
-
                 `;
+
 
                 tbody.appendChild(row);
             });
+
         }
         catch (error) {
 
             console.error(
-                "loadPatients error:",
+                'loadPatients error:',
                 error
             );
 
+
             tbody.innerHTML = `
                 <tr>
-                    <td colspan="7">
+                    <td colspan="6">
                         Unable to load patients.
                     </td>
                 </tr>
             `;
+
 
             toast(
                 'Unable to load patients from the database.'

@@ -478,6 +478,53 @@
 
     const sampleBarcodes = {};
 
+    const sampleColorClasses = [
+        "sample-color-lavender",
+        "sample-color-blue",
+        "sample-color-red",
+        "sample-color-green",
+        "sample-color-gray",
+        "sample-color-gold"
+    ];
+
+    function getSampleColorClass(sampleTypeName) {
+
+        const sampleType =
+            (sampleTypeName || "sample").toLowerCase();
+
+        if (sampleType.includes("edta") || sampleType.includes("lavender") || sampleType.includes("purple")) {
+            return "sample-color-lavender";
+        }
+
+        if (sampleType.includes("citrate") || sampleType.includes("blue")) {
+            return "sample-color-blue";
+        }
+
+        if (sampleType.includes("serum") || sampleType.includes("red")) {
+            return "sample-color-red";
+        }
+
+        if (sampleType.includes("heparin") || sampleType.includes("green")) {
+            return "sample-color-green";
+        }
+
+        if (sampleType.includes("fluoride") || sampleType.includes("gray") || sampleType.includes("grey")) {
+            return "sample-color-gray";
+        }
+
+        if (sampleType.includes("gold") || sampleType.includes("gel")) {
+            return "sample-color-gold";
+        }
+
+        const colorIndex =
+            sampleType
+                .split("")
+                .reduce((total, character) => total + character.charCodeAt(0), 0)
+            % sampleColorClasses.length;
+
+        return sampleColorClasses[colorIndex];
+    }
+
 
     // =============================================================
     // PAGE LOAD
@@ -1958,6 +2005,10 @@
                     );
 
 
+                sample.className =
+                    `vial-chip ${getSampleColorClass(test.sampleTypeName)}`;
+
+
                 sample.textContent =
                     `${test.sampleTypeName} sample`;
 
@@ -2400,6 +2451,40 @@
                 );
 
             }
+
+            const storedRequests =
+                JSON.parse(
+                    localStorage.getItem("doctorRequests") || "[]"
+                );
+
+            const requestId =
+                String(
+                    result.testRequestId
+                    ?? result.requestId
+                    ?? `REQ-${Date.now()}`
+                );
+
+            storedRequests.push({
+                id: requestId,
+                patientName: selectedPatient
+                    ? `${selectedPatient.name || ""} ${selectedPatient.surname || ""}`.trim()
+                    : "Unknown",
+                status: "Submitted",
+                urgency,
+                clinicalNotes,
+                createdAt: new Date().toISOString(),
+                tests: selectedTests.map(test => test.testName),
+                items: selectedTests.map(test => ({
+                    testType: test.testName,
+                    sampleBarcode: String(sampleBarcodes[test.testTypeId] || "").trim(),
+                    status: "Submitted"
+                }))
+            });
+
+            localStorage.setItem(
+                "doctorRequests",
+                JSON.stringify(storedRequests)
+            );
 
 
             alert(

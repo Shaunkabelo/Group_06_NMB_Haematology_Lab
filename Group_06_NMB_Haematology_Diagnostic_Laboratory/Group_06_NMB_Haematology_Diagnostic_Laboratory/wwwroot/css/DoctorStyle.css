@@ -1199,6 +1199,30 @@ td {
     border-radius: 999px;
 }
 
+.sample-color-lavender {
+    background: #8e6bbf;
+}
+
+.sample-color-blue {
+    background: #2878c8;
+}
+
+.sample-color-red {
+    background: #d9485f;
+}
+
+.sample-color-green {
+    background: #258f6b;
+}
+
+.sample-color-gray {
+    background: #68727d;
+}
+
+.sample-color-gold {
+    background: #b8860b;
+}
+
 .sample-summary-barcode {
     display: grid;
     gap: 6px;
@@ -1697,6 +1721,12 @@ td {
 .doctor-patients-table td {
     vertical-align: top;
     overflow-wrap: anywhere;
+}
+
+.doctor-patients-table .patient-view-btn {
+    min-width: 72px;
+    white-space: nowrap;
+    text-align: center;
 }
 
     .doctor-patients-table td:first-child {

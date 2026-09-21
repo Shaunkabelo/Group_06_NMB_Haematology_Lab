@@ -9,24 +9,6 @@ builder.Services.AddControllersWithViews();
 //builder.Services.AddTransient<IDoctorRepository, DoctorRepository>();
 builder.Services.AddScoped<ISqlDataAccess, SqlDataAccess>();
 builder.Services.AddScoped<IDoctorRepository, DoctorRepository>();
-//Patient Service
-builder.Services
-	.AddAuthentication(
-		"MyCookieAuth")
-	.AddCookie(
-		"MyCookieAuth",
-		options =>
-		{
-			options.LoginPath =
-				"/Account/Login";
-
-			options.AccessDeniedPath =
-				"/Account/AccessDenied";
-
-			options.ExpireTimeSpan =
-				TimeSpan.FromHours(8);
-		});
-
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -42,8 +24,7 @@ app.UseStaticFiles();
 
 app.UseRouting();
 
-app.UseAuthentication();
-app.UseAuthorization();
+
 
 app.MapControllerRoute(
 	name: "default",

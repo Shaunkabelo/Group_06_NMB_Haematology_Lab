@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Authorization;
 
 namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 {
-	[Authorize(Roles = "Doctor")]
+	//[Authorize(Roles = "Doctor")]
 	public class DoctorController : Controller
 	{
 		private readonly IDoctorRepository _doctorRepository;

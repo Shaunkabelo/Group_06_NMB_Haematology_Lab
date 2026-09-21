@@ -53,7 +53,7 @@
 
     function createTestRow(item) {
         const status = normalizeStatus(item.status);
-        const barcode = item.sampleBarcode || item.barcode || item.sampleCode || 'N/A';
+        const barcode = item.sampleBarcode || item.barcode || item.sampleCode || item.barcodeNumber || item.BarcodeNumber || 'N/A';
         return `
             <tr>
                 <td>${item.testType}</td>
