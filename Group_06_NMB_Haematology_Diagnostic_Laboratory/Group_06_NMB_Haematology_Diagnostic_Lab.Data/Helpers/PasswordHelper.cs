@@ -1,57 +1,48 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Security.Cryptography;
+using System.Text;
 
-namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Helpers
+namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Helpers;
+
+public static class PasswordHelper
 {
-    public static class PasswordHelper
+    public static string GenerateTemporaryPassword() =>
+        "Aa1!" + Convert.ToHexString(RandomNumberGenerator.GetBytes(12));
+
+    public static string GenerateSalt() => Convert.ToBase64String(RandomNumberGenerator.GetBytes(32));
+
+    public static bool MeetsPolicy(string? password) =>
+        password is { Length: >= 8 and <= 128 } &&
+        password.Any(char.IsUpper) && password.Any(char.IsDigit) &&
+        password.Any(c => !char.IsLetterOrDigit(c) && !char.IsWhiteSpace(c));
+
+    public static string HashPassword(string password, string salt) =>
+        "PBKDF2-SHA256$600000$" + Convert.ToBase64String(
+            Rfc2898DeriveBytes.Pbkdf2(password, Convert.FromBase64String(salt), 600000, HashAlgorithmName.SHA256, 32));
+
+    public static bool VerifyPassword(string password, string passwordHash, string salt)
     {
-        public static string GenerateTemporaryPassword()
+        if (string.IsNullOrWhiteSpace(passwordHash) || string.IsNullOrWhiteSpace(salt)) return false;
+        try
         {
-            return "Temp@123";
-        }
-
-        public static string GenerateSalt()
-        {
-            byte[] salt = RandomNumberGenerator.GetBytes(32);
-
-            return Convert.ToBase64String(salt);
-        }
-
-        public static string HashPassword(string password, string salt)
-        {
-            using SHA256 sha = SHA256.Create();
-
-            byte[] bytes = Encoding.UTF8.GetBytes(password + salt);
-
-            byte[] hash = sha.ComputeHash(bytes);
-
-            return Convert.ToBase64String(hash);
-        }
-
-        public static bool VerifyPassword(string password, string passwordHash, string salt)
-        {
-            if (string.IsNullOrWhiteSpace(passwordHash) || string.IsNullOrWhiteSpace(salt))
+            byte[] expected;
+            byte[] actual;
+            if (passwordHash.StartsWith("PBKDF2-SHA256$", StringComparison.Ordinal))
             {
-                return false;
+                var parts = passwordHash.Split('$');
+                if (parts.Length != 3 || !int.TryParse(parts[1], out var iterations) ||
+                    iterations < 100000 || iterations > 1000000) return false;
+                expected = Rfc2898DeriveBytes.Pbkdf2(password, Convert.FromBase64String(salt), iterations, HashAlgorithmName.SHA256, 32);
+                actual = Convert.FromBase64String(parts[2]);
             }
-
-            try
+            else
             {
-                var expectedHash = HashPassword(password, salt);
-                var expectedBytes = Convert.FromBase64String(expectedHash);
-                var actualBytes = Convert.FromBase64String(passwordHash);
-
-                return CryptographicOperations.FixedTimeEquals(expectedBytes, actualBytes);
+                // Compatibility with existing salted SHA-256 accounts.
+                expected = SHA256.HashData(Encoding.UTF8.GetBytes(password + salt));
+                actual = Convert.FromBase64String(passwordHash);
             }
-            catch (FormatException)
-            {
-                // Older seed accounts may contain non-Base64 placeholder values.
-                return false;
-            }
+            return CryptographicOperations.FixedTimeEquals(expected, actual);
         }
+        catch (FormatException) { return false; }
+        catch (ArgumentException) { return false; }
     }
 }
