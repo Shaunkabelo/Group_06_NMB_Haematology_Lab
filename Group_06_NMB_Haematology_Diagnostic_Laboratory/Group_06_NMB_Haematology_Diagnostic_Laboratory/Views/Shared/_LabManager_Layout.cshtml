@@ -1,4 +1,4 @@
-﻿
+
 @{
     var currentAction = ViewContext.RouteData.Values["action"]?.ToString() ?? "";
     var title = ViewData["Title"]?.ToString() ?? "NMB-HLabSys";
@@ -325,7 +325,7 @@
                     </a>
 
 
-                    <a asp-controller="LabManager"
+                    <a asp-controller="Account"
                        asp-action="ChangePassword"
                        class="account-dropdown-item">
 
