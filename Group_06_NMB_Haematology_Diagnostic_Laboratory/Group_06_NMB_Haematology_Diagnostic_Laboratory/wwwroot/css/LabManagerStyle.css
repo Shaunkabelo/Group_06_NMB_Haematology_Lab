@@ -908,3 +908,9 @@ tr:hover {
         padding: 4px;
     }
 }
+
+/* Single profile entry anchored below the scrolling navigation. */
+.sidebar .nav-menu { min-height: 0; }
+.account-sidebar-footer { flex-shrink: 0; padding: 12px 0 18px; }
+.account-sidebar-footer .user-info { display: grid; gap: 4px; padding: 12px 20px 0; }
+.account-sidebar-footer .user-info small { color: #9cafc2; }

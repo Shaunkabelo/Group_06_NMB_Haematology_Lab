@@ -1,4 +1,4 @@
-# Login and password recovery setup
+ï»¿# Login and password recovery setup
 
 ## Database
 Run Database/Authentication_PasswordRecovery.sql in SSMS against the database
@@ -38,15 +38,15 @@ to omit reset query strings.
 - Account forms use controller parameters and server validation, without view models.
 - Existing salted SHA-256 hashes remain valid. New passwords use PBKDF2-SHA256
   with 600,000 iterations.
-- Passwords require 8–128 characters, uppercase, number and a non-whitespace special character.
+- Passwords require 8ï¿½128 characters, uppercase, number and a non-whitespace special character.
 - Reset links expire in 30 minutes; only the newest link is valid and it works once.
 - Reset/password change invalidates previous cookies and reset links.
 - First-login changes are enforced before other application actions.
 - Login/reset/change POSTs require anti-forgery tokens and share an IP rate limit
   of 10 requests per minute. Reset emails have a one-minute per-account cooldown.
-- LabManagerController role checks remain in force. Other roles land on Home.
+- LabManagerController role checks remain in force. Roles use installed dashboards or the shared account workspace.
 - Change password is at /Account/ChangePassword.
-- Email/username changes and emailing generated staff passwords are outside this change.
+- Shared profile and generated staff password emails are supported; see the integration notes below.
 
 ## Verification
 Build, apply the migration in a test database, and configure email.
@@ -62,3 +62,41 @@ The checks cover PBKDF2, legacy SHA-256 compatibility, malformed hashes, passwor
 policy, generated password uniqueness, input validation, generic reset responses,
 and rejection of invalid, mismatched and expired-token reset submissions.
 They use a fake repository; live SQL and SMTP require the setup above.
+
+## Shared profile and staff email integration
+Apply Authentication_Profile.sql and Staff_AccountCreation.sql after the original
+password-recovery migration. These have been applied to the local GRP_04_06_db;
+teammates and the hosted server need the same migrations.
+
+All roles use /Account/Profile. It uses the User entity and explicit POST parameters,
+not a view model. Only name, surname, email, cellphone and home address are editable.
+Date of birth and role are read-only. The controller obtains UserID from the signed-in
+principal. Email changes require the current password; mailbox ownership is not
+verified by a separate confirmation email. Saving signs the user out and invalidates
+existing cookies/reset links. Email uniqueness is enforced by the database.
+
+Link shared navigation to Account/Profile and Account/Continue with MVC tag helpers.
+Account/Continue and login use AccountNavigation. Default destinations:
+LabManager/Dashboard, Admin/Dashboard, Doctor/Dashboard,
+LabTechnician/Dashboard and Patient/Dashboard.
+Only installed GET actions are selected; missing subsystems use Account/Workspace.
+Unknown roles also use Account/Workspace. Existing role authorization remains required.
+
+If a teammate uses a different controller/action, configure:
+  "AccountNavigation": {
+    "LabTechnician": { "Controller": "Technician", "Action": "Dashboard" }
+  }
+The destination must exist in this application and its authorization must allow that role.
+The resolver currently supports controllers outside MVC Areas. Stale return URLs are
+ignored unless they match the role destination or shared profile.
+
+Doctor, technician and manager creation now generate a fresh password in the controller,
+pass it to the repository for hashing and email it only after saving succeeds.
+Technician accounts and required test assignments are saved in one database transaction.
+The technician migration accepts the EmployeeNumber already supplied by the form.
+Welcome email failure does not undo an existing account: the manager sees a warning,
+and the user can use Forgot password once email delivery is restored.
+Cleartext passwords are not saved in TempData, logs or database tables.
+First-login password changes are enforced for all newly created staff accounts.
+
+Automated checks use fake email delivery; they never send credentials to real recipients.

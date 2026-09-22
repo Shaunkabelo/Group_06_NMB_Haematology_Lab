@@ -16,7 +16,7 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Helpers
             if (dateOfBirth == null)
                 return false;
 
-            if (idNumber.Length != 13)
+            if (idNumber.Length != 13 || idNumber.Any(c => c < '0' || c > '9'))
                 return false;
 
             string idDob = idNumber.Substring(0, 6);
@@ -27,3 +27,4 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Helpers
         }
     }
 }
+

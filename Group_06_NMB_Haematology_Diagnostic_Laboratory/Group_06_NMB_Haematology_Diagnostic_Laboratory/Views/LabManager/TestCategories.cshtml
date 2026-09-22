@@ -1,4 +1,4 @@
-﻿@using Group_06_NMB_Haematology_Diagnostic_Lab.Data.Models
+@using Group_06_NMB_Haematology_Diagnostic_Lab.Data.Models
 @model IEnumerable<TestCategory>
 
 @{
@@ -264,7 +264,7 @@
 
     <div class="offcanvas-body">
 
-        <form id="categoryForm"
+        <form id="categoryForm" data-staff-validation
               asp-controller="LabManager"
               asp-action="CreateTestCategory"
               method="post">
@@ -422,3 +422,4 @@
     }
 
 </script>
+

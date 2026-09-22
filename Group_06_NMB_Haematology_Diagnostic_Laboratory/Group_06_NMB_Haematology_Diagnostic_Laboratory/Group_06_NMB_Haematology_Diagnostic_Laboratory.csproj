@@ -2,6 +2,7 @@
 
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
+    <DefaultItemExcludes>$(DefaultItemExcludes);bin/**;obj/**</DefaultItemExcludes>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UserSecretsId>9f6c5db5-c1a3-433b-9f27-a9cf8420f9b0</UserSecretsId>
@@ -28,3 +29,4 @@
   </ItemGroup>
 
 </Project>
+

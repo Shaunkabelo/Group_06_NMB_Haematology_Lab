@@ -1,4 +1,4 @@
-﻿@using Group_06_NMB_Haematology_Diagnostic_Lab.Data.Models
+@using Group_06_NMB_Haematology_Diagnostic_Lab.Data.Models
 @model IEnumerable<Consumable>
 
 @{
@@ -6,6 +6,8 @@
 }
 
 <div class="page-body">
+    @if (TempData["Success"] is string success) { <div class="alert alert-success" role="status">@success</div> }
+    @if (TempData["Error"] is string error) { <div class="alert alert-danger" role="alert">@error</div> }
 
     <!-- ========================================================= -->
     <!-- PAGE HEADER -->
@@ -25,7 +27,7 @@
             <!-- ================================================= -->
 
             <input type="text"
-                   id="consumableSearch"
+                   id="consumableSearch" value="@ViewBag.Search"
                    class="form-control"
                    placeholder="Search consumables..."
                    autocomplete="off" />
@@ -147,18 +149,14 @@
                         <!-- REORDER LEVEL -->
                         <!-- ================================================= -->
 
-                        <td>
-                            @consumable.ReorderLevel
-                        </td>
+                        <td>@consumable.ReorderLevel</td>
 
 
                         <!-- ================================================= -->
                         <!-- QUANTITY ON HAND -->
                         <!-- ================================================= -->
 
-                        <td>
-                            @consumable.QuantityOnHand
-                        </td>
+                        <td>@consumable.QuantityOnHand</td>
 
 
                         <!-- ================================================= -->
@@ -173,7 +171,7 @@
                                     Out of Stock
                                 </span>
                             }
-                            else if (consumable.QuantityOnHand <= consumable.ReorderLevel)
+                            else if (consumable.QuantityOnHand <= consumable.ReorderLevel * 1.1m)
                             {
                                 <span class="btn btn-deactivate btn-sm">
                                     Low Stock
@@ -224,6 +222,14 @@
 
                             @if (consumable.IsActive)
                             {
+                                <button type="button" class="btn btn-secondary btn-sm"
+                                        data-bs-toggle="offcanvas" data-bs-target="#stockAdjustmentPanel"
+                                        onclick="openStockAdjustment(this)"
+                                        data-id="@consumable.ConsumableId" data-name="@consumable.Name"
+                                        data-quantity="@consumable.QuantityOnHand" data-reorder="@consumable.ReorderLevel">
+                                    Adjust
+                                </button>
+
                                 <!-- DELETE -->
 
                                 <form asp-action="DeleteConsumable"
@@ -308,7 +314,7 @@
 
     <div class="offcanvas-body">
 
-        <form id="consumableForm"
+        <form id="consumableForm" data-staff-validation
               asp-controller="LabManager"
               asp-action="CreateConsumable"
               method="post">
@@ -457,6 +463,51 @@
 <!-- JAVASCRIPT -->
 <!-- ========================================================= -->
 
+<div class="offcanvas offcanvas-end" tabindex="-1" id="stockAdjustmentPanel"
+     aria-labelledby="stockAdjustmentTitle" style="width: min(480px, 100vw);">
+    <div class="offcanvas-header">
+        <h4 id="stockAdjustmentTitle">Adjust consumable</h4>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+    <div class="offcanvas-body">
+        <p id="adjustmentName" class="fw-semibold"></p>
+        <p class="text-muted">Quantity on hand: <strong id="adjustmentQuantity"></strong>
+            &middot; Reorder level: <strong id="adjustmentReorder"></strong></p>
+        <form id="stockAdjustmentForm" asp-controller="LabManager" asp-action="AdjustConsumableLevel" method="post">
+            <input type="hidden" name="id" id="adjustmentId" />
+            <input type="hidden" name="expectedValue" id="adjustmentExpected" />
+            <input type="hidden" name="filter" value="@ViewBag.Filter" />
+            <input type="hidden" name="search" id="adjustmentSearch" />
+            <div class="form-group">
+                <label class="form-label" for="adjustmentField">Adjust</label>
+                <select class="form-select" id="adjustmentField" name="field">
+                    <option value="Quantity">Quantity on hand</option>
+                    <option value="Reorder">Reorder level</option>
+                </select>
+            </div>
+            <div class="form-group" id="adjustmentModeGroup">
+                <label class="form-label" for="adjustmentMode">Adjustment type</label>
+                <select class="form-select" id="adjustmentMode" name="mode">
+                    <option value="Set">Set to</option>
+                    <option value="Increase">Increase by</option>
+                    <option value="Decrease">Decrease by</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="adjustmentValue" id="adjustmentValueLabel">New quantity</label>
+                <input class="form-control" id="adjustmentValue" name="value" type="number"
+                       min="0" max="2147483647" step="1" required />
+            </div>
+            <div class="form-group" id="adjustmentReasonGroup">
+                <label class="form-label" for="adjustmentReason">Reason</label>
+                <input class="form-control" id="adjustmentReason" name="reason" maxlength="100"
+                       placeholder="e.g. stock count correction" required />
+            </div>
+            <button type="submit" id="adjustmentSave" class="btn btn-primary">Save adjustment</button>
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="offcanvas">Cancel</button>
+        </form>
+    </div>
+</div>
 <script>
 
     // =========================================================
@@ -504,6 +555,7 @@
 
     function openCreateConsumable()
     {
+        toggleInitialLevels(true);
         document.getElementById("consumablePanelTitle").innerText =
             "Add Consumable";
 
@@ -511,7 +563,7 @@
             "Save Consumable";
 
         document.getElementById("consumableForm").action =
-            "/LabManager/CreateConsumable";
+            '@Url.Action("CreateConsumable", "LabManager")';
 
         document.getElementById("consumableForm").reset();
 
@@ -538,6 +590,7 @@
 
     function openEditConsumable(button)
     {
+        toggleInitialLevels(false);
         document.getElementById("consumablePanelTitle").innerText =
             "Edit Consumable";
 
@@ -545,7 +598,7 @@
             "Update Consumable";
 
         document.getElementById("consumableForm").action =
-            "/LabManager/EditConsumable";
+            '@Url.Action("EditConsumable", "LabManager")';
 
 
         // Consumable ID
@@ -587,4 +640,63 @@
             "Quantity can only be changed through stock transactions.";
     }
 
+    function toggleInitialLevels(creating) {
+        ["ReorderLevel", "QuantityOnHand"].forEach(id => {
+            const input = document.getElementById(id);
+            input.closest(".form-group").hidden = !creating;
+            input.disabled = !creating;
+        });
+    }
+
+    const adjustmentForm = document.getElementById("stockAdjustmentForm");
+    const adjustmentField = document.getElementById("adjustmentField");
+    const adjustmentMode = document.getElementById("adjustmentMode");
+    const adjustmentValue = document.getElementById("adjustmentValue");
+    const adjustmentReason = document.getElementById("adjustmentReason");
+
+    function refreshAdjustment() {
+        const quantity = adjustmentField.value === "Quantity";
+        if (!quantity) adjustmentMode.value = "Set";
+        document.getElementById("adjustmentModeGroup").hidden = !quantity;
+        document.getElementById("adjustmentReasonGroup").hidden = !quantity;
+        adjustmentReason.disabled = !quantity;
+        adjustmentReason.required = quantity;
+        const current = quantity ? adjustmentForm.dataset.quantity : adjustmentForm.dataset.reorder;
+        document.getElementById("adjustmentExpected").value = current;
+        adjustmentValue.value = adjustmentMode.value === "Set" ? current : "0";
+        adjustmentValue.setCustomValidity("");
+        document.getElementById("adjustmentValueLabel").textContent = !quantity ? "New reorder level"
+            : adjustmentMode.value === "Set" ? "New quantity"
+            : adjustmentMode.value === "Increase" ? "Quantity to add" : "Quantity to remove";
+    }
+
+    function openStockAdjustment(button) {
+        adjustmentForm.reset();
+        adjustmentForm.dataset.quantity = button.dataset.quantity;
+        adjustmentForm.dataset.reorder = button.dataset.reorder;
+        document.getElementById("adjustmentId").value = button.dataset.id;
+        document.getElementById("adjustmentName").textContent = button.dataset.name;
+        document.getElementById("adjustmentQuantity").textContent = button.dataset.quantity;
+        document.getElementById("adjustmentReorder").textContent = button.dataset.reorder;
+        document.getElementById("adjustmentSave").disabled = false;
+        refreshAdjustment();
+    }
+    adjustmentField.addEventListener("change", refreshAdjustment);
+    adjustmentMode.addEventListener("change", refreshAdjustment);
+    adjustmentValue.addEventListener("input", () => adjustmentValue.setCustomValidity(""));
+    adjustmentForm.addEventListener("submit", event => {
+        if (adjustmentField.value === "Quantity" && adjustmentMode.value === "Decrease"
+            && Number(adjustmentValue.value) > Number(adjustmentForm.dataset.quantity)) {
+            event.preventDefault();
+            adjustmentValue.setCustomValidity("You cannot decrease stock below zero.");
+            adjustmentValue.reportValidity();
+            return;
+        }
+        document.getElementById("adjustmentSearch").value = document.getElementById("consumableSearch").value;
+        document.getElementById("adjustmentSave").disabled = true;
+    });
+    document.getElementById("stockAdjustmentPanel").addEventListener("shown.bs.offcanvas", () => adjustmentField.focus());
+    document.getElementById("consumableSearch").dispatchEvent(new Event("input"));
 </script>
+
+

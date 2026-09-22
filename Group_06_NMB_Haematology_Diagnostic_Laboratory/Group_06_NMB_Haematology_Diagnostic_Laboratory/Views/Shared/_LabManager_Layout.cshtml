@@ -1,3 +1,4 @@
+@using System.Security.Claims
 
 @{
     var currentAction = ViewContext.RouteData.Values["action"]?.ToString() ?? "";
@@ -36,6 +37,7 @@
     <!-- Validation -->
     <script src="~/js/LabManager_Validation_Script.js"></script>
 
+    @await RenderSectionAsync("Styles", required: false)
 </head>
 
 
@@ -212,24 +214,17 @@
             <!-- SIDEBAR FOOTER -->
             <!-- ================================================= -->
 
-            <div class="sidebar-footer">
-
-                <div class="user-info">
-
-                    <strong id="sidebar-user-name">
-                        Guest User
-                    </strong>
-
-                    <small id="sidebar-user-role">
-                        Lab Manager
-                    </small>
-
-                </div>
-
-            </div>
-
         </nav>
 
+        <div class="sidebar-footer account-sidebar-footer">
+            <a asp-controller="Account" asp-action="Profile" class="nav-item@(IsActive("Profile"))">
+                <span aria-hidden="true">&#128100;</span> My Profile
+            </a>
+            <div class="user-info">
+                <strong>@User.Identity?.Name</strong>
+                <small>@User.FindFirstValue(ClaimTypes.Role)</small>
+            </div>
+        </div>
     </aside>
 
 
@@ -255,110 +250,18 @@
 
             <!-- ACCOUNT -->
 
-            <div class="account-menu">
-
-                <button type="button"
-                        class="account-button"
-                        id="accountButton">
-
-                    <span class="account-icon">
-                        👤
-                    </span>
-
-                    <span class="account-details">
-
-                        <strong id="topbar-user-name">
-                            Guest User
-                        </strong>
-
-                        <small id="topbar-user-role">
-                            Lab Manager
-                        </small>
-
-                    </span>
-
-                    <span class="account-arrow">
-                        ▾
-                    </span>
-
-                </button>
-
-
-                <!-- ACCOUNT DROPDOWN -->
-
-                <div class="account-dropdown"
-                     id="accountDropdown">
-
-                    <div class="account-dropdown-header">
-
-                        <strong id="dropdown-user-name">
-                            Guest User
-                        </strong>
-
-                        <small id="dropdown-user-role">
-                            Lab Manager
-                        </small>
-
-                    </div>
-
-
-                    <div class="account-dropdown-divider"></div>
-
-
-                    <a asp-controller="LabManager"
-                       asp-action="Profile"
-                       class="account-dropdown-item">
-
-                        <span>👤</span>
-                        My Profile
-
-                    </a>
-
-
-                    <a asp-controller="LabManager"
-                       asp-action="Profile"
-                       class="account-dropdown-item">
-
-                        <span>✏️</span>
-                        Update Details
-
-                    </a>
-
-
-                    <a asp-controller="Account"
-                       asp-action="ChangePassword"
-                       class="account-dropdown-item">
-
-                        <span>🔑</span>
-                        Change Password
-
-                    </a>
-
-
-                    <div class="account-dropdown-divider"></div>
-
-
-                    <form asp-controller="Account"
-                          asp-action="Logout"
-                          method="post">
-                        @Html.AntiForgeryToken()
-                        <button type="submit" class="account-dropdown-item logout-item">
-                            <span>🚪</span>
-                            Logout
-                        </button>
-                    </form>
-
-                </div>
-
-            </div>
-
+            <form asp-controller="Account" asp-action="Logout" method="post">
+                <button type="submit" class="btn btn-secondary">Logout</button>
+            </form>
         </header>
 
 
         <!-- ===================================================== -->
         <!-- PAGE CONTENT -->
         <!-- ===================================================== -->
-        @RenderBody()
+        @if (ViewContext.RouteData.Values["action"]?.ToString() is "Doctors" or "ManageManagers" && TempData["Success"] is string success) { <div class="alert alert-success" role="status">@success</div> }
+            @if (ViewContext.RouteData.Values["action"]?.ToString() is "Doctors" or "ManageManagers" && TempData["Error"] is string error) { <div class="alert alert-danger" role="alert">@error</div> }
+            @RenderBody()
 
 
 
@@ -377,31 +280,8 @@
     <!-- ACCOUNT DROPDOWN -->
     <!-- ========================================================= -->
 
-    <script>
 
-        const accountButton =
-            document.getElementById("accountButton");
-
-        const accountDropdown =
-            document.getElementById("accountDropdown");
-
-
-        accountButton.addEventListener("click", function ()
-        {
-            accountDropdown.classList.toggle("show");
-        });
-
-
-        document.addEventListener("click", function (event)
-        {
-            if (!accountButton.contains(event.target) &&
-                !accountDropdown.contains(event.target))
-            {
-                accountDropdown.classList.remove("show");
-            }
-        });
-
-    </script>
+    <script src="~/js/staff-validation.js" asp-append-version="true"></script>
     @RenderSection("Scripts", required: false)
 
 </body>

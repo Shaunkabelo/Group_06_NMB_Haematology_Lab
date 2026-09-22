@@ -1,9 +1,24 @@
-﻿@using Group_06_NMB_Haematology_Diagnostic_Lab.Data.Models
+@using Group_06_NMB_Haematology_Diagnostic_Lab.Data.Models
 @model IEnumerable<TestType>
 
 @{
     Layout = "~/Views/Shared/_LabManager_Layout.cshtml";
 
+    var technicians = ViewBag.AssignmentTechnicians as List<LabTechnician> ?? new List<LabTechnician>();
+    var assignments = ViewBag.TestTypeAssignments as List<LabTechnicianTestType> ?? new List<LabTechnicianTestType>();
+    var assignmentLookup = assignments.ToLookup(a => a.TestTypeId);
+    var technicianLookup = technicians.ToDictionary(t => t.LabTechnicianId);
+    var orderedTests = Model.OrderBy(t => t.TestCategory?.CategoryName).ThenBy(t => t.TestName).ToList();
+
+    var panelData = orderedTests.Select(t => new {
+        id = t.TestTypeId, name = t.TestName, category = t.TestCategory?.CategoryName ?? "Uncategorised",
+        active = t.IsActive,
+        assigned = assignmentLookup[t.TestTypeId].Select(a => a.LabTechnicianId).Distinct().ToArray()
+    });
+    var technicianData = technicians.Select(t => new {
+        id = t.LabTechnicianId, name = (t.User.Name + " " + t.User.Surname).Trim(),
+        employee = t.EmployeeNumber, email = t.User.Email, active = t.User.IsActive
+    });
     var consumables = ViewBag.Consumables as IEnumerable<Consumable>
         ?? Enumerable.Empty<Consumable>();
 }
@@ -53,13 +68,22 @@
             <form asp-controller="LabManager"
                   asp-action="TestTypes"
                   method="get"
-                  id="filterForm">
+                  id="filterForm" class="test-type-filters">
 
                 <input type="hidden"
                        name="search"
                        id="filterSearch"
                        value="@ViewBag.Search" />
 
+                <label class="visually-hidden" for="categoryFilter">Test category</label>
+                <select id="categoryFilter" name="categoryId" class="form-select"
+                        onchange="document.getElementById('filterSearch').value = document.getElementById('searchInput').value; this.form.submit();">
+                    <option value="">All categories</option>
+                    @foreach (var category in ViewBag.Categories)
+                    {
+                        <option value="@category.TestCategoryId" selected="@(ViewBag.CategoryId == category.TestCategoryId)">@category.CategoryName</option>
+                    }
+                </select>
                 <select id="filterSelect"
                         name="filter"
                         class="form-select @(ViewBag.Filter == "Active" ? "filter-active" : ViewBag.Filter == "Inactive" ? "filter-inactive" : "filter-all")"
@@ -136,6 +160,7 @@
                     <th>Turnaround</th>
                     <th>Consumable(s)</th>
                     <th>Qty / Test</th>
+                    <th>Technicians</th>
                     <th>Status</th>
                     <th>Actions</th>
 
@@ -146,8 +171,12 @@
 
             <tbody id="testTypesTableBody">
 
-                @foreach (var testType in Model)
+                @foreach (var testType in orderedTests)
                 {
+                    var assignedIds = assignmentLookup[testType.TestTypeId].Select(a => a.LabTechnicianId).Distinct().ToArray();
+                    var activeCount = assignedIds.Count(id => technicianLookup.TryGetValue(id, out var tech) && tech.User.IsActive);
+                    var inactiveCount = assignedIds.Length - activeCount;
+
                     <tr>
 
                         <td>
@@ -205,6 +234,14 @@
                         </td>
 
                         <td>
+                            <button type="button" class="btn btn-link btn-sm p-0"
+                                    data-bs-toggle="offcanvas" data-bs-target="#testTechniciansPanel"
+                                    onclick="openTestTechnicians(@testType.TestTypeId, false)">
+                                @(activeCount == 0 ? "No active technicians" : $"{activeCount} technician{(activeCount == 1 ? "" : "s")}") &rsaquo;
+                            </button>
+
+                        </td>
+                        <td>
 
                             @(testType.IsActive ? "Active" : "Inactive")
 
@@ -242,6 +279,9 @@
 
                             @if (testType.IsActive)
                             {
+                                <button type="button" class="btn btn-secondary btn-sm"
+                                        data-bs-toggle="offcanvas" data-bs-target="#testTechniciansPanel"
+                                        onclick="openTestTechnicians(@testType.TestTypeId, true)">Assign</button>
                                 <!-- ================================================= -->
                                 <!-- DELETE -->
                                 <!-- ================================================= -->
@@ -338,7 +378,7 @@
 
     <div class="offcanvas-body">
 
-        <form id="testTypeForm"
+        <form id="testTypeForm" data-staff-validation
               asp-controller="LabManager"
               asp-action="CreateTestType"
               method="post">
@@ -560,6 +600,34 @@
 <!-- JAVASCRIPT -->
 <!-- ========================================================= -->
 
+<div class="offcanvas offcanvas-end" tabindex="-1" id="testTechniciansPanel"
+     aria-labelledby="testTechniciansTitle" style="width:min(600px,100vw)">
+    <div class="offcanvas-header">
+        <h4 id="testTechniciansTitle">Assigned technicians</h4>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+    <div class="offcanvas-body">
+        <h5 id="assignmentTestName"></h5>
+        <p class="text-muted" id="assignmentCategory"></p>
+        <h6>Currently assigned</h6>
+        <div id="assignedTechnicianDetails" class="mb-4"></div>
+        <form asp-controller="LabManager" asp-action="AssignTestTypeTechnicians" method="post" id="assignmentForm">
+            <input type="hidden" name="testTypeId" id="assignmentTestId" />
+            <input type="hidden" name="expectedTechnicianIds" id="assignmentExpected" />
+            <input type="hidden" name="filter" value="@ViewBag.Filter" />
+            <input type="hidden" name="search" id="assignmentSearch" />
+            <input type="hidden" name="categoryId" value="@ViewBag.CategoryId" />
+            <h6>Assign technicians</h6>
+            <label class="form-label" for="assignmentTechnicianSearch">Search by name, employee number or email</label>
+            <input type="search" id="assignmentTechnicianSearch" class="form-control mb-3" autocomplete="off" />
+            <p class="small text-muted">Select active technicians. A technician must retain at least one active test type.</p>
+            <div id="assignmentChoices"></div>
+            <button type="submit" id="assignmentSave" class="btn btn-primary mt-3">Save assignments</button>
+            <button type="button" class="btn btn-secondary mt-3" data-bs-dismiss="offcanvas">Cancel</button>
+        </form>
+        <p id="assignmentInactiveNotice" class="text-muted" hidden>This test type is inactive. Reactivate it to change assignments.</p>
+    </div>
+</div>
 <script>
 
     // =========================================================
@@ -739,5 +807,83 @@
         }
     });
 
+    const assignmentTests = @Json.Serialize(panelData);
+    const assignmentTechnicians = @Json.Serialize(technicianData);
+    const assignmentChoices = document.getElementById("assignmentChoices");
+    function openTestTechnicians(id, editing) {
+        const test = assignmentTests.find(t => t.id === id);
+        if (!test) return;
+        document.getElementById("assignmentTestName").textContent = test.name;
+        document.getElementById("assignmentCategory").textContent = "Category: " + test.category;
+        document.getElementById("assignmentTestId").value = test.id;
+        document.getElementById("assignmentForm").hidden = !test.active;
+        document.getElementById("assignmentInactiveNotice").hidden = test.active;
+        document.getElementById("assignmentSave").disabled = false;
+        document.getElementById("assignmentTechnicianSearch").value = "";
+        document.getElementById("assignmentExpected").value = assignmentTechnicians
+            .filter(t => t.active && test.assigned.includes(t.id)).map(t => t.id).join(",");
+        const details = document.getElementById("assignedTechnicianDetails");
+        details.replaceChildren();
+        const assigned = assignmentTechnicians.filter(t => test.assigned.includes(t.id));
+        if (!assigned.length) {
+            const empty = document.createElement("p"); empty.className = "text-muted";
+            empty.textContent = "No technicians assigned."; details.append(empty);
+        }
+        assigned.sort((a,b) => Number(b.active)-Number(a.active) || a.name.localeCompare(b.name)).forEach(t => {
+            const card = document.createElement("div"); card.className = "border rounded p-3 mb-2";
+            const name = document.createElement("strong"); name.textContent = t.name;
+            const info = document.createElement("div"); info.className = "small text-muted";
+            info.textContent = [t.employee, t.email, t.active ? "Active" : "Inactive"].filter(Boolean).join(" · ");
+            card.append(name, info); details.append(card);
+        });
+        assignmentChoices.replaceChildren();
+        assignmentTechnicians.filter(t => t.active).sort((a,b) => a.name.localeCompare(b.name)).forEach(t => {
+            const label = document.createElement("label"); label.className = "d-flex gap-2 border rounded p-3 mb-2";
+            label.dataset.search = [t.name,t.employee,t.email].join(" ").toLowerCase();
+            const checkbox = document.createElement("input"); checkbox.type = "checkbox";
+            checkbox.className = "form-check-input"; checkbox.name = "technicianIds"; checkbox.value = t.id;
+            checkbox.checked = test.assigned.includes(t.id);
+            const text = document.createElement("span"); text.textContent = t.name + " — " + (t.employee || t.email);
+            label.append(checkbox,text); assignmentChoices.append(label);
+        });
+        if (!assignmentChoices.children.length) assignmentChoices.textContent = "No active technicians are available.";
+        document.getElementById("testTechniciansPanel").dataset.editing = String(editing);
+    }
+    document.getElementById("assignmentTechnicianSearch").addEventListener("input", event => {
+        const query = event.target.value.trim().toLowerCase();
+        assignmentChoices.querySelectorAll("label").forEach(label => {
+            label.classList.toggle("d-none", !label.dataset.search.includes(query));
+        });
+    });
+    document.getElementById("assignmentForm").addEventListener("submit", () => {
+        document.getElementById("assignmentSearch").value = document.getElementById("searchInput").value;
+        document.getElementById("assignmentSave").disabled = true;
+    });
+    document.getElementById("testTechniciansPanel").addEventListener("shown.bs.offcanvas", event => {
+        if (event.target.dataset.editing === "true") document.getElementById("assignmentTechnicianSearch").focus();
+    });
 </script>
+
+
+@section Styles {
+    <style>
+        #testTypesTable .test-category-heading th { background:#eaf3f6; }
+        .main-content:has(#testTypesTable) { min-width:0; }
+        .test-type-filters { display:flex; gap:10px; flex-wrap:wrap; }
+        .test-type-filters select { width:auto; max-width:260px; }
+        .page-body:has(#testTypesTable) { max-width:none; width:100%; min-width:0; }
+        .page-body:has(#testTypesTable) .section-header { flex-wrap:wrap; gap:16px; }
+        .page-body:has(#testTypesTable) .section-header > div:last-child { flex-wrap:wrap; }
+        .page-body:has(#testTypesTable) .table-wrap { width:100%; overflow-x:auto; }
+        #testTypesTable { width:100%; min-width:1250px; table-layout:auto; }
+        #testTypesTable th, #testTypesTable td { padding:12px 14px; vertical-align:middle; }
+        #testTypesTable .td-actions { display:table-cell; min-width:285px; width:285px; white-space:normal; }
+        #testTypesTable .td-actions .btn { display:inline-flex; align-items:center; white-space:nowrap; margin:3px 2px; }
+        #testTypesTable .td-actions form { display:inline-block !important; margin:0; }
+        #testTechniciansPanel [hidden] { display:none !important; }
+    </style>
+}
+
+
+
 

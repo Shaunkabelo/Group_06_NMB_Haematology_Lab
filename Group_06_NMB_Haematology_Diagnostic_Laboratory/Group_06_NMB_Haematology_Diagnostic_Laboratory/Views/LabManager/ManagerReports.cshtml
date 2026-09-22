@@ -38,3 +38,11 @@
         </div>
     </div>
 </div>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+ const start = document.getElementById("startDate"), end = document.getElementById("endDate");
+ function check() { end.setCustomValidity(start.value && end.value && end.value < start.value ? "End date must be on or after start date." : ""); }
+ start.addEventListener("change", check); end.addEventListener("change", check);
+});
+</script>

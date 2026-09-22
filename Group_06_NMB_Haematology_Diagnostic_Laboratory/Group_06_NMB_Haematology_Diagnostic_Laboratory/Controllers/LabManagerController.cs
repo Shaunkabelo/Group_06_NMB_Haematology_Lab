@@ -1,4 +1,5 @@
-﻿using Group_06_NMB_Haematology_Diagnostic_Lab.Data.Models;
+using Group_06_NMB_Haematology_Diagnostic_Laboratory.Services;
+using Group_06_NMB_Haematology_Diagnostic_Lab.Data.Models;
 using Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
@@ -10,15 +11,33 @@ using QuestPDF.Infrastructure;
 
 namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 {
+    [ServiceFilter(typeof(Group_06_NMB_Haematology_Diagnostic_Laboratory.Validation.StaffValidationFilter))]
     [Authorize(Roles = "LabManager,Admin")]
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
     public class LabManagerController : Controller
     {
+        private async Task SendWelcomeEmail(User user, string temporaryPassword)
+        {
+            try
+            {
+                await _emailSender.SendTemporaryPassword(user.Email, user.Name, temporaryPassword);
+                TempData["Success"] = "Account created. A temporary password has been emailed to the user.";
+            }
+            catch (Exception exception)
+            {
+                _logger.LogError("Account created but welcome email failed ({FailureType}).", exception.GetType().Name);
+                TempData["Error"] = "The account was created, but its welcome email could not be sent. Do not create it again. The user can use Forgot password once email delivery is restored.";
+            }
+        }
         private readonly ILabManagerRepository _repository;
 
-        public LabManagerController(ILabManagerRepository repository)
+        private readonly IAccountEmailSender _emailSender;
+        private readonly ILogger<LabManagerController> _logger;
+        public LabManagerController(ILabManagerRepository repository, IAccountEmailSender emailSender, ILogger<LabManagerController> logger)
         {
             _repository = repository;
+            _emailSender = emailSender;
+            _logger = logger;
         }
         [HttpGet]
         public async Task<IActionResult> Dashboard()
@@ -77,7 +96,7 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
             var consumables = (await _repository.GetConsumables("Active"))
                 .ToDictionary(c => c.ConsumableId);
 
-            if (supplier == null || selectedIds.Any(id => !consumables.ContainsKey(id)))
+            if (supplier == null || !supplier.IsActive || selectedIds.Any(id => !consumables.ContainsKey(id) || consumables[id].SupplierId != supplierId))
             {
                 TempData["ErrorMessage"] = "The supplier or one of the selected consumables is no longer available.";
                 return RedirectToAction(nameof(Orders));
@@ -379,9 +398,13 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
         [HttpGet]
         public async Task<IActionResult> TestTypes(
     string filter = "Active",
-    string search = "")
+    string search = "", int? categoryId = null)
         {
             var testTypes = await _repository.GetTestTypes(filter, search);
+            if (categoryId.HasValue) testTypes = testTypes.Where(t => t.TestCategoryId == categoryId.Value);
+            ViewBag.CategoryId = categoryId;
+            ViewBag.AssignmentTechnicians = (await _repository.GetTechnicians("All")).ToList();
+            ViewBag.TestTypeAssignments = (await _repository.GetTestTypeAssignments()).ToList();
 
             var categories = await _repository.GetTestCategories();
 
@@ -400,6 +423,27 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
         }
 
 
+        [HttpPost, ValidateAntiForgeryToken]
+        public async Task<IActionResult> AssignTestTypeTechnicians(int testTypeId, int[] technicianIds,
+            string? expectedTechnicianIds, string filter = "Active", string search = "", int? categoryId = null)
+        {
+            technicianIds ??= Array.Empty<int>();
+            if (!ModelState.IsValid || testTypeId <= 0 || technicianIds.Any(id => id <= 0))
+            {
+                TempData["Error"] = "Choose valid technicians.";
+                return RedirectToAction(nameof(TestTypes), new { filter, search, categoryId });
+            }
+            try
+            {
+                await _repository.ReplaceTestTypeTechnicians(testTypeId, technicianIds, expectedTechnicianIds ?? "");
+                TempData["Success"] = "Technician assignments saved.";
+            }
+            catch (Microsoft.Data.SqlClient.SqlException ex) when (ex.Number is >= 50100 and <= 50103)
+            {
+                TempData["Error"] = ex.Message;
+            }
+            return RedirectToAction(nameof(TestTypes), new { filter, search, categoryId });
+        }
         // ==================== CREATE TEST TYPE ====================
 
         [HttpPost]
@@ -586,7 +630,7 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 
         // ==================== CREATE / ADD CONSUMABLES ====================
 
-        [HttpPost]
+        [HttpPost, ValidateAntiForgeryToken]
         public async Task<IActionResult> CreateConsumable(Consumable consumable)
         {
             if (!ModelState.IsValid)
@@ -618,7 +662,7 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 
         // ==================== UPDATE / EDIT CONSUMABLE ====================
 
-        [HttpPost]
+        [HttpPost, ValidateAntiForgeryToken]
         public async Task<IActionResult> EditConsumable(Consumable consumable)
         {
             if (!ModelState.IsValid)
@@ -632,6 +676,32 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
         }
 
 
+        [HttpPost, ValidateAntiForgeryToken]
+        public async Task<IActionResult> AdjustConsumableLevel(int id, string field, string mode,
+            int? value, int? expectedValue, string? reason, string filter = "Active", string search = "")
+        {
+            reason = reason?.Trim();
+            if (!ModelState.IsValid || id <= 0 || value is null or < 0 || expectedValue is null or < 0 ||
+                field is not ("Quantity" or "Reorder") || mode is not ("Set" or "Increase" or "Decrease") ||
+                (field == "Reorder" && mode != "Set") ||
+                (field == "Quantity" && (string.IsNullOrWhiteSpace(reason) || reason.Length > 100)))
+            {
+                TempData["Error"] = "Enter a valid non-negative whole number and a stock reason of up to 100 characters.";
+                return RedirectToAction(nameof(Consumables), new { filter, search });
+            }
+            if (!int.TryParse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value, out var userId))
+                return Challenge();
+            try
+            {
+                await _repository.AdjustConsumableLevel(id, field, mode, value.Value, expectedValue.Value, userId, reason);
+                TempData["Success"] = field == "Quantity" ? "Quantity on hand saved." : "Reorder level saved.";
+            }
+            catch (Microsoft.Data.SqlClient.SqlException ex) when (ex.Number is >= 50100 and <= 50103)
+            {
+                TempData["Error"] = ex.Message;
+            }
+            return RedirectToAction(nameof(Consumables), new { filter, search });
+        }
         // ==================== DELETE CONSUMABLE ====================
 
         [HttpPost]
@@ -752,6 +822,7 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 
         // ==================== CREATE MANAGER ====================
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> CreateManager(LabManager manager)
         {
             if (!ModelState.IsValid)
@@ -759,7 +830,9 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
                 return RedirectToAction(nameof(ManageManagers));
             }
 
-            await _repository.CreateManager(manager);
+            var temporaryPassword = PasswordHelper.GenerateTemporaryPassword();
+            await _repository.CreateManager(manager, temporaryPassword);
+            await SendWelcomeEmail(manager.User, temporaryPassword);
 
             return RedirectToAction(nameof(ManageManagers));
         }
@@ -779,7 +852,7 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
         }
 
         // ==================== EDIT MANAGER (POST) ====================
-        [HttpPost]
+        [HttpPost, ValidateAntiForgeryToken]
         public async Task<IActionResult> EditManager(LabManager manager)
         {
             if (!ModelState.IsValid)
@@ -836,6 +909,7 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 
         // ==================== CREATE/ADD DOCTORS ====================
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> CreateDoctor(Doctor doctor)
         {
             if (!ModelState.IsValid)
@@ -852,7 +926,9 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
                 return RedirectToAction(nameof(Doctors));
             }
 
-            await _repository.CreateDoctor(doctor);
+            var temporaryPassword = PasswordHelper.GenerateTemporaryPassword();
+            await _repository.CreateDoctor(doctor, temporaryPassword);
+            await SendWelcomeEmail(doctor.User, temporaryPassword);
 
             return RedirectToAction(nameof(Doctors));
         }
@@ -872,7 +948,7 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
         }
 
         // ==================== UPDATE/EDIT DOCTORS ==================== [POST]
-        [HttpPost]
+        [HttpPost, ValidateAntiForgeryToken]
         public async Task<IActionResult> EditDoctor(Doctor doctor)
         {
             if (!ModelState.IsValid)
@@ -939,6 +1015,7 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 
         // ==================== CREATE TECHNICIAN ====================
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> CreateTechnician(LabTechnician technician, int[] testTypeIds)
         {
             if (!ModelState.IsValid)
@@ -980,10 +1057,11 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
                 return RedirectToAction(nameof(Technicians));
             }
 
-            var technicianId = await _repository.CreateTechnician(technician);
-            await _repository.ReplaceTechnicianTestTypes(technicianId, selectedIds);
+            var temporaryPassword = PasswordHelper.GenerateTemporaryPassword();
+            await _repository.CreateTechnician(technician, temporaryPassword, selectedIds);
 
-            TempData["Success"] = "Technician created and test-type assignments saved.";
+
+            await SendWelcomeEmail(technician.User, temporaryPassword);
 
             return RedirectToAction(nameof(Technicians));
         }
@@ -1002,8 +1080,8 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
         }
 
         // ==================== UPDATE TECHNICIAN ====================
-        [HttpPost]
-        public async Task<IActionResult> EditTechnician(LabTechnician technician, int[] testTypeIds)
+        [HttpPost, ValidateAntiForgeryToken]
+        public async Task<IActionResult> EditTechnician(LabTechnician technician)
         {
             if (!ModelState.IsValid)
             {
@@ -1018,23 +1096,8 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
                 return RedirectToAction(nameof(Technicians));
             }
 
-            var selectedIds = (testTypeIds ?? Array.Empty<int>()).Where(id => id > 0).Distinct().ToArray();
-            var activeIds = (await _repository.GetTestTypes("Active"))
-                .Select(testType => testType.TestTypeId)
-                .ToHashSet();
-            if (selectedIds.Length == 0)
-            {
-                TempData["Error"] = "Assign at least one test type to the technician.";
-                return RedirectToAction(nameof(Technicians));
-            }
-            if (selectedIds.Any(id => !activeIds.Contains(id)))
-            {
-                TempData["Error"] = "One or more selected test types are not active.";
-                return RedirectToAction(nameof(Technicians));
-            }
-
             await _repository.UpdateTechnician(technician);
-            await _repository.ReplaceTechnicianTestTypes(technician.LabTechnicianId, selectedIds);
+
 
             return RedirectToAction(nameof(Technicians));
         }
@@ -1063,7 +1126,7 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
             );
         }
 
-        [HttpPost]
+        [HttpPost, ValidateAntiForgeryToken]
         public async Task<IActionResult> UpdateTechnicianTestTypes(int technicianId, int[] testTypeIds, string filter = "Active")
         {
             var technician = await _repository.GetTechnicianById(technicianId);
@@ -1083,7 +1146,21 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
                 return RedirectToAction(nameof(Technicians), new { filter });
             }
 
-            await _repository.ReplaceTechnicianTestTypes(technicianId, selectedIds);
+
+            if (!ModelState.IsValid || selectedIds.Length == 0)
+            {
+                TempData["Error"] = "Assign at least one active test type.";
+                return RedirectToAction(nameof(Technicians), new { filter });
+            }
+            try
+            {
+                await _repository.ReplaceTechnicianTestTypes(technicianId, selectedIds);
+            }
+            catch (Microsoft.Data.SqlClient.SqlException ex) when (ex.Number is >= 50100 and <= 50103)
+            {
+                TempData["Error"] = ex.Message;
+                return RedirectToAction(nameof(Technicians), new { filter });
+            }
             TempData["Success"] = "Technician test-type assignments updated.";
             return RedirectToAction(nameof(Technicians), new { filter });
         }
@@ -1153,7 +1230,7 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
                 $"tests-performed-{startDate:yyyyMMdd}-{endDate:yyyyMMdd}.pdf");
         }
 
-        public IActionResult Profile() => View();
+        public IActionResult Profile() => RedirectToAction("Profile", "Account");
 
 
     }
@@ -1162,4 +1239,8 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 
 
 }
+
+
+
+
 

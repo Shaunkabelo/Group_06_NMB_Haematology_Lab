@@ -1,4 +1,4 @@
-using Group_06_NMB_Haematology_Diagnostic_Laboratory.Services;
+﻿using Group_06_NMB_Haematology_Diagnostic_Laboratory.Services;
 using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.RateLimiting;
 using Group_06_NMB_Haematology_Diagnostic_Lab.Data.DataAccess;
@@ -12,8 +12,10 @@ QuestPDF.Settings.License = LicenseType.Community;
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
+builder.Services.AddScoped<Group_06_NMB_Haematology_Diagnostic_Laboratory.Validation.StaffValidationFilter>();
 builder.Services.AddScoped<IAccountEmailSender, SmtpAccountEmailSender>();
 builder.Services.AddScoped<AccountCookieEvents>();
+builder.Services.AddScoped<AccountNavigation>();
 builder.Services.AddSingleton<PasswordResetQueue>();
 builder.Services.AddHostedService<PasswordResetWorker>();
 builder.Services.AddRateLimiter(options =>
@@ -81,3 +83,4 @@ app.MapControllerRoute(
     pattern: "{controller=Home}/{action=Index}/{id?}");
 
 app.Run();
+

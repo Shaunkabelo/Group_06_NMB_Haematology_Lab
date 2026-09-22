@@ -1,4 +1,4 @@
-﻿using Group_06_NMB_Haematology_Diagnostic_Lab.Data.Models;
+using Group_06_NMB_Haematology_Diagnostic_Lab.Data.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,7 +11,7 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
     {
         //      ==== DOCTOR ====
         Task<IEnumerable<Doctor>> GetDoctors(string filter = "Active");
-        Task CreateDoctor(Doctor doctor);
+        Task CreateDoctor(Doctor doctor, string temporaryPassword);
         Task<Doctor> GetDoctorById(int doctorId);
         Task UpdateDoctor(Doctor doctor);
         Task DeleteDoctor(int doctorId);
@@ -22,13 +22,15 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
 
         Task<LabTechnician?> GetTechnicianById(int technicianId);
 
-        Task<int> CreateTechnician(LabTechnician technician);
+        Task<int> CreateTechnician(LabTechnician technician, string temporaryPassword, IEnumerable<int> testTypeIds);
 
         Task UpdateTechnician(LabTechnician technician);
 
         Task DeleteTechnician(int technicianId);
         Task ReactivateTechnician(int technicianId);
         Task<IEnumerable<LabTechnicianTestType>> GetTechnicianTestTypes(int technicianId);
+        Task<IEnumerable<LabTechnicianTestType>> GetTestTypeAssignments();
+        Task ReplaceTestTypeTechnicians(int testTypeId, IEnumerable<int> technicianIds, string expectedTechnicianIds);
         Task ReplaceTechnicianTestTypes(int technicianId, IEnumerable<int> testTypeIds);
 
         //      === LAB MANAGER ===
@@ -36,7 +38,7 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
 
         Task<LabManager?> GetManagerById(int managerId);
 
-        Task CreateManager(LabManager manager);
+        Task CreateManager(LabManager manager, string temporaryPassword);
 
         Task UpdateManager(LabManager manager);
 
@@ -68,6 +70,7 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
         Task CreateConsumable(Consumable consumable, int? performedByUserId = null);
 
         Task UpdateConsumable(Consumable consumable);
+        Task AdjustConsumableLevel(int consumableId, string field, string mode, int value, int expectedValue, int performedByUserId, string? reason);
 
         Task DeleteConsumable(int consumableId);
 

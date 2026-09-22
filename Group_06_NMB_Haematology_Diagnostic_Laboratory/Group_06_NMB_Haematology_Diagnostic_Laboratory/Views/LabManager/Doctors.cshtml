@@ -1,4 +1,4 @@
-﻿@using Group_06_NMB_Haematology_Diagnostic_Lab.Data.Models
+@using Group_06_NMB_Haematology_Diagnostic_Lab.Data.Models
 @model IEnumerable<Doctor>
 
 @{
@@ -235,11 +235,10 @@
 
     <div class="offcanvas-body">
 
-        <form id="doctorForm"
+        <form id="doctorForm" data-staff-validation
               asp-controller="LabManager"
               asp-action="CreateDoctor"
-              method="post"
-              onsubmit="return validateSouthAfricanId('SaIdNumber','DateOfBirth');">
+              method="post">
 
             <input type="hidden"
                    id="DoctorId"
@@ -257,7 +256,7 @@
 
                 <input id="Name"
                        class="form-control"
-                       name="User.Name"
+                       name="User.Name" maxlength="100"
                        required />
 
             </div>
@@ -273,7 +272,7 @@
 
                 <input id="Surname"
                        class="form-control"
-                       name="User.Surname"
+                       name="User.Surname" maxlength="100"
                        required />
 
             </div>
@@ -290,7 +289,7 @@
                 <input id="Email"
                        type="email"
                        class="form-control"
-                       name="User.Email"
+                       name="User.Email" maxlength="150"
                        required />
 
             </div>
@@ -308,7 +307,7 @@
 
                     <input id="Cellphone"
                            class="form-control"
-                           name="User.Cellphone" />
+                           name="User.Cellphone" required inputmode="numeric" data-digits="10" pattern="[0-9]{10}" maxlength="10" />
 
                 </div>
 
@@ -322,8 +321,7 @@
                     <input id="DateOfBirth"
                            type="date"
                            class="form-control"
-                           name="User.DateOfBirth"
-                           onchange="validateSouthAfricanId('SaIdNumber','DateOfBirth')" />
+                           name="User.DateOfBirth" max="@DateTime.Today.ToString("yyyy-MM-dd")" required />
 
                 </div>
 
@@ -340,10 +338,7 @@
 
                 <input id="SaIdNumber"
                        class="form-control"
-                       maxlength="13"
-                       name="User.SaIdNumber"
-                       onkeyup="validateSouthAfricanId('SaIdNumber','DateOfBirth')"
-                       onchange="validateSouthAfricanId('SaIdNumber','DateOfBirth')" />
+                       name="User.SaIdNumber" required inputmode="numeric" data-digits="13" pattern="[0-9]{13}" maxlength="13" />
 
                 <small id="idValidation"
                        style="color:red;font-weight:bold;">
@@ -362,7 +357,7 @@
 
                 <textarea id="HomeAddress"
                           class="form-control"
-                          name="User.HomeAddress"></textarea>
+                          name="User.HomeAddress" maxlength="255"></textarea>
 
             </div>
 
@@ -377,7 +372,7 @@
 
                 <input id="HpcsaNumber"
                        class="form-control"
-                       name="HpcsaNumber"
+                       name="HpcsaNumber" maxlength="20"
                        required />
 
             </div>
@@ -480,3 +475,5 @@
     }
 
 </script>
+
+

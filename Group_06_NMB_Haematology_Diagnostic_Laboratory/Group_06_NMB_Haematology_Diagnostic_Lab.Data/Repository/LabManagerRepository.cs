@@ -1,4 +1,6 @@
-﻿using Group_06_NMB_Haematology_Diagnostic_Lab.Data.DataAccess;
+using Dapper;
+using System.Data;
+using Group_06_NMB_Haematology_Diagnostic_Lab.Data.DataAccess;
 using Group_06_NMB_Haematology_Diagnostic_Lab.Data.Helpers;
 using Group_06_NMB_Haematology_Diagnostic_Lab.Data.Models;
 using System;
@@ -39,9 +41,11 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
             );
         }
         // -------------- CREATE/ADD DOCTORS ----------------
-        public async Task CreateDoctor(Doctor doctor)
+        public async Task CreateDoctor(Doctor doctor, string temporaryPassword)
         {
-            string password = PasswordHelper.GenerateTemporaryPassword();
+            if (!PasswordHelper.MeetsPolicy(temporaryPassword))
+                throw new ArgumentException("Temporary password does not meet the password policy.", nameof(temporaryPassword));
+            string password = temporaryPassword;
 
             string salt = PasswordHelper.GenerateSalt();
 
@@ -178,37 +182,32 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
         }
 
         // ------------------------   CREATE / ADD TECHNICIAN --------------------------------
-        public async Task<int> CreateTechnician(LabTechnician technician)
+        public async Task<int> CreateTechnician(LabTechnician technician, string temporaryPassword, IEnumerable<int> testTypeIds)
         {
-            string password = PasswordHelper.GenerateTemporaryPassword();
-
-            string salt = PasswordHelper.GenerateSalt();
-
-            string hash = PasswordHelper.HashPassword(password, salt);
-
-            return await _db.SaveDataAndReturn<int, object>(
-                "sp_LabTechnician_Create",
-                new
+            if (!PasswordHelper.MeetsPolicy(temporaryPassword))
+                throw new ArgumentException("Temporary password does not meet policy.", nameof(temporaryPassword));
+            var assignments = testTypeIds.Distinct().ToArray();
+            if (assignments.Length == 0) throw new ArgumentException("Assign at least one test type.", nameof(testTypeIds));
+            var salt = PasswordHelper.GenerateSalt();
+            var hash = PasswordHelper.HashPassword(temporaryPassword, salt);
+            var technicianId = 0;
+            // Account and required assignments commit together, before any welcome email is sent.
+            await _db.ExecuteInTransaction(async (connection, transaction) =>
+            {
+                technicianId = await connection.ExecuteScalarAsync<int>("sp_LabTechnician_Create", new
                 {
-                    technician.User.Name,
-                    technician.User.Surname,
-                    technician.User.Email,
-
-                    PasswordHash = hash,
-                    PasswordSalt = salt,
-
-                    technician.User.Cellphone,
-                    technician.User.HomeAddress,
-
-                    SA_ID_Number = technician.User.SaIdNumber,
-
-                    technician.User.DateOfBirth,
-
-                    technician.EmployeeNumber,
-
-                });
+                    technician.User.Name, technician.User.Surname, technician.User.Email,
+                    PasswordHash = hash, PasswordSalt = salt, technician.User.Cellphone,
+                    technician.User.HomeAddress, SA_ID_Number = technician.User.SaIdNumber,
+                    technician.User.DateOfBirth, technician.EmployeeNumber
+                }, transaction, commandType: CommandType.StoredProcedure);
+                await connection.ExecuteAsync("sp_LabTechnicianTestType_Replace", new
+                {
+                    LabTechnicianID = technicianId, TestTypeIDs = string.Join(",", assignments)
+                }, transaction, commandType: CommandType.StoredProcedure);
+            });
+            return technicianId;
         }
-
         //  ---------------------------- UPDATE TECHNICIAN -----------------------------------
         public async Task UpdateTechnician(LabTechnician technician)
         {
@@ -259,6 +258,14 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
             _db.GetData<LabTechnicianTestType, object>(
                 "sp_LabTechnicianTestType_GetByTechnician",
                 new { LabTechnicianID = technicianId });
+
+        public Task<IEnumerable<LabTechnicianTestType>> GetTestTypeAssignments() =>
+            _db.GetData<LabTechnicianTestType, object>("sp_LabTechnicianTestType_GetByTechnician", new { });
+
+        public Task ReplaceTestTypeTechnicians(int testTypeId, IEnumerable<int> technicianIds, string expectedTechnicianIds) =>
+            _db.SaveData("sp_LabTechnicianTestType_Replace", new {
+                TestTypeID = testTypeId, TechnicianIDs = string.Join(",", technicianIds.Distinct()),
+                ExpectedTechnicianIDs = expectedTechnicianIds });
 
         public Task ReplaceTechnicianTestTypes(int technicianId, IEnumerable<int> testTypeIds) =>
             _db.SaveData(
@@ -314,9 +321,11 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
         }
 
         // ------------------------- CREATE MANAGER -------------------------
-        public async Task CreateManager(LabManager manager)
+        public async Task CreateManager(LabManager manager, string temporaryPassword)
         {
-            string password = PasswordHelper.GenerateTemporaryPassword();
+            if (!PasswordHelper.MeetsPolicy(temporaryPassword))
+                throw new ArgumentException("Temporary password does not meet the password policy.", nameof(temporaryPassword));
+            string password = temporaryPassword;
 
             string salt = PasswordHelper.GenerateSalt();
 
@@ -533,16 +542,19 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
         public async Task UpdateConsumable(Consumable consumable)
         {
             await _db.SaveData(
-                "sp_Consumable_Update",
+                "sp_Consumable_UpdateDetails",
                 new
                 {
                     consumable.ConsumableId,
                     consumable.SupplierId,
-                    consumable.Name,
-                    consumable.ReorderLevel
+                    consumable.Name
                 });
         }
 
+        public Task AdjustConsumableLevel(int consumableId, string field, string mode, int value, int expectedValue, int performedByUserId, string? reason) =>
+            _db.SaveData("sp_Consumable_AdjustLevel", new {
+                ConsumableID = consumableId, Field = field, Mode = mode, Value = value,
+                ExpectedValue = expectedValue, PerformedByUserID = performedByUserId, Reason = reason });
         // ------------------------- DELETE CONSUMABLE -------------------------
 
         public async Task DeleteConsumable(int consumableId)

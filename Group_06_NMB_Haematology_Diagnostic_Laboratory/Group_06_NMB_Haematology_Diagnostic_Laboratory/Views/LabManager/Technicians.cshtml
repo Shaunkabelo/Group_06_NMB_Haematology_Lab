@@ -1,4 +1,4 @@
-﻿@using Group_06_NMB_Haematology_Diagnostic_Lab.Data.Models
+@using Group_06_NMB_Haematology_Diagnostic_Lab.Data.Models
 @model IEnumerable<LabTechnician>
 
 @{
@@ -187,6 +187,12 @@
                             <!-- ================= ACTIVE TECHNICIAN ================= -->
                             @if (technician.User.IsActive)
                             {
+                                <button type="button" class="btn btn-secondary btn-sm"
+                                        data-bs-toggle="offcanvas" data-bs-target="#technicianAssignmentsPanel"
+                                        onclick="openTechnicianAssignments(this)"
+                                        data-id="@technician.LabTechnicianId"
+                                        data-name="@technician.User.Name @technician.User.Surname"
+                                        data-assigned="@string.Join(",", assignedIds)">Assign Tests</button>
                                 <form asp-action="DeleteTechnician"
                                       asp-controller="LabManager"
                                       method="post"
@@ -279,11 +285,10 @@
 
     <div class="offcanvas-body">
 
-        <form id="technicianForm"
+        <form id="technicianForm" data-staff-validation
               asp-controller="LabManager"
               asp-action="CreateTechnician"
-              method="post"
-              onsubmit="return validateSouthAfricanId('TechnicianSaIdNumber','TechnicianDateOfBirth');">
+              method="post">
 
             <input type="hidden"
                    id="LabTechnicianId"
@@ -301,7 +306,7 @@
 
                 <input id="TechnicianName"
                        class="form-control"
-                       name="User.Name"
+                       name="User.Name" maxlength="100"
                        required />
 
             </div>
@@ -310,7 +315,7 @@
                 <label class="form-label">Employee Number</label>
                 <input id="TechnicianEmployeeNumber"
                        class="form-control"
-                       name="EmployeeNumber"
+                       name="EmployeeNumber" maxlength="50"
                        required />
             </div>
 
@@ -325,7 +330,7 @@
 
                 <input id="TechnicianSurname"
                        class="form-control"
-                       name="User.Surname"
+                       name="User.Surname" maxlength="100"
                        required />
 
             </div>
@@ -342,7 +347,7 @@
                 <input id="TechnicianEmail"
                        type="email"
                        class="form-control"
-                       name="User.Email"
+                       name="User.Email" maxlength="150"
                        required />
 
             </div>
@@ -360,7 +365,7 @@
 
                     <input id="TechnicianCellphone"
                            class="form-control"
-                           name="User.Cellphone" />
+                           name="User.Cellphone" required inputmode="numeric" data-digits="10" pattern="[0-9]{10}" maxlength="10" />
 
                 </div>
 
@@ -374,8 +379,7 @@
                     <input id="TechnicianDateOfBirth"
                            type="date"
                            class="form-control"
-                           name="User.DateOfBirth"
-                           onchange="validateSouthAfricanId('TechnicianSaIdNumber','TechnicianDateOfBirth')" />
+                           name="User.DateOfBirth" max="@DateTime.Today.ToString("yyyy-MM-dd")" required />
 
                 </div>
 
@@ -392,10 +396,7 @@
 
                 <input id="TechnicianSaIdNumber"
                        class="form-control"
-                       maxlength="13"
-                       name="User.SaIdNumber"
-                       onkeyup="validateSouthAfricanId('TechnicianSaIdNumber','TechnicianDateOfBirth')"
-                       onchange="validateSouthAfricanId('TechnicianSaIdNumber','TechnicianDateOfBirth')" />
+                       name="User.SaIdNumber" required inputmode="numeric" data-digits="13" pattern="[0-9]{13}" maxlength="13" />
 
                 <small id="idValidation"
                        style="color:red;font-weight:bold;">
@@ -414,7 +415,7 @@
 
                 <textarea id="TechnicianHomeAddress"
                           class="form-control"
-                          name="User.HomeAddress"></textarea>
+                          name="User.HomeAddress" maxlength="255"></textarea>
 
             </div>
 
@@ -423,18 +424,19 @@
                 <small class="text-muted d-block mb-3">
                     Select at least one test type. The same test type can be assigned to multiple technicians.
                 </small>
-                @foreach (var testType in testTypes)
+                @foreach (var category in testTypes.GroupBy(t => t.TestCategory?.CategoryName ?? "Uncategorised").OrderBy(g => g.Key))
                 {
-                    <div class="form-check mb-2">
-                        <input class="form-check-input technician-test-type"
-                               type="checkbox"
-                               name="testTypeIds"
-                               value="@testType.TestTypeId"
-                               id="technician-test-@testType.TestTypeId" />
-                           <label class="form-check-label" for="technician-test-@testType.TestTypeId">
-                            @testType.TestName
-                        </label>
-                    </div>
+                    <fieldset class="border rounded p-3 mb-3">
+                        <legend class="float-none w-auto px-2 fs-6">@category.Key</legend>
+                        @foreach (var testType in category.OrderBy(t => t.TestName))
+                        {
+                            <div class="form-check mb-2">
+                                <input class="form-check-input technician-test-type" type="checkbox" name="testTypeIds"
+                                       value="@testType.TestTypeId" id="technician-test-@testType.TestTypeId" />
+                                <label class="form-check-label" for="technician-test-@testType.TestTypeId">@testType.TestName</label>
+                            </div>
+                        }
+                    </fieldset>
                 }
             </div>
 
@@ -468,6 +470,43 @@
 <!-- JAVASCRIPT -->
 <!-- ========================================================= -->
 
+<div class="offcanvas offcanvas-end" id="technicianAssignmentsPanel" tabindex="-1"
+     aria-labelledby="technicianAssignmentsTitle" style="width:min(600px,100vw)">
+    <div class="offcanvas-header">
+        <h4 id="technicianAssignmentsTitle">Assign tests</h4>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+    <div class="offcanvas-body">
+        <p id="technicianAssignmentName" class="fw-semibold"></p>
+        <p class="text-muted">Choose one or more test types. Each test can be assigned to multiple technicians.</p>
+        <label for="technicianAssignmentSearch" class="form-label">Search test types or categories</label>
+        <input id="technicianAssignmentSearch" type="search" class="form-control mb-3" autocomplete="off" />
+        <form asp-controller="LabManager" asp-action="UpdateTechnicianTestTypes" method="post" id="technicianAssignmentForm">
+            <input type="hidden" name="technicianId" id="assignmentTechnicianId" />
+            <input type="hidden" name="filter" value="@ViewBag.Filter" />
+            <div id="technicianAssignmentChoices">
+                @foreach (var category in testTypes.GroupBy(t => t.TestCategory?.CategoryName ?? "Uncategorised").OrderBy(g => g.Key))
+                {
+                    <fieldset class="border rounded p-3 mb-3">
+                        <legend class="float-none w-auto px-2 fs-6">@category.Key</legend>
+                        @foreach (var testType in category.OrderBy(t => t.TestName))
+                        {
+                            <div class="form-check mb-2">
+                                <input class="form-check-input assignment-test-choice" type="checkbox" name="testTypeIds"
+                                       value="@testType.TestTypeId" id="assignment-test-@testType.TestTypeId" />
+                                <label class="form-check-label" for="assignment-test-@testType.TestTypeId">@testType.TestName</label>
+                            </div>
+                        }
+                    </fieldset>
+                }
+
+            </div>
+            <p id="assignmentSearchEmpty" class="text-muted" hidden>No matching test types.</p>
+            <button type="submit" class="btn btn-primary">Save assignments</button>
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="offcanvas">Cancel</button>
+        </form>
+    </div>
+</div>
 <script>
 
     // =========================================================
@@ -476,6 +515,7 @@
 
     function openCreateTechnician()
     {
+        setInitialTestAssignments(true);
         document.getElementById("technicianPanelTitle").innerText =
             "Add Technician";
 
@@ -500,6 +540,7 @@
 
     function openEditTechnician(button)
     {
+        setInitialTestAssignments(false);
         document.getElementById("technicianPanelTitle").innerText =
             "Edit Technician";
 
@@ -593,4 +634,43 @@
         return true;
     }
 
+    function setInitialTestAssignments(creating) {
+        const section = document.getElementById("testTypeAssignmentSection");
+        section.hidden = !creating;
+        section.querySelectorAll("input").forEach(input => input.disabled = !creating);
+    }
+    function filterTechnicianAssignments() {
+        const query = document.getElementById("technicianAssignmentSearch").value.trim().toLowerCase();
+        let visible = 0;
+        document.querySelectorAll("#technicianAssignmentChoices fieldset").forEach(group => {
+            const category = group.querySelector("legend").textContent.toLowerCase();
+            let matches = 0;
+            group.querySelectorAll(".form-check").forEach(row => {
+                const show = (category + " " + row.textContent.toLowerCase()).includes(query);
+                row.hidden = !show;
+                if (show) matches++;
+            });
+            group.hidden = matches === 0;
+            visible += matches;
+        });
+        document.getElementById("assignmentSearchEmpty").hidden = visible > 0;
+    }
+    function openTechnicianAssignments(button) {
+        document.getElementById("assignmentTechnicianId").value = button.dataset.id;
+        document.getElementById("technicianAssignmentName").textContent = button.dataset.name;
+        const selected = (button.dataset.assigned || "").split(",");
+        document.querySelectorAll(".assignment-test-choice").forEach(input => input.checked = selected.includes(input.value));
+        document.getElementById("technicianAssignmentSearch").value = "";
+        filterTechnicianAssignments();
+    }
+    document.getElementById("technicianAssignmentSearch").addEventListener("input", filterTechnicianAssignments);
+    document.getElementById("technicianAssignmentForm").addEventListener("submit", event => {
+        if (!document.querySelector(".assignment-test-choice:checked")) {
+            event.preventDefault();
+            alert("Assign at least one test type.");
+        }
+    });
 </script>
+
+
+

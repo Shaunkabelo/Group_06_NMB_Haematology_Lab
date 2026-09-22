@@ -1,4 +1,4 @@
-﻿@model IEnumerable<Group_06_NMB_Haematology_Diagnostic_Lab.Data.Models.StockOrder>
+@model IEnumerable<Group_06_NMB_Haematology_Diagnostic_Lab.Data.Models.StockOrder>
 
 @{
     ViewData["Title"] = "Stock Orders";
@@ -23,7 +23,7 @@ var consumables =
 
 }
 
-<div class="container-fluid px-4 py-4">
+<div class="container-fluid px-4 py-4 orders-page">
 
     <!-- ========================================================= -->
     <!-- PAGE HEADER -->
@@ -595,7 +595,7 @@ var consumables =
                     </div>
 
 
-                    <!-- CONSUMABLE TABLE -->
+                    <p id="supplierItemsMessage" class="text-muted" role="status">Select a supplier to see their consumables.</p><!-- CONSUMABLE TABLE -->
 
                     <div class="table-responsive"
                          style="max-height: 450px;">
@@ -645,7 +645,7 @@ var consumables =
                                     consumable.ReorderLevel;
 
                                     <tr class="consumable-row @(isLowStock ? "table-danger" : "")"
-                                        data-name="@consumable.Name.ToLower()">
+                                        data-supplier="@consumable.SupplierId" data-name="@consumable.Name.ToLower()">
 
                                         <td>
 
@@ -963,7 +963,7 @@ var consumables =
                         </label>
 
                         <textarea name="cancelReason"
-                                  id="cancelReason"
+                                  id="cancelReason" maxlength="255"
                                   class="form-control"
                                   rows="4"
                                   required
@@ -1105,32 +1105,28 @@ var consumables =
         const consumableSearch =
             document.getElementById("consumableSearch");
 
-        consumableSearch.addEventListener(
-            "input",
-            function () {
-
-                const search =
-                    this.value.toLowerCase().trim();
-
-                const rows =
-                    document.querySelectorAll(".consumable-row");
-
-                rows.forEach(row => {
-
-                    const name =
-                        row.dataset.name;
-
-                    row.style.display =
-                        name.includes(search)
-                            ? ""
-                            : "none";
-
-                });
-
-            }
-        );
-
-
+        function filterOrderConsumables() {
+            const supplier = document.getElementById("supplierId").value;
+            const search = consumableSearch.value.trim().toLowerCase();
+            let visible = 0;
+            document.querySelectorAll(".consumable-row").forEach(row => {
+                const belongs = !!supplier && row.dataset.supplier === supplier;
+                const check = row.querySelector(".consumable-check");
+                const quantity = row.querySelector(".quantity-input");
+                check.disabled = !belongs;
+                if (!belongs) { check.checked = false; quantity.value = ""; }
+                quantity.disabled = !belongs || !check.checked;
+                row.style.display = belongs && row.dataset.name.includes(search) ? "" : "none";
+                if (row.style.display !== "none") visible++;
+            });
+            document.getElementById("supplierItemsMessage").textContent = !supplier
+                ? "Select a supplier to see their consumables."
+                : visible ? "" : "No consumables match this supplier and search.";
+            updateOrderSummary();
+        }
+        consumableSearch.addEventListener("input", filterOrderConsumables);
+        document.getElementById("supplierId").addEventListener("change", filterOrderConsumables);
+        createOrderModal.addEventListener("shown.bs.modal", filterOrderConsumables);
         // ============================================================
         // CONSUMABLE SELECTION
         // ============================================================
@@ -1482,4 +1478,31 @@ var consumables =
     </script>
 
 }
+
+
+@section Styles {
+<style>
+.orders-page { color: var(--text); }
+.orders-page h2 { font-size: 24px; }
+.orders-page .card { border: 1px solid var(--border) !important; border-radius: 12px; box-shadow: none !important; overflow: hidden; }
+.orders-page .card-header { background: white; padding: 18px 20px; border-bottom: 1px solid var(--border); }
+.orders-page .table th { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .04em; background: #f8fafc; }
+.orders-page .table > :not(caption) > * > * {
+    padding: 14px 12px;
+    vertical-align: middle;
+    border-color: var(--border);
+}
+#ordersTable th:nth-child(4), #ordersTable td:nth-child(4) { text-align: center; }
+#ordersTable th:last-child, #ordersTable td:last-child { text-align: right; }
+#ordersTable th, #ordersTable td:nth-child(3), #ordersTable td:last-child { white-space: nowrap; }
+.orders-page .btn-primary, #createOrderModal .btn-primary { background: var(--teal); border-color: var(--teal); color: #073d35; font-weight: 600; }
+.orders-page .table-responsive { overflow-x: auto; }
+#createOrderModal .modal-content { max-height: calc(100dvh - 3.5rem); }
+#createOrderForm { display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
+#createOrderForm .modal-body { overflow-y: auto; min-height: 0; }
+#createOrderForm .modal-header, #createOrderForm .modal-footer { flex-shrink: 0; }
+#orderDetailsCanvas { max-width: 100vw; }
+</style>
+}
+
 

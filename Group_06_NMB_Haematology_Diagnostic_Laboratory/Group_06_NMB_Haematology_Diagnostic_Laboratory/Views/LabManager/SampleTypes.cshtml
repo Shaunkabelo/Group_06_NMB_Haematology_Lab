@@ -1,4 +1,4 @@
-﻿@using Group_06_NMB_Haematology_Diagnostic_Lab.Data.Models
+@using Group_06_NMB_Haematology_Diagnostic_Lab.Data.Models
 @model IEnumerable<SampleType>
 
 @{
@@ -258,7 +258,7 @@
 
     <div class="offcanvas-body">
 
-        <form id="sampleTypeForm"
+        <form id="sampleTypeForm" data-staff-validation
               asp-controller="LabManager"
               asp-action="CreateSampleType"
               method="post">
@@ -399,3 +399,4 @@
     }
 
 </script>
+
