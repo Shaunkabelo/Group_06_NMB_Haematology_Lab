@@ -7,6 +7,14 @@ public class AuthenticationRepository(ISqlDataAccess db) : IAuthenticationReposi
     public async Task<User?> GetActiveUserByEmail(string email) =>
         (await db.GetData<User, object>("sp_Auth_GetActiveUserByEmail", new { Email = email.Trim() })).FirstOrDefault();
 
+    public async Task<User?> GetActiveUserById(int userId) =>
+        (await db.GetData<User, object>("sp_Auth_GetUserById", new { UserID = userId })).FirstOrDefault();
+
+    public async Task<bool> UpdateProfile(int userId, Guid securityStamp, string name, string surname, string email, string? cellphone, string? homeAddress) =>
+        (await db.GetData<bool, object>("sp_Auth_UpdateProfile", new {
+            UserID = userId, SecurityStamp = securityStamp, Name = name, Surname = surname,
+            Email = email, Cellphone = cellphone, HomeAddress = homeAddress })).Single();
+
     public Task RecordLogin(int userId) =>
         db.SaveData("sp_Auth_RecordLogin", new { UserID = userId });
 

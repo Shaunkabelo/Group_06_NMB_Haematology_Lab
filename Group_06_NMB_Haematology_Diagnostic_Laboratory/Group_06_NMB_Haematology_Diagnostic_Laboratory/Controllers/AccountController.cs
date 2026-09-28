@@ -15,7 +15,7 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers;
 
 [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
 public class AccountController(IAuthenticationRepository repository, PasswordResetQueue resetQueue,
-    ILogger<AccountController> logger) : Controller
+    ILogger<AccountController> logger, AccountNavigation navigation) : Controller
 {
     [AllowAnonymous, HttpGet]
     public IActionResult Login(string? returnUrl = null)
@@ -23,7 +23,7 @@ public class AccountController(IAuthenticationRepository repository, PasswordRes
         ViewData["ReturnUrl"] = returnUrl;
         if (User.Identity?.IsAuthenticated == true)
             return User.HasClaim("MustChangePassword", "True")
-                ? RedirectToAction(nameof(ChangePassword)) : RedirectAfterLogin(User.FindFirstValue(ClaimTypes.Role), returnUrl);
+                ? RedirectToAction(nameof(ChangePassword)) : RedirectToAction(nameof(Continue));
         return View();
     }
 
@@ -67,24 +67,13 @@ public class AccountController(IAuthenticationRepository repository, PasswordRes
             });
         await repository.RecordLogin(user.UserId);
         if (state.MustChangePassword) return RedirectToAction(nameof(ChangePassword));
-        return RedirectAfterLogin(state.Role, returnUrl);
-    }
-
-    private IActionResult RedirectAfterLogin(string? role, string? returnUrl)
-    {
-        // Do not send an authenticated user straight back to the sign-in form.
+        var destination = navigation.Destination(state.Role);
+        var destinationUrl = Url.Action(destination.Action, destination.Controller);
         if (Url.IsLocalUrl(returnUrl) &&
-            !string.Equals(returnUrl!.Split('?', '#')[0].TrimEnd('/'),
-                Url.Action(nameof(Login), "Account"), StringComparison.OrdinalIgnoreCase))
+            (string.Equals(returnUrl, destinationUrl, StringComparison.OrdinalIgnoreCase) ||
+             string.Equals(returnUrl, Url.Action(nameof(Profile), "Account"), StringComparison.OrdinalIgnoreCase)))
             return LocalRedirect(returnUrl!);
-
-        return role switch
-        {
-            "Doctor" => RedirectToAction("Dashboard", "Doctor"),
-            "LabManager" => RedirectToAction("Dashboard", "LabManager"),
-            "Admin" => RedirectToAction("Dashboard", "Admin"),
-            _ => RedirectToAction("Index", "Home")
-        };
+        return RedirectToAction(destination.Action, destination.Controller);
     }
 
     [AllowAnonymous, HttpGet]
@@ -142,7 +131,7 @@ public class AccountController(IAuthenticationRepository repository, PasswordRes
         if (string.IsNullOrEmpty(currentPassword) || currentPassword.Length > 128)
             ModelState.AddModelError("", "Enter your current password.");
         if (!ModelState.IsValid) return View();
-        var user = await repository.GetActiveUserByEmail(User.FindFirstValue(ClaimTypes.Email)!);
+        var user = await repository.GetActiveUserById(int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!));
         if (user == null || !PasswordHelper.VerifyPassword(currentPassword!, user.PasswordHash, user.PasswordSalt))
         {
             ModelState.AddModelError("", "Your current password is incorrect.");
@@ -174,6 +163,76 @@ public class AccountController(IAuthenticationRepository repository, PasswordRes
     [AllowAnonymous, HttpGet]
     public IActionResult AccessDenied() => View();
 
+    [Authorize, HttpGet]
+    public IActionResult Continue()
+    {
+        if (User.HasClaim("MustChangePassword", "True")) return RedirectToAction(nameof(ChangePassword));
+        var destination = navigation.Destination(User);
+        return RedirectToAction(destination.Action, destination.Controller);
+    }
+
+    [Authorize, HttpGet]
+    public IActionResult Workspace() => View();
+
+    [Authorize, HttpGet]
+    public async Task<IActionResult> Profile()
+    {
+        var user = await repository.GetActiveUserById(int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!));
+        if (user == null) return Challenge();
+        return View(user);
+    }
+
+    [Authorize, HttpPost, ValidateAntiForgeryToken, EnableRateLimiting("account")]
+    public async Task<IActionResult> Profile(string? name, string? surname, string? email,
+        string? cellphone, string? homeAddress, string? currentPassword)
+    {
+        var user = await repository.GetActiveUserById(int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!));
+        if (user == null) return Challenge();
+        name = name?.Trim();
+        surname = surname?.Trim();
+        email = email?.Trim();
+        cellphone = cellphone?.Trim();
+        homeAddress = homeAddress?.Trim();
+        if (string.IsNullOrWhiteSpace(name) || name.Length > 100)
+            ModelState.AddModelError("", "Enter your first name (up to 100 characters).");
+        if (string.IsNullOrWhiteSpace(surname) || surname.Length > 100)
+            ModelState.AddModelError("", "Enter your surname (up to 100 characters).");
+        if ((!string.IsNullOrEmpty(name) && !System.Text.RegularExpressions.Regex.IsMatch(name, @"^[\p{L}\p{M} .'\u2019-]+$")) ||
+            (!string.IsNullOrEmpty(surname) && !System.Text.RegularExpressions.Regex.IsMatch(surname, @"^[\p{L}\p{M} .'\u2019-]+$")))
+            ModelState.AddModelError("", "Names and surnames must not contain numbers or symbols.");
+        if (!ValidEmail(email)) ModelState.AddModelError("", "Enter a valid email address.");
+        if (!string.IsNullOrEmpty(cellphone) && !System.Text.RegularExpressions.Regex.IsMatch(cellphone, "^[0-9]{10}$"))
+            ModelState.AddModelError("", "Cellphone number must contain exactly 10 digits.");
+        if (homeAddress?.Length > 255) ModelState.AddModelError("", "Home address must be 255 characters or fewer.");
+        var emailChanged = !string.Equals(user.Email, email, StringComparison.OrdinalIgnoreCase);
+        if (emailChanged && (string.IsNullOrEmpty(currentPassword) || currentPassword.Length > 128 ||
+            !PasswordHelper.VerifyPassword(currentPassword, user.PasswordHash, user.PasswordSalt)))
+            ModelState.AddModelError("", "Enter your current password to change your email address / username.");
+        if (ModelState.IsValid)
+        {
+            try
+            {
+                if (await repository.UpdateProfile(user.UserId, user.SecurityStamp, name!, surname!, email!, cellphone, homeAddress))
+                {
+                    await HttpContext.SignOutAsync();
+                    TempData["AccountMessage"] = "Your profile was saved. Sign in again using " + email + ".";
+                    return RedirectToAction(nameof(Login));
+                }
+                ModelState.AddModelError("", "Your account changed while editing. Reload this page and try again.");
+            }
+            catch (Microsoft.Data.SqlClient.SqlException ex) when (ex.Number is 2601 or 2627)
+            {
+                ModelState.AddModelError("", "That email address is already in use. Choose another address.");
+            }
+        }
+        user.Name = name ?? "";
+        user.Surname = surname ?? "";
+        user.Email = email ?? "";
+        user.Cellphone = cellphone ?? "";
+        user.HomeAddress = homeAddress ?? "";
+        return View(user);
+    }
+
     private void ValidateNewPassword(string? password, string? confirmation)
     {
         if (!PasswordHelper.MeetsPolicy(password))
@@ -185,3 +244,5 @@ public class AccountController(IAuthenticationRepository repository, PasswordRes
     private static bool ValidToken(string? token) => token is { Length: 64 } && token.All(Uri.IsHexDigit);
     private static string TokenHash(string token) => Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(token)));
 }
+
+

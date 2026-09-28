@@ -1,0 +1,64 @@
+@model Group_06_NMB_Haematology_Diagnostic_Lab.Data.Models.User
+@{
+    ViewData["Title"] = "My profile";
+    var useManagerLayout = User.IsInRole("LabManager");
+    Layout = useManagerLayout
+        ? "~/Views/Shared/_LabManager_Layout.cshtml"
+        : "~/Views/Shared/_UserAccountLayout.cshtml";
+}
+<div class="shared-profile">
+<p class="subtitle">Manage your personal details, email address and password.</p>
+<div class="profile-grid">
+    <section class="profile-card">
+        <header><h2>Personal details</h2><span class="badge">Active @Model.Role</span></header>
+        <form asp-controller="Account" asp-action="Profile" method="post" class="card-body">
+            <div asp-validation-summary="All" class="error" role="alert"></div>
+            <div class="field-row">
+                <div><label for="name">First name</label><input id="name" name="name" value="@Model.Name" maxlength="100" autocomplete="given-name" required /></div>
+                <div><label for="surname">Surname</label><input id="surname" name="surname" value="@Model.Surname" maxlength="100" autocomplete="family-name" required /></div>
+            </div>
+            <label for="email">Email address / username</label>
+            <input id="email" name="email" value="@Model.Email" type="email" maxlength="150" autocomplete="email" required />
+            <p class="hint">Use a mailbox you can access. Password reset links are sent here.</p>
+            <div class="field-row">
+                <div><label for="cellphone">Cellphone</label><input id="cellphone" name="cellphone" value="@Model.Cellphone" type="tel" inputmode="numeric" pattern="[0-9]{10}" maxlength="10" autocomplete="tel" /></div>
+                <div><label for="dateOfBirth">Date of birth</label><input id="dateOfBirth" type="date" value="@Model.DateOfBirth?.ToString("yyyy-MM-dd")" readonly aria-readonly="true" /></div>
+            </div>
+            <label for="homeAddress">Home address</label>
+            <input id="homeAddress" name="homeAddress" value="@Model.HomeAddress" maxlength="255" autocomplete="street-address" />
+            <label for="emailPassword">Current password (only when changing email)</label>
+            <div class="password-field"><input id="emailPassword" name="currentPassword" type="password" maxlength="128" autocomplete="current-password" /><button type="button" data-password-toggle="emailPassword" aria-label="Show password" aria-pressed="false"></button></div>
+            <p class="hint">After saving, sign in again so your account details are refreshed on all devices.</p>
+            <button class="primary" type="submit">Save personal details</button>
+        </form>
+    </section>
+    <section class="profile-card">
+        <header><h2>Security</h2></header>
+        <form asp-controller="Account" asp-action="ChangePassword" method="post" class="card-body">
+            <label for="currentPassword">Current password</label>
+            <div class="password-field"><input id="currentPassword" name="currentPassword" type="password" maxlength="128" autocomplete="current-password" required /><button type="button" data-password-toggle="currentPassword" aria-label="Show password" aria-pressed="false"></button></div>
+            <partial name="_NewPasswordFields" />
+            <button class="primary" type="submit">Change password</button>
+            <p class="hint">Changing your password signs you out on all devices.</p>
+        </form>
+    </section>
+</div>
+
+</div>
+@section Styles {
+    <link rel="stylesheet" href="~/css/profile-content.css" asp-append-version="true" />
+}
+@section Scripts {
+<script>
+document.querySelectorAll('input[name="name"], input[name="surname"]').forEach(field => {
+    field.addEventListener("input", () => { field.value = field.value.replace(/[^\p{L}\p{M} .'\u2019-]/gu, ""); });
+});
+document.getElementById("cellphone").addEventListener("input", event => {
+    event.target.value = event.target.value.replace(/[^0-9]/g, "").slice(0,10);
+});
+</script>
+    @if (useManagerLayout)
+    {
+        <script src="~/js/account.js" asp-append-version="true"></script>
+    }
+}
