@@ -302,7 +302,7 @@ var consumables =
                                     _ => "bg-secondary"
                                 };
 
-                                <tr class="order-row">
+                                <tr class="stock-order-row">
 
                                     <td>
                                         <strong>
@@ -570,6 +570,37 @@ var consumables =
                     </div>
 
 
+                    <section class="border rounded p-3 mb-4" aria-labelledby="orderLowStockHeading">
+                        <h6 id="orderLowStockHeading" class="fw-bold mb-1">Low Stock Consumables</h6>
+                        <p class="text-muted small mb-3">Check stock levels here while preparing your order. Select a supplier to show only their consumables.</p>
+                        <div class="table-responsive" style="max-height: 240px; overflow-y: auto;">
+                            <table class="table table-sm align-middle mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th scope="col">Consumable</th>
+                                        <th scope="col">Supplier</th>
+                                        <th scope="col">Stock Level</th>
+                                        <th scope="col">Reorder Level</th>
+                                        <th scope="col">Below Reorder Level</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var item in lowStockConsumables.OrderBy(c => c.QuantityOnHand))
+                                    {
+                                        <tr class="order-low-stock-row" data-supplier="@item.SupplierId">
+                                            <td><strong>@item.Name</strong></td>
+                                            <td>@(item.Supplier?.SupplierName ?? "Unknown")</td>
+                                            <td><span class="badge bg-danger">@item.QuantityOnHand</span></td>
+                                            <td>@item.ReorderLevel</td>
+                                            <td>@Math.Max(0, item.ReorderLevel - item.QuantityOnHand)</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                        <p id="orderLowStockEmpty" class="text-muted small mb-0 mt-2" role="status"
+                           hidden="@(lowStockConsumables.Any())">No consumables currently require reordering.</p>
+                    </section>
                     <!-- CONSUMABLE SEARCH -->
 
                     <div class="mb-3">
@@ -1013,7 +1044,7 @@ var consumables =
             document.getElementById("orderSearch");
 
         const orderRows =
-            document.querySelectorAll(".order-row");
+            document.querySelectorAll("#ordersTable .stock-order-row");
 
         const noSearchResults =
             document.getElementById("noSearchResults");
@@ -1108,6 +1139,16 @@ var consumables =
         function filterOrderConsumables() {
             const supplier = document.getElementById("supplierId").value;
             const search = consumableSearch.value.trim().toLowerCase();
+            let lowStockVisible = 0;
+            document.querySelectorAll("#createOrderModal .order-low-stock-row").forEach(row => {
+                row.hidden = !!supplier && row.dataset.supplier !== supplier;
+                if (!row.hidden) lowStockVisible++;
+            });
+            const lowStockEmpty = document.getElementById("orderLowStockEmpty");
+            lowStockEmpty.hidden = lowStockVisible > 0;
+            lowStockEmpty.textContent = supplier
+                ? "This supplier has no consumables currently requiring reordering."
+                : "No consumables currently require reordering.";
             let visible = 0;
             document.querySelectorAll(".consumable-row").forEach(row => {
                 const belongs = !!supplier && row.dataset.supplier === supplier;
