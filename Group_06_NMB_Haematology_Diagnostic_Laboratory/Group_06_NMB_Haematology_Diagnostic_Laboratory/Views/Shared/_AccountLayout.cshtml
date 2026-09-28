@@ -1,0 +1,30 @@
+@{
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="referrer" content="no-referrer" />
+    <title>@ViewData["Title"] - NMB-HLabSys</title>
+    <link rel="stylesheet" href="~/css/account.css" asp-append-version="true" />
+</head>
+<body>
+    <main class="account-shell">
+        <section class="welcome">
+            <a class="brand" asp-controller="Home" asp-action="Index">NMB-HLabSys</a>
+            <span class="eyebrow">Lab intelligence for every care team</span>
+            <h1>Welcome to NMB-Haematology Lab System</h1>
+            <p>Connected care starts here. Your workspace for laboratory diagnostics, staff and supplies.</p>
+            <ul><li>Test catalogues and diagnostic workflows</li><li>Laboratory staff and consumable management</li><li>Secure access for your care team</li></ul>
+            <small>Nelson Mandela Bay Haematology Diagnostic Laboratory</small>
+        </section>
+        <section class="account-card">
+            <div class="card-brand"><span aria-hidden="true">HL</span><div><strong>NMB-HLabSys</strong><p>Laboratory management system</p></div></div>
+            @RenderBody()
+        </section>
+    </main>
+    <script src="~/js/account.js" asp-append-version="true"></script>
+</body>
+</html>
