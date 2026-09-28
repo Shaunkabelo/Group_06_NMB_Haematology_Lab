@@ -36,6 +36,19 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
 
 			return result.FirstOrDefault();
 		}
+
+		public async Task<int?> GetDoctorIdByUserIdAsync(
+	   int userId)
+		{
+			var result = await _db.GetData<int, dynamic>(
+				"dbo.spDoctor_GetByUserId",
+				new { UserID = userId }
+			);
+
+			return result
+				.Select(id => (int?)id)
+				.FirstOrDefault();
+		}
 		public async Task<DoctorAccountDto?>GetDoctorAccountAsync(int userId)
 				{
 					var result =

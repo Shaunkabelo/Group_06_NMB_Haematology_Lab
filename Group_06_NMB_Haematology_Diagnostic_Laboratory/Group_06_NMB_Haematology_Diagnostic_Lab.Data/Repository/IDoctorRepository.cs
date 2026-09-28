@@ -9,6 +9,9 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
 {
 	public interface IDoctorRepository
 	{
+		
+		//RESULTS
+		Task<int?> GetDoctorIdByUserIdAsync(int userId);
 		//================
 		//Login
 		//=============

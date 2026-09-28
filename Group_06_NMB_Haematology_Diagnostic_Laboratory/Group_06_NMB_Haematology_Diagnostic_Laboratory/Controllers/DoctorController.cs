@@ -3,21 +3,99 @@ using Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Cryptography;
-using Microsoft.AspNetCore.Authorization;
 
 namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 {
-	//[Authorize(Roles = "Doctor")]
 	public class DoctorController : Controller
 	{
+
 		private readonly IDoctorRepository _doctorRepository;
+		private readonly IDoctorResultsRepository _doctorResultsRepository;
 
 		public DoctorController(
-			IDoctorRepository doctorRepository)
+			IDoctorRepository doctorRepository,
+			IDoctorResultsRepository doctorResultsRepository)
 		{
 			_doctorRepository = doctorRepository;
+			_doctorResultsRepository = doctorResultsRepository;
 		}
+		// ============================================================
+		//ALERTS
+		// ============================================================
+		[Authorize(Roles = "Doctor")]
+		[HttpGet]
+		public async Task<IActionResult> GetDoctorAlerts(
+	DateTime? startDate,
+	DateTime? endDate)
+		{
+			var today = DateTime.Today;
 
+			var start = (startDate ?? today.AddDays(-5)).Date;
+			var end = (endDate ?? today).Date;
+
+			if (start > end)
+			{
+				return BadRequest(new
+				{
+					message = "Start date cannot be after end date."
+				});
+			}
+
+			var userIdValue = User.FindFirst(
+				System.Security.Claims.ClaimTypes.NameIdentifier
+			)?.Value;
+
+			if (!int.TryParse(userIdValue, out int userId))
+			{
+				return Unauthorized();
+			}
+
+			int? doctorId = await _doctorRepository
+				.GetDoctorIdByUserIdAsync(userId);
+
+			if (!doctorId.HasValue)
+			{
+				return Forbid();
+			}
+
+			var alerts = await _doctorResultsRepository
+				.GetAbnormalAlertsAsync(
+					doctorId.Value,
+					start,
+					end
+				);
+
+			return Json(alerts);
+		}
+		// ============================================================
+		//RESULTS
+		// ============================================================
+		[Authorize(Roles = "Doctor")]
+		[HttpGet]
+		public async Task<IActionResult> GetDoctorResults()
+		{
+			var userIdValue = User.FindFirst(
+				System.Security.Claims.ClaimTypes.NameIdentifier
+			)?.Value;
+
+			if (!int.TryParse(userIdValue, out int userId))
+			{
+				return Unauthorized();
+			}
+
+			int? doctorId = await _doctorRepository
+				.GetDoctorIdByUserIdAsync(userId);
+
+			if (doctorId == null)
+			{
+				return Forbid();
+			}
+
+			var results = await _doctorResultsRepository
+				.GetDoctorResultsAsync(doctorId.Value);
+
+			return Json(results);
+		}
 		private bool VerifyPassword(string password,string storedHash,string storedSalt)
 				{
 					byte[] saltBytes =

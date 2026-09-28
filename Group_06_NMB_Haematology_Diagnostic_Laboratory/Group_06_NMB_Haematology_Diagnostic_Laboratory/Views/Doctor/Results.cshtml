@@ -6,12 +6,12 @@
 <div class="page-body">
     <div class="section-header">
         <div class="section-title">Review and Release Results</div>
-        <div class="section-sub">Manage result cards, send patient emails, and release completed reports.</div>
+        <div class="section-sub">Manage result cards, request patient appointments, and release completed reports.</div>
     </div>
 
     <div class="card" style="margin-bottom: 18px;">
-        <div class="card-body" style="padding: 16px 24px; display: grid; grid-template-columns: 1fr auto; gap: 16px; align-items: center;">
-            <div>
+        <div class="card-body" style="padding: 16px 24px; display: flex; flex-wrap: wrap; gap: 16px; align-items: center;">
+            <div style="flex: 1 1 260px; min-width: 0;">
                 <div class="form-label">Search</div>
                 <input id="results-search" class="form-control" type="search" placeholder="Search by patient, test type, or request ID..." oninput="renderResultCards()" />
             </div>
@@ -22,70 +22,6 @@
     </div>
 
     <div id="results-list"></div>
-</div>
-
-<div class="modal-overlay" id="modal-release">
-    <div class="modal modal-md release-modal" role="dialog" aria-modal="true" aria-labelledby="release-modal-title" aria-describedby="release-modal-description">
-        <div class="modal-header">
-            <div>
-                <span class="modal-title" id="release-modal-title">Release results to patient</span>
-                <span class="modal-subtitle">Choose what the patient should receive with the report.</span>
-            </div>
-            <button class="modal-close" type="button" aria-label="Close release results dialog" onclick="closeModal('modal-release')">×</button>
-        </div>
-        <div class="modal-body">
-            <p class="release-description" id="release-modal-description">The patient will be notified by email when the results are released. Select an appropriate message for the patient.</p>
-            <fieldset class="release-options">
-                <legend class="form-label">Patient message</legend>
-                <label class="release-option" for="release-option-1">
-                    <input type="radio" name="release-option" id="release-option-1" value="normal" checked />
-                    <span>
-                        <strong>Results are ready to view</strong>
-                        <small>The patient can review the results online.</small>
-                    </span>
-                </label>
-                <label class="release-option" for="release-option-2">
-                    <input type="radio" name="release-option" id="release-option-2" value="appointment" />
-                    <span>
-                        <strong>Request an appointment</strong>
-                        <small>The patient should arrange an appointment to discuss the results.</small>
-                    </span>
-                </label>
-            </fieldset>
-            <div class="form-group">
-                <label class="form-label" for="release-note">Additional message <span class="form-label-hint">Optional</span></label>
-                <textarea id="release-note" class="form-control" rows="4" placeholder="Add any instructions or context for the patient..."></textarea>
-            </div>
-        </div>
-        <div class="modal-footer">
-            <button class="btn btn-secondary" type="button" onclick="closeModal('modal-release')">Cancel</button>
-            <button class="btn btn-primary" type="button" onclick="submitReleaseResult()">Send &amp; email patient</button>
-        </div>
-    </div>
-</div>
-
-<div class="modal-overlay" id="modal-email">
-    <div class="modal modal-md release-modal" role="dialog" aria-modal="true" aria-labelledby="email-modal-title" aria-describedby="email-modal-description">
-        <div class="modal-header">
-            <div>
-                <span class="modal-title" id="email-modal-title">Email results to patient</span>
-                <span class="modal-subtitle">Send the report securely with a short message.</span>
-            </div>
-            <button class="modal-close" type="button" aria-label="Close email results dialog" onclick="closeModal('modal-email')">×</button>
-        </div>
-        <div class="modal-body">
-            <p class="release-description" id="email-modal-description">The patient will receive an email with the PDF report attached. Review the message before sending.</p>
-            <div class="form-group">
-                <label class="form-label" for="email-message">Email message</label>
-                <textarea id="email-message" class="form-control" rows="6" placeholder="Dear patient, please find your test results attached..."></textarea>
-                <small class="form-hint">Do not include sensitive information that is not part of the report.</small>
-            </div>
-        </div>
-        <div class="modal-footer">
-            <button class="btn btn-secondary" type="button" onclick="closeModal('modal-email')">Cancel</button>
-            <button class="btn btn-primary" type="button" onclick="submitEmailResult()">Send email with PDF</button>
-        </div>
-    </div>
 </div>
 
 <style>
@@ -100,9 +36,9 @@
         background: rgba(11, 25, 41, 0.58);
     }
 
-    .modal-overlay.is-open {
-        display: flex;
-    }
+        .modal-overlay.is-open {
+            display: flex;
+        }
 
     .modal-subtitle {
         display: block;
@@ -127,10 +63,10 @@
         border: 0;
     }
 
-    .release-options legend {
-        width: 100%;
-        margin-bottom: 8px;
-    }
+        .release-options legend {
+            width: 100%;
+            margin-bottom: 8px;
+        }
 
     .release-option {
         display: flex;
@@ -144,33 +80,33 @@
         transition: border-color 0.2s ease, background 0.2s ease;
     }
 
-    .release-option:hover,
-    .release-option:has(input:checked) {
-        border-color: #00A98D;
-        background: #F2FCFA;
-    }
+        .release-option:hover,
+        .release-option:has(input:checked) {
+            border-color: #00A98D;
+            background: #F2FCFA;
+        }
 
-    .release-option input {
-        margin-top: 3px;
-        accent-color: #00A98D;
-    }
+        .release-option input {
+            margin-top: 3px;
+            accent-color: #00A98D;
+        }
 
-    .release-option strong,
-    .release-option small {
-        display: block;
-    }
+        .release-option strong,
+        .release-option small {
+            display: block;
+        }
 
-    .release-option strong {
-        color: #1A2A3A;
-        font-size: 13px;
-    }
+        .release-option strong {
+            color: #1A2A3A;
+            font-size: 13px;
+        }
 
-    .release-option small {
-        margin-top: 3px;
-        color: #7A8CA0;
-        font-size: 12px;
-        line-height: 1.4;
-    }
+        .release-option small {
+            margin-top: 3px;
+            color: #7A8CA0;
+            font-size: 12px;
+            line-height: 1.4;
+        }
 
     .form-label-hint {
         color: #7A8CA0;
@@ -344,143 +280,140 @@
 </style>
 
 <script>
-    const requestsStorageKey = 'doctorRequests';
+    // Loads real laboratory results from the DoctorController endpoint.
+    // Release and email operations remain unavailable until server-side workflows exist.
+    const resultsUrl = '@Url.Action("GetDoctorResults", "Doctor")';
     const expandedResultCards = new Set();
-    let currentActionRequestId = null;
+    let resultRequests = [];
 
-    function openModal(modalId) {
-        document.getElementById(modalId)?.classList.add('is-open');
+    function escapeHtml(value) {
+        return String(value ?? '')
+            .replaceAll('&', '&amp;')
+            .replaceAll('<', '&lt;')
+            .replaceAll('>', '&gt;')
+            .replaceAll('"', '&quot;')
+            .replaceAll("'", '&#39;');
     }
 
-    function closeModal(modalId) {
-        document.getElementById(modalId)?.classList.remove('is-open');
-    }
-
-    document.querySelectorAll('.modal-overlay').forEach(modal => {
-        modal.addEventListener('click', event => {
-            if (event.target === modal) {
-                modal.classList.remove('is-open');
-            }
-        });
-    });
-
-    function getStoredRequests() {
-        try {
-            const stored = localStorage.getItem(requestsStorageKey);
-            const parsed = stored ? JSON.parse(stored) : [];
-            return Array.isArray(parsed) ? parsed : [];
-        } catch {
-            return [];
-        }
-    }
-
-    function saveStoredRequests(items) {
-        localStorage.setItem(requestsStorageKey, JSON.stringify(items));
-    }
-
-    function ensureStoredRequests() {
-        const stored = getStoredRequests();
-        saveStoredRequests(stored);
-        return stored;
-    }
-
-    function getTestDetails(testName) {
-        return {
-            performedBy: 'Pending lab review',
-            result: 'Awaiting result entry',
-            normalRange: 'Pending',
-            verifiedBy: 'Pending verification',
-            notes: 'No result details are available yet for this test.',
-            abnormal: false
-        };
+    function formatDate(value) {
+        if (!value) return 'Not available';
+        const date = new Date(value);
+        return Number.isNaN(date.getTime()) ? 'Not available' : date.toLocaleString();
     }
 
     function normalizeStatus(status) {
         const value = String(status || '').toLowerCase();
         if (value === 'released') return 'Released by doctor';
-        if (value === 'samples received') return 'Samples Received';
-        if (value === 'in progress') return 'In progress';
-        if (value === 'released by doctor') return 'Released by doctor';
-        if (value === 'submitted') return 'Submitted';
-        if (value === 'completed') return 'Completed';
-        if (value === 'cancelled') return 'Cancelled';
         return status || 'Unknown';
+    }
+
+    function groupResults(rows) {
+        const requests = new Map();
+        for (const row of rows) {
+            const id = row.testRequestId;
+            if (!requests.has(id)) {
+                requests.set(id, {
+                    id,
+                    patientName: row.patientName,
+                    createdAt: row.requestDate,
+                    status: row.requestStatus,
+                    urgency: row.urgency,
+                    tests: []
+                });
+            }
+            requests.get(id).tests.push({
+                testName: row.testName,
+                result: row.resultValue != null
+                    ? String(row.resultValue)
+                    : (row.resultText || 'Not recorded'),
+                notes: row.notes || '',
+                abnormal: row.isAbnormal === true,
+                verificationStatus: row.verificationStatus || 'Not verified',
+                reviewStatus: row.reviewStatus || 'Not reviewed',
+                reviewNotes: row.reviewNotes || '',
+                captureDateTime: row.captureDateTime
+            });
+        }
+        return [...requests.values()];
+    }
+
+    async function loadDoctorResults() {
+        const list = document.getElementById('results-list');
+        list.innerHTML = '<div class="card"><div class="card-body">Loading results...</div></div>';
+        try {
+            const response = await fetch(resultsUrl, {
+                credentials: 'same-origin',
+                headers: { Accept: 'application/json' }
+            });
+            if (!response.ok || response.redirected) {
+                throw new Error(response.status === 401 || response.redirected
+                    ? 'Please sign in as a doctor to view results.'
+                    : 'The server could not retrieve your results.');
+            }
+            const rows = await response.json();
+            if (!Array.isArray(rows)) throw new Error('Unexpected response from server.');
+            resultRequests = groupResults(rows);
+            renderResultCards();
+        } catch (error) {
+            console.error('Doctor results:', error);
+            list.textContent = error.message || 'Unable to load results.';
+        }
     }
 
     function renderResultCards(forceRefresh = false) {
         if (forceRefresh) {
-            saveStoredRequests(ensureStoredRequests());
-        }
-        const searchTerm = document.getElementById('results-search').value.toLowerCase().trim();
-        const list = document.getElementById('results-list');
-        const requests = ensureStoredRequests();
-        const filtered = requests.filter(item => {
-            if (!searchTerm) return true;
-            const searchFields = [item.patientName, item.id, item.status, ...(Array.isArray(item.tests) ? item.tests.map(t => typeof t === 'string' ? t : t.testName) : [])];
-            return searchFields.some(value => String(value).toLowerCase().includes(searchTerm));
-        });
-
-        if (filtered.length === 0) {
-            list.innerHTML = '<div class="card"><div class="card-body">No results found matching your search.</div></div>';
+            loadDoctorResults();
             return;
         }
-
+        const list = document.getElementById('results-list');
+        const searchTerm = document.getElementById('results-search').value.toLowerCase().trim();
+        const filtered = resultRequests.filter(item =>
+            [item.patientName, item.id, item.status, ...item.tests.map(t => t.testName)]
+                .some(value => String(value ?? '').toLowerCase().includes(searchTerm))
+        );
+        if (!filtered.length) {
+            list.innerHTML = '<div class="card"><div class="card-body">No laboratory results found.</div></div>';
+            return;
+        }
         list.innerHTML = filtered.map(item => {
-            const tests = Array.isArray(item.tests) ? item.tests : [];
-            const testsHtml = tests.map(test => {
-                const isString = typeof test === 'string';
-                const testName = isString ? test : (test && test.testName ? test.testName : 'Unnamed test');
-                const data = isString ? getTestDetails(testName) : { ...getTestDetails(testName), ...test };
-                return `
-                    <div class="result-item">
-                        <div class="result-item-title"><strong>${testName}</strong><span class="badge ${data.abnormal ? 'red' : 'green'}">${data.abnormal ? 'Abnormal' : 'Normal'}</span></div>
-                        <div class="result-item-details">
-                            <div class="result-item-detail"><strong>Performed by</strong>${data.performedBy}</div>
-                            <div class="result-item-detail"><strong>Result</strong>${data.result}</div>
-                            <div class="result-item-detail"><strong>Normal Range</strong>${data.normalRange}</div>
-                            <div class="result-item-detail"><strong>Verified</strong>${data.verifiedBy}</div>
-                        </div>
-                        <div class="result-note">${data.notes}</div>
+            const testsHtml = item.tests.map(test => `
+                <div class="result-item">
+                    <div class="result-item-title">
+                        <strong>${escapeHtml(test.testName)}</strong>
+                        <span class="badge ${test.abnormal ? 'red' : 'blue'}">
+                            ${test.abnormal ? 'Abnormal' : 'Not flagged abnormal'}
+                        </span>
                     </div>
-                `;
-            }).join('');
-
-            const hasAbnormal = tests.some(test => {
-                if (typeof test === 'string') return getTestDetails(test).abnormal;
-                return test.abnormal;
-            });
-            const displayStatus = normalizeStatus(item.status);
-            const isReleased = item.released || displayStatus === 'Released by doctor';
-            const badgeClass = isReleased ? 'green' : hasAbnormal ? 'amber' : 'blue';
-            const badgeLabel = displayStatus || (isReleased ? 'Released by doctor' : 'Pending release');
-            const isExpanded = expandedResultCards.has(item.id);
-
-            const actionButton = isReleased
-                ? `<button class="btn btn-secondary" disabled>Released by doctor</button>`
-                : `<button class="btn btn-primary" type="button" onclick="openReleaseModal('${item.id}')">Release Results</button>`;
-
-            const emailButton = `<button class="btn btn-secondary" type="button" onclick="openEmailModal('${item.id}')">Email</button>`;
-            const pdfButton = `<button class="btn btn-secondary" type="button" onclick="toast('Download PDF generated for ${item.patientName}.')">PDF</button>`;
-            const toggleButton = `<button class="btn btn-secondary result-toggle" type="button" aria-expanded="${isExpanded}" onclick="toggleResultCard('${item.id}')">${isExpanded ? 'Minimize' : 'Expand'}</button>`;
-
+                    <div class="result-item-details">
+                        <div class="result-item-detail"><strong>Result</strong>${escapeHtml(test.result)}</div>
+                        <div class="result-item-detail"><strong>Verification</strong>${escapeHtml(test.verificationStatus)}</div>
+                        <div class="result-item-detail"><strong>Review</strong>${escapeHtml(test.reviewStatus)}</div>
+                        <div class="result-item-detail"><strong>Captured</strong>${escapeHtml(formatDate(test.captureDateTime))}</div>
+                    </div>
+                    <div class="result-note">${escapeHtml(test.notes || 'No notes recorded')}</div>
+                    ${test.reviewNotes ? `<div class="result-note"><strong>Review notes:</strong> ${escapeHtml(test.reviewNotes)}</div>` : ''}
+                </div>
+            `).join('');
+            const hasAbnormal = item.tests.some(t => t.abnormal);
+            const expanded = expandedResultCards.has(item.id);
+            const released = normalizeStatus(item.status).toLowerCase() === 'released by doctor';
             return `
-                <div class="result-card ${isExpanded ? 'expanded' : ''}">
+                <div class="result-card ${expanded ? 'expanded' : ''}">
                     <div class="result-card-header">
                         <div class="result-card-summary">
-                            <h2>${item.patientName} - ${item.id}</h2>
-                            <div class="result-meta">${item.createdAt ? item.createdAt.split('T')[0] : 'Unknown date'} · ${tests.length} test(s)</div>
+                            <h2>${escapeHtml(item.patientName)} - Request ${item.id}</h2>
+                            <div class="result-meta">${escapeHtml(formatDate(item.createdAt))} · ${item.tests.length} test(s)</div>
                         </div>
                         <div class="result-status">
-                            <span class="badge ${badgeClass}">${badgeLabel}</span>
-                            ${toggleButton}
+                            <span class="badge ${released ? 'green' : hasAbnormal ? 'amber' : 'blue'}">${escapeHtml(normalizeStatus(item.status))}</span>
+                            <button class="btn btn-secondary result-toggle" type="button" aria-expanded="${expanded}" onclick="toggleResultCard(${item.id})">${expanded ? 'Minimize' : 'Expand'}</button>
                         </div>
                     </div>
                     ${hasAbnormal ? '<div class="result-warning">Contains abnormal results</div>' : ''}
                     <div class="result-card-body">${testsHtml}</div>
                     <div class="result-actions">
-                        ${pdfButton}
-                        ${emailButton}
-                        ${actionButton}
+                        <button class="btn btn-secondary" type="button" disabled title="Requires backend email integration">Request Appointment</button>
+                        <button class="btn btn-primary" type="button" disabled title="Requires secure release, PDF and email integration">${released ? 'Released by doctor' : 'Release Results'}</button>
                     </div>
                 </div>
             `;
@@ -488,50 +421,10 @@
     }
 
     function toggleResultCard(requestId) {
-        if (expandedResultCards.has(requestId)) {
-            expandedResultCards.delete(requestId);
-        } else {
-            expandedResultCards.add(requestId);
-        }
+        if (expandedResultCards.has(requestId)) expandedResultCards.delete(requestId);
+        else expandedResultCards.add(requestId);
         renderResultCards();
     }
 
-    function openReleaseModal(requestId) {
-        currentActionRequestId = requestId;
-        document.getElementById('release-option-1').checked = true;
-        document.getElementById('release-note').value = '';
-        openModal('modal-release');
-    }
-
-    function openEmailModal(requestId) {
-        currentActionRequestId = requestId;
-        const item = ensureStoredRequests().find(r => r.id === requestId);
-        const message = `Dear ${item?.patientName || 'patient'}, please find your test results attached. If you have any questions, reply to this email.`;
-        document.getElementById('email-message').value = message;
-        openModal('modal-email');
-    }
-
-    function submitReleaseResult() {
-        const requests = ensureStoredRequests();
-        const item = requests.find(r => r.id === currentActionRequestId);
-        if (!item) return;
-        item.status = 'Released by doctor';
-        item.released = true;
-        saveStoredRequests(requests);
-        closeModal('modal-release');
-        renderResultCards();
-        toast(`Results released for ${item.patientName}.`);
-    }
-
-    function submitEmailResult() {
-        const item = ensureStoredRequests().find(r => r.id === currentActionRequestId);
-        if (!item) return;
-        closeModal('modal-email');
-        toast(`Email sent to ${item.patientName}.`);
-    }
-
-    document.addEventListener('DOMContentLoaded', () => {
-        ensureStoredRequests();
-        renderResultCards();
-    });
+    document.addEventListener('DOMContentLoaded', loadDoctorResults);
 </script>

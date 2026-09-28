@@ -5,7 +5,105 @@
 
 <div class="page-body">
 
-    ```
+    <style>
+        .patient-info-panel {
+            background: #f9fbfd;
+            border: 1px solid #e5ecf4;
+            border-radius: 14px;
+            padding: 18px;
+        }
+
+        .patient-info-panel .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 14px 18px;
+            margin-top: 8px;
+        }
+
+        .patient-info-panel .info-item {
+            display: grid;
+            gap: 6px;
+            background: #ffffff;
+            border: 1px solid #edf2f7;
+            border-radius: 10px;
+            padding: 10px 12px;
+        }
+
+        .patient-info-panel .info-item label,
+        .patient-info-panel .info-section h4 {
+            margin: 0;
+            color: #5f6f84;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.03em;
+            text-transform: uppercase;
+        }
+
+        .patient-info-panel .info-item span {
+            color: #1d2d3d;
+            font-size: 14px;
+            line-height: 1.5;
+            word-break: break-word;
+        }
+
+        .patient-extra-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 16px;
+            margin-top: 20px;
+        }
+
+        .patient-extra-grid .info-section {
+            background: #ffffff;
+            border: 1px solid #edf2f7;
+            border-radius: 12px;
+            padding: 14px 16px;
+        }
+
+        .patient-history-list {
+            display: grid;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .history-item {
+            background: #f5f8fb;
+            border: 1px solid #e6edf5;
+            border-radius: 10px;
+            padding: 12px;
+        }
+
+        .history-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+
+        .history-header strong {
+            font-size: 14px;
+            color: #1d2d3d;
+        }
+
+        .history-meta {
+            color: #627287;
+            font-size: 12px;
+            line-height: 1.5;
+        }
+
+        @@media (max-width: 700px) {
+            .patient-info-panel {
+                padding: 14px;
+            }
+
+            .patient-info-panel .info-grid,
+            .patient-extra-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+
     <div class="section-header">
         <div class="section-title">Patient Records</div>
         <div class="section-sub">
@@ -29,18 +127,19 @@
 
                 <div class="form-group">
 
-                    <label class="form-label">
-                        Select Patient by SA ID
+                    <label class="form-label"
+                           for="doc-pat-id">
+                        Search Patient by SA ID
                     </label>
 
-                    <select id="doc-pat-id"
-                            class="form-control">
-
-                        <option value="">
-                            -- Select patient SA ID --
-                        </option>
-
-                    </select>
+                    <input id="doc-pat-id"
+                           class="form-control"
+                           type="text"
+                           inputmode="numeric"
+                           maxlength="13"
+                           pattern="[0-9]*"
+                           autocomplete="off"
+                           placeholder="Enter patient SA ID" />
 
                 </div>
 
@@ -85,6 +184,48 @@
                             <div class="info-item">
                                 <label>Email</label>
                                 <span id="selected-patient-email"></span>
+                            </div>
+
+                            <div class="info-item">
+                                <label>Medical Conditions</label>
+                                <span id="selected-patient-conditions">None recorded</span>
+                            </div>
+
+                            <div class="info-item">
+                                <label>Allergies</label>
+                                <span id="selected-patient-allergies">None recorded</span>
+                            </div>
+
+                            <div class="info-item">
+                                <label>Medication</label>
+                                <span id="selected-patient-medication">None recorded</span>
+                            </div>
+
+                        </div>
+
+                        <div class="patient-extra-grid">
+
+                            <div class="info-section">
+
+                                <h4>Test Request History</h4>
+
+                                <div id="selected-patient-request-history"
+                                     class="patient-history-list">
+                                    No request history recorded.
+                                </div>
+
+                            </div>
+
+
+                            <div class="info-section">
+
+                                <h4>Results Available with Patient Consent</h4>
+
+                                <div id="selected-patient-consent-results"
+                                     class="patient-history-list">
+                                    No consented results available.
+                                </div>
+
                             </div>
 
                         </div>
@@ -326,13 +467,25 @@
                 </div>
 
 
-                <button class="btn btn-primary"
-                        type="button"
-                        onclick="refreshPatientData()">
+                <div style="display:flex; justify-content:flex-end; gap:10px; flex-wrap:wrap; margin-top: 10px;">
 
-                    Refresh Patient Data
+                    <button class="btn btn-primary"
+                            type="button"
+                            onclick="refreshPatientData()">
 
-                </button>
+                        Refresh Patient Data
+
+                    </button>
+
+                    <button class="btn btn-primary"
+                            type="button"
+                            onclick="openCreateRequest()">
+
+                        + New Test Request
+
+                    </button>
+
+                </div>
 
             </div>
 
@@ -349,7 +502,7 @@
             <div class="card-header">
 
                 <span class="card-title">
-                    Existing Patients
+                    My Patients
                 </span>
 
             </div>
@@ -401,6 +554,26 @@
     </section>
     ```
 
+</div>
+
+<div id="patient-not-found-modal"
+     role="dialog"
+     aria-modal="true"
+     aria-labelledby="patient-not-found-title"
+     style="display:none; position:fixed; inset:0; z-index:1000; align-items:center; justify-content:center; padding:16px; background:rgba(11,25,41,.55);">
+    <div class="modal modal-sm">
+        <div class="modal-header">
+            <span id="patient-not-found-title" class="modal-title">Patient not found</span>
+            <button class="modal-close" type="button" onclick="closePatientNotFoundModal()" aria-label="Close">&times;</button>
+        </div>
+        <div class="modal-body">
+            <p id="patient-not-found-message">This patient does not exist in the system.</p>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" type="button" onclick="closePatientNotFoundModal()">Close</button>
+            <a class="btn btn-primary" href="@Url.Action("Register", "Account")">Register Patient</a>
+        </div>
+    </div>
 </div>
 
 <script>
@@ -691,12 +864,8 @@
                 await response.json();
 
 
-            // Reset patient dropdown
-            select.innerHTML = `
-                <option value="">
-                    -- Select patient SA ID --
-                </option>
-            `;
+            // Reset patient search input
+            select.value = '';
 
 
             // Reset table
@@ -718,22 +887,6 @@
 
 
             patients.forEach(patient => {
-
-                // ==============================================
-                // ADD PATIENT TO SA ID DROPDOWN
-                // ==============================================
-
-                const option =
-                    document.createElement('option');
-
-                option.value =
-                    patient.saIdNumber;
-
-                option.textContent =
-                    patient.saIdNumber;
-
-                select.appendChild(option);
-
 
                 // ==============================================
                 // CREATE PATIENT TABLE ROW
@@ -840,14 +993,32 @@
     }
 
 
+    function sanitizeSaIdInput(value) {
+        return String(value || '')
+            .replace(/\D/g, '')
+            .slice(0, 13);
+    }
+
+
+    function validateSaIdNumber(value) {
+        return /^\d{13}$/.test(value);
+    }
+
+
     // ================================================================
     // SELECT PATIENT
     // ================================================================
 
     async function loadSelectedPatientSummary() {
 
+        const patientIdInput =
+            document.getElementById('doc-pat-id');
+
         const saIdNumber =
-            document.getElementById('doc-pat-id').value;
+            sanitizeSaIdInput(patientIdInput.value);
+
+        patientIdInput.value =
+            saIdNumber;
 
 
         const panel =
@@ -869,6 +1040,21 @@
         }
 
 
+        if (!validateSaIdNumber(saIdNumber)) {
+
+            selectedPatient = null;
+
+            panel.style.display = 'none';
+
+            clearPatientDetails();
+
+            toast('SA ID must contain exactly 13 numbers.');
+            patientIdInput.focus();
+            return;
+
+        }
+
+
         try {
 
             const response =
@@ -878,6 +1064,11 @@
 
 
             if (!response.ok) {
+
+                if (response.status === 404) {
+                    showPatientNotFoundModal(saIdNumber);
+                    return;
+                }
 
                 throw new Error(
                     'Patient could not be loaded.'
@@ -915,6 +1106,29 @@
             );
 
         }
+
+    }
+
+
+    function showPatientNotFoundModal(saIdNumber) {
+
+        document.getElementById(
+            'patient-not-found-message'
+        ).textContent =
+            `Patient with SA ID ${saIdNumber} does not exist in the system.`;
+
+        document.getElementById(
+            'patient-not-found-modal'
+        ).style.display = 'flex';
+
+    }
+
+
+    function closePatientNotFoundModal() {
+
+        document.getElementById(
+            'patient-not-found-modal'
+        ).style.display = 'none';
 
     }
 
@@ -966,6 +1180,213 @@
             patient.Email ||
             'N/A';
 
+
+        document.getElementById(
+            'selected-patient-conditions'
+        ).textContent =
+            formatMedicalList(
+                patient.knownMedicalConditions ||
+                patient.KnownMedicalConditions
+            );
+
+
+        document.getElementById(
+            'selected-patient-allergies'
+        ).textContent =
+            formatMedicalList(
+                patient.allergies ||
+                patient.Allergies
+            );
+
+
+        document.getElementById(
+            'selected-patient-medication'
+        ).textContent =
+            formatMedicalList(
+                patient.medication ||
+                patient.Medication
+            );
+
+
+        renderPatientHistory(patient);
+
+    }
+
+
+    function formatMedicalList(value) {
+
+        if (value === null || value === undefined || value === '') {
+
+            return 'None recorded';
+
+        }
+
+        const values =
+            (Array.isArray(value) ? value : String(value).split(','))
+                .map(item => {
+
+                    if (typeof item === 'string') {
+                        return item.trim();
+                    }
+
+                    return item.name ||
+                        item.Name ||
+                        item.conditionName ||
+                        item.ConditionName ||
+                        item.allergyName ||
+                        item.AllergyName ||
+                        item.medicationName ||
+                        item.MedicationName ||
+                        '';
+
+                })
+                .filter(item => item);
+
+        return values.length
+            ? values.sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' })).join(', ')
+            : 'None recorded';
+
+    }
+
+
+    function getStoredRequests() {
+
+        try {
+
+            const stored =
+                localStorage.getItem('doctorRequests');
+
+            const parsed =
+                stored ? JSON.parse(stored) : [];
+
+            return Array.isArray(parsed)
+                ? parsed
+                : [];
+
+        }
+        catch {
+
+            return [];
+
+        }
+
+    }
+
+
+    function renderPatientHistory(patient) {
+
+        const patientSaId =
+            (patient && (patient.saIdNumber || patient.SaIdNumber)) || '';
+
+        const patientName =
+            ((patient && (`${patient.name || ''} ${patient.surname || ''}`.trim())) || '')
+                .toLowerCase();
+
+        const requests =
+            getStoredRequests()
+                .filter(item => {
+
+                    const itemSaId = String(item.saIdNumber || item.patientSaId || '').trim();
+                    const itemName = String(item.patientName || '').trim().toLowerCase();
+
+                    return itemSaId && patientSaId
+                        ? itemSaId === patientSaId
+                        : itemName && patientName
+                            ? itemName === patientName
+                            : false;
+
+                })
+                .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+
+
+        const requestPanel =
+            document.getElementById('selected-patient-request-history');
+
+
+        if (!requests.length) {
+
+            requestPanel.innerHTML =
+                '<div class="medical-empty">No request history recorded.</div>';
+
+        }
+        else {
+
+            requestPanel.innerHTML =
+                requests.map(item => {
+
+                    const tests =
+                        Array.isArray(item.tests)
+                            ? item.tests.join(', ')
+                            : 'No tests recorded';
+
+                    const status =
+                        item.status || 'Unknown';
+
+                    return `
+                        <div class="history-item">
+                            <div class="history-header">
+                                <strong>${escapeHtml(item.id || 'Request')}</strong>
+                                <span class="badge ${status.toLowerCase().includes('released') ? 'green' : status.toLowerCase().includes('cancel') ? 'red' : 'blue'}">${escapeHtml(status)}</span>
+                            </div>
+                            <div class="history-meta">${escapeHtml(item.urgency || 'Routine')} • ${escapeHtml(item.createdAt ? new Date(item.createdAt).toLocaleDateString() : 'Unknown date')}</div>
+                            <div class="history-meta">Tests: ${escapeHtml(tests)}</div>
+                        </div>
+                    `;
+
+                }).join('');
+
+        }
+
+
+        const consentedResults =
+            requests.filter(item => {
+
+                const consentGranted = item.consentGranted === true || item.resultConsentGranted === true || item.released === true;
+                const releasedByDoctor = String(item.status || '').toLowerCase() === 'released by doctor';
+
+                return consentGranted || releasedByDoctor;
+
+            });
+
+
+        const resultsPanel =
+            document.getElementById('selected-patient-consent-results');
+
+
+        if (!consentedResults.length) {
+
+            resultsPanel.innerHTML =
+                '<div class="medical-empty">No consented results available.</div>';
+
+            return;
+
+        }
+
+
+        resultsPanel.innerHTML =
+            consentedResults.map(item => {
+
+                const tests =
+                    Array.isArray(item.tests)
+                        ? item.tests.join(', ')
+                        : 'No tests recorded';
+
+                const releasedDate =
+                    item.updatedAt || item.createdAt || new Date().toISOString();
+
+                return `
+                    <div class="history-item">
+                        <div class="history-header">
+                            <strong>${escapeHtml(item.id || 'Request')}</strong>
+                            <span class="badge green">Consented</span>
+                        </div>
+                        <div class="history-meta">Released: ${escapeHtml(new Date(releasedDate).toLocaleDateString())}</div>
+                        <div class="history-meta">Tests: ${escapeHtml(tests)}</div>
+                    </div>
+                `;
+
+            }).join('');
+
     }
 
 
@@ -1003,6 +1424,41 @@
         document.getElementById(
             'selected-patient-email'
         ).textContent = '';
+
+
+        document.getElementById(
+            'selected-patient-conditions'
+        ).textContent = 'None recorded';
+
+
+        document.getElementById(
+            'selected-patient-allergies'
+        ).textContent = 'None recorded';
+
+
+        document.getElementById(
+            'selected-patient-medication'
+        ).textContent = 'None recorded';
+
+    }
+
+
+    function appendPatientHistory(elementId, value) {
+
+        const element =
+            document.getElementById(elementId);
+
+        const currentValue =
+            element.textContent.trim();
+
+        if (!value || currentValue === value) {
+            return;
+        }
+
+        element.textContent =
+            currentValue === 'None recorded'
+                ? value
+                : `${currentValue}, ${value}`;
 
     }
 
@@ -1295,6 +1751,11 @@
                 conditionName,
                 result.patientConditionId,
                 'condition'
+            );
+
+            appendPatientHistory(
+                'selected-patient-conditions',
+                conditionName
             );
 
 
@@ -1669,6 +2130,11 @@
                 'allergy'
             );
 
+            appendPatientHistory(
+                'selected-patient-allergies',
+                allergyName
+            );
+
 
             toast(
                 result.message ||
@@ -2041,6 +2507,11 @@
                 'medication'
             );
 
+            appendPatientHistory(
+                'selected-patient-medication',
+                medicationName
+            );
+
 
             toast(
                 result.message ||
@@ -2376,14 +2847,49 @@
     // EVENT LISTENERS
     // ================================================================
 
-    document
-        .getElementById(
-            'doc-pat-id'
-        )
-        .addEventListener(
-            'change',
-            loadSelectedPatientSummary
-        );
+    function openCreateRequest() {
+
+        const patientSaId =
+            sanitizeSaIdInput(
+                document.getElementById('doc-pat-id').value
+            );
+
+        const createRequestUrl =
+            '@Url.Action("CreateRequest", "Doctor")';
+
+        window.location.href = patientSaId
+            ? `${createRequestUrl}?saIdNumber=${encodeURIComponent(patientSaId)}`
+            : createRequestUrl;
+
+    }
+
+    const patientIdField =
+        document.getElementById('doc-pat-id');
+
+
+    patientIdField.addEventListener('input', function () {
+        const sanitizedValue = sanitizeSaIdInput(this.value);
+        if (this.value !== sanitizedValue) {
+            this.value = sanitizedValue;
+        }
+    });
+
+
+    patientIdField.addEventListener(
+        'change',
+        loadSelectedPatientSummary
+    );
+
+
+    patientIdField.addEventListener(
+        'keydown',
+        event => {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                loadSelectedPatientSummary();
+            }
+        }
+    );
 
 
     document

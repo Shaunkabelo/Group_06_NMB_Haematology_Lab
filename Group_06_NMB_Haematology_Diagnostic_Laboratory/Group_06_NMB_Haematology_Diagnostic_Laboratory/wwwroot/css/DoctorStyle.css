@@ -867,24 +867,24 @@ td {
         font-weight: 400;
     }
 
-    .priority-tile.critical {
+    .priority-tile.abnormal {
         border: 1px solid #FFB7B7;
         background: #FFF4F4;
     }
 
-    .priority-tile.high {
+    .priority-tile.urgent {
         border: 1px solid #FFC985;
         background: #FFF9F2;
     }
 
-    .priority-tile.medium {
-        border: 1px solid #F0D81E;
-        background: #FFFDEB;
-    }
-
-    .priority-tile.low {
+    .priority-tile.routine {
         border: 1px solid #A8CCFF;
         background: #EFF6FF;
+    }
+
+    .priority-tile.stat {
+        border: 1px solid #F0D81E;
+        background: #FFFDEB;
     }
 
 .alerts-empty-panel {

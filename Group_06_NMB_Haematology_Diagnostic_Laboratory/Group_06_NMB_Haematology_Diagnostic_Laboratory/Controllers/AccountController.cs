@@ -20,6 +20,13 @@ public class AccountController : Controller
 
     [AllowAnonymous]
     [HttpGet]
+    public IActionResult Register()
+    {
+        return View();
+    }
+
+    [AllowAnonymous]
+    [HttpGet]
     public IActionResult Login(string? returnUrl = null)
     {
         if (User.Identity?.IsAuthenticated == true)
