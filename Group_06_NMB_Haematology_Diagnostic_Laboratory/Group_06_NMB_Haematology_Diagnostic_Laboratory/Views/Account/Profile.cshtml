@@ -1,7 +1,9 @@
+@inject Microsoft.AspNetCore.Mvc.ViewEngines.ICompositeViewEngine AccountViewEngine
 @model Group_06_NMB_Haematology_Diagnostic_Lab.Data.Models.User
 @{
     ViewData["Title"] = "My profile";
-    var useManagerLayout = User.IsInRole("LabManager");
+    var useManagerLayout = User.IsInRole("LabManager") &&
+        AccountViewEngine.GetView(null, "~/Views/Shared/_LabManager_Layout.cshtml", false).Success;
     Layout = useManagerLayout
         ? "~/Views/Shared/_LabManager_Layout.cshtml"
         : "~/Views/Shared/_UserAccountLayout.cshtml";

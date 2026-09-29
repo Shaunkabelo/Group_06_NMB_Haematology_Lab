@@ -33,7 +33,8 @@ Check(temporary.All(PasswordHelper.MeetsPolicy) && temporary.Distinct().Count() 
     "Generated passwords are unique and satisfy policy");
 
 var repository = new FakeRepository();
-AccountController Controller() => new(repository, new PasswordResetQueue(), NullLogger<AccountController>.Instance);
+AccountController Controller() => new(repository, new PasswordResetQueue(), NullLogger<AccountController>.Instance, new AccountNavigation(
+    new Microsoft.Extensions.Configuration.ConfigurationBuilder().Build(), new EmptyActions()));
 var controller = Controller();
 Check(await controller.Login("invalid-email", password) is ViewResult && repository.Lookups == 0,
     "Malformed login rejected before database access");
@@ -68,6 +69,8 @@ Console.WriteLine($"{checks} authentication checks passed.");
 
 sealed class FakeRepository : IAuthenticationRepository
 {
+    public Task<User?> GetActiveUserById(int id) => Task.FromResult<User?>(null);
+    public Task<bool> UpdateProfile(int id, Guid stamp, string name, string surname, string email, string? cellphone, string? address) => Task.FromResult(false);
     public int Lookups { get; private set; }
     public int ResetCalls { get; private set; }
     public string? LastTokenHash { get; private set; }
@@ -82,4 +85,10 @@ sealed class FakeRepository : IAuthenticationRepository
         return Task.FromResult(false);
     }
     public Task<bool> ChangePassword(int id, string old, string hash, string salt) => Task.FromResult(false);
+}
+
+sealed class EmptyActions : Microsoft.AspNetCore.Mvc.Infrastructure.IActionDescriptorCollectionProvider
+{
+    public Microsoft.AspNetCore.Mvc.Infrastructure.ActionDescriptorCollection ActionDescriptors { get; } =
+        new(Array.Empty<Microsoft.AspNetCore.Mvc.Abstractions.ActionDescriptor>(), 0);
 }
