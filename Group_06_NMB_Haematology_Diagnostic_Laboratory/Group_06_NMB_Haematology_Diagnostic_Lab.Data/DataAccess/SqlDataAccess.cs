@@ -12,6 +12,12 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.DataAccess
 {
     public class SqlDataAccess : ISqlDataAccess
     {
+        static SqlDataAccess()
+        {
+            // Dapper also applies this handler to nullable DateOnly properties.
+            SqlMapper.AddTypeHandler(new DateOnlyTypeHandler());
+        }
+
         private readonly IConfiguration _config;
 
         public SqlDataAccess(IConfiguration config)

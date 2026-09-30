@@ -23,7 +23,7 @@ public class AccountController(IAuthenticationRepository repository, PasswordRes
         ViewData["ReturnUrl"] = returnUrl;
         if (User.Identity?.IsAuthenticated == true)
             return User.HasClaim("MustChangePassword", "True")
-                ? RedirectToAction(nameof(ChangePassword)) : RedirectToAction("Index", "Home");
+                ? RedirectToAction(nameof(ChangePassword)) : RedirectAfterLogin(User.FindFirstValue(ClaimTypes.Role), returnUrl);
         return View();
     }
 
@@ -67,9 +67,23 @@ public class AccountController(IAuthenticationRepository repository, PasswordRes
             });
         await repository.RecordLogin(user.UserId);
         if (state.MustChangePassword) return RedirectToAction(nameof(ChangePassword));
-        if (Url.IsLocalUrl(returnUrl)) return LocalRedirect(returnUrl!);
-        return state.Role is "LabManager" or "Admin"
-            ? RedirectToAction("Dashboard", "LabManager") : RedirectToAction("Index", "Home");
+        return RedirectAfterLogin(state.Role, returnUrl);
+    }
+
+    private IActionResult RedirectAfterLogin(string? role, string? returnUrl)
+    {
+        // Do not send an authenticated user straight back to the sign-in form.
+        if (Url.IsLocalUrl(returnUrl) &&
+            !string.Equals(returnUrl!.Split('?', '#')[0].TrimEnd('/'),
+                Url.Action(nameof(Login), "Account"), StringComparison.OrdinalIgnoreCase))
+            return LocalRedirect(returnUrl!);
+
+        return role switch
+        {
+            "Doctor" => RedirectToAction("Dashboard", "Doctor"),
+            "LabManager" or "Admin" => RedirectToAction("Dashboard", "LabManager"),
+            _ => RedirectToAction("Index", "Home")
+        };
     }
 
     [AllowAnonymous, HttpGet]
