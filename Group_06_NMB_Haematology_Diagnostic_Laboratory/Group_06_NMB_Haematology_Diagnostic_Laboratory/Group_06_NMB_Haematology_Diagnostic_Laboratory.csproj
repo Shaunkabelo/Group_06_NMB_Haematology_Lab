@@ -18,6 +18,7 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
+    <PackageReference Include="QuestPDF" Version="2026.9.1" />
 	  <ProjectReference Include="..\Group_06_NMB_Haematology_Diagnostic_Lab.Data\Group_06_NMB_Haematology_Diagnostic_Lab.Data.csproj" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="10.0.10" />
   </ItemGroup>

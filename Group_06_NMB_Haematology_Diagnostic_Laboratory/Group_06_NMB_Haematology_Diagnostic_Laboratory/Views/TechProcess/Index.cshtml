@@ -131,7 +131,7 @@
                             <th>Patient</th>
                             <th>Doctor</th>
                             <th>Urgency</th>
-                            <th>My Tests</th>
+                            <th>Due</th>
                             <th>Status</th>
                         </tr>
                     </thead>
@@ -147,7 +147,19 @@
                                 <td>@req.PatientName</td>
                                 <td>@req.DoctorName</td>
                                 <td><span class="badge @urgencyBadge">@req.Urgency</span></td>
-                                <td><span class="badge gray">@req.Tests.Count test@(req.Tests.Count == 1 ? "" : "s")</span></td>
+                                <td>
+                                    @{
+                                        var earliestDue = req.Tests.Where(t => t.ExpectedDoneBy.HasValue).OrderBy(t => t.ExpectedDoneBy).FirstOrDefault()?.ExpectedDoneBy;
+                                    }
+                                    @if (req.AnyOverdue)
+                                    {
+                                        <span style="color:#FF4757;font-weight:600">⚠️ @earliestDue?.ToString("HH:mm")</span>
+                                    }
+                                    else
+                                    {
+                                        @earliestDue?.ToString("HH:mm")
+                                    }
+                                </td>
                                 <td>
                                     @if (req.AnyOverdue)
                                     {

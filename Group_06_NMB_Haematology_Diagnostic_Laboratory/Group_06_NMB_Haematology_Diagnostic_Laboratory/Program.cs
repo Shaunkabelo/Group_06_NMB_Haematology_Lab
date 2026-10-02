@@ -2,6 +2,7 @@ using Group_06_NMB_Haematology_Diagnostic_Lab.Data.DataAccess;
 using Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository;
 using Group_06_NMB_Haematology_Diagnostic_Lab.Data.Services;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using QuestPDF.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -17,6 +18,8 @@ builder.Services.AddScoped<ITechDashboardRepository, TechDashboardRepository>();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentTechnicianService, CurrentTechnicianService>();
 builder.Services.AddScoped<ITechProfileRepository, TechProfileRepository>();
+builder.Services.AddScoped<ITechReportsRepository, TechReportsRepository>();
+QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
 
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
