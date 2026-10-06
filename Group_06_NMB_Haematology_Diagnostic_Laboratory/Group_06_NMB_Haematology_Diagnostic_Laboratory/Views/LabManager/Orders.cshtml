@@ -1,3 +1,4 @@
+@using Group_06_NMB_Haematology_Diagnostic_Laboratory.Services
 @model IEnumerable<Group_06_NMB_Haematology_Diagnostic_Lab.Data.Models.StockOrder>
 
 @{
@@ -142,7 +143,7 @@ var consumables =
                 <div class="card-body">
                     <div class="d-flex justify-content-between">
                         <div>
-                            <p class="text-muted mb-1">Partially Complete</p>
+                            <p class="text-muted mb-1">Partially Received</p>
                             <h3 class="fw-bold mb-0">@partialOrders</h3>
                         </div>
 
@@ -229,12 +230,12 @@ var consumables =
 
                             <option value="Partially Complete"
                                     selected="@(currentFilter == "Partially Complete")">
-                                Partially Complete
+                                Partially Received
                             </option>
 
                             <option value="Complete"
                                     selected="@(currentFilter == "Complete")">
-                                Complete
+                                Received
                             </option>
 
                             <option value="Cancelled"
@@ -324,7 +325,7 @@ var consumables =
 
                                     <td>
                                         <span class="badge @statusClass">
-                                            @order.Status
+                                            @OrderStatusLabels.Display(order.Status)
                                         </span>
                                     </td>
 
@@ -731,7 +732,7 @@ var consumables =
                                             <input type="number"
                                                    class="form-control quantity-input"
                                                    name="quantity_@consumable.ConsumableId"
-                                                   min="1"
+                                                   min="1" max="2147483647" step="1" required
                                                    value=""
                                                    disabled
                                                    placeholder="Qty" />
@@ -1123,7 +1124,7 @@ var consumables =
             function () {
 
                 document.getElementById("orderNumber").value =
-                    generateOrderNumber();
+                    "Assigned when saved";
 
             }
         );
@@ -1344,6 +1345,10 @@ var consumables =
         // VIEW ORDER
         // ============================================================
 
+        function displayOrderStatus(status) {
+            const labels = { "complete": "Received", "partially complete": "Partially Received", "received": "Received", "partially received": "Partially Received", "ordered": "Ordered", "cancelled": "Cancelled" };
+            return labels[String(status).toLowerCase()] || "Unknown";
+        }
         async function viewOrder(orderId) {
 
             const canvasElement =
@@ -1418,7 +1423,7 @@ var consumables =
                     "cancelled": "bg-danger"
                 };
                 const statusClass = statusClasses[status.toLowerCase()] ?? "bg-secondary";
-                statusEl.innerHTML = `<span class="badge ${statusClass}">${status}</span>`;
+                statusEl.innerHTML = `<span class="badge ${statusClass}">${displayOrderStatus(status)}</span>`;
 
                 // Items table
                 const body = document.getElementById("orderItemsBody");
@@ -1429,7 +1434,9 @@ var consumables =
                     body.innerHTML = `<tr><td colspan="4" class="text-center text-muted">No items for this order.</td></tr>`;
                 } else {
                     for (const item of items) {
-                        const consumableName = item.consumable?.name ?? item.name ?? "Unknown";
+                        const nameNode = document.createElement("span");
+                nameNode.textContent = item.consumable?.name ?? item.name ?? "Unknown";
+                const consumableName = nameNode.innerHTML;
                         const qty = item.quantityOrdered ?? item.quantity ?? 0;
                         const itemStatus = item.status ?? "";
 
@@ -1465,7 +1472,7 @@ var consumables =
             <td>${qty}</td>
             <td>
                 <span class="badge ${itemStatusClass}">
-                    ${itemStatus}
+                    ${displayOrderStatus(itemStatus)}
                 </span>
             </td>
             <td class="text-end">

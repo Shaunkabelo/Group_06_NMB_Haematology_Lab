@@ -102,7 +102,7 @@
                         <a class="order-row" asp-action="Orders">
                             <span class="order-symbol">🛒</span>
                             <span class="order-details"><strong>@order.OrderNumber</strong><small>@(order.Supplier?.SupplierName ?? "Supplier not available")</small></span>
-                            <span class="order-status">@order.Status</span>
+                            <span class="order-status">@Group_06_NMB_Haematology_Diagnostic_Laboratory.Services.OrderStatusLabels.Display(order.Status)</span>
                         </a>
                     }
                 </div>

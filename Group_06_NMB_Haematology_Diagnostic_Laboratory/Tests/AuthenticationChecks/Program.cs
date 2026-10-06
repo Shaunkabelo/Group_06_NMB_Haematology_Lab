@@ -1,4 +1,4 @@
-﻿using System.Security.Claims;
+using System.Security.Claims;
 using System.Reflection;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Authentication;
@@ -176,6 +176,46 @@ Check(catalogueErrors.ContainsKey("QuantityOnHand") && catalogueErrors.ContainsK
 Check(Group_06_NMB_Haematology_Diagnostic_Laboratory.Validation.CatalogueInputValidator.Validate(new object[] {
     new SampleType { SampleTypeName = "Whole blood" }, new TestCategory { CategoryName = "Coagulation" }
 }).Count == 0, "Valid catalogue inputs accepted");
+foreach (var text in new[] { "4.5", "4,5", "-4,5", "0", "99999999.9999" })
+    Check(Group_06_NMB_Haematology_Diagnostic_Laboratory.Validation.NormalRangeParser.TryParse(text, out _), "Valid normal range: " + text);
+foreach (var text in new[] { "abc", "1,234.5", "4..5", "1e3", "1.12345", "100000000", "", "4 5" })
+    Check(!Group_06_NMB_Haematology_Diagnostic_Laboratory.Validation.NormalRangeParser.TryParse(text, out _), "Invalid normal range rejected: " + text);
+Group_06_NMB_Haematology_Diagnostic_Laboratory.Validation.NormalRangeParser.TryParse("4,5", out var commaRange);
+Group_06_NMB_Haematology_Diagnostic_Laboratory.Validation.NormalRangeParser.TryParse("4.5", out var dotRange);
+Check(commaRange == 4.5m && commaRange == dotRange, "Comma and dot preserve the same decimal value");
+Check(OrderStatusLabels.Display("Complete") == "Received" && OrderStatusLabels.Display("Partially complete") == "Partially Received", "Legacy receipt statuses display consistently");
+manager.ModelState.Clear();
+Check(await manager.DownloadReport("unknown", null, null) is RedirectToActionResult, "Unknown report type rejected");
+Check(await manager.DownloadReport("orders", new DateTime(2026,10,2), new DateTime(2026,10,1)) is RedirectToActionResult, "Reversed order-report dates rejected");
+Check(await manager.DownloadReport("orders", new DateTime(2026,10,1), DateTime.MaxValue) is RedirectToActionResult, "Report date overflow rejected");
+Check(await manager.DownloadReport("orders", new DateTime(2026,10,1), new DateTime(2026,10,2), "bad") is RedirectToActionResult, "Invalid report status rejected");
+
+QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
+var reportOutput = Path.Combine(Path.GetTempPath(), "NmbReportVerification");
+Directory.CreateDirectory(reportOutput);
+var orderReport = (FileContentResult)await manager.DownloadReport("orders", new DateTime(2026,9,1), new DateTime(2026,9,30), "Received");
+Check(orderReport.ContentType == "application/pdf", "Order report endpoint produces a PDF");
+File.WriteAllBytes(Path.Combine(reportOutput, "orders-filtered.pdf"), orderReport.FileContents);
+var stockReport = (FileContentResult)await manager.DownloadReport("stock", null, null, lowStockOnly: true);
+Check(stockReport.ContentType == "application/pdf", "Stock snapshot works without date inputs");
+File.WriteAllBytes(Path.Combine(reportOutput, "stock-filtered.pdf"), stockReport.FileContents);
+var longOrders = ManagementReportPdf.Generate("Stock Orders Report", "Sample records for pagination verification", "150 orders",
+    new[] { "Order number", "Supplier", "Ordered on", "Item lines", "Status", "Received on" },
+    Enumerable.Range(1,150).Select(i => new[] { $"ORD-{i:D3}", "Supplier name with longer text for wrapping",
+        "30 Sep 2026", "2", "Partially Received", "—" }), DateTimeOffset.UtcNow);
+File.WriteAllBytes(Path.Combine(reportOutput, "orders-multipage.pdf"), longOrders);
+Check(longOrders.Length > 0, "Order table generates across multiple pages");
+foreach (var count in new[] { 0, 3, 150 }) {
+    var reportRows = Enumerable.Range(1, count).Select(i => new TestsPerformedByCategory {
+        CategoryName = $"Category {i:D3} — Full blood count and differential studies",
+        TotalTests = i
+    }).ToList();
+    var reportPdf = TestsPerformedPdf.Generate(reportRows, new DateTime(2026, 9, 1), new DateTime(2026, 9, 30),
+        new DateTimeOffset(2026, 10, 1, 8, 30, 0, TimeSpan.Zero));
+    Check(Encoding.ASCII.GetString(reportPdf, 0, 5) == "%PDF-", $"Report generates a PDF for {count} categories");
+    File.WriteAllBytes(Path.Combine(reportOutput, $"report-{count}.pdf"), reportPdf);
+}
+Console.WriteLine($"Report samples: {reportOutput}");
 Console.WriteLine($"{checks} authentication and validation checks passed.");
 
 sealed class FakeRepository : IAuthenticationRepository
@@ -229,6 +269,15 @@ public class StaffRepositoryProxy : DispatchProxy
     public bool Fail { get; set; }
     protected override object? Invoke(MethodInfo? method, object?[]? args)
     {
+        if (method?.Name == "GetStockOrders") return Task.FromResult<IEnumerable<StockOrder>>(new[] {
+            new StockOrder { OrderNumber="INCLUDED-END", OrderDate=new DateTime(2026,9,30,23,59,59), Status="Complete", Supplier=new Supplier {SupplierName="Test supplier"} },
+            new StockOrder { OrderNumber="EXCLUDED-OCTOBER", OrderDate=new DateTime(2026,10,1), Status="Complete" },
+            new StockOrder { OrderNumber="EXCLUDED-STATUS", OrderDate=new DateTime(2026,9,15), Status="Ordered" }
+        });
+        if (method?.Name == "GetConsumables") return Task.FromResult<IEnumerable<Consumable>>(new[] {
+            new Consumable { Name="INCLUDED-NEAR", QuantityOnHand=11, ReorderLevel=10, Supplier=new Supplier { SupplierName="Supplier"} },
+            new Consumable { Name="EXCLUDED-ENOUGH", QuantityOnHand=12, ReorderLevel=10 }
+        });
         if (method?.Name == "GetTechnicianById") return Task.FromResult<LabTechnician?>(new LabTechnician { User = new User { IsActive = true } });
         if (method?.Name == "GetTestTypes") return Task.FromResult<IEnumerable<TestType>>(new[] { new TestType { TestTypeId = 1 }, new TestType { TestTypeId = 2 } });
         if (method?.Name == "ReplaceTechnicianTestTypes") { AssignmentSaves++; return Task.CompletedTask; }

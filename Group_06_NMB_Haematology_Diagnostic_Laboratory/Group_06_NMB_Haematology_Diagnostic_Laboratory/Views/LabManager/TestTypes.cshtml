@@ -234,7 +234,7 @@
                         </td>
 
                         <td>
-                            <button type="button" class="btn btn-link btn-sm p-0"
+                            <button type="button" class="btn btn-sm technician-status @(activeCount == 0 ? "technician-status-empty" : "technician-status-assigned")"
                                     data-bs-toggle="offcanvas" data-bs-target="#testTechniciansPanel"
                                     onclick="openTestTechnicians(@testType.TestTypeId, false)">
                                 @(activeCount == 0 ? "No active technicians" : $"{activeCount} technician{(activeCount == 1 ? "" : "s")}") &rsaquo;
@@ -303,7 +303,7 @@
                                             class="btn btn-delete btn-sm"
                                             onclick="return confirm('Are you sure you want to deactivate this test type?');">
 
-                                        Delete
+                                        Deactivate
 
                                     </button>
 
@@ -499,14 +499,14 @@
                 <div class="form-group">
 
                     <label class="form-label">
-                        Normal Range Minimum
+                        Normal Range Minimum (e.g. 4.5 or 4,5)
                     </label>
 
                     <input id="NormalRangeMin"
                            type="text"
                            inputmode="decimal"
                            class="form-control"
-                           name="NormalRangeMin" />
+                           name="NormalRangeMin" required maxlength="14" data-normal-range />
 
                 </div>
 
@@ -521,7 +521,7 @@
                            type="text"
                            inputmode="decimal"
                            class="form-control"
-                           name="NormalRangeMax" />
+                           name="NormalRangeMax" required maxlength="14" data-normal-range />
 
                 </div>
 
@@ -727,7 +727,7 @@
                 <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeRequirementRow(this)">Remove</button></div>
             <label class="form-label">Consumable</label>
             <select name="requirements[${index}].ConsumableId" class="form-control" required>${consumableOptions}</select>
-            <label class="form-label mt-3">Quantity Required per Test</label>
+            <label class="form-label mt-3">Quantity Required per Test</label><p class="text-muted small">This records the quantity needed per test. Stock is used when the technician performs the test, not when this catalogue is saved.</p>
             <input name="requirements[${index}].QuantityRequired" type="number" min="1" value="${requirement.quantity || 1}" class="form-control" required />`;
         container.appendChild(row);
         row.querySelector("select").value = requirement.consumableId || "";
@@ -826,12 +826,12 @@
         details.replaceChildren();
         const assigned = assignmentTechnicians.filter(t => test.assigned.includes(t.id));
         if (!assigned.length) {
-            const empty = document.createElement("p"); empty.className = "text-muted";
+            const empty = document.createElement("p"); empty.className = "text-danger fw-semibold";
             empty.textContent = "No technicians assigned."; details.append(empty);
         }
         assigned.sort((a,b) => Number(b.active)-Number(a.active) || a.name.localeCompare(b.name)).forEach(t => {
             const card = document.createElement("div"); card.className = "border rounded p-3 mb-2";
-            const name = document.createElement("strong"); name.textContent = t.name;
+            const name = document.createElement("strong"); name.textContent = t.name; name.className = t.active ? "text-success" : "text-muted";
             const info = document.createElement("div"); info.className = "small text-muted";
             info.textContent = [t.employee, t.email, t.active ? "Active" : "Inactive"].filter(Boolean).join(" · ");
             card.append(name, info); details.append(card);
@@ -846,6 +846,7 @@
             const text = document.createElement("span"); text.textContent = t.name + " — " + (t.employee || t.email);
             label.append(checkbox,text); assignmentChoices.append(label);
         });
+        assignmentChoices.classList.toggle("text-danger", !assignmentChoices.children.length);
         if (!assignmentChoices.children.length) assignmentChoices.textContent = "No active technicians are available.";
         document.getElementById("testTechniciansPanel").dataset.editing = String(editing);
     }
@@ -880,6 +881,11 @@
         #testTypesTable .td-actions { display:table-cell; min-width:285px; width:285px; white-space:normal; }
         #testTypesTable .td-actions .btn { display:inline-flex; align-items:center; white-space:nowrap; margin:3px 2px; }
         #testTypesTable .td-actions form { display:inline-block !important; margin:0; }
+        #testTypesTable .technician-status { border:1px solid; padding:6px 10px; font-weight:600; text-align:left; }
+        #testTypesTable .technician-status-empty { color:#a51d2d; background:#fff0f2; border-color:#efb3bb; }
+        #testTypesTable .technician-status-assigned { color:#146339; background:#eaf7ef; border-color:#9ed4b3; }
+        #testTypesTable .technician-status:hover { filter:brightness(.96); }
+        #testTypesTable .technician-status:focus-visible { outline:3px solid #285ea8; outline-offset:2px; }
         #testTechniciansPanel [hidden] { display:none !important; }
     </style>
 }

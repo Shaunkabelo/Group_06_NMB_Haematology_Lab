@@ -5,9 +5,9 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using Group_06_NMB_Haematology_Diagnostic_Lab.Data.Helpers;
 using Group_06_NMB_Haematology_Diagnostic_Laboratory.Models;
-using QuestPDF.Fluent;
-using QuestPDF.Helpers;
-using QuestPDF.Infrastructure;
+
+
+
 
 namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 {
@@ -86,7 +86,7 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
             IFormCollection form)
         {
             var selectedIds = selectedConsumables.Distinct().ToList();
-            if (supplierId <= 0 || selectedIds.Count == 0)
+            if (!ModelState.IsValid || supplierId <= 0 || selectedIds.Count == 0)
             {
                 TempData["ErrorMessage"] = "Select a supplier and at least one consumable.";
                 return RedirectToAction(nameof(Orders));
@@ -114,9 +114,7 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
                 items.Add((consumableId, quantity));
             }
 
-            var safeOrderNumber = string.IsNullOrWhiteSpace(orderNumber)
-                ? $"ORD-{DateTime.UtcNow:yyyyMMdd}-{Guid.NewGuid().ToString("N")[..8]}"
-                : orderNumber.Trim();
+            var safeOrderNumber = $"ORD-{DateTime.UtcNow:yyyyMMdd}-{Guid.NewGuid().ToString("N")[..8]}";
 
             var stockOrderId = await _repository.CreateStockOrder(new StockOrder
             {
@@ -194,9 +192,9 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> CancelOrderItem(int stockOrderItemId, string? cancelReason)
         {
-            if (stockOrderItemId <= 0 || string.IsNullOrWhiteSpace(cancelReason))
+            if (stockOrderItemId <= 0 || string.IsNullOrWhiteSpace(cancelReason) || cancelReason.Trim().Length > 255)
             {
-                TempData["ErrorMessage"] = "A reason is required to cancel an order item.";
+                TempData["ErrorMessage"] = "Enter a cancellation reason of 1–255 characters.";
                 return RedirectToAction(nameof(Orders));
             }
 
@@ -209,9 +207,9 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> CancelOrder(int stockOrderId, string? cancelReason)
         {
-            if (stockOrderId <= 0 || string.IsNullOrWhiteSpace(cancelReason))
+            if (stockOrderId <= 0 || string.IsNullOrWhiteSpace(cancelReason) || cancelReason.Trim().Length > 255)
             {
-                TempData["ErrorMessage"] = "A reason is required to cancel an order.";
+                TempData["ErrorMessage"] = "Enter a cancellation reason of 1–255 characters.";
                 return RedirectToAction(nameof(Orders));
             }
 
@@ -490,7 +488,7 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
                 testType.TurnaroundTimeMinutes, validRequirements[0].ConsumableId, validRequirements[0].QuantityRequired);
             foreach (var requirement in validRequirements.Skip(1))
                 await _repository.CreateTestTypeConsumable(testTypeId, requirement.ConsumableId, requirement.QuantityRequired);
-            TempData["Success"] = "Test type created and consumable stock allocated.";
+            TempData["Success"] = "Test type created and consumable requirements saved.";
 
             return RedirectToAction(
                 nameof(TestTypes),
@@ -1167,15 +1165,22 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
         //================================================================================================================
 
         [HttpGet]
-        public IActionResult ManagerReports() => View();
+        public IActionResult ManagerReports(DateTime? startDate, DateTime? endDate, string reportType = "tests", string orderStatus = "All", bool lowStockOnly = false)
+        {
+            var today = DateTimeOffset.UtcNow.ToOffset(TimeSpan.FromHours(2)).Date;
+            ViewBag.ReportType = reportType; ViewBag.OrderStatus = orderStatus; ViewBag.LowStockOnly = lowStockOnly;
+            ViewBag.ReportStart = startDate?.Date ?? today.AddMonths(-1);
+            ViewBag.ReportEnd = endDate?.Date ?? today;
+            return View();
+        }
 
         [HttpGet]
         public async Task<IActionResult> TestsPerformedReport(DateTime startDate, DateTime endDate)
         {
-            if (startDate == default || endDate == default || startDate.Date > endDate.Date)
+            if (!ModelState.IsValid || startDate == default || endDate == default || startDate.Date > endDate.Date || endDate.Date == DateTime.MaxValue.Date)
             {
                 TempData["ReportError"] = "Select a valid start and end date.";
-                return RedirectToAction(nameof(ManagerReports));
+                return RedirectToAction(nameof(ManagerReports), new { startDate = startDate.ToString("yyyy-MM-dd"), endDate = endDate.ToString("yyyy-MM-dd") });
             }
 
             var categories = (await _repository.GetTestsPerformedByCategory(
@@ -1185,51 +1190,62 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
                 .ThenBy(row => row.CategoryName)
                 .ToList();
 
-            var document = Document.Create(container =>
-            {
-                container.Page(page =>
-                {
-                    page.Margin(45);
-                    page.Header().Column(column =>
-                    {
-                        column.Item().Text("NMB-HLabSys").FontSize(18).Bold().FontColor(Colors.Blue.Medium);
-                        column.Item().Text("Tests Performed by Category").FontSize(24).Bold();
-                        column.Item().Text($"Reporting period: {startDate:dd MMM yyyy} to {endDate:dd MMM yyyy}").FontSize(10).FontColor(Colors.Grey.Darken1);
-                    });
-                    page.Content().PaddingTop(24).Column(column =>
-                    {
-                        column.Item().Table(table =>
-                        {
-                            table.ColumnsDefinition(columns =>
-                            {
-                                columns.RelativeColumn(3);
-                                columns.RelativeColumn(1);
-                            });
-                            table.Header(header =>
-                            {
-                                header.Cell().Background(Colors.Blue.Medium).Padding(8).Text("Test category").FontColor(Colors.White).Bold();
-                                header.Cell().Background(Colors.Blue.Medium).Padding(8).AlignRight().Text("Total tests").FontColor(Colors.White).Bold();
-                            });
-                            foreach (var category in categories)
-                            {
-                                table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten2).Padding(8).Text(category.CategoryName);
-                                table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten2).Padding(8).AlignRight().Text(category.TotalTests.ToString());
-                            }
-                        });
-                        column.Item().PaddingTop(18).Text($"Total tests performed: {categories.Sum(row => row.TotalTests)}").Bold();
-                    });
-                    page.Footer().AlignCenter().Text(text =>
-                    {
-                        text.Span("Generated ");
-                        text.Span(DateTime.Now.ToString("dd MMM yyyy HH:mm"));
-                    });
-                });
-            });
-
-            return File(document.GeneratePdf(), "application/pdf",
+            var pdf = TestsPerformedPdf.Generate(categories, startDate.Date, endDate.Date, DateTimeOffset.UtcNow);
+            return File(pdf, "application/pdf",
                 $"tests-performed-{startDate:yyyyMMdd}-{endDate:yyyyMMdd}.pdf");
         }
 
+        [HttpGet]
+        public async Task<IActionResult> DownloadReport(string reportType, DateTime? startDate, DateTime? endDate,
+            string orderStatus = "All", bool lowStockOnly = false)
+        {
+            var statuses = new[] { "All", "Ordered", "Partially Received", "Received", "Cancelled" };
+            var dated = reportType is "tests" or "orders";
+            if (!ModelState.IsValid || reportType is not ("tests" or "orders" or "stock") ||
+                (reportType == "orders" && !statuses.Contains(orderStatus)) ||
+                (dated && (!startDate.HasValue || !endDate.HasValue || startDate.Value == default ||
+                    startDate.Value.Date > endDate.Value.Date || endDate.Value.Date == DateTime.MaxValue.Date)))
+            {
+                TempData["ReportError"] = "Choose a valid report and date range. The end date must be on or after the start date.";
+                return RedirectToAction(nameof(ManagerReports), new { reportType, startDate, endDate, orderStatus, lowStockOnly });
+            }
+            if (reportType == "tests")
+                return await TestsPerformedReport(startDate!.Value, endDate!.Value);
+
+            var culture = System.Globalization.CultureInfo.GetCultureInfo("en-ZA");
+            var now = DateTimeOffset.UtcNow;
+            byte[] pdf;
+            if (reportType == "orders")
+            {
+                var orders = (await _repository.GetStockOrders("All", ""))
+                    .Where(x => x.OrderDate.HasValue && x.OrderDate.Value >= startDate!.Value.Date
+                        && x.OrderDate.Value < endDate!.Value.Date.AddDays(1))
+                    .Where(x => orderStatus == "All" || OrderStatusLabels.Display(x.Status) == orderStatus)
+                    .OrderBy(x => x.OrderDate).ThenBy(x => x.OrderNumber, StringComparer.OrdinalIgnoreCase).ToList();
+                string Date(DateTime? value) => value?.ToString("dd MMM yyyy", culture) ?? "—";
+                pdf = ManagementReportPdf.Generate("Stock Orders Report",
+                    $"Order dates: {Date(startDate)} – {Date(endDate)} (inclusive). Status: {orderStatus}. Sorted by order date, then order number. Statuses are current at generation.",
+                    $"Orders: {orders.Count:N0} • Ordered: {orders.Count(x => OrderStatusLabels.Display(x.Status) == "Ordered"):N0} • Partially received: {orders.Count(x => OrderStatusLabels.Display(x.Status) == "Partially Received"):N0} • Received: {orders.Count(x => OrderStatusLabels.Display(x.Status) == "Received"):N0} • Cancelled: {orders.Count(x => OrderStatusLabels.Display(x.Status) == "Cancelled"):N0}",
+                    new[] { "Order number", "Supplier", "Ordered on", "Item lines", "Status", "Received on" },
+                    orders.Select(x => new[] { x.OrderNumber, x.Supplier?.SupplierName ?? "Unknown", Date(x.OrderDate),
+                        x.StockOrderItem.Count.ToString("N0", culture), OrderStatusLabels.Display(x.Status), Date(x.CompletionDate) }), now);
+            }
+            else
+            {
+                var stock = (await _repository.GetConsumables("Active"))
+                    .Where(x => !lowStockOnly || x.QuantityOnHand <= x.ReorderLevel * 1.1m)
+                    .OrderBy(x => x.Supplier?.SupplierName, StringComparer.OrdinalIgnoreCase)
+                    .ThenBy(x => x.Name, StringComparer.OrdinalIgnoreCase).ToList();
+                pdf = ManagementReportPdf.Generate("Current Consumable Stock",
+                    $"Current snapshot, not historical stock. Active consumables only. Selection: {(lowStockOnly ? "near/below reorder level (within 10%)" : "all stock")}. Sorted by supplier, then consumable.",
+                    $"Stock items: {stock.Count:N0} • Near/below reorder level: {stock.Count(x => x.QuantityOnHand <= x.ReorderLevel * 1.1m):N0}",
+                    new[] { "Consumable", "Supplier", "Quantity on hand", "Reorder level", "Stock status" },
+                    stock.Select(x => new[] { x.Name, x.Supplier?.SupplierName ?? "Unknown",
+                        x.QuantityOnHand.ToString("N0", culture), x.ReorderLevel.ToString("N0", culture),
+                        x.QuantityOnHand <= x.ReorderLevel ? "At/below reorder" : x.QuantityOnHand <= x.ReorderLevel * 1.1m ? "Near reorder" : "Available" }), now);
+            }
+            return File(pdf, "application/pdf", $"{reportType}-report-{now:yyyyMMdd-HHmm}.pdf");
+        }
         public IActionResult Profile() => RedirectToAction("Profile", "Account");
 
 
