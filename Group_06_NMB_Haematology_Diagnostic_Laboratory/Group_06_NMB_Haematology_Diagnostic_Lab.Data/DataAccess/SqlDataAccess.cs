@@ -1,4 +1,4 @@
-﻿using Dapper;
+using Dapper;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
 using System;
@@ -135,7 +135,7 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.DataAccess
             }
             catch
             {
-                transaction.Rollback();
+                if (transaction.Connection != null) transaction.Rollback();
                 throw;
             }
         }

@@ -116,6 +116,7 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 
             var safeOrderNumber = $"ORD-{DateTime.UtcNow:yyyyMMdd}-{Guid.NewGuid().ToString("N")[..8]}";
 
+<<<<<<< Updated upstream
             var stockOrderId = await _repository.CreateStockOrder(new StockOrder
             {
                 SupplierId = supplierId,
@@ -129,6 +130,21 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
             }
 
             TempData["SuccessMessage"] = $"Order {safeOrderNumber} was created.";
+=======
+            int stockOrderId;
+            try
+            {
+                stockOrderId = await _repository.CreateStockOrderWithItems(new StockOrder
+                { SupplierId = supplierId, OrderNumber = safeOrderNumber, OrderDate = DateTime.UtcNow }, items);
+            }
+            catch (Microsoft.Data.SqlClient.SqlException ex) when (ex.Number is 50110 or 2601 or 2627 or 1205)
+            {
+                TempData["ErrorMessage"] = ex.Number == 50110 ? ex.Message : "The order could not be saved. Refresh and try again.";
+                return RedirectToAction(nameof(Orders));
+            }
+            TempData["SuccessMessage"] = $"Order {safeOrderNumber} was created.";
+            await NotifySupplier(stockOrderId, "A new consumable stock order has been placed.");
+>>>>>>> Stashed changes
             return RedirectToAction(nameof(Orders));
         }
 
@@ -173,6 +189,7 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
             });
         }
 
+<<<<<<< Updated upstream
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ReceiveOrderItem(int stockOrderItemId, int stockOrderId)
@@ -216,6 +233,75 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
             await _repository.CancelStockOrder(stockOrderId, cancelReason.Trim());
             TempData["SuccessMessage"] = "Order cancelled.";
             return RedirectToAction(nameof(Orders));
+=======
+        private async Task NotifySupplier(int id, string notification)
+        {
+            try
+            {
+                var order = await _repository.GetStockOrderById(id)
+                    ?? throw new InvalidOperationException("Order unavailable after save.");
+                await _emailSender.SendSupplierNotification(order, notification);
+                TempData["SupplierEmailStatus"] = "success";
+                TempData["SupplierEmailNotification"] = $"Supplier email sent automatically to {order.Supplier?.SupplierEmail} for order {order.OrderNumber}. Accepted by the mail server; this does not confirm it has been read.";
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("Order {OrderId} saved but supplier notification failed ({FailureType}).", id, ex.GetType().Name);
+                TempData["SupplierEmailStatus"] = "warning";
+                TempData["SupplierEmailNotification"] = "The order change is saved, but the automatic supplier email could not be confirmed. Contact the supplier directly and check the email configuration. Do not create or cancel the order again to resend an email.";
+            }
+        }
+
+        private async Task<IActionResult> ChangeOrder(Func<Task> change, int id, string success, string? notification = null)
+        {
+            if (!ModelState.IsValid || id <= 0)
+            { TempData["ErrorMessage"] = "Choose a valid order."; return RedirectToAction(nameof(Orders)); }
+            try { await change(); }
+            catch (Microsoft.Data.SqlClient.SqlException ex) when (ex.Number is 50110 or 1205)
+            {
+                TempData["ErrorMessage"] = ex.Number == 50110 ? ex.Message : "The order was being changed. Refresh and try again.";
+                return RedirectToAction(nameof(Orders));
+            }
+            TempData["SuccessMessage"] = success;
+            if (notification != null) await NotifySupplier(id, notification);
+            return RedirectToAction(nameof(Orders));
+        }
+
+        [HttpPost, ValidateAntiForgeryToken]
+        public async Task<IActionResult> ReceiveOrderItem(int stockOrderItemId, int stockOrderId)
+        {
+            var order = await _repository.GetStockOrderById(stockOrderId);
+            if (order == null || !order.StockOrderItem.Any(x => x.StockOrderItemId == stockOrderItemId)) return NotFound();
+            return await ChangeOrder(() => _repository.ReceiveStockOrderItem(stockOrderItemId), stockOrderId,
+                "Order item received and stock updated.");
+        }
+
+        [HttpPost, ValidateAntiForgeryToken]
+        public Task<IActionResult> ReceiveOrder(int stockOrderId) =>
+            ChangeOrder(() => _repository.ReceiveStockOrder(stockOrderId), stockOrderId,
+                "All outstanding items received and stock updated.");
+
+        [HttpPost, ValidateAntiForgeryToken]
+        public async Task<IActionResult> CancelOrderItem(int stockOrderItemId, string? cancelReason, int stockOrderId)
+        {
+            if (string.IsNullOrWhiteSpace(cancelReason) || cancelReason.Trim().Length > 255)
+            { TempData["ErrorMessage"] = "Enter a cancellation reason of 1–255 characters."; return RedirectToAction(nameof(Orders)); }
+            var order = await _repository.GetStockOrderById(stockOrderId);
+            var item = order?.StockOrderItem.FirstOrDefault(x => x.StockOrderItemId == stockOrderItemId);
+            if (item == null) return NotFound();
+            return await ChangeOrder(() => _repository.CancelStockOrderItem(stockOrderItemId, cancelReason.Trim()), stockOrderId,
+                "Order item cancelled.", $"Cancellation: {item.Consumable?.Name}, quantity {item.QuantityOrdered}. Reason: {cancelReason.Trim()}");
+        }
+
+        [HttpPost, ValidateAntiForgeryToken]
+        public Task<IActionResult> CancelOrder(int stockOrderId, string? cancelReason)
+        {
+            if (string.IsNullOrWhiteSpace(cancelReason) || cancelReason.Trim().Length > 255)
+            { TempData["ErrorMessage"] = "Enter a cancellation reason of 1–255 characters."; return Task.FromResult<IActionResult>(RedirectToAction(nameof(Orders))); }
+            return ChangeOrder(() => _repository.CancelStockOrder(stockOrderId, cancelReason.Trim()), stockOrderId,
+                "Order cancelled. Received items were preserved; outstanding items were cancelled.",
+                $"The outstanding items on this order have been cancelled. Reason: {cancelReason.Trim()}");
+>>>>>>> Stashed changes
         }
 
         // ==================== SAMPLE TYPES ====================

@@ -685,6 +685,31 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
             return order;
         }
 
+<<<<<<< Updated upstream
+=======
+        public async Task<int> CreateStockOrderWithItems(StockOrder order, IEnumerable<(int ConsumableId, int Quantity)> items)
+        {
+            var lines = items.ToList();
+            if (lines.Count == 0 || lines.Any(x => x.ConsumableId <= 0 || x.Quantity <= 0) ||
+                lines.Select(x => x.ConsumableId).Distinct().Count() != lines.Count)
+                throw new ArgumentException("Choose distinct consumables with positive quantities.");
+            var id = 0;
+            await _db.ExecuteInTransaction(async (connection, transaction) =>
+            {
+                id = await connection.QuerySingleAsync<int>("dbo.sp_StockOrder_Create",
+                    new { order.SupplierId, order.OrderNumber }, transaction, commandType: CommandType.StoredProcedure);
+                foreach (var item in lines)
+                    await connection.ExecuteAsync("dbo.sp_StockOrder_AddItem",
+                        new { StockOrderID = id, ConsumableID = item.ConsumableId, QuantityOrdered = item.Quantity },
+                        transaction, commandType: CommandType.StoredProcedure);
+            });
+            return id;
+        }
+
+        public Task ReceiveStockOrder(int stockOrderId) =>
+            _db.SaveData("sp_StockOrder_ReceiveItem", new { StockOrderID = stockOrderId });
+
+>>>>>>> Stashed changes
         public Task<int> CreateStockOrder(StockOrder order) =>
             _db.SaveDataAndReturn<int, dynamic>(
                 "sp_StockOrder_Create",

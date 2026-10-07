@@ -237,7 +237,11 @@
                             <button type="button" class="btn btn-sm technician-status @(activeCount == 0 ? "technician-status-empty" : "technician-status-assigned")"
                                     data-bs-toggle="offcanvas" data-bs-target="#testTechniciansPanel"
                                     onclick="openTestTechnicians(@testType.TestTypeId, false)">
+<<<<<<< Updated upstream
                                 @(activeCount == 0 ? "No active technicians" : $"{activeCount} technician{(activeCount == 1 ? "" : "s")}") &rsaquo;
+=======
+                                @(activeCount == 0 ? "No active technicians" : $"{activeCount} technician{(activeCount == 1 ? "" : "s")}")
+>>>>>>> Stashed changes
                             </button>
 
                         </td>
@@ -881,7 +885,11 @@
         #testTypesTable .td-actions { display:table-cell; min-width:285px; width:285px; white-space:normal; }
         #testTypesTable .td-actions .btn { display:inline-flex; align-items:center; white-space:nowrap; margin:3px 2px; }
         #testTypesTable .td-actions form { display:inline-block !important; margin:0; }
+<<<<<<< Updated upstream
         #testTypesTable .technician-status { border:1px solid; padding:6px 10px; font-weight:600; text-align:left; }
+=======
+        #testTypesTable .technician-status { border:1px solid; padding:6px 10px; font-weight:600; text-align:left; white-space:nowrap; }
+>>>>>>> Stashed changes
         #testTypesTable .technician-status-empty { color:#a51d2d; background:#fff0f2; border-color:#efb3bb; }
         #testTypesTable .technician-status-assigned { color:#146339; background:#eaf7ef; border-color:#9ed4b3; }
         #testTypesTable .technician-status:hover { filter:brightness(.96); }
