@@ -116,21 +116,6 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 
             var safeOrderNumber = $"ORD-{DateTime.UtcNow:yyyyMMdd}-{Guid.NewGuid().ToString("N")[..8]}";
 
-<<<<<<< Updated upstream
-            var stockOrderId = await _repository.CreateStockOrder(new StockOrder
-            {
-                SupplierId = supplierId,
-                OrderNumber = safeOrderNumber,
-                OrderDate = DateTime.Now
-            });
-
-            foreach (var item in items)
-            {
-                await _repository.CreateStockOrderItem(stockOrderId, item.ConsumableId, item.Quantity);
-            }
-
-            TempData["SuccessMessage"] = $"Order {safeOrderNumber} was created.";
-=======
             int stockOrderId;
             try
             {
@@ -144,7 +129,6 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
             }
             TempData["SuccessMessage"] = $"Order {safeOrderNumber} was created.";
             await NotifySupplier(stockOrderId, "A new consumable stock order has been placed.");
->>>>>>> Stashed changes
             return RedirectToAction(nameof(Orders));
         }
 
@@ -189,51 +173,6 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
             });
         }
 
-<<<<<<< Updated upstream
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> ReceiveOrderItem(int stockOrderItemId, int stockOrderId)
-        {
-            if (stockOrderItemId <= 0)
-            {
-                TempData["ErrorMessage"] = "Invalid order item.";
-                return RedirectToAction(nameof(Orders));
-            }
-
-            await _repository.ReceiveStockOrderItem(stockOrderItemId);
-            TempData["SuccessMessage"] = "Order item received and stock updated.";
-            return RedirectToAction(nameof(Orders));
-        }
-
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> CancelOrderItem(int stockOrderItemId, string? cancelReason)
-        {
-            if (stockOrderItemId <= 0 || string.IsNullOrWhiteSpace(cancelReason) || cancelReason.Trim().Length > 255)
-            {
-                TempData["ErrorMessage"] = "Enter a cancellation reason of 1–255 characters.";
-                return RedirectToAction(nameof(Orders));
-            }
-
-            await _repository.CancelStockOrderItem(stockOrderItemId, cancelReason.Trim());
-            TempData["SuccessMessage"] = "Order item cancelled.";
-            return RedirectToAction(nameof(Orders));
-        }
-
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> CancelOrder(int stockOrderId, string? cancelReason)
-        {
-            if (stockOrderId <= 0 || string.IsNullOrWhiteSpace(cancelReason) || cancelReason.Trim().Length > 255)
-            {
-                TempData["ErrorMessage"] = "Enter a cancellation reason of 1–255 characters.";
-                return RedirectToAction(nameof(Orders));
-            }
-
-            await _repository.CancelStockOrder(stockOrderId, cancelReason.Trim());
-            TempData["SuccessMessage"] = "Order cancelled.";
-            return RedirectToAction(nameof(Orders));
-=======
         private async Task NotifySupplier(int id, string notification)
         {
             try
@@ -301,7 +240,6 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
             return ChangeOrder(() => _repository.CancelStockOrder(stockOrderId, cancelReason.Trim()), stockOrderId,
                 "Order cancelled. Received items were preserved; outstanding items were cancelled.",
                 $"The outstanding items on this order have been cancelled. Reason: {cancelReason.Trim()}");
->>>>>>> Stashed changes
         }
 
         // ==================== SAMPLE TYPES ====================

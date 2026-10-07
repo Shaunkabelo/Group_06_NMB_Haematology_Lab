@@ -685,8 +685,6 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
             return order;
         }
 
-<<<<<<< Updated upstream
-=======
         public async Task<int> CreateStockOrderWithItems(StockOrder order, IEnumerable<(int ConsumableId, int Quantity)> items)
         {
             var lines = items.ToList();
@@ -709,7 +707,6 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
         public Task ReceiveStockOrder(int stockOrderId) =>
             _db.SaveData("sp_StockOrder_ReceiveItem", new { StockOrderID = stockOrderId });
 
->>>>>>> Stashed changes
         public Task<int> CreateStockOrder(StockOrder order) =>
             _db.SaveDataAndReturn<int, dynamic>(
                 "sp_StockOrder_Create",

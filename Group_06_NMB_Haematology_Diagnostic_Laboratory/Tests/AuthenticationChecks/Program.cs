@@ -295,6 +295,11 @@ sealed class TestEmail : IAccountEmailSender
     public int Sent { get; private set; }
     public string? Password { get; private set; }
     public bool Fail { get; set; }
+    public Task SendSupplierNotification(StockOrder order, string notification)
+    {
+        if (Fail) throw new InvalidOperationException("Simulated SMTP failure");
+        return Task.CompletedTask;
+    }
     public Task SendResetLink(string recipient, string link) => Task.CompletedTask;
     public Task SendTemporaryPassword(string recipient, string name, string password)
     {

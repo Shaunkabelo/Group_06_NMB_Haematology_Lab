@@ -85,11 +85,8 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
         Task<StockOrder?> GetStockOrderById(int stockOrderId);
         Task<IEnumerable<Consumable>> GetLowStockConsumables();
         Task<int> CreateStockOrder(StockOrder order);
-<<<<<<< Updated upstream
-=======
         Task<int> CreateStockOrderWithItems(StockOrder order, IEnumerable<(int ConsumableId, int Quantity)> items);
         Task ReceiveStockOrder(int stockOrderId);
->>>>>>> Stashed changes
         Task CreateStockOrderItem(int stockOrderId, int consumableId, int quantityOrdered);
         Task ReceiveStockOrderItem(int stockOrderItemId);
         Task CancelStockOrderItem(int stockOrderItemId, string cancelReason);
