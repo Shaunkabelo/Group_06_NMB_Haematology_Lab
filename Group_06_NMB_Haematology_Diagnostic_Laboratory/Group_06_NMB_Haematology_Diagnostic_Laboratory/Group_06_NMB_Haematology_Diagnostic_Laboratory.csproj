@@ -28,5 +28,8 @@
     <ProjectReference Include="..\Group_06_NMB_Haematology_Diagnostic_Lab.Data\Group_06_NMB_Haematology_Diagnostic_Lab.Data.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\Group_06_NMB_Haematology_Diagnostic_Lab.Data\Group_06_NMB_Haematology_Diagnostic_Lab.Data.csproj" />
+  </ItemGroup>
 </Project>
 

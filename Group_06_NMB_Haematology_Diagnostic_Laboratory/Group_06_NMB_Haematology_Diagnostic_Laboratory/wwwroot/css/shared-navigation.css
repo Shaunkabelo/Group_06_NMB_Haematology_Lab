@@ -1,0 +1,27 @@
+/* Optional enhancement, isolated for easy reversal. */
+.main-content { min-width: 0; }
+.shared-heading { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.shared-heading h2 { margin: 0; }
+#shared-nav-toggle { flex-shrink: 0; }
+.shared-nav-tooltip {
+    position: fixed; z-index: 1090; pointer-events: none;
+    background: #0b1929; color: #fff; padding: 8px 12px;
+    border-radius: 6px; font-size: 14px; box-shadow: 0 3px 12px #0003;
+}
+.sidebar .nav-item:focus-visible { outline: 2px solid #00c9a7; outline-offset: -3px; }
+@media (min-width: 861px) {
+    html.shared-nav-collapsed { --sidebar: 68px; }
+    .shared-nav-collapsed .sidebar .nav-label,
+    .shared-nav-collapsed .sidebar .nav-brand-label,
+    .shared-nav-collapsed .sidebar .sidebar-section,
+    .shared-nav-collapsed .sidebar .user-info { display: none; }
+    .shared-nav-collapsed .sidebar .sidebar-brand { padding: 20px 0; text-align: center; }
+    .shared-nav-collapsed .sidebar .nav-item {
+        justify-content: center; gap: 0; padding: 12px 0;
+    }
+    .shared-nav-collapsed .sidebar .sidebar-footer { padding-left: 0; padding-right: 0; }
+}
+@media (max-width: 860px) {
+    #shared-nav-toggle { display: none; }
+    .shared-nav-tooltip { display: none; }
+}

@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 using System.Text.RegularExpressions;
 using Group_06_NMB_Haematology_Diagnostic_Lab.Data.Models;
 
@@ -33,7 +33,7 @@ public static class StaffInputValidator
         if (!Regex.IsMatch(user.SaIdNumber, @"^[0-9]{13}$"))
             Error("User.SaIdNumber", "SA ID number must contain exactly 13 digits (0–9), with no spaces or letters.");
         if (!user.DateOfBirth.HasValue) Error("User.DateOfBirth", "Date of birth is required.");
-        else if (user.DateOfBirth.Value.Date > DateTime.Today) Error("User.DateOfBirth", "Date of birth cannot be in the future.");
+        else if (user.DateOfBirth.Value > DateOnly.FromDateTime(DateTime.Today)) Error("User.DateOfBirth", "Date of birth cannot be in the future.");
         else if (!errors.ContainsKey("User.SaIdNumber") && user.SaIdNumber[..6] != user.DateOfBirth.Value.ToString("yyMMdd"))
             Error("User.SaIdNumber", "The first 6 ID digits must match the date of birth (YYMMDD).");
         if (user.HomeAddress.Length > 255) Error("User.HomeAddress", "Home address must be 255 characters or fewer.");

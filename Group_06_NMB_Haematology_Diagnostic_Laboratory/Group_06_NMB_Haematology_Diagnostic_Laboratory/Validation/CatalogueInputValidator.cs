@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using Group_06_NMB_Haematology_Diagnostic_Lab.Data.Models;
 namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Validation;
 public static class CatalogueInputValidator
@@ -29,8 +29,6 @@ public static class CatalogueInputValidator
                     t.TestName = t.TestName?.Trim(); t.UnitOfMeasurement = t.UnitOfMeasurement?.Trim();
                     Text("TestName", t.TestName, 100); Text("UnitOfMeasurement", t.UnitOfMeasurement, 50);
                     Positive("TestCategoryId", t.TestCategoryId); Positive("SampleTypeId", t.SampleTypeId); Positive("TurnaroundTimeMinutes", t.TurnaroundTimeMinutes);
-                    if (!t.NormalRangeMin.HasValue) errors["NormalRangeMin"] = new[] { "Enter the minimum normal range." };
-                    if (!t.NormalRangeMax.HasValue) errors["NormalRangeMax"] = new[] { "Enter the maximum normal range." };
                     if(t.NormalRangeMin > t.NormalRangeMax) errors["NormalRangeMax"] = new[] { "Maximum must be greater than or equal to minimum." };
                     break;
                 case IEnumerable<TestTypeConsumable> requirements:
