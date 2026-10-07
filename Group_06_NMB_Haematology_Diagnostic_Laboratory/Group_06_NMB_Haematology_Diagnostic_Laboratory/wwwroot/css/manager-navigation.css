@@ -1,0 +1,14 @@
+/* Lab Manager table actions; independent of shared navigation. */
+.main-content table td.td-actions,
+#ordersTable td:last-child,
+#orderItemsTable td:last-child {
+    display: table-cell;
+    white-space: nowrap !important;
+}
+.main-content table td.td-actions form,
+#ordersTable td:last-child form,
+#orderItemsTable td:last-child form { display: inline-block !important; margin-bottom: 0; }
+.main-content table td.td-actions .btn,
+#ordersTable td:last-child .btn,
+#orderItemsTable td:last-child .btn { white-space: nowrap; }
+.main-content .table-wrap, .main-content .table-responsive { overflow-x: auto; }
