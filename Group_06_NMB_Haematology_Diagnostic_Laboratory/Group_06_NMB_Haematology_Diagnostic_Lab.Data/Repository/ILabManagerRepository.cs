@@ -12,7 +12,7 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
         //      ==== DOCTOR ====
         Task<IEnumerable<Doctor>> GetDoctors(string filter = "Active");
         Task CreateDoctor(Doctor doctor, string temporaryPassword);
-        Task<Doctor> GetDoctorById(int doctorId);
+        Task<Doctor?> GetDoctorById(int doctorId);
         Task UpdateDoctor(Doctor doctor);
         Task DeleteDoctor(int doctorId);
         Task ReactivateDoctor(int doctorId);
@@ -109,7 +109,7 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
             int consumableId,
             int quantityRequired);
 
-        Task<TestType> GetTestTypeById(int id);
+        Task<TestType?> GetTestTypeById(int id);
 
 
 
@@ -136,7 +136,7 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
             string filter = "Active",
             string search = "");
 
-        Task<TestCategory> GetTestCategoryById(int id);
+        Task<TestCategory?> GetTestCategoryById(int id);
 
         Task CreateTestCategory(TestCategory category);
 
@@ -156,7 +156,7 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
             string filter = "Active",
             string search = "");
 
-        Task<SampleType> GetSampleTypeById(int id);
+        Task<SampleType?> GetSampleTypeById(int id);
 
         Task CreateSampleType(SampleType sampleType);
 

@@ -1026,7 +1026,7 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
         }
 
         // ------------------- GET CATEGOTRY BY ID -----------
-        public async Task<TestCategory> GetTestCategoryById(int id)
+        public async Task<TestCategory?> GetTestCategoryById(int id)
         {
             var result = await _db.GetData<TestCategory, object>(
                 "sp_TestCategory_GetById",
@@ -1104,7 +1104,7 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
         }
 
         //-------------------- GET BY ID ---------------------------------
-        public async Task<SampleType> GetSampleTypeById(int id)
+        public async Task<SampleType?> GetSampleTypeById(int id)
         {
             var result = await _db.GetData<SampleType, object>(
                 "sp_SampleType_GetById",
