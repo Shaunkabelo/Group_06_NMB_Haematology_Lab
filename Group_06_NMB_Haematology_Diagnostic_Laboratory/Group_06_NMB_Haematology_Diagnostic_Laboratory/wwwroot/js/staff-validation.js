@@ -29,7 +29,9 @@ document.addEventListener("DOMContentLoaded", () => {
                 error = "Enter a valid number within the allowed range.";
             else if (field.type === "email" && value && field.validity.typeMismatch)
                 error = "Enter a valid email address.";
-            else if (name === "NormalRangeMax" && value && form.elements.namedItem("NormalRangeMin")?.value && Number(value) < Number(form.elements.namedItem("NormalRangeMin").value))
+            else if (field.hasAttribute("data-normal-range") && !/^-?[0-9]{1,8}([.,][0-9]{1,4})?$/.test(value))
+                error = "Enter numbers only: up to 8 digits before and 4 after one comma or dot. No thousands separators.";
+            else if (name === "NormalRangeMax" && value && form.elements.namedItem("NormalRangeMin")?.value && Number(value.replace(",", ".")) < Number(form.elements.namedItem("NormalRangeMin").value.replace(",", ".")))
                 error = "Maximum must be greater than or equal to minimum.";
             else if (name === "User.Cellphone" && !/^[0-9]{10}$/.test(value))
                 error = "Cellphone number must contain exactly 10 digits, with no spaces or letters.";
@@ -49,6 +51,20 @@ document.addEventListener("DOMContentLoaded", () => {
             message(field, error); return !error;
         }
         fields.forEach(field => {
+            if (field.type === "number") { field.max = field.max || "2147483647"; }
+            if (field.hasAttribute("data-normal-range")) {
+                field.addEventListener("beforeinput", event => {
+                    if (event.data && /[^0-9,.\-]/.test(event.data)) {
+                        event.preventDefault(); message(field, "Only numbers and one decimal comma or dot are allowed.");
+                    }
+                });
+                field.addEventListener("paste", event => {
+                    const pasted = event.clipboardData?.getData("text") ?? "";
+                    if (/[^0-9,.\-\s]/.test(pasted)) {
+                        event.preventDefault(); message(field, "Paste a number, for example 4.5 or 4,5.");
+                    }
+                });
+            }
             const error = document.createElement("span");
             error.id = form.id + "-" + (field.id || field.name) + "-error";
             error.className = "text-danger small d-block mt-1"; error.setAttribute("aria-live", "polite");
@@ -67,6 +83,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     if (removed) { message(field, "Only digits (0–9) are allowed."); return; }
                 }
                 validate(field);
+                if (field.name === "NormalRangeMin") validate(form.elements.namedItem("NormalRangeMax"));
                 if (field.name === "User.DateOfBirth") validate(form.elements.namedItem("User.SaIdNumber"));
             });
             field.addEventListener("blur", () => validate(field));

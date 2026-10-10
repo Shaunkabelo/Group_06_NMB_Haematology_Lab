@@ -1,0 +1,300 @@
+@using System.Security.Claims
+
+@{
+    var currentAction = ViewContext.RouteData.Values["action"]?.ToString() ?? "";
+    var title = ViewData["Title"]?.ToString() ?? "NMB-HLabSys";
+
+    string IsActive(string action) =>
+        string.Equals(
+            currentAction,
+            action,
+            StringComparison.OrdinalIgnoreCase)
+            ? " active"
+            : "";
+}
+
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+    <meta name="viewport" content="width=device-width" />
+
+    <title>@ViewBag.Title</title>
+
+    <base href="@Url.Content("~/")" />
+
+    <!-- Bootstrap -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css"
+          rel="stylesheet">
+
+    <!-- Lab Manager Styles -->
+    <link rel="stylesheet"
+          href="~/css/LabManagerStyle.css"
+          asp-append-version="true" />
+
+    <!-- Validation -->
+    <script src="~/js/LabManager_Validation_Script.js"></script>
+
+    @await RenderSectionAsync("Styles", required: false)
+    <!-- Optional navigation/table layout enhancement: remove its CSS and JS includes to revert. -->
+    <link rel="stylesheet" href="~/css/shared-navigation.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/manager-navigation.css" asp-append-version="true" />
+</head>
+
+
+<body>
+
+    <!-- ========================================================= -->
+    <!-- SIDEBAR -->
+    <!-- ========================================================= -->
+
+    <aside class="sidebar" id="shared-sidebar">
+
+        <!-- BRAND -->
+
+        <div class="sidebar-brand">
+
+            <span class="brand-icon">🧬</span>
+
+            <span class="nav-brand-label">NMB-HLabSys</span>
+
+        </div>
+
+
+        <!-- NAVIGATION -->
+
+        <nav class="nav-menu">
+
+
+            <!-- ================================================= -->
+            <!-- OVERVIEW -->
+            <!-- ================================================= -->
+
+            <div class="sidebar-section">
+                Overview
+            </div>
+
+            <a asp-controller="LabManager"
+               asp-action="Dashboard"
+               class="nav-item@(IsActive("Dashboard"))">
+
+                <span>📊</span>
+                Dashboard
+
+            </a>
+
+
+            <a asp-controller="LabManager"
+               asp-action="ManagerReports"
+               class="nav-item@(IsActive("ManagerReports"))">
+
+                <span>📄</span>
+                Reports
+
+            </a>
+
+
+            <!-- ================================================= -->
+            <!-- CATALOGUE -->
+            <!-- ================================================= -->
+
+            <div class="sidebar-section">
+                Catalogue
+            </div>
+
+
+            <a asp-controller="LabManager"
+               asp-action="TestCategories"
+               class="nav-item@(IsActive("TestCategories"))">
+
+                <span>🗂️</span>
+                Categories
+
+            </a>
+
+
+            <a asp-controller="LabManager"
+               asp-action="TestTypes"
+               class="nav-item@(IsActive("TestTypes"))">
+
+                <span>🔬</span>
+                Test Types
+
+            </a>
+
+
+            <a asp-controller="LabManager"
+               asp-action="SampleTypes"
+               class="nav-item@(IsActive("SampleTypes"))">
+
+                <span>🧫</span>
+                Sample Types
+
+            </a>
+
+
+            <!-- ================================================= -->
+            <!-- INVENTORY -->
+            <!-- ================================================= -->
+
+            <div class="sidebar-section">
+                Inventory
+            </div>
+
+
+            <a asp-controller="LabManager"
+               asp-action="Consumables"
+               class="nav-item@(IsActive("Consumables"))">
+
+                <span>📦</span>
+                Consumables
+
+            </a>
+
+
+            <a asp-controller="LabManager"
+               asp-action="Orders"
+               class="nav-item@(IsActive("Orders"))">
+
+                <span>🛒</span>
+                Orders
+
+            </a>
+
+
+            <a asp-controller="LabManager"
+               asp-action="Suppliers"
+               class="nav-item@(IsActive("Suppliers"))">
+
+                <span>🏭</span>
+                Suppliers
+
+            </a>
+
+
+            <!-- ================================================= -->
+            <!-- STAFF -->
+            <!-- ================================================= -->
+
+            <div class="sidebar-section">
+                Users
+            </div>
+
+
+            <a asp-controller="LabManager"
+               asp-action="Doctors"
+               class="nav-item@(IsActive("Doctors"))">
+
+                <span>👨‍⚕️</span>
+                Doctors
+
+            </a>
+
+
+            <a asp-controller="LabManager"
+               asp-action="Technicians"
+               class="nav-item@(IsActive("Technicians"))">
+
+                <span>🧪</span>
+                Technicians
+
+            </a>
+
+
+            <a asp-controller="LabManager"
+               asp-action="ManageManagers"
+               class="nav-item@(IsActive("ManageManagers"))">
+
+                <span>👥</span>
+                Manage Managers
+
+            </a>
+
+
+            <!-- ================================================= -->
+            <!-- SIDEBAR FOOTER -->
+            <!-- ================================================= -->
+
+        </nav>
+
+        <div class="sidebar-footer account-sidebar-footer">
+            <a asp-controller="Account" asp-action="Profile" class="nav-item@(IsActive("Profile"))">
+                <span aria-hidden="true">&#128100;</span> My Profile
+            </a>
+            <div class="user-info">
+                <strong>@User.Identity?.Name</strong>
+                <small>@User.FindFirstValue(ClaimTypes.Role)</small>
+            </div>
+        </div>
+    </aside>
+
+
+    <!-- ========================================================= -->
+    <!-- MAIN CONTENT -->
+    <!-- ========================================================= -->
+
+    <main class="main-content">
+
+
+        <!-- ===================================================== -->
+        <!-- TOP BAR -->
+        <!-- ===================================================== -->
+
+        <header class="topbar">
+
+            <!-- PAGE TITLE -->
+
+            <div class="shared-heading">
+                <button type="button" id="shared-nav-toggle" class="btn btn-outline-secondary"
+                        aria-controls="shared-sidebar" aria-expanded="true"
+                        aria-label="Collapse navigation" title="Collapse navigation" hidden>
+                    <span aria-hidden="true">&#9776;</span>
+                </button>
+                <h2>@title</h2>
+            </div>
+
+
+            <!-- ACCOUNT -->
+
+            <form asp-controller="Account" asp-action="Logout" method="post">
+
+                <button type="submit" class="btn btn-secondary">Logout</button>
+            </form>
+        </header>
+
+
+        <!-- ===================================================== -->
+        <!-- PAGE CONTENT -->
+        <!-- ===================================================== -->
+        @if (ViewContext.RouteData.Values["action"]?.ToString() is "Doctors" or "ManageManagers" && TempData["Success"] is string success) { <div class="alert alert-success" role="status">@success</div> }
+            @if (ViewContext.RouteData.Values["action"]?.ToString() is "Doctors" or "ManageManagers" && TempData["Error"] is string error) { <div class="alert alert-danger" role="alert">@error</div> }
+            @RenderBody()
+
+
+
+    </main>
+
+
+    <!-- ========================================================= -->
+    <!-- BOOTSTRAP JAVASCRIPT -->
+    <!-- ========================================================= -->
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js">
+    </script>
+
+
+    <!-- ========================================================= -->
+    <!-- ACCOUNT DROPDOWN -->
+    <!-- ========================================================= -->
+
+
+    <script src="~/js/staff-validation.js" asp-append-version="true"></script>
+    <script src="~/js/shared-navigation.js" asp-append-version="true"></script>
+    @RenderSection("Scripts", required: false)
+
+</body>
+
+</html>
+

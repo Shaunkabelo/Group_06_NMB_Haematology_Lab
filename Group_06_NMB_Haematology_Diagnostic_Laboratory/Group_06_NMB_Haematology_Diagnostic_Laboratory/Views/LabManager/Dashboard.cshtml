@@ -1,0 +1,123 @@
+@model Group_06_NMB_Haematology_Diagnostic_Laboratory.Models.DashboardViewModel
+
+@{
+    ViewData["Title"] = "Dashboard";
+    Layout = "~/Views/Shared/_LabManager_Layout.cshtml";
+}
+
+<div class="dashboard-page">
+    <div class="dashboard-heading">
+        <div>
+            <p class="dashboard-eyebrow">Laboratory operations</p>
+            <h1>Dashboard</h1>
+            <p class="dashboard-intro">A quick view of your laboratory catalogue, team and stock activity.</p>
+        </div>
+        <div class="dashboard-date">@DateTime.Now.ToString("dddd, dd MMMM yyyy")</div>
+    </div>
+
+    <section class="dashboard-metrics" aria-label="Laboratory totals">
+        <a class="metric-card metric-blue" asp-action="TestTypes">
+            <span class="metric-icon">🔬</span>
+            <span class="metric-label">Active test types</span>
+            <strong>@Model.TestTypeCount</strong>
+            <span class="metric-link">View catalogue <span aria-hidden="true">→</span></span>
+        </a>
+        <a class="metric-card metric-teal" asp-action="Doctors">
+            <span class="metric-icon">👨‍⚕️</span>
+            <span class="metric-label">Doctors</span>
+            <strong>@Model.DoctorCount</strong>
+            <span class="metric-link">View accounts <span aria-hidden="true">→</span></span>
+        </a>
+        <a class="metric-card metric-coral" asp-action="Technicians">
+            <span class="metric-icon">🧪</span>
+            <span class="metric-label">Technicians</span>
+            <strong>@Model.TechnicianCount</strong>
+            <span class="metric-link">View accounts <span aria-hidden="true">→</span></span>
+        </a>
+        <a class="metric-card metric-gold" asp-action="Consumables">
+            <span class="metric-icon">📦</span>
+            <span class="metric-label">Active consumables</span>
+            <strong>@Model.ConsumableCount</strong>
+            <span class="metric-link">Manage stock <span aria-hidden="true">→</span></span>
+        </a>
+        <a class="metric-card metric-purple" asp-action="TestCategories">
+            <span class="metric-icon">🗂️</span>
+            <span class="metric-label">Test categories</span>
+            <strong>@Model.CategoryCount</strong>
+            <span class="metric-link">View categories <span aria-hidden="true">→</span></span>
+        </a>
+        <a class="metric-card metric-navy" asp-action="ManageManagers">
+            <span class="metric-icon">👥</span>
+            <span class="metric-label">Lab managers</span>
+            <strong>@Model.ManagerCount</strong>
+            <span class="metric-link">Manage team <span aria-hidden="true">→</span></span>
+        </a>
+    </section>
+
+    <div class="dashboard-grid">
+        <section class="dashboard-panel">
+            <div class="panel-heading">
+                <div>
+                    <p class="panel-kicker">Inventory attention</p>
+                    <h2>Low stock alerts</h2>
+                </div>
+                <a class="panel-action" asp-action="Consumables">View all <span aria-hidden="true">→</span></a>
+            </div>
+            @if (Model.LowStockConsumables.Count == 0)
+            {
+                <div class="empty-panel"><span>✓</span><p>All active consumables are above their reorder level.</p></div>
+            }
+            else
+            {
+                <div class="alert-list">
+                    @foreach (var consumable in Model.LowStockConsumables.Take(5))
+                    {
+                        <div class="alert-row">
+                            <span class="alert-mark">!</span>
+                            <div><strong>@consumable.Name</strong><small>Reorder level: @consumable.ReorderLevel</small></div>
+                            <span class="stock-count">@consumable.QuantityOnHand left</span>
+                        </div>
+                    }
+                </div>
+            }
+        </section>
+
+        <section class="dashboard-panel">
+            <div class="panel-heading">
+                <div>
+                    <p class="panel-kicker">Purchasing</p>
+                    <h2>Recent stock orders</h2>
+                </div>
+                <a class="panel-action" asp-action="Orders">View all <span aria-hidden="true">→</span></a>
+            </div>
+            @if (Model.RecentOrders.Count == 0)
+            {
+                <div class="empty-panel"><span>—</span><p>No stock orders have been recorded yet.</p></div>
+            }
+            else
+            {
+                <div class="order-list">
+                    @foreach (var order in Model.RecentOrders)
+                    {
+                        <a class="order-row" asp-action="Orders">
+                            <span class="order-symbol">🛒</span>
+                            <span class="order-details"><strong>@order.OrderNumber</strong><small>@(order.Supplier?.SupplierName ?? "Supplier not available")</small></span>
+                            <span class="order-status">@Group_06_NMB_Haematology_Diagnostic_Laboratory.Services.OrderStatusLabels.Display(order.Status)</span>
+                        </a>
+                    }
+                </div>
+            }
+        </section>
+    </div>
+
+    <section class="dashboard-quick-links">
+        <div><p class="panel-kicker">Shortcuts</p><h2>Common actions</h2></div>
+        <div class="quick-link-list">
+            <a asp-action="Orders">Create stock order <span aria-hidden="true">↗</span></a>
+            <a asp-action="Technicians">Manage technicians <span aria-hidden="true">↗</span></a>
+            <a asp-action="TestTypes">Configure test types <span aria-hidden="true">↗</span></a>
+            <a asp-action="Suppliers">Manage suppliers <span aria-hidden="true">↗</span></a>
+        </div>
+    </section>
+</div>
+

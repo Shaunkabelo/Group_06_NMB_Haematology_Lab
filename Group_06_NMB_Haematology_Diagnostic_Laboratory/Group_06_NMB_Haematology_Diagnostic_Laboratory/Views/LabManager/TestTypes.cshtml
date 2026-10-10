@@ -1,0 +1,895 @@
+@using Group_06_NMB_Haematology_Diagnostic_Lab.Data.Models
+@model IEnumerable<TestType>
+
+@{
+    Layout = "~/Views/Shared/_LabManager_Layout.cshtml";
+
+    var technicians = ViewBag.AssignmentTechnicians as List<LabTechnician> ?? new List<LabTechnician>();
+    var assignments = ViewBag.TestTypeAssignments as List<LabTechnicianTestType> ?? new List<LabTechnicianTestType>();
+    var assignmentLookup = assignments.ToLookup(a => a.TestTypeId);
+    var technicianLookup = technicians.ToDictionary(t => t.LabTechnicianId);
+    var orderedTests = Model.OrderBy(t => t.TestCategory?.CategoryName).ThenBy(t => t.TestName).ToList();
+
+    var panelData = orderedTests.Select(t => new {
+        id = t.TestTypeId, name = t.TestName, category = t.TestCategory?.CategoryName ?? "Uncategorised",
+        active = t.IsActive,
+        assigned = assignmentLookup[t.TestTypeId].Select(a => a.LabTechnicianId).Distinct().ToArray()
+    });
+    var technicianData = technicians.Select(t => new {
+        id = t.LabTechnicianId, name = (t.User.Name + " " + t.User.Surname).Trim(),
+        employee = t.EmployeeNumber, email = t.User.Email, active = t.User.IsActive
+    });
+    var consumables = ViewBag.Consumables as IEnumerable<Consumable>
+        ?? Enumerable.Empty<Consumable>();
+}
+
+<div class="page-body">
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success">@TempData["Success"]</div>
+    }
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger">@TempData["Error"]</div>
+    }
+
+    <!-- ========================================================= -->
+    <!-- PAGE HEADER -->
+    <!-- ========================================================= -->
+
+    <div class="section-header">
+
+        <div>
+            <h2>Test Types</h2>
+            <small>Manage registered laboratory test types.</small>
+        </div>
+
+        <div style="display:flex; gap:10px; align-items:center;">
+
+            <!-- ================================================= -->
+            <!-- LIVE SEARCH -->
+            <!-- ================================================= -->
+
+            <input type="text"
+                   id="searchInput"
+                   class="form-control"
+                   placeholder="Search test types..."
+                   value="@ViewBag.Search"
+                   autocomplete="off"
+                   style="width:240px;" />
+
+
+            <!-- ================================================= -->
+            <!-- FILTER -->
+            <!-- ================================================= -->
+
+            <form asp-controller="LabManager"
+                  asp-action="TestTypes"
+                  method="get"
+                  id="filterForm" class="test-type-filters">
+
+                <input type="hidden"
+                       name="search"
+                       id="filterSearch"
+                       value="@ViewBag.Search" />
+
+                <label class="visually-hidden" for="categoryFilter">Test category</label>
+                <select id="categoryFilter" name="categoryId" class="form-select"
+                        onchange="document.getElementById('filterSearch').value = document.getElementById('searchInput').value; this.form.submit();">
+                    <option value="">All categories</option>
+                    @foreach (var category in ViewBag.Categories)
+                    {
+                        <option value="@category.TestCategoryId" selected="@(ViewBag.CategoryId == category.TestCategoryId)">@category.CategoryName</option>
+                    }
+                </select>
+                <select id="filterSelect"
+                        name="filter"
+                        class="form-select @(ViewBag.Filter == "Active" ? "filter-active" : ViewBag.Filter == "Inactive" ? "filter-inactive" : "filter-all")"
+                        onchange="document.getElementById('filterSearch').value = document.getElementById('searchInput').value; this.form.submit();">
+
+                    @if (ViewBag.Filter == "Active")
+                    {
+                        <option value="Active" selected>Active</option>
+                    }
+                    else
+                    {
+                        <option value="Active">Active</option>
+                    }
+
+                    @if (ViewBag.Filter == "Inactive")
+                    {
+                        <option value="Inactive" selected>Inactive</option>
+                    }
+                    else
+                    {
+                        <option value="Inactive">Inactive</option>
+                    }
+
+                    @if (ViewBag.Filter == "All")
+                    {
+                        <option value="All" selected>All</option>
+                    }
+                    else
+                    {
+                        <option value="All">All</option>
+                    }
+
+                </select>
+
+            </form>
+
+
+            <!-- ================================================= -->
+            <!-- ADD TEST TYPE -->
+            <!-- ================================================= -->
+
+            <button class="btn btn-primary"
+                    type="button"
+                    onclick="openCreateTestType()"
+                    data-bs-toggle="offcanvas"
+                    data-bs-target="#testTypePanel">
+
+                Add Test Type
+
+            </button>
+
+        </div>
+
+    </div>
+
+
+    <!-- ========================================================= -->
+    <!-- TEST TYPES TABLE -->
+    <!-- ========================================================= -->
+
+    <div class="table-wrap">
+
+        <table id="testTypesTable">
+
+            <thead>
+
+                <tr>
+
+                    <th>Test Name</th>
+                    <th>Category</th>
+                    <th>Sample Type</th>
+                    <th>Unit</th>
+                    <th>Normal Range</th>
+                    <th>Turnaround</th>
+                    <th>Consumable(s)</th>
+                    <th>Qty / Test</th>
+                    <th>Technicians</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+
+                </tr>
+
+            </thead>
+
+
+            <tbody id="testTypesTableBody">
+
+                @foreach (var testType in orderedTests)
+                {
+                    var assignedIds = assignmentLookup[testType.TestTypeId].Select(a => a.LabTechnicianId).Distinct().ToArray();
+                    var activeCount = assignedIds.Count(id => technicianLookup.TryGetValue(id, out var tech) && tech.User.IsActive);
+                    var inactiveCount = assignedIds.Length - activeCount;
+
+                    <tr>
+
+                        <td>
+                            @testType.TestName
+                        </td>
+
+                        <td>
+                            @testType.TestCategory?.CategoryName
+                        </td>
+
+                        <td>
+                            @testType.SampleType?.SampleTypeName
+                        </td>
+
+                        <td>
+                            @testType.UnitOfMeasurement
+                        </td>
+
+                        <td>
+                            @testType.NormalRangeMin
+                            -
+                            @testType.NormalRangeMax
+                        </td>
+
+                        <td>
+                            @testType.TurnaroundTimeMinutes min
+                        </td>
+
+                        <td>
+                            @if (testType.TestTypeConsumable.Any())
+                            {
+                                foreach (var requirement in testType.TestTypeConsumable)
+                                {
+                                    <div>@(requirement.Consumable?.Name ?? "Unknown")</div>
+                                }
+                            }
+                            else
+                            {
+                                <span class="text-muted">None</span>
+                            }
+                        </td>
+
+                        <td>
+                            @if (testType.TestTypeConsumable.Any())
+                            {
+                                foreach (var requirement in testType.TestTypeConsumable)
+                                {
+                                    <div>@requirement.QuantityRequired</div>
+                                }
+                            }
+                            else
+                            {
+                                <span class="text-muted">-</span>
+                            }
+                        </td>
+
+                        <td>
+                            <button type="button" class="btn btn-sm technician-status @(activeCount == 0 ? "technician-status-empty" : "technician-status-assigned")"
+                                    data-bs-toggle="offcanvas" data-bs-target="#testTechniciansPanel"
+                                    onclick="openTestTechnicians(@testType.TestTypeId, false)">
+                                @(activeCount == 0 ? "No active technicians" : $"{activeCount} technician{(activeCount == 1 ? "" : "s")}")
+                            </button>
+
+                        </td>
+                        <td>
+
+                            @(testType.IsActive ? "Active" : "Inactive")
+
+                        </td>
+
+
+                        <td class="td-actions">
+
+                            <!-- ================================================= -->
+                            <!-- EDIT -->
+                            <!-- ================================================= -->
+
+                            <button type="button"
+                                    class="btn btn-edit btn-sm"
+                                    data-bs-toggle="offcanvas"
+                                    data-bs-target="#testTypePanel"
+                                    onclick="openEditTestType(this)"
+                                    data-id="@testType.TestTypeId"
+                                    data-name="@testType.TestName"
+                                    data-category="@testType.TestCategoryId"
+                                    data-sample="@testType.SampleTypeId"
+                                    data-unit="@testType.UnitOfMeasurement"
+                                    data-min="@testType.NormalRangeMin"
+                                    data-max="@testType.NormalRangeMax"
+                                    data-turnaround="@testType.TurnaroundTimeMinutes"
+                                    data-requirement-id="@testType.TestTypeConsumable.FirstOrDefault()?.TestTypeConsumableId"
+                                    data-consumable-id="@testType.TestTypeConsumable.FirstOrDefault()?.ConsumableId"
+                                    data-quantity-required="@testType.TestTypeConsumable.FirstOrDefault()?.QuantityRequired"
+                                    data-requirements="@string.Join(";", testType.TestTypeConsumable.Select(requirement => $"{requirement.TestTypeConsumableId},{requirement.ConsumableId},{requirement.QuantityRequired}"))">
+
+                                Edit
+
+                            </button>
+
+
+                            @if (testType.IsActive)
+                            {
+                                <button type="button" class="btn btn-secondary btn-sm"
+                                        data-bs-toggle="offcanvas" data-bs-target="#testTechniciansPanel"
+                                        onclick="openTestTechnicians(@testType.TestTypeId, true)">Assign</button>
+                                <!-- ================================================= -->
+                                <!-- DELETE -->
+                                <!-- ================================================= -->
+
+                                <form asp-action="DeleteTestType"
+                                      asp-controller="LabManager"
+                                      method="post"
+                                      style="display:inline;">
+
+                                    <input type="hidden"
+                                           name="id"
+                                           value="@testType.TestTypeId" />
+
+                                    <input type="hidden"
+                                           name="filter"
+                                           value="@ViewBag.Filter" />
+
+                                    <button type="submit"
+                                            class="btn btn-delete btn-sm"
+                                            onclick="return confirm('Are you sure you want to deactivate this test type?');">
+
+                                        Deactivate
+
+                                    </button>
+
+                                </form>
+                            }
+                            else
+                            {
+                                <!-- ================================================= -->
+                                <!-- REACTIVATE -->
+                                <!-- ================================================= -->
+
+                                <form asp-action="ReactivateTestType"
+                                      asp-controller="LabManager"
+                                      method="post"
+                                      style="display:inline;">
+
+                                    <input type="hidden"
+                                           name="id"
+                                           value="@testType.TestTypeId" />
+
+                                    <input type="hidden"
+                                           name="filter"
+                                           value="@ViewBag.Filter" />
+
+                                    <button type="submit"
+                                            class="btn btn-primary btn-sm"
+                                            onclick="return confirm('Are you sure you want to reactivate this test type?');">
+
+                                        Reactivate
+
+                                    </button>
+
+                                </form>
+                            }
+
+                        </td>
+
+                    </tr>
+                }
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+</div>
+
+
+<!-- ========================================================= -->
+<!-- ADD / EDIT TEST TYPE OFFCANVAS -->
+<!-- ========================================================= -->
+
+<div class="offcanvas offcanvas-end"
+     tabindex="-1"
+     id="testTypePanel"
+     style="width:600px;">
+
+    <div class="offcanvas-header">
+
+        <h4 id="testTypePanelTitle">
+            Add Test Type
+        </h4>
+
+        <button type="button"
+                class="btn-close"
+                data-bs-dismiss="offcanvas">
+        </button>
+
+    </div>
+
+
+    <div class="offcanvas-body">
+
+        <form id="testTypeForm" data-staff-validation
+              asp-controller="LabManager"
+              asp-action="CreateTestType"
+              method="post">
+
+
+            <!-- TEST TYPE ID -->
+
+            <input type="hidden"
+                   id="TestTypeId"
+                   name="TestTypeId"
+                   value="0" />
+
+
+            <!-- ================================================= -->
+            <!-- TEST NAME -->
+            <!-- ================================================= -->
+
+            <div class="form-group">
+
+                <label class="form-label">
+                    Test Name
+                </label>
+
+                <input id="TestName"
+                       class="form-control"
+                       name="TestName"
+                       required />
+
+            </div>
+
+
+            <!-- ================================================= -->
+            <!-- CATEGORY -->
+            <!-- ================================================= -->
+
+            <div class="form-group">
+
+                <label class="form-label">
+                    Test Category
+                </label>
+
+                <select id="TestCategoryId"
+                        name="TestCategoryId"
+                        class="form-control"
+                        required>
+
+                    <option value="">
+                        Select Test Category
+                    </option>
+
+                    @foreach (var category in ViewBag.Categories)
+                    {
+                        <option value="@category.TestCategoryId">
+                            @category.CategoryName
+                        </option>
+                    }
+
+                </select>
+
+            </div>
+
+
+            <!-- ================================================= -->
+            <!-- SAMPLE TYPE -->
+            <!-- ================================================= -->
+
+            <div class="form-group">
+
+                <label class="form-label">
+                    Sample Type
+                </label>
+
+                <select id="SampleTypeId"
+                        name="SampleTypeId"
+                        class="form-control"
+                        required>
+
+                    <option value="">
+                        Select Sample Type
+                    </option>
+
+                    @foreach (var sampleType in ViewBag.SampleTypes)
+                    {
+                        <option value="@sampleType.SampleTypeId">
+                            @sampleType.SampleTypeName
+                        </option>
+                    }
+
+                </select>
+
+            </div>
+
+
+            <!-- ================================================= -->
+            <!-- UNIT OF MEASUREMENT -->
+            <!-- ================================================= -->
+
+            <div class="form-group">
+
+                <label class="form-label">
+                    Unit of Measurement
+                </label>
+
+                <input id="UnitOfMeasurement"
+                       class="form-control"
+                       name="UnitOfMeasurement"
+                       placeholder="e.g. g/dL, g/L, µL" />
+
+            </div>
+
+
+            <!-- ================================================= -->
+            <!-- NORMAL RANGE -->
+            <!-- ================================================= -->
+
+            <div class="form-row">
+
+                <div class="form-group">
+
+                    <label class="form-label">
+                        Normal Range Minimum (e.g. 4.5 or 4,5)
+                    </label>
+
+                    <input id="NormalRangeMin"
+                           type="text"
+                           inputmode="decimal"
+                           class="form-control"
+                           name="NormalRangeMin" required maxlength="14" data-normal-range />
+
+                </div>
+
+
+                <div class="form-group">
+
+                    <label class="form-label">
+                        Normal Range Maximum
+                    </label>
+
+                    <input id="NormalRangeMax"
+                           type="text"
+                           inputmode="decimal"
+                           class="form-control"
+                           name="NormalRangeMax" required maxlength="14" data-normal-range />
+
+                </div>
+
+            </div>
+
+
+            <!-- ================================================= -->
+            <!-- TURNAROUND TIME -->
+            <!-- ================================================= -->
+
+            <div class="form-group">
+
+                <label class="form-label">
+                    Turnaround Time (Minutes)
+                </label>
+
+                <input id="TurnaroundTimeMinutes"
+                       type="number"
+                       min="1"
+                       class="form-control"
+                       name="TurnaroundTimeMinutes"
+                       value="60"
+                       required />
+
+            </div>
+
+
+            <!-- ================================================= -->
+            <!-- CONSUMABLE REQUIREMENT -->
+            <!-- ================================================= -->
+
+            <div id="consumableRequirementSection" class="form-group border-top pt-4 mt-4">
+
+                <h6 class="mb-1">Consumable Requirement</h6>
+                <small class="text-muted d-block mb-3">
+                    Select the consumable used by this test and the quantity required per test.
+                </small>
+
+                <div id="requirementRows"></div>
+                <button type="button" class="btn btn-outline-secondary btn-sm mt-3" onclick="addRequirementRow()">
+                    Add consumable
+                </button>
+
+            </div>
+
+
+            <!-- ================================================= -->
+            <!-- BUTTONS -->
+            <!-- ================================================= -->
+
+            <button id="testTypeSubmitButton"
+                    type="submit"
+                    class="btn btn-primary">
+
+                Save Test Type
+
+            </button>
+
+
+            <button type="button"
+                    class="btn btn-secondary"
+                    data-bs-dismiss="offcanvas">
+
+                Cancel
+
+            </button>
+
+        </form>
+
+    </div>
+
+</div>
+
+
+<!-- ========================================================= -->
+<!-- JAVASCRIPT -->
+<!-- ========================================================= -->
+
+<div class="offcanvas offcanvas-end" tabindex="-1" id="testTechniciansPanel"
+     aria-labelledby="testTechniciansTitle" style="width:min(600px,100vw)">
+    <div class="offcanvas-header">
+        <h4 id="testTechniciansTitle">Assigned technicians</h4>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+    <div class="offcanvas-body">
+        <h5 id="assignmentTestName"></h5>
+        <p class="text-muted" id="assignmentCategory"></p>
+        <h6>Currently assigned</h6>
+        <div id="assignedTechnicianDetails" class="mb-4"></div>
+        <form asp-controller="LabManager" asp-action="AssignTestTypeTechnicians" method="post" id="assignmentForm">
+            <input type="hidden" name="testTypeId" id="assignmentTestId" />
+            <input type="hidden" name="expectedTechnicianIds" id="assignmentExpected" />
+            <input type="hidden" name="filter" value="@ViewBag.Filter" />
+            <input type="hidden" name="search" id="assignmentSearch" />
+            <input type="hidden" name="categoryId" value="@ViewBag.CategoryId" />
+            <h6>Assign technicians</h6>
+            <label class="form-label" for="assignmentTechnicianSearch">Search by name, employee number or email</label>
+            <input type="search" id="assignmentTechnicianSearch" class="form-control mb-3" autocomplete="off" />
+            <p class="small text-muted">Select active technicians. A technician must retain at least one active test type.</p>
+            <div id="assignmentChoices"></div>
+            <button type="submit" id="assignmentSave" class="btn btn-primary mt-3">Save assignments</button>
+            <button type="button" class="btn btn-secondary mt-3" data-bs-dismiss="offcanvas">Cancel</button>
+        </form>
+        <p id="assignmentInactiveNotice" class="text-muted" hidden>This test type is inactive. Reactivate it to change assignments.</p>
+    </div>
+</div>
+<script>
+
+    // =========================================================
+    // CREATE TEST TYPE
+    // =========================================================
+
+    function openCreateTestType()
+    {
+        document.getElementById("testTypePanelTitle").innerText =
+            "Add Test Type";
+
+        document.getElementById("testTypeSubmitButton").innerText =
+            "Save Test Type";
+
+        document.getElementById("testTypeForm").action =
+            "/LabManager/CreateTestType";
+
+        document.getElementById("testTypeForm").reset();
+
+        document.getElementById("TestTypeId").value = "0";
+        document.getElementById("TurnaroundTimeMinutes").value = "60";
+        resetRequirementRows([]);
+    }
+
+
+    // =========================================================
+    // EDIT TEST TYPE
+    // =========================================================
+
+    function openEditTestType(button)
+    {
+        document.getElementById("testTypePanelTitle").innerText =
+            "Edit Test Type";
+
+        document.getElementById("testTypeSubmitButton").innerText =
+            "Update Test Type";
+
+        document.getElementById("testTypeForm").action =
+            "/LabManager/EditTestType";
+
+
+        document.getElementById("TestTypeId").value =
+            button.dataset.id;
+
+        document.getElementById("TestName").value =
+            button.dataset.name;
+
+        document.getElementById("TestCategoryId").value =
+            button.dataset.category;
+
+        document.getElementById("SampleTypeId").value =
+            button.dataset.sample;
+
+        document.getElementById("UnitOfMeasurement").value =
+            button.dataset.unit;
+
+        document.getElementById("NormalRangeMin").value =
+            button.dataset.min;
+
+        document.getElementById("NormalRangeMax").value =
+            button.dataset.max;
+
+        document.getElementById("TurnaroundTimeMinutes").value =
+            button.dataset.turnaround;
+
+        const requirements = (button.dataset.requirements || "")
+            .split(";")
+            .filter(value => value)
+            .map(value => {
+                const parts = value.split(",");
+                return { id: parts[0], consumableId: parts[1], quantity: parts[2] };
+            });
+        resetRequirementRows(requirements);
+    }
+
+    const consumableOptions = `
+        <option value="">Select consumable</option>
+        @foreach (var consumable in consumables)
+        {
+                <option value="@consumable.ConsumableId">@consumable.Name (Stock: @consumable.QuantityOnHand)</option>
+        }
+`;
+
+    function resetRequirementRows(requirements) {
+        document.getElementById("requirementRows").innerHTML = "";
+        (requirements.length ? requirements : [{}]).forEach(requirement => addRequirementRow(requirement));
+    }
+
+    function addRequirementRow(requirement = {}) {
+        const container = document.getElementById("requirementRows");
+        const index = container.children.length;
+        const row = document.createElement("div");
+        row.className = "border rounded p-3 mb-3";
+        row.innerHTML = `
+            <input type="hidden" name="requirements[${index}].TestTypeConsumableId" value="${requirement.id || 0}" />
+            <div class="d-flex justify-content-between align-items-center mb-2"><strong>Consumable requirement</strong>
+                <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeRequirementRow(this)">Remove</button></div>
+            <label class="form-label">Consumable</label>
+            <select name="requirements[${index}].ConsumableId" class="form-control" required>${consumableOptions}</select>
+            <label class="form-label mt-3">Quantity Required per Test</label><p class="text-muted small">This records the quantity needed per test. Stock is used when the technician performs the test, not when this catalogue is saved.</p>
+            <input name="requirements[${index}].QuantityRequired" type="number" min="1" value="${requirement.quantity || 1}" class="form-control" required />`;
+        container.appendChild(row);
+        row.querySelector("select").value = requirement.consumableId || "";
+    }
+
+    function removeRequirementRow(button) {
+        const container = document.getElementById("requirementRows");
+        if (container.children.length === 1) return;
+        button.closest(".border").remove();
+        [...container.children].forEach((row, index) => {
+            row.querySelectorAll("[name]").forEach(input => {
+                input.name = input.name.replace(/requirements\[\d+\]/, `requirements[${index}]`);
+            });
+        });
+    }
+
+
+    // =========================================================
+    // LIVE SEARCH
+    // =========================================================
+
+    const searchInput =
+        document.getElementById("searchInput");
+
+    let searchTimer;
+
+    searchInput.addEventListener("input", function ()
+    {
+        clearTimeout(searchTimer);
+
+        const searchValue =
+            this.value.trim();
+
+        searchTimer = setTimeout(function ()
+        {
+            const currentFilter =
+                document.getElementById("filterSelect").value;
+
+            const url =
+                new URL(window.location.href);
+
+            url.searchParams.set("filter", currentFilter);
+
+            if (searchValue.length > 0)
+            {
+                url.searchParams.set("search", searchValue);
+            }
+            else
+            {
+                url.searchParams.delete("search");
+            }
+
+            window.location.href = url.toString();
+
+        }, 350);
+
+    });
+
+
+    // =========================================================
+    // KEEP SEARCH FOCUSED AFTER PAGE REFRESH
+    // =========================================================
+
+    window.addEventListener("load", function ()
+    {
+        const input =
+            document.getElementById("searchInput");
+
+        if (input)
+        {
+            input.focus();
+
+            const length =
+                input.value.length;
+
+            input.setSelectionRange(length, length);
+        }
+    });
+
+    const assignmentTests = @Json.Serialize(panelData);
+    const assignmentTechnicians = @Json.Serialize(technicianData);
+    const assignmentChoices = document.getElementById("assignmentChoices");
+    function openTestTechnicians(id, editing) {
+        const test = assignmentTests.find(t => t.id === id);
+        if (!test) return;
+        document.getElementById("assignmentTestName").textContent = test.name;
+        document.getElementById("assignmentCategory").textContent = "Category: " + test.category;
+        document.getElementById("assignmentTestId").value = test.id;
+        document.getElementById("assignmentForm").hidden = !test.active;
+        document.getElementById("assignmentInactiveNotice").hidden = test.active;
+        document.getElementById("assignmentSave").disabled = false;
+        document.getElementById("assignmentTechnicianSearch").value = "";
+        document.getElementById("assignmentExpected").value = assignmentTechnicians
+            .filter(t => t.active && test.assigned.includes(t.id)).map(t => t.id).join(",");
+        const details = document.getElementById("assignedTechnicianDetails");
+        details.replaceChildren();
+        const assigned = assignmentTechnicians.filter(t => test.assigned.includes(t.id));
+        if (!assigned.length) {
+            const empty = document.createElement("p"); empty.className = "text-danger fw-semibold";
+            empty.textContent = "No technicians assigned."; details.append(empty);
+        }
+        assigned.sort((a,b) => Number(b.active)-Number(a.active) || a.name.localeCompare(b.name)).forEach(t => {
+            const card = document.createElement("div"); card.className = "border rounded p-3 mb-2";
+            const name = document.createElement("strong"); name.textContent = t.name; name.className = t.active ? "text-success" : "text-muted";
+            const info = document.createElement("div"); info.className = "small text-muted";
+            info.textContent = [t.employee, t.email, t.active ? "Active" : "Inactive"].filter(Boolean).join(" · ");
+            card.append(name, info); details.append(card);
+        });
+        assignmentChoices.replaceChildren();
+        assignmentTechnicians.filter(t => t.active).sort((a,b) => a.name.localeCompare(b.name)).forEach(t => {
+            const label = document.createElement("label"); label.className = "d-flex gap-2 border rounded p-3 mb-2";
+            label.dataset.search = [t.name,t.employee,t.email].join(" ").toLowerCase();
+            const checkbox = document.createElement("input"); checkbox.type = "checkbox";
+            checkbox.className = "form-check-input"; checkbox.name = "technicianIds"; checkbox.value = t.id;
+            checkbox.checked = test.assigned.includes(t.id);
+            const text = document.createElement("span"); text.textContent = t.name + " — " + (t.employee || t.email);
+            label.append(checkbox,text); assignmentChoices.append(label);
+        });
+        assignmentChoices.classList.toggle("text-danger", !assignmentChoices.children.length);
+        if (!assignmentChoices.children.length) assignmentChoices.textContent = "No active technicians are available.";
+        document.getElementById("testTechniciansPanel").dataset.editing = String(editing);
+    }
+    document.getElementById("assignmentTechnicianSearch").addEventListener("input", event => {
+        const query = event.target.value.trim().toLowerCase();
+        assignmentChoices.querySelectorAll("label").forEach(label => {
+            label.classList.toggle("d-none", !label.dataset.search.includes(query));
+        });
+    });
+    document.getElementById("assignmentForm").addEventListener("submit", () => {
+        document.getElementById("assignmentSearch").value = document.getElementById("searchInput").value;
+        document.getElementById("assignmentSave").disabled = true;
+    });
+    document.getElementById("testTechniciansPanel").addEventListener("shown.bs.offcanvas", event => {
+        if (event.target.dataset.editing === "true") document.getElementById("assignmentTechnicianSearch").focus();
+    });
+</script>
+
+
+@section Styles {
+    <style>
+        #testTypesTable .test-category-heading th { background:#eaf3f6; }
+        .main-content:has(#testTypesTable) { min-width:0; }
+        .test-type-filters { display:flex; gap:10px; flex-wrap:wrap; }
+        .test-type-filters select { width:auto; max-width:260px; }
+        .page-body:has(#testTypesTable) { max-width:none; width:100%; min-width:0; }
+        .page-body:has(#testTypesTable) .section-header { flex-wrap:wrap; gap:16px; }
+        .page-body:has(#testTypesTable) .section-header > div:last-child { flex-wrap:wrap; }
+        .page-body:has(#testTypesTable) .table-wrap { width:100%; overflow-x:auto; }
+        #testTypesTable { width:100%; min-width:1250px; table-layout:auto; }
+        #testTypesTable th, #testTypesTable td { padding:12px 14px; vertical-align:middle; }
+        #testTypesTable .td-actions { display:table-cell; min-width:285px; width:285px; white-space:normal; }
+        #testTypesTable .td-actions .btn { display:inline-flex; align-items:center; white-space:nowrap; margin:3px 2px; }
+        #testTypesTable .td-actions form { display:inline-block !important; margin:0; }
+        #testTypesTable .technician-status { border:1px solid; padding:6px 10px; font-weight:600; text-align:left; white-space:nowrap; }
+        #testTypesTable .technician-status-empty { color:#a51d2d; background:#fff0f2; border-color:#efb3bb; }
+        #testTypesTable .technician-status-assigned { color:#146339; background:#eaf7ef; border-color:#9ed4b3; }
+        #testTypesTable .technician-status:hover { filter:brightness(.96); }
+        #testTypesTable .technician-status:focus-visible { outline:3px solid #285ea8; outline-offset:2px; }
+        #testTechniciansPanel [hidden] { display:none !important; }
+    </style>
+}
+
+
+
+

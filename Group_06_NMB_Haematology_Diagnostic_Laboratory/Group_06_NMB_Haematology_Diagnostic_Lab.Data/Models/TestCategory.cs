@@ -14,6 +14,6 @@ public partial class TestCategory
     public string CategoryDescription { get; set; }
 
     public DateTime? CreatedAt { get; set; }
-
+    public bool IsActive { get; set; }
     public virtual ICollection<TestType> TestType { get; set; } = new List<TestType>();
 }

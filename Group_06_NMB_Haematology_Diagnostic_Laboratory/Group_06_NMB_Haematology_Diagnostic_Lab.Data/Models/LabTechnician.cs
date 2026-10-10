@@ -25,5 +25,5 @@ public partial class LabTechnician
 
     public virtual ICollection<TestResultVerification> TestResultVerification { get; set; } = new List<TestResultVerification>();
 
-    public virtual User User { get; set; }
+    public virtual User User { get; set; } = new User();
 }
