@@ -82,6 +82,8 @@ Check(navigation.Destination("Admin") == new AccountDestination("Account", "Work
 Check(navigation.Destination("Unknown") == new AccountDestination("Account", "Workspace"), "Unknown role uses shared workspace");
 descriptors.Items.Add(new ControllerActionDescriptor { ControllerName = "Doctor", ActionName = "Dashboard" });
 Check(navigation.Destination("Doctor") == new AccountDestination("Doctor", "Dashboard"), "Merged Doctor dashboard is automatically discovered");
+descriptors.Items.Add(new ControllerActionDescriptor { ControllerName = "TechDashboard", ActionName = "Index" });
+Check(navigation.Destination("LabTechnician") == new AccountDestination("TechDashboard", "Index"), "Technician routes to the technician dashboard");
 
 var auth = new TestAuthentication();
 var services = new ServiceCollection().AddSingleton<IAuthenticationService>(auth).BuildServiceProvider();
