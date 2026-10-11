@@ -61,7 +61,7 @@
             }
             errorBox.style.display = 'none';
 
-            const url = '/TechReports/TestsCompleted?fromDate=' + fromDate + '&toDate=' + toDate;
+            const url = '@Url.Action("TestsCompleted", "TechReports")' + '?fromDate=' + fromDate + '&toDate=' + toDate;
             document.getElementById('report-iframe').src = url;
             document.getElementById('download-link').href = url;
             document.getElementById('report-preview-section').style.display = 'block';
