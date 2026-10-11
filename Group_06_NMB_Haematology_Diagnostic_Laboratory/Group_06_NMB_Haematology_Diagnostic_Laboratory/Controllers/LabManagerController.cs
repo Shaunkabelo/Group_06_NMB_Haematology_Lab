@@ -39,6 +39,20 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
             _emailSender = emailSender;
             _logger = logger;
         }
+
+        [HttpGet]
+        public async Task<IActionResult> AddressTownCities(int provinceId)
+        {
+            if (provinceId <= 0) return Json(Array.Empty<object>());
+            return Json(await _repository.GetTownCities(provinceId));
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> AddressSuburbs(int townCityId)
+        {
+            if (townCityId <= 0) return Json(Array.Empty<object>());
+            return Json(await _repository.GetSuburbs(townCityId));
+        }
         [HttpGet]
         public async Task<IActionResult> Dashboard()
         {
@@ -837,6 +851,7 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
             var managers = await _repository.GetManagers(filter);
 
             ViewBag.Filter = filter;
+            ViewBag.Provinces = await _repository.GetProvinces();
 
             return View(managers);
         }
@@ -924,6 +939,7 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
             var doctors = await _repository.GetDoctors(filter);
 
             ViewBag.Filter = filter;
+            ViewBag.Provinces = await _repository.GetProvinces();
 
             return View(doctors);
         }
@@ -1031,6 +1047,7 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
             ViewBag.Filter = filter;
             ViewBag.TestTypes = testTypes;
             ViewBag.TechnicianTestTypes = assignments;
+            ViewBag.Provinces = await _repository.GetProvinces();
 
             return View(technicians);
         }

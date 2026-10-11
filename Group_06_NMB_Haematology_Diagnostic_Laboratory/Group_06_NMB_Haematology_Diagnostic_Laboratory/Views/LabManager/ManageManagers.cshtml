@@ -150,7 +150,11 @@
                                         data-cellphone="@manager.User.Cellphone"
                                         data-dob="@manager.User.DateOfBirth?.ToString("yyyy-MM-dd")"
                                         data-said="@manager.User.SaIdNumber"
-                                        data-address="@manager.User.HomeAddress">
+                                        data-address-line1="@manager.User.StructuredAddress?.AddressLine1"
+                                        data-address-line2="@manager.User.StructuredAddress?.AddressLine2"
+                                        data-province-id="@manager.User.StructuredAddress?.ProvinceId"
+                                        data-town-city-id="@manager.User.StructuredAddress?.TownCityId"
+                                        data-suburb-id="@manager.User.StructuredAddress?.SuburbId">
 
                                     Edit
 
@@ -363,19 +367,7 @@
             </div>
 
 
-            <!-- HOME ADDRESS -->
-
-            <div class="form-group">
-
-                <label class="form-label">
-                    Home Address
-                </label>
-
-                <textarea id="HomeAddress"
-                          class="form-control"
-                          name="User.HomeAddress" maxlength="255"></textarea>
-
-            </div>
+            <partial name="_StructuredAddressFields" view-data='new ViewDataDictionary(ViewData) { { "AddressPrefix", "managerAddress" } }' />
 
 
             <!-- SUBMIT -->
@@ -428,6 +420,7 @@
             "/LabManager/CreateManager";
 
         document.getElementById("managerForm").reset();
+        structuredAddress.reset("managerAddress");
 
         document.getElementById("LabManagerId").value = "0";
 
@@ -471,8 +464,13 @@
         document.getElementById("ManagerSaIdNumber").value =
             button.dataset.said;
 
-        document.getElementById("HomeAddress").value =
-            button.dataset.address;
+        structuredAddress.set("managerAddress", {
+            line1: button.dataset.addressLine1,
+            line2: button.dataset.addressLine2,
+            provinceId: button.dataset.provinceId,
+            townCityId: button.dataset.townCityId,
+            suburbId: button.dataset.suburbId
+        });
 
         clearValidation();
     }
@@ -538,5 +536,6 @@
     }
 
 </script>
+<script src="~/js/structured-address.js" asp-append-version="true"></script>
 
 

@@ -176,7 +176,11 @@
                                     data-cellphone="@technician.User.Cellphone"
                                     data-dob="@technician.User.DateOfBirth?.ToString("yyyy-MM-dd")"
                                     data-said="@technician.User.SaIdNumber"
-                                    data-address="@technician.User.HomeAddress"
+                                    data-address-line1="@technician.User.StructuredAddress?.AddressLine1"
+                                    data-address-line2="@technician.User.StructuredAddress?.AddressLine2"
+                                    data-province-id="@technician.User.StructuredAddress?.ProvinceId"
+                                    data-town-city-id="@technician.User.StructuredAddress?.TownCityId"
+                                    data-suburb-id="@technician.User.StructuredAddress?.SuburbId"
                                     data-employee="@technician.EmployeeNumber"
                                     data-assigned="@string.Join(",", assignedIds)">
 
@@ -405,19 +409,7 @@
             </div>
 
 
-            <!-- HOME ADDRESS -->
-
-            <div class="form-group">
-
-                <label class="form-label">
-                    Home Address
-                </label>
-
-                <textarea id="TechnicianHomeAddress"
-                          class="form-control"
-                          name="User.HomeAddress" maxlength="255"></textarea>
-
-            </div>
+            <partial name="_StructuredAddressFields" view-data='new ViewDataDictionary(ViewData) { { "AddressPrefix", "technicianAddress" } }' />
 
             <div id="testTypeAssignmentSection" class="form-group border-top pt-4 mt-4">
                 <h6 class="mb-1">Test Types</h6>
@@ -526,6 +518,7 @@
             "/LabManager/CreateTechnician";
 
         document.getElementById("technicianForm").reset();
+        structuredAddress.reset("technicianAddress");
 
         document.getElementById("LabTechnicianId").value = "0";
         document.querySelectorAll(".technician-test-type").forEach(checkbox => checkbox.checked = false);
@@ -572,8 +565,13 @@
         document.getElementById("TechnicianSaIdNumber").value =
             button.dataset.said;
 
-        document.getElementById("TechnicianHomeAddress").value =
-            button.dataset.address;
+        structuredAddress.set("technicianAddress", {
+            line1: button.dataset.addressLine1,
+            line2: button.dataset.addressLine2,
+            provinceId: button.dataset.provinceId,
+            townCityId: button.dataset.townCityId,
+            suburbId: button.dataset.suburbId
+        });
 
         document.getElementById("TechnicianEmployeeNumber").value =
             button.dataset.employee;
@@ -671,6 +669,7 @@
         }
     });
 </script>
+<script src="~/js/structured-address.js" asp-append-version="true"></script>
 
 
 
