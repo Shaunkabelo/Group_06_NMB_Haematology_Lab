@@ -4,7 +4,7 @@
     <div style="overflow-x:auto">
         <table>
             <thead>
-                <tr><th>Test</th><th>Result</th><th>Reference Range</th><th>Units</th><th>Flag</th></tr>
+                <tr><th>Test</th><th>Result</th><th>Reference Range</th><th>Units</th><th>Flag</th><th>Notes</th></tr>
             </thead>
             <tbody>
                 @foreach (var test in Model)
@@ -22,6 +22,14 @@
                         <td>@test.ReferenceRange</td>
                         <td>@test.UnitOfMeasurement</td>
                         <td><span class="badge @flagClass">@test.ResultFlag</span></td>
+                        <td>
+                            <a href="#notes-@test.TestRequestTestTypeID" style="text-decoration: none;" onclick="document.getElementById('notes-@test.TestRequestTestTypeID').showModal(); return false;" aria-label="View technician notes for @test.TestName">View</a>
+                            <dialog id="notes-@test.TestRequestTestTypeID" aria-labelledby="notes-title-@test.TestRequestTestTypeID" style="max-width: min(560px, 90vw); border: 1px solid #ddd; border-radius: 12px; padding: 24px;">
+                                <h3 id="notes-title-@test.TestRequestTestTypeID">Lab technician notes — @test.TestName</h3>
+                                <p style="white-space: pre-wrap; overflow-wrap: anywhere;">@(string.IsNullOrWhiteSpace(test.ResultNotes) ? "No technician notes were recorded for this test." : test.ResultNotes)</p>
+                                <form method="dialog"><button class="btn btn-secondary btn-sm">Close</button></form>
+                            </dialog>
+                        </td>
                     </tr>
                 }
             </tbody>

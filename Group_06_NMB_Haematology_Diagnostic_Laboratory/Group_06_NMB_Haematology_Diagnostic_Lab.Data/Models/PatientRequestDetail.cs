@@ -23,6 +23,7 @@ public class PatientRequestDetail : PatientRequest
     public string ResultFlag { get; set; } = "Pending";
     public string? ResultText { get; set; }
     public string? ResultNotes { get; set; }
+    public string? LabTechnicianName { get; set; }
     public bool? IsAbnormal { get; set; }
     public DateTime? CaptureDateTime { get; set; }
     public string? VerificationStatus { get; set; }

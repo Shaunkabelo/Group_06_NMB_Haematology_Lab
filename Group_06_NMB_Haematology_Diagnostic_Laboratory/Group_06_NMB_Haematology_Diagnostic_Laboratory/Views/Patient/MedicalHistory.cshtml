@@ -1,4 +1,4 @@
-﻿@model IEnumerable<string>
+@model IEnumerable<string>
 
 @{
     Layout = "~/Views/Shared/_LayoutPatient.cshtml";
@@ -66,7 +66,7 @@
                 <div style="margin-bottom: 12px;">
                     <select id="condition-category" class="form-control compact-select" style="width: 100%; display: block;">
                         <option value="">Select category</option>
-                        @foreach (var category in ViewBag.MedicalConditionCategories as IEnumerable<string> ?? Enumerable.Empty<string>())
+                        @foreach (var category in (ViewBag.MedicalConditionCategories as IEnumerable<string> ?? Enumerable.Empty<string>()).OrderBy(name => name, StringComparer.OrdinalIgnoreCase))
                         {
                             <option value="@category">@category</option>
                         }
@@ -88,7 +88,7 @@
                 <div style="margin-bottom: 12px;">
                     <select id="allergy-category" class="form-control compact-select" style="width: 100%; display: block;">
                         <option value="">Select category</option>
-                        @foreach (var category in Model ?? Enumerable.Empty<string>())
+                        @foreach (var category in (Model ?? Enumerable.Empty<string>()).OrderBy(name => name, StringComparer.OrdinalIgnoreCase))
                         {
                             <option value="@category">@category</option>
                         }
@@ -110,7 +110,7 @@
                 <div style="margin-bottom: 12px;">
                     <select id="medication-category" class="form-control compact-select" style="width: 100%; display: block;">
                         <option value="">Select category</option>
-                        @foreach (var category in ViewBag.MedicationCategories as IEnumerable<string> ?? Enumerable.Empty<string>())
+                        @foreach (var category in (ViewBag.MedicationCategories as IEnumerable<string> ?? Enumerable.Empty<string>()).OrderBy(name => name, StringComparer.OrdinalIgnoreCase))
                         {
                             <option value="@category">@category</option>
                         }
@@ -124,6 +124,16 @@
                 </div>
             </div>
         </div>
+    </div>
+
+    <div class="filter-row">
+        <label for="history-filter" class="form-label">Filter medical history</label>
+        <select id="history-filter" class="form-control compact-select" onchange="filterMedicalHistory()">
+            <option value="">All</option>
+            <option value="Allergy">Allergies</option>
+            <option value="Condition">Conditions</option>
+            <option value="Medication">Medication</option>
+        </select>
     </div>
 
     <div class="card section-gap">
@@ -174,7 +184,8 @@
                 if (!response.ok) throw new Error(result.message || 'Unable to load medications.');
 
                 const medications = result;
-                medications.forEach(medication => medicationSelect.add(new Option(medication, medication)));
+                medications.sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }))
+                    .forEach(medication => medicationSelect.add(new Option(medication, medication)));
                 medicationSelect.disabled = false;
             } catch (error) {
                 toast(error.message || 'Unable to load medications for the selected category.');
@@ -184,12 +195,13 @@
         async function saveMedication() {
             const medicationName = medicationSelect.value.trim();
             if (!medicationName) return;
+            const categoryName = medicationCategorySelect.value;
 
             const isAlreadyAdded = Array.from(document.querySelectorAll('#history-table-body tr[data-category]'))
-                .some(item => item.dataset.category === 'Medication' &&
-                    item.dataset.value.toLowerCase() === medicationName.toLowerCase());
+                .some(item => item.dataset.itemType === 'Medication' &&
+                    item.dataset.value.trim().toLowerCase() === medicationName.toLowerCase());
             if (isAlreadyAdded) {
-                toast('This item is already added.');
+                showDuplicateHistoryMessage('Medication', medicationName);
                 return;
             }
 
@@ -205,9 +217,14 @@
                 });
                 const result = await response.json().catch(() => ({}));
 
+                if (result.duplicate) {
+                    toast(result.message, 'warning');
+                    return;
+                }
+
                 if (!response.ok) throw new Error(result.message || 'Unable to save the selected medication.');
 
-                addHistoryItem('Medication', 'med-input', 'badge-teal');
+                addHistoryItem('Medication', 'med-input', 'badge-teal', medicationName, categoryName);
             } catch (error) {
                 toast(error.message || 'Unable to save the selected medication.');
             }
@@ -231,7 +248,8 @@
                 if (!response.ok) throw new Error('Unable to load medical conditions.');
 
                 const conditions = await response.json();
-                conditions.forEach(condition => conditionSelect.add(new Option(condition, condition)));
+                conditions.sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }))
+                    .forEach(condition => conditionSelect.add(new Option(condition, condition)));
                 conditionSelect.disabled = false;
             } catch {
                 toast('Unable to load conditions for the selected category.');
@@ -241,12 +259,13 @@
         async function saveMedicalCondition() {
             const conditionName = conditionSelect.value.trim();
             if (!conditionName) return;
+            const categoryName = conditionCategorySelect.value;
 
             const isAlreadyAdded = Array.from(document.querySelectorAll('#history-table-body tr[data-category]'))
-                .some(item => item.dataset.category === 'Condition' &&
-                    item.dataset.value.toLowerCase() === conditionName.toLowerCase());
+                .some(item => item.dataset.itemType === 'Condition' &&
+                    item.dataset.value.trim().toLowerCase() === conditionName.toLowerCase());
             if (isAlreadyAdded) {
-                toast('This item is already added.');
+                showDuplicateHistoryMessage('Condition', conditionName);
                 return;
             }
 
@@ -262,9 +281,14 @@
                 });
                 const result = await response.json().catch(() => ({}));
 
+                if (result.duplicate) {
+                    toast(result.message, 'warning');
+                    return;
+                }
+
                 if (!response.ok) throw new Error(result.message || 'Unable to save the selected medical condition.');
 
-                addHistoryItem('Condition', 'condition-input', 'badge-amber');
+                addHistoryItem('Condition', 'condition-input', 'badge-amber', conditionName, categoryName);
             } catch (error) {
                 toast(error.message || 'Unable to save the selected medical condition.');
             }
@@ -288,7 +312,8 @@
                 if (!response.ok) throw new Error('Unable to load allergies.');
 
                 const allergies = await response.json();
-                allergies.forEach(allergy => allergySelect.add(new Option(allergy, allergy)));
+                allergies.sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }))
+                    .forEach(allergy => allergySelect.add(new Option(allergy, allergy)));
                 allergySelect.disabled = false;
             } catch {
                 toast('Unable to load allergies for the selected category.');
@@ -298,12 +323,13 @@
         async function saveAllergy() {
             const allergyName = allergySelect.value.trim();
             if (!allergyName) return;
+            const categoryName = allergyCategorySelect.value;
 
             const isAlreadyAdded = Array.from(document.querySelectorAll('#history-table-body tr[data-category]'))
-                .some(item => item.dataset.category === 'Allergy' &&
-                    item.dataset.value.toLowerCase() === allergyName.toLowerCase());
+                .some(item => item.dataset.itemType === 'Allergy' &&
+                    item.dataset.value.trim().toLowerCase() === allergyName.toLowerCase());
             if (isAlreadyAdded) {
-                toast('This item is already added.');
+                showDuplicateHistoryMessage('Allergy', allergyName);
                 return;
             }
 
@@ -319,17 +345,26 @@
                 });
                 const result = await response.json().catch(() => ({}));
 
+                if (result.duplicate) {
+                    toast(result.message, 'warning');
+                    return;
+                }
+
                 if (!response.ok) throw new Error(result.message || 'Unable to save the selected allergy.');
 
-                addHistoryItem('Allergy', 'allergy-input', 'badge-red');
+                addHistoryItem('Allergy', 'allergy-input', 'badge-red', allergyName, categoryName);
             } catch (error) {
                 toast(error.message || 'Unable to save the selected allergy.');
             }
         }
 
-        function addHistoryItem(category, inputId, badgeClass) {
+        function showDuplicateHistoryMessage(category, name) {
+            toast(`${category} "${name}" is already in your medical history. No need to add it again.`, 'warning');
+        }
+
+        function addHistoryItem(itemType, inputId, badgeClass, value, categoryName) {
             const input = document.getElementById(inputId);
-            let value = input.value.trim();
+            value = value.trim();
             if (!value) return;
 
             if (value === 'Other') {
@@ -338,23 +373,23 @@
             }
 
             const existingItems = Array.from(document.querySelectorAll('#history-table-body tr[data-category]'));
-            if (existingItems.some(item => item.dataset.category === category && item.dataset.value.toLowerCase() === value.toLowerCase())) {
-                toast('This item is already added.');
+            if (existingItems.some(item => item.dataset.itemType === itemType && item.dataset.value.trim().toLowerCase() === value.toLowerCase())) {
+                showDuplicateHistoryMessage(itemType, value);
                 return;
             }
 
-            addHistoryRow(category, value, badgeClass);
-            input.value = '';
+            addHistoryRow(categoryName, value, badgeClass, itemType);
+            if (input.value.trim() === value) input.value = '';
             toast('History item added.');
         }
 
-        function addHistoryRow(category, value, badgeClass) {
+        function addHistoryRow(category, value, badgeClass, itemType) {
             const tableBody = document.getElementById('history-table-body');
             const row = document.createElement('tr');
             row.dataset.category = category;
             row.dataset.value = value;
             row.dataset.badgeClass = badgeClass;
-            row.dataset.itemType = category;
+            row.dataset.itemType = itemType;
 
             const categoryCell = document.createElement('td');
             categoryCell.textContent = category;
@@ -445,9 +480,27 @@
                 })
                 .forEach(row => tableBody.appendChild(row));
 
-            const emptyRow = document.getElementById('history-empty-row');
-            emptyRow.classList.toggle('hidden', rows.length > 0);
-            document.getElementById('history-count').textContent = rows.length === 1 ? '1 item' : `${rows.length} items`;
+            filterMedicalHistory();
         }
+
+        function filterMedicalHistory() {
+            const selectedType = document.getElementById('history-filter').value;
+            const rows = Array.from(document.querySelectorAll('#history-table-body tr[data-category]'));
+            let visibleCount = 0;
+            rows.forEach(row => {
+                const visible = !selectedType || row.dataset.itemType === selectedType;
+                row.classList.toggle('hidden', !visible);
+                if (visible) visibleCount++;
+            });
+
+            const emptyRow = document.getElementById('history-empty-row');
+            emptyRow.classList.toggle('hidden', visibleCount > 0);
+            emptyRow.querySelector('td').textContent = selectedType
+                ? 'No medical history items match this filter.'
+                : 'No medical history items selected.';
+            document.getElementById('history-count').textContent = visibleCount === 1 ? '1 item' : `${visibleCount} items`;
+        }
+
+        filterMedicalHistory();
     </script>
 }

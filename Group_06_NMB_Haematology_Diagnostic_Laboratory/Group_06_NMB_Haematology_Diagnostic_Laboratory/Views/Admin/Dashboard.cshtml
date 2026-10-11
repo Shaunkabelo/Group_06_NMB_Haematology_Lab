@@ -1,18 +1,20 @@
+@model Group_06_NMB_Haematology_Diagnostic_Lab.Data.Models.CategoryManagementViewModel
 @{
     ViewData["Title"] = "Admin Dashboard";
+    var categoryGroups = new[]
+    {
+        new { Name = "Medical Conditions", Items = Model.MedicalConditionCategories.ToList() },
+        new { Name = "Allergies", Items = Model.AllergyCategories.ToList() },
+        new { Name = "Medications", Items = Model.MedicationCategories.ToList() }
+    };
+    var totalCategories = categoryGroups.Sum(group => group.Items.Count);
 }
 @* <div class="main main-content"> *@
   
   <div class="page-body">
     <style>
-      .dash-wide{display:grid;grid-template-columns:2fr 1fr;gap:18px;margin-bottom:18px;}
+      .dash-wide{display:grid;grid-template-columns:1fr;gap:18px;margin-bottom:18px;}
       .dash-3{display:grid;grid-template-columns:repeat(3, minmax(0, 1fr));gap:18px;}
-      .feed-item{display:flex;align-items:flex-start;gap:10px;padding:9px 0;border-bottom:1px solid var(--border);}
-      .feed-item:last-child{border-bottom:none;}
-      .fdot{width:7px;height:7px;border-radius:50%;flex-shrink:0;margin-top:5px;}
-      .fdot-t{background:var(--teal);}.fdot-a{background:var(--amber);}.fdot-b{background:var(--blue);}.fdot-r{background:var(--red);}
-      .feed-txt{font-size:12.5px;line-height:1.5;flex:1;}
-      .feed-time{font-size:11px;color:var(--muted);margin-top:2px;}
       .stats-grid{display:grid;grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));gap:16px;}
       .qa-grid{display:grid;grid-template-columns:repeat(2, minmax(0, 1fr));gap:8px;}
       .qa-btn{display:flex;flex-direction:column;gap:3px;padding:12px 13px;background:var(--bg);border:1px solid var(--border);border-radius:10px;cursor:pointer;text-align:left;font-family:'DM Sans',sans-serif;transition:all 0.15s;text-decoration:none;}
@@ -51,11 +53,11 @@
 
     <div class="section-header">
       <div><div class="section-title">Welcome back, @ViewData["AdminFirstName"]!</div><div class="section-sub">Manage reference data and monitor system health</div></div>
-      <button class="btn btn-secondary btn-sm" onclick="toast('Refreshed ✔')">↻ Refresh</button>
+      <a class="btn btn-secondary btn-sm" asp-controller="Admin" asp-action="Dashboard">Refresh</a>
     </div>
 
     <div class="stats-grid">
-      <a class="stat-card clickable" asp-controller="Admin" asp-action="Conditions" style="--accent:var(--blue)"><div class="stat-emoji">&#9874;</div><div class="stat-label">Medical Conditions</div><div class="stat-value">@ViewBag.MedicalConditionCount</div><div class="stat-sub">Across 6 categories</div></a>
+      <a class="stat-card clickable" asp-controller="Admin" asp-action="Conditions" style="--accent:var(--blue)"><div class="stat-emoji">&#9874;</div><div class="stat-label">Medical Conditions</div><div class="stat-value">@ViewBag.MedicalConditionCount</div><div class="stat-sub">Across @Model.MedicalConditionCategories.Count() categories</div></a>
       <a class="stat-card clickable" asp-controller="Admin" asp-action="Allergies" style="--accent:var(--red)"><div class="stat-emoji">&#9888;&#65039;</div><div class="stat-label">Allergies</div><div class="stat-value">@ViewBag.AllergyCount</div><div class="stat-sub">Listed allergies</div></a>
       <a class="stat-card clickable" asp-controller="Admin" asp-action="Medication" style="--accent:var(--teal)"><div class="stat-emoji">&#128279;</div><div class="stat-label">Medications</div><div class="stat-value">@ViewBag.MedicationCount</div><div class="stat-sub">Listed medications</div></a>
       <a class="stat-card clickable" asp-controller="Admin" asp-action="Users" style="--accent:#F5A623"><div class="stat-emoji">&#128101;</div><div class="stat-label">Registered Users</div><div class="stat-value">@ViewBag.UserCount</div><div class="stat-sub">Total system users</div></a>
@@ -64,25 +66,27 @@
         <br>
     </div>
     <div class="dash-wide">
-      <div class="card">
-        <div class="card-header"><span class="card-title">Recent Activity</span><span class="badge badge-gray">Last 24 hrs</span></div>
-        <div class="card-body">
-          <div class="feed-item"><div class="fdot fdot-t"></div><div><div class="feed-txt">Added <strong>Sickle Cell Anaemia</strong> → Haematological conditions</div><div class="feed-time">Today, 10:42</div></div><span class="badge badge-blue" style="align-self:center;margin-left:8px;">Condition</span></div>
-          <div class="feed-item"><div class="fdot fdot-a"></div><div><div class="feed-txt">Updated description for <strong>Latex</strong> allergy</div><div class="feed-time">Today, 09:15</div></div><span class="badge badge-amber" style="align-self:center;margin-left:8px;">Allergy</span></div>
-          <div class="feed-item"><div class="fdot fdot-t"></div><div><div class="feed-txt">Added <strong>Warfarin 5mg</strong> → Anticoagulant medications</div><div class="feed-time">Yesterday, 16:30</div></div><span class="badge badge-teal" style="align-self:center;margin-left:8px;">Medication</span></div>
-          <div class="feed-item"><div class="fdot fdot-r"></div><div><div class="feed-txt">Reviewed <strong>Aspirin 325mg</strong> — duplicate entry</div><div class="feed-time">Yesterday, 14:05</div></div><span class="badge badge-amber" style="align-self:center;margin-left:8px;">Reviewed</span></div>
-          <div class="feed-item"><div class="fdot fdot-b"></div><div><div class="feed-txt">Created category <strong>Autoimmune</strong> under Medical Conditions</div><div class="feed-time">16 May, 11:20</div></div><span class="badge badge-blue" style="align-self:center;margin-left:8px;">Category</span></div>
-        </div>
-      </div>
       <div style="display:flex;flex-direction:column;gap:16px;">
           <div class="card">
           <div class="card-header"><span class="card-title">Category Coverage</span></div>
           <div class="card-body">
-            <div class="cov-row"><span class="cov-lbl">Haematological</span><div class="cov-bg"><div class="cov-fill" style="width:85%"></div></div><span class="cov-num">14</span></div>
-            <div class="cov-row"><span class="cov-lbl">Cardiovascular</span><div class="cov-bg"><div class="cov-fill" style="width:60%"></div></div><span class="cov-num">10</span></div>
-            <div class="cov-row"><span class="cov-lbl">Metabolic</span><div class="cov-bg"><div class="cov-fill" style="width:48%"></div></div><span class="cov-num">8</span></div>
-            <div class="cov-row"><span class="cov-lbl">Autoimmune</span><div class="cov-bg"><div class="cov-fill" style="width:36%"></div></div><span class="cov-num">6</span></div>
-            <div class="cov-row"><span class="cov-lbl">Respiratory</span><div class="cov-bg"><div class="cov-fill" style="width:30%"></div></div><span class="cov-num">5</span></div>
+            <p class="section-sub">@totalCategories categories in total. Bars show each group's share of all categories.</p>
+            @foreach (var group in categoryGroups)
+            {
+                var count = group.Items.Count;
+                var activeCount = group.Items.Count(category => category.IsActive);
+                var percentage = totalCategories == 0 ? 0 : (int)Math.Round(100.0 * count / totalCategories);
+                <div class="cov-row">
+                    <span class="cov-lbl">@group.Name <small style="display:block;color:var(--muted);">@activeCount active / @(count - activeCount) deactivated</small></span>
+                    <div class="cov-bg" aria-hidden="true"><div class="cov-fill" style="width:@(percentage)%"></div></div>
+                    <span class="cov-num">@count</span>
+                </div>
+            }
+            @if (totalCategories == 0)
+            {
+                <p class="section-sub">No categories have been added yet.</p>
+            }
+            <a asp-controller="Admin" asp-action="Categories" class="card-link">Manage categories</a>
           </div>
         </div>
       </div>

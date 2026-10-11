@@ -6,6 +6,7 @@
 
 <div class="page-body">
     @Html.AntiForgeryToken()
+    <p id="consent-email-status" role="status" aria-live="polite"></p>
     <div class="section-header">
         <div>
             <!--- <div class="section-title">Doctor Consent</div>-->
@@ -41,13 +42,15 @@
                 <button class="modal-close" type="button" onclick="closeModal('modal-shared-results')">&times;</button>
             </div>
             <div class="modal-body">
+                <p>Select the test results you want to stop sharing with this doctor. Unchecked results will stay shared.</p>
+                <p id="shared-results-message" role="status" aria-live="polite"></p>
                 <table>
-                    <thead><tr><th>Test</th><th>Result</th><th>Reference Range</th><th>Units</th><th>Flag</th></tr></thead>
+                    <thead><tr><th>Revoke</th><th>Test</th><th>Result</th><th>Reference Range</th><th>Units</th><th>Flag</th></tr></thead>
                     <tbody id="shared-results-body"></tbody>
                 </table>
             </div>
             <div class="modal-footer">
-                <button class="btn btn-secondary" type="button" onclick="closeModal('modal-shared-results')">Close</button>
+                <button class="btn btn-primary" id="revoke-shared-results" type="button" onclick="revokeSharedResults()" disabled>Revoke selected results</button>                <button class="btn btn-secondary" type="button" onclick="closeModal('modal-shared-results')">Close</button>
             </div>
         </div>
     </div>
@@ -81,14 +84,19 @@
                 <button class="modal-close" type="button" onclick="closeModal('modal-grant-access')">&times;</button>
             </div>
             <div class="modal-body">
-                <div class="form-group">
-                    <label class="form-label" for="grant-doctor-search">Search doctor</label>
-                    <input id="grant-doctor-search" type="text" class="form-control" placeholder="Search by name or email" oninput="filterGrantDoctors()" />
-                </div>
                 <div class="card">
-                    <div class="card-header"><span class="card-title">Doctor Search Results</span></div>
+                    <div class="card-header"><span class="card-title">Doctors</span></div>
                     <div class="card-body">
-                        <div id="grant-doctor-results" class="list"></div>
+                        <div class="form-group">
+                            <label class="form-label" for="grant-doctor-search">Search doctor</label>
+                            <input id="grant-doctor-search" type="search" class="form-control" placeholder="Name, email or HPCSA number" oninput="renderGrantDoctorResults()" disabled />
+                        </div>
+                        <label class="form-label" for="grant-doctor-results">Select a doctor</label>
+                        <select id="grant-doctor-results" class="form-control" onchange="selectGrantDoctor(this.value === '' ? -1 : Number(this.value))" disabled>
+                            <option value="">Loading doctors...</option>
+                        </select>
+                        <p id="grant-doctor-load-error" class="td-muted" role="status" aria-live="polite" hidden></p>
+                        <button id="grant-doctor-retry" class="btn btn-secondary btn-sm" type="button" onclick="loadGrantDoctors()" hidden>Retry loading doctors</button>
                     </div>
                 </div>
                 <div class="section-gap">
@@ -143,11 +151,13 @@
                         ? 'The request could not be validated. Refresh the page and try again.'
                         : 'Access could not be ' + (granting ? 'granted' : 'revoked') + '. Please try again.'));
                 }
+                const outcome = await response.json();
+                if (outcome) document.getElementById('consent-email-status').textContent = outcome.message;
                 btn.classList.toggle('on', granting);
                 btn.classList.toggle('off', !granting);
                 btn.setAttribute('aria-checked', String(granting));
                 btn.setAttribute('aria-label', (granting ? 'Revoke access for ' : 'Grant access to ') + name);
-                toast((granting ? 'Access granted to ' : 'Access revoked from ') + name + '.');
+                toast(outcome?.message || ('Access revoked from ' + name + '.'));
                 await loadSavedConsents();
             } catch (error) {
                 toast(error.message || 'Unable to connect. Please try again.');
@@ -156,7 +166,63 @@
             }
         }
         let sharedResultsLoadVersion = 0;
-        async function showSharedResults(ref, requestId = 0, selectedTestIds = []) {
+        let sharedResultsContext = null;
+        let revokingSharedResults = false;
+
+        function updateRevokeSelection() {
+            document.getElementById('revoke-shared-results').disabled = revokingSharedResults ||
+                !document.querySelector('#shared-results-body input[type="checkbox"]:checked');
+        }
+
+        async function revokeSharedResults() {
+            if (revokingSharedResults || !sharedResultsContext) return;
+            const context = sharedResultsContext;
+            const selected = Array.from(document.querySelectorAll('#shared-results-body input[type="checkbox"]:checked'))
+                .map(input => Number(input.value));
+            if (!selected.length) return;
+            revokingSharedResults = true;
+            updateRevokeSelection();
+            const message = document.getElementById('shared-results-message');
+            message.textContent = 'Revoking access...';
+            document.querySelectorAll('#shared-results-body input').forEach(input => input.disabled = true);
+            try {
+                const response = await fetch('@Url.Action("RevokeConsent", "Patient")', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+                    },
+                    body: JSON.stringify({ doctorID: context.doctorId, testRequestTestTypeIDs: selected })
+                });
+                if (!response.ok) {
+                    const error = await response.json().catch(() => null);
+                    throw new Error(error?.message || 'Unable to revoke access. Please try again.');
+                }
+                const outcome = await response.json();
+                document.getElementById('consent-email-status').textContent = outcome.message;
+                if (sharedResultsContext === context) {
+                    document.querySelectorAll('#shared-results-body input[type="checkbox"]').forEach(input => {
+                        if (selected.includes(Number(input.value))) input.closest('tr').remove();
+                    });
+                    message.textContent = outcome.message;
+                }
+                await loadSavedConsents();
+            } catch (error) {
+                if (sharedResultsContext === context) message.textContent = error.message || 'Unable to revoke access. Please try again.';
+            } finally {
+                revokingSharedResults = false;
+                if (sharedResultsContext === context) {
+                    document.querySelectorAll('#shared-results-body input').forEach(input => input.disabled = false);
+                }
+                updateRevokeSelection();
+            }
+        }
+        async function showSharedResults(ref, requestId = 0, selectedTestIds = [], doctorId = 0, isActive = false) {
+            if (revokingSharedResults) return;
+            sharedResultsContext = { doctorId };
+            document.getElementById('shared-results-message').textContent = isActive
+                ? '' : 'Access to these results has already been revoked.';
+            document.getElementById('revoke-shared-results').disabled = true;
             const version = ++sharedResultsLoadVersion;
             const body = document.getElementById('shared-results-body');
             document.getElementById('shared-results-title').textContent = 'Test Results - ' + ref;
@@ -164,7 +230,7 @@
                 body.replaceChildren();
                 const row = body.insertRow();
                 const cell = row.insertCell();
-                cell.colSpan = 5;
+                cell.colSpan = 6;
                 cell.className = 'td-muted';
                 cell.textContent = message;
             }
@@ -190,6 +256,14 @@
                 body.replaceChildren();
                 rows.forEach(result => {
                     const row = body.insertRow();
+                    const selectionCell = row.insertCell();
+                    const checkbox = document.createElement('input');
+                    checkbox.type = 'checkbox';
+                    checkbox.value = result.id;
+                    checkbox.disabled = !isActive || !doctorId;
+                    checkbox.setAttribute('aria-label', 'Revoke access to ' + result.test);
+                    checkbox.onchange = updateRevokeSelection;
+                    selectionCell.append(checkbox);
                     const abnormal = result.flag === 'High' || result.flag === 'Low';
                     if (abnormal) row.className = 'abnormal-row';
                     [result.test, result.result, result.range, result.units].forEach(value => {
@@ -217,19 +291,21 @@
         const selectedConsentTests = new Map();
         let consentTestLoadVersion = 0;
 
-        let grantSearchResults = [...grantDoctors];
+
         let selectedGrantDoctorIndex = -1;
 
         async function openGrantDoctorModal() {
             const loadVersion = ++doctorLoadVersion;
             selectedGrantDoctorIndex = -1;
             grantDoctors = [];
-            grantSearchResults = [];
+
+            const dropdown = document.getElementById('grant-doctor-results');
             const search = document.getElementById('grant-doctor-search');
             search.value = '';
             search.disabled = true;
+            dropdown.replaceChildren(new Option('Loading doctors...', ''));
+            dropdown.disabled = true;
             document.getElementById('grant-access-error').style.display = 'none';
-            document.getElementById('grant-doctor-results').textContent = 'Loading doctorsÃ¢â‚¬Â¦';
             renderSelectedGrantDoctor();
             grantRequests = [];
             selectedConsentTests.clear();
@@ -237,55 +313,58 @@
             document.getElementById('grant-request-list').textContent = 'Loading released requests...';
             loadGrantRequests(loadVersion);
             openModal('modal-grant-access');
+            await loadGrantDoctors(loadVersion);
+        }
+
+        async function loadGrantDoctors(loadVersion = doctorLoadVersion) {
+            const dropdown = document.getElementById('grant-doctor-results');
+            const search = document.getElementById('grant-doctor-search');
+            const errorMessage = document.getElementById('grant-doctor-load-error');
+            const retry = document.getElementById('grant-doctor-retry');
+            dropdown.replaceChildren(new Option('Loading doctors...', ''));
+            dropdown.disabled = search.disabled = true;
+            errorMessage.hidden = retry.hidden = true;
             try {
                 const response = await fetch('@Url.Action("ConsentDoctors", "Patient")', {
                     headers: { 'Accept': 'application/json' },
                     cache: 'no-store'
                 });
-                if (!response.ok) throw new Error('Unable to load doctors.');
+                if (response.redirected || response.status === 401 || response.status === 403)
+                    throw new Error('Your session has expired. Sign in again to load doctors.');
                 const doctors = await response.json();
-                if (!Array.isArray(doctors)) throw new Error('Invalid doctor response.');
+                if (!response.ok) throw new Error(doctors.message || 'Unable to load doctors from the database.');
+                if (!Array.isArray(doctors)) throw new Error('Unable to read the doctor list. Please retry.');
                 if (loadVersion !== doctorLoadVersion) return;
                 grantDoctors = doctors;
-                filterGrantDoctors();
-            } catch {
+                search.disabled = false;
+                renderGrantDoctorResults();
+            } catch (error) {
                 if (loadVersion !== doctorLoadVersion) return;
-                document.getElementById('grant-doctor-results').textContent =
-                    'Unable to load doctors. Close this dialog and try again.';
-            } finally {
-                if (loadVersion === doctorLoadVersion) search.disabled = false;
+                dropdown.replaceChildren(new Option('Unable to load doctors.', ''));
+                dropdown.disabled = search.disabled = true;
+                errorMessage.textContent = error.message || 'Unable to load doctors. Please retry.';
+                errorMessage.hidden = retry.hidden = false;
             }
         }
-
-        function filterGrantDoctors() {
-            const query = document.getElementById('grant-doctor-search').value.toLowerCase();
-            grantSearchResults = grantDoctors.filter(doc =>
-                doc.name.toLowerCase().includes(query) ||
-                doc.email.toLowerCase().includes(query)
-            );
-            renderGrantDoctorResults();
-        }
-
         function renderGrantDoctorResults() {
-            const container = document.getElementById('grant-doctor-results');
-            if (!container) return;
-            if (grantSearchResults.length === 0) {
-                container.innerHTML = '<div class="td-muted">No doctors found.</div>';
-                return;
+            const dropdown = document.getElementById('grant-doctor-results');
+            const query = document.getElementById('grant-doctor-search').value.trim().toLowerCase();
+            const matches = grantDoctors.map((doctor, index) => ({ doctor, index }))
+                .filter(({ doctor }) => [doctor.name, doctor.email, doctor.hpcsaNumber]
+                    .some(value => String(value || '').toLowerCase().includes(query)));
+            if (!matches.some(item => item.index === selectedGrantDoctorIndex)) {
+                selectedGrantDoctorIndex = -1;
+                renderSelectedGrantDoctor();
             }
-            container.innerHTML = grantSearchResults.map((doc, idx) => {
-                const globalIndex = grantDoctors.findIndex(d => d.email === doc.email);
-                const selected = globalIndex === selectedGrantDoctorIndex;
-                return `
-                    <div class="list-row" style="cursor:pointer;${selected ? 'background:#F5F7FA;border-color:#00C9A7;' : ''}" onclick="selectGrantDoctor(${globalIndex})">
-                        <div>
-                            <strong>${consentText(doc.name)}</strong><br />
-                            <small>${consentText(doc.email)}</small>
-                        </div>
-                        <span class="badge gray">Select</span>
-                    </div>
-                `;
-            }).join('');
+            dropdown.replaceChildren(new Option(matches.length ? 'Select a doctor' :
+                query ? 'No doctors match your search.' : 'No doctors available.', ''));
+            matches.forEach(({ doctor, index }) => {
+                const label = doctor.name + ' - ' + doctor.email +
+                    (doctor.hpcsaNumber ? ' - HPCSA: ' + doctor.hpcsaNumber : '');
+                dropdown.add(new Option(label, String(index)));
+            });
+            dropdown.disabled = matches.length === 0;
+            dropdown.value = selectedGrantDoctorIndex < 0 ? '' : String(selectedGrantDoctorIndex);
         }
 
         function selectGrantDoctor(index) {
@@ -327,24 +406,39 @@
         function renderGrantRequestList() {
             const container = document.getElementById('grant-request-list');
             container.replaceChildren();
+            const table = document.createElement('table');
+            const headingRow = table.createTHead().insertRow();
+            ['TestResults', 'Doctor', 'Date'].forEach(title => {
+                const heading = document.createElement('th');
+                heading.scope = 'col';
+                heading.textContent = title;
+                headingRow.append(heading);
+            });
+            const body = table.createTBody();
+            container.append(table);
             if (!grantRequests.length) {
-                container.textContent = 'No released test requests found.';
+                const cell = body.insertRow().insertCell();
+                cell.colSpan = 3;
+                cell.className = 'td-muted';
+                cell.textContent = 'No released test requests found.';
                 return;
             }
             grantRequests.forEach(request => {
-                const row = document.createElement('div');
-                row.className = 'check-row';
+                const row = body.insertRow();
                 const link = document.createElement('a');
                 link.href = '#';
                 link.className = 'card-link';
                 link.textContent = request.reference;
                 link.onclick = event => { event.preventDefault(); openConsentTests(request); };
                 const count = selectedConsentTests.get(request.id)?.size || 0;
-                row.append(link, document.createTextNode(` (${count} tests selected)`));
-                container.append(row);
+                const selection = document.createElement('div');
+                selection.className = 'td-muted';
+                selection.textContent = count + ' tests selected';
+                row.insertCell().append(link, selection);
+                row.insertCell().textContent = request.doctorName || 'Not recorded';
+                row.insertCell().textContent = request.requestDate || 'Not recorded';
             });
         }
-
         async function openConsentTests(request) {
             const version = ++consentTestLoadVersion;
             const container = document.getElementById('consent-tests-list');
@@ -429,12 +523,19 @@
                         testRequestTestTypeIDs: selection.requests.flatMap(request => request.selectedTestIds)
                     })
                 });
-                if (!response.ok) throw new Error('Consent could not be saved. Please try again.');
+                if (!response.ok) {
+                    const error = await response.json().catch(() => null);
+                    throw new Error(error?.message || (response.status === 400
+                        ? 'The request could not be validated. Refresh the page and try again.'
+                        : 'Consent could not be saved. Please try again.'));
+                }
+                const outcome = await response.json();
+                document.getElementById('consent-email-status').textContent = outcome.message;
                 await loadSavedConsents();
                 pendingConsent = null;
                 closeModal('modal-confirm-consent');
                 closeModal('modal-grant-access');
-                toast(`Access saved for ${selection.doctor.name}.`);
+                toast(outcome.message);
             } catch (error) {
                 document.getElementById('confirm-consent-error').textContent = error.message;
             } finally {
@@ -443,12 +544,12 @@
                 yes.textContent = 'Yes';
             }
         }
-        function bindSharedResultLinks(row) {
+        function bindSharedResultLinks(row, doctor) {
             row.querySelectorAll('a[data-request-id]').forEach(link => {
                 link.onclick = event => {
                     event.preventDefault();
                     const selectedTestIds = link.dataset.testIds.split(',').map(Number).filter(id => Number.isInteger(id) && id > 0);
-                    showSharedResults(link.textContent, Number(link.dataset.requestId), selectedTestIds);
+                    showSharedResults(link.textContent, Number(link.dataset.requestId), selectedTestIds, doctor.id, doctor.isActive);
                 };
             });
         }
@@ -483,7 +584,7 @@
                     const button = row.querySelector('.toggle');
                     button.setAttribute('aria-label', (doctor.isActive ? 'Revoke access for ' : 'Grant access to ') + doctor.name);
                     button.onclick = () => toggleConsent(button, doctor.name, doctor.id);
-                    bindSharedResultLinks(row);
+                    bindSharedResultLinks(row, doctor);
                     body.append(row);
                 });
             } catch {

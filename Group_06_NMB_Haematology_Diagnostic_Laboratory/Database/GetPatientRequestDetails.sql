@@ -4,7 +4,7 @@ CREATE OR ALTER PROCEDURE dbo.sp_Patient_GetTestRequestDetails
 AS
 BEGIN
     SET NOCOUNT ON;
-    SELECT trtt.TestRequestTestTypeID, tt.TestName, trr.ResultValue, tt.UnitOfMeasurement,
+    SELECT trtt.TestRequestTestTypeID, tt.TestName, trr.ResultValue, trr.Notes AS ResultNotes, tt.UnitOfMeasurement,
         CASE
             WHEN tt.NormalRangeMin IS NOT NULL AND tt.NormalRangeMax IS NOT NULL
                 THEN CAST(tt.NormalRangeMin AS NVARCHAR(50)) + ' - ' + CAST(tt.NormalRangeMax AS NVARCHAR(50))

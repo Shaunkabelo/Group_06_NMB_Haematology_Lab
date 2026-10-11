@@ -1,4 +1,4 @@
-﻿@{
+@{
     var currentAction = ViewContext.RouteData.Values["action"]?.ToString() ?? "";
     var title = ViewData["Title"]?.ToString() ?? "NMB-HLabSys";
     string IsActive(string action) => string.Equals(currentAction, action, StringComparison.OrdinalIgnoreCase) ? " active" : "";
@@ -27,7 +27,7 @@
             <div class="sidebar-section">Account</div>
             <a asp-controller="Patient" asp-action="Consent" class="nav-item@(IsActive("Consent"))"><span>🔐</span> Doctor Consent</a>
             <a asp-controller="Patient" asp-action="Trends" class="nav-item@(IsActive("Trends"))"><span>📊</span> Track Results</a>
-            <a asp-controller="Patient" asp-action="Reports" class="nav-item@(IsActive("Reports"))"><span>📄</span> Reports</a>
+            <a asp-controller="Patient" asp-action="Report" class="nav-item@(IsActive("Report"))"><span>📄</span> Reports</a>
             <a asp-controller="Patient" asp-action="Update" class="nav-item@(IsActive("Update"))"><span>👤</span> My Profile</a>
             <div class="sidebar-footer">
                 <div class="user-info">

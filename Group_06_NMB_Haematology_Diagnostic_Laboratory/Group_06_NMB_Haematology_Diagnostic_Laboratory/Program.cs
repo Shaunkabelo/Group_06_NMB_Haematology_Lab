@@ -2,11 +2,31 @@ using Group_06_NMB_Haematology_Diagnostic_Lab.Data.DataAccess;
 using Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository;
 using Group_06_NMB_Haematology_Diagnostic_Laboratory.Services;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.Data.SqlClient;
 
 
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Allow the development SQL server's untrusted certificate without disabling encryption.
+if (builder.Environment.IsDevelopment() &&
+    builder.Configuration.GetValue<bool>("Database:TrustServerCertificate"))
+{
+    var connectionString = builder.Configuration.GetConnectionString("conn");
+    if (!string.IsNullOrWhiteSpace(connectionString))
+    {
+        var sqlConnection = new SqlConnectionStringBuilder(connectionString)
+        {
+            Encrypt = SqlConnectionEncryptOption.Mandatory,
+            TrustServerCertificate = true
+        };
+        builder.Configuration["ConnectionStrings:conn"] = sqlConnection.ConnectionString;
+    }
+}
+
 builder.Services.AddScoped<IPasswordService, PasswordService>();
+builder.Services.AddScoped<IConsentEmailService, ConsentEmailService>();
+builder.Services.AddScoped<IRegistrationEmailService, RegistrationEmailService>();
 builder.Services.AddControllersWithViews();
 
 // Data access

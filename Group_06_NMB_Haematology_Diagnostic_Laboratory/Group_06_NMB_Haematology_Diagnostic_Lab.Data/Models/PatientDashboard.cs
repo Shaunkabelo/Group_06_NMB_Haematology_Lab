@@ -9,4 +9,5 @@ public class PatientDashboard
     public int InProgress { get; set; }
     public int Submitted { get; set; }
     public int AbnormalFlags { get; set; }
+    public IReadOnlyList<PatientRequest> RecentRequests { get; set; } = [];
 }

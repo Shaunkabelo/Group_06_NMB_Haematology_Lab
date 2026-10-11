@@ -35,7 +35,7 @@
         <table id="med-tbl">
             <thead><tr><th>Medication Name</th><th>Category</th><th>Description</th><th>Patients</th><th>Status</th><th>Actions</th></tr></thead>
             <tbody>
-                @foreach (var medication in ViewBag.Medications as IEnumerable<Group_06_NMB_Haematology_Diagnostic_Lab.Data.Models.MedicationWithPatientCount> ?? Enumerable.Empty<Group_06_NMB_Haematology_Diagnostic_Lab.Data.Models.MedicationWithPatientCount>())
+                @foreach (var medication in (ViewBag.Medications as IEnumerable<Group_06_NMB_Haematology_Diagnostic_Lab.Data.Models.MedicationWithPatientCount> ?? Enumerable.Empty<Group_06_NMB_Haematology_Diagnostic_Lab.Data.Models.MedicationWithPatientCount>()).OrderBy(item => item.MedicationName.Trim(), StringComparer.CurrentCultureIgnoreCase))
                 {
                     <tr data-is-active="@medication.IsActive.ToString().ToLowerInvariant()" data-description="@medication.MedicationDescription">
                         <td><strong>@medication.MedicationName</strong></td>

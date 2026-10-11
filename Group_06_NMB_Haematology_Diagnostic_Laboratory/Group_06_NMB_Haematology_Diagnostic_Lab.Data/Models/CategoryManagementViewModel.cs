@@ -11,6 +11,7 @@ public class CategoryManagementViewModel
 
 public class CategoryItem
 {
+    public bool IsActive { get; set; } = true;
     public string CategoryName { get; set; } = string.Empty;
 
     public string Description { get; set; } = string.Empty;

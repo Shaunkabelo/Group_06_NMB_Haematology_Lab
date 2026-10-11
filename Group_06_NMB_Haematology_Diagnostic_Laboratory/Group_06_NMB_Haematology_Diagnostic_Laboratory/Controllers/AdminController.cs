@@ -50,7 +50,7 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
         public async Task<IActionResult> Dashboard()
         {
             await LoadNavigationCounts();
-            return View();
+            return View(await LoadCategoryModel());
         }
 
         [HttpPost]
@@ -115,14 +115,19 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
             return View();
         }
 
+        private async Task<CategoryManagementViewModel> LoadCategoryModel()
+        {
+            return new CategoryManagementViewModel
+            {
+                AllergyCategories = (await _patientRepository.GetCategoryDetails("allergy")).ToList(),
+                MedicationCategories = (await _patientRepository.GetCategoryDetails("medication")).ToList(),
+                MedicalConditionCategories = (await _patientRepository.GetCategoryDetails("condition")).ToList()
+            };
+        }
+
         public async Task<IActionResult> Categories()
         {
-            var model = new CategoryManagementViewModel
-            {
-                AllergyCategories = await _patientRepository.GetCategoryDetails("allergy"),
-                MedicationCategories = await _patientRepository.GetCategoryDetails("medication"),
-                MedicalConditionCategories = await _patientRepository.GetCategoryDetails("condition")
-            };
+            var model = await LoadCategoryModel();
             await LoadNavigationCounts();
             return View(model);
         }
@@ -152,13 +157,14 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
                 TempData["ProfileError"] = "Name, surname, and email are required.";
                 return RedirectToAction(nameof(Profile));
             }
-            if (!System.Text.RegularExpressions.Regex.IsMatch(model.Name, @"^[A-Za-zÀ-ÿ .'-]{2,100}$") ||
-                !System.Text.RegularExpressions.Regex.IsMatch(model.Surname, @"^[A-Za-zÀ-ÿ .'-]{2,100}$"))
+            if (!System.Text.RegularExpressions.Regex.IsMatch(model.Name, @"^[\p{L}][\p{L}\p{M} .\u2019\u0027-]{1,99}$") ||
+                !System.Text.RegularExpressions.Regex.IsMatch(model.Surname, @"^[\p{L}][\p{L}\p{M} .\u2019\u0027-]{1,99}$"))
             {
                 TempData["ProfileError"] = "Name and surname may only contain letters, spaces, apostrophes, periods, and hyphens.";
                 return RedirectToAction(nameof(Profile));
             }
-            if (!System.Net.Mail.MailAddress.TryCreate(model.Email, out _))
+            if (!System.Net.Mail.MailAddress.TryCreate(model.Email, out _) ||
+                !System.Text.RegularExpressions.Regex.IsMatch(model.Email, @"\A[^\s@]+@[^\s@.]+(?:\.[^\s@.]+)+\z") || model.Email.Length > 256)
             {
                 TempData["ProfileError"] = "Enter a valid email address.";
                 return RedirectToAction(nameof(Profile));
@@ -250,19 +256,19 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteCategory([FromForm] string categoryType, [FromForm] string categoryName)
+        public async Task<IActionResult> SetCategoryStatus([FromForm] string categoryType, [FromForm] string categoryName, [FromForm] bool? isActive)
         {
-            if (string.IsNullOrWhiteSpace(categoryType) || string.IsNullOrWhiteSpace(categoryName))
-                return BadRequest(new { message = "Category type and name are required." });
+            if (!ModelState.IsValid || !isActive.HasValue || string.IsNullOrWhiteSpace(categoryType) || string.IsNullOrWhiteSpace(categoryName))
+                return BadRequest(new { message = "Category type, name and a valid status are required." });
 
             try
             {
-                await _patientRepository.DeleteCategory(categoryType, categoryName);
-                return Ok(new { message = "Category deleted." });
+                await _patientRepository.SetCategoryStatus(categoryType, categoryName, isActive.Value);
+                return Ok(new { message = isActive.Value ? "Category activated." : "Category deactivated." });
             }
             catch (Exception)
             {
-                return BadRequest(new { message = "This category cannot be deleted while records are assigned to it." });
+                return BadRequest(new { message = "Unable to update this category status. Please try again." });
             }
         }
 

@@ -9,9 +9,11 @@ body.public-page { background: #fff; }
 .registration-field .form-control { min-height: 48px; padding: 10px 15px; border: 1px solid #e0e2e5; border-radius: 11px; font-size: 16px; }
 .registration-field .form-control:focus { border-color: #00bfa9; box-shadow: 0 0 0 3px rgba(0,191,169,.15); }
 .registration-field small { display: block; color: #7b8997; font-size: 14px; }
-.registration-password { display: flex; gap: 10px; }
-.registration-password input { min-width: 0; }
-.password-toggle { flex: 0 0 54px; border: 1px solid #e0e2e5; border-radius: 11px; background: #fff; color: #536170; }
+.registration-password { position: relative; }
+.registration-password .form-control { width: 100%; min-width: 0; padding-right: 48px; }
+.registration-password .password-toggle { position: absolute; right: 6px; top: 50%; transform: translateY(-50%); display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; padding: 0; border: 0; border-radius: 6px; background: transparent; color: #536170; cursor: pointer; }
+.registration-password .password-toggle:focus-visible { outline: 2px solid #009f8e; outline-offset: 1px; }
+.registration-password input::-ms-reveal { display: none; }
 .registration-footer { display: flex; justify-content: flex-end; gap: 12px; padding: 20px; margin-top: 18px; border-top: 1px solid #e0e2e5; }
 .registration-cancel, .registration-create { padding: 10px 18px; border-radius: 10px; font-size: 16px; font-weight: 700; text-decoration: none; }
 .registration-cancel { background: #fff; border: 1px solid #e0e2e5; color: #536170; }

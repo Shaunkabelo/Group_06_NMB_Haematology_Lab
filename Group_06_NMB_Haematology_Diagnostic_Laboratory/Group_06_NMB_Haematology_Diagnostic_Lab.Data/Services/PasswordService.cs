@@ -21,7 +21,7 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Services
                 Convert.ToBase64String(hashBytes);
 
             return (hash, salt);
-        }
+        } 
 
         public bool VerifyPassword(
             string password,

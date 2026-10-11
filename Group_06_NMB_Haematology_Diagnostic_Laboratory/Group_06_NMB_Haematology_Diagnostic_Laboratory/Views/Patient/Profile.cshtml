@@ -1,4 +1,4 @@
-﻿@using Group_06_NMB_Haematology_Diagnostic_Lab.Data.Models
+@using Group_06_NMB_Haematology_Diagnostic_Lab.Data.Models
 
 @model PatientUpdate
 
@@ -85,7 +85,7 @@
                             First Name
                         </label>
 
-                        <input asp-for="Name"
+                        <input asp-for="Name" data-person-name
                                id="p-fname"
                                class="form-control" />
 
@@ -102,7 +102,7 @@
                             Surname
                         </label>
 
-                        <input asp-for="Surname"
+                        <input asp-for="Surname" data-person-name
                                id="p-lname"
                                class="form-control" />
 
@@ -124,6 +124,8 @@
                     <input asp-for="Email"
                            id="p-email"
                            type="email"
+                           required
+                           autocomplete="email"
                            class="form-control" />
 
                     <span asp-validation-for="Email"
@@ -141,7 +143,7 @@
                             Cellphone
                         </label>
 
-                        <input asp-for="Cellphone"
+                        <input asp-for="Cellphone" data-digits="10" inputmode="numeric" minlength="10" maxlength="10" pattern="[0-9]{10}"
                                id="p-cell"
                                class="form-control" />
 
@@ -215,15 +217,12 @@
 
         <div class="card-body">
 
-            <form asp-controller="Patients"
+            <form asp-controller="Patient"
                   asp-action="ChangePassword"
                   method="post">
 
                 @Html.AntiForgeryToken()
 
-                <input type="hidden"
-                       name="UserId"
-                       value="@Model.UserId" />
 
 
                 <div class="form-group">
@@ -239,13 +238,6 @@
                                type="password"
                                class="form-control" />
 
-                        <button class="btn btn-secondary"
-                                type="button"
-                                onclick="togglePassword('current-password')">
-
-                            Show
-
-                        </button>
 
                     </div>
 
@@ -266,13 +258,6 @@
                                class="form-control"
                                oninput="validatePassword('profile-password')" />
 
-                        <button class="btn btn-secondary"
-                                type="button"
-                                onclick="togglePassword('profile-password')">
-
-                            Show
-
-                        </button>
 
                     </div>
 
@@ -390,5 +375,6 @@
 @section Scripts
 {
     <partial name="_ValidationScriptsPartial" />
+    <script src="~/js/person-input-validation.js" asp-append-version="true"></script>
     <script src="~/js/address-autocomplete.js" asp-append-version="true"></script>
 }

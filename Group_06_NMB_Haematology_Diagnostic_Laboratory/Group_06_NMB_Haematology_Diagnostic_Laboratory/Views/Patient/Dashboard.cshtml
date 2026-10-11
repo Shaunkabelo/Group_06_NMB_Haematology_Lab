@@ -28,7 +28,7 @@
             <div class="stat-value">@Model.Submitted</div>
             <div class="stat-sub">Awaiting sample receipt</div>
         </a>
-        <a asp-controller="Patient" asp-action="Reports" class="stat-card clickable red">
+        <a asp-controller="Patient" asp-action="Requests" class="stat-card clickable red">
             <div class="stat-label">Abnormal Flags</div>
             <div class="stat-value">@Model.AbnormalFlags</div>
             <div class="stat-sub">Released by your doctor</div>
@@ -47,9 +47,27 @@
                         <tr><th>Request</th><th>Date</th><th>Doctor</th><th>Status</th></tr>
                     </thead>
                     <tbody>
-                        <tr data-searchable><td><strong>REQ-2026-041</strong><br /><span class="td-muted">Full Blood Count</span></td><td>18 Apr 2026</td><td>Dr. T. Nkosi</td><td><span class="badge badge-blue">In Progress</span></td></tr>
-                        <tr data-searchable><td><strong>REQ-2026-040</strong><br /><span class="td-muted">Coagulation Studies</span></td><td>18 Apr 2026</td><td>Dr. T. Nkosi</td><td><span class="badge badge-amber">Submitted</span></td></tr>
-                        <tr data-searchable><td><strong>REQ-2026-038</strong><br /><span class="td-muted">Differential Count</span></td><td>02 Apr 2026</td><td>Dr. T. Nkosi</td><td><span class="badge badge-green">Released</span></td></tr>
+                        @if (Model.RecentRequests.Count == 0)
+                        {
+                            <tr><td colspan="4" class="td-muted">No test requests found.</td></tr>
+                        }
+                        @foreach (var request in Model.RecentRequests)
+                        {
+                            var statusClass = request.Status?.Trim().ToLowerInvariant() switch
+                            {
+                                "submitted" => "badge-amber",
+                                "samples received" or "sample(s) received" or "in progress" => "badge-blue",
+                                "completed" or "released" or "released by doctor" or "released by the doctor" => "badge-green",
+                                "cancelled" => "badge-red",
+                                _ => "badge-gray"
+                            };
+                            <tr data-searchable>
+                                <td><strong>@request.RequestNumber</strong><br /><span class="td-muted">@request.TestsRequested</span></td>
+                                <td>@request.RequestDate.ToString("dd MMM yyyy")</td>
+                                <td>@request.DoctorName</td>
+                                <td><span class="badge @statusClass">@request.Status</span></td>
+                            </tr>
+                        }
                     </tbody>
                 </table>
             </div>
@@ -70,6 +88,6 @@
     </div>
 
     <div class="section-gap">
-        <a asp-controller="Patient" asp-action="Reports" class="btn btn-primary btn-sm">Download Report</a>
+        <a asp-controller="Patient" asp-action="Report" class="btn btn-primary btn-sm">Download Report</a>
     </div>
 </div>

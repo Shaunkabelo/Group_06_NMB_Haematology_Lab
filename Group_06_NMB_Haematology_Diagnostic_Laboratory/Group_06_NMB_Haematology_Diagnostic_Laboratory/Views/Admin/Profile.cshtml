@@ -6,11 +6,14 @@
 <style>
     .admin-profile-grid { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:18px; }
     .admin-profile-grid .form-control { width:100%; box-sizing:border-box; }
-    .profile-password-row { display:flex; gap:8px; align-items:stretch; }
-    .profile-password-row .form-control { flex:1; min-width:0; }
+    .profile-password-row { position:relative; }
+    .profile-password-row .form-control { min-width:0; padding-right:48px; }
+.profile-password-row .password-toggle { position:absolute; right:6px; top:50%; transform:translateY(-50%); width:36px; height:36px; display:flex; align-items:center; justify-content:center; border:0; border-radius:6px; background:transparent; color:inherit; cursor:pointer; }
+.profile-password-row .password-toggle:focus-visible { outline:2px solid var(--teal, #009f8e); }
+.profile-password-row input::-ms-reveal { display:none; }
     .validation-message { color:var(--red); font-size:12px; margin-top:5px; min-height:16px; }
     @@media (max-width:900px) { .admin-profile-grid { grid-template-columns:1fr; } }
-    @@media (max-width:600px) { .page-body { padding:14px; } .form-row { display:block; } .profile-password-row { flex-wrap:wrap; } .profile-password-row button { width:100%; } .card-body { padding:16px; } }
+    @@media (max-width:600px) { .page-body { padding:14px; } .form-row { display:block; }  .card-body { padding:16px; } }
 </style>
 
 <div class="page-body">
@@ -41,16 +44,16 @@
                     <div class="form-row">
                         <div class="form-group">
                             <label class="form-label">First Name</label>
-                            <input class="form-control" name="Name" value="@Model.Name" minlength="2" maxlength="100" pattern="[A-Za-zÀ-ÿ .'-]+" required />
+                            <input class="form-control" name="Name" data-person-name value="@Model.Name" minlength="2" maxlength="100" pattern="\p{L}[\p{L}\p{M} .\u2019\u0027\-]*" required />
                         </div>
                         <div class="form-group">
                             <label class="form-label">Surname</label>
-                            <input class="form-control" name="Surname" value="@Model.Surname" minlength="2" maxlength="100" pattern="[A-Za-zÀ-ÿ .'-]+" required />
+                            <input class="form-control" name="Surname" data-person-name value="@Model.Surname" minlength="2" maxlength="100" pattern="\p{L}[\p{L}\p{M} .\u2019\u0027\-]*" required />
                         </div>
                     </div>
                     <div class="form-group">
                         <label class="form-label">Email Address / Username</label>
-                        <input class="form-control" name="Email" type="email" value="@Model.Email" maxlength="256" required />
+                        <input class="form-control" name="Email" type="email" value="@Model.Email" maxlength="256" autocomplete="email" pattern="[^\s@@]+@@[^\s@@.]+(?:\.[^\s@@.]+)+" title="Enter a valid email address, such as admin@example.com." required />
                     </div>
                     <div class="form-row">
                         <div class="form-group">
@@ -72,10 +75,9 @@
                 <div class="card-body">
                     <form asp-controller="Admin" asp-action="ChangePassword" method="post" id="admin-password-form" novalidate>
                         @Html.AntiForgeryToken()
-                        <input type="hidden" name="Email" value="@Model.Email" />
-                        <div class="form-group"><label class="form-label" for="current-password">Current Password *</label><div class="profile-password-row"><input class="form-control" id="current-password" name="CurrentPassword" type="password" required /><button class="btn btn-secondary" type="button" onclick="toggleAdminPassword('current-password', this)">Show</button></div><div class="validation-message" id="current-password-error"></div></div>
-                        <div class="form-group"><label class="form-label" for="new-password">New Password *</label><div class="profile-password-row"><input class="form-control" id="new-password" name="NewPassword" type="password" required minlength="8" /><button class="btn btn-secondary" type="button" onclick="toggleAdminPassword('new-password', this)">Show</button></div><div class="form-hint">Use 8+ characters, an uppercase letter, number, and special character.</div><div class="validation-message" id="new-password-error"></div></div>
-                        <div class="form-group"><label class="form-label" for="confirm-password">Confirm New Password *</label><div class="profile-password-row"><input class="form-control" id="confirm-password" name="ConfirmPassword" type="password" required /><button class="btn btn-secondary" type="button" onclick="toggleAdminPassword('confirm-password', this)">Show</button></div><div class="validation-message" id="confirm-password-error"></div></div>
+                        <div class="form-group"><label class="form-label" for="current-password">Current Password *</label><div class="profile-password-row"><input class="form-control" id="current-password" name="CurrentPassword" type="password" required /><button class="password-toggle" type="button" aria-label="Show password" aria-pressed="false" onclick="toggleAdminPassword('current-password', this)"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M12 5C7 5 3 9 1 12c2 3 6 7 11 7s9-4 11-7c-2-3-6-7-11-7zm0 11a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm0-2a2 2 0 1 0 0-4 2 2 0 0 0 0 4z"/></svg></button></div><div class="validation-message" id="current-password-error"></div></div>
+                        <div class="form-group"><label class="form-label" for="new-password">New Password *</label><div class="profile-password-row"><input class="form-control" id="new-password" name="NewPassword" type="password" required minlength="8" /><button class="password-toggle" type="button" aria-label="Show password" aria-pressed="false" onclick="toggleAdminPassword('new-password', this)"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M12 5C7 5 3 9 1 12c2 3 6 7 11 7s9-4 11-7c-2-3-6-7-11-7zm0 11a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm0-2a2 2 0 1 0 0-4 2 2 0 0 0 0 4z"/></svg></button></div><div class="form-hint">Use 8+ characters, an uppercase letter, number, and special character.</div><div class="validation-message" id="new-password-error"></div></div>
+                        <div class="form-group"><label class="form-label" for="confirm-password">Confirm New Password *</label><div class="profile-password-row"><input class="form-control" id="confirm-password" name="ConfirmPassword" type="password" required /><button class="password-toggle" type="button" aria-label="Show password" aria-pressed="false" onclick="toggleAdminPassword('confirm-password', this)"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M12 5C7 5 3 9 1 12c2 3 6 7 11 7s9-4 11-7c-2-3-6-7-11-7zm0 11a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm0-2a2 2 0 1 0 0-4 2 2 0 0 0 0 4z"/></svg></button></div><div class="validation-message" id="confirm-password-error"></div></div>
                         <button class="btn btn-primary" type="submit">Change Password</button>
                     </form>
                 </div>
@@ -94,8 +96,9 @@
 </div>
 
 @section Scripts {
+<script src="~/js/person-input-validation.js" asp-append-version="true"></script>
 <script>
-    function toggleAdminPassword(id, button) { const input = document.getElementById(id); const visible = input.type === 'text'; input.type = visible ? 'password' : 'text'; button.textContent = visible ? 'Show' : 'Hide'; }
+    function toggleAdminPassword(id, button) { const input = document.getElementById(id); const visible = input.type === 'text'; input.type = visible ? 'password' : 'text'; button.setAttribute('aria-pressed', String(!visible)); button.setAttribute('aria-label', (visible ? 'Show ' : 'Hide ') + document.querySelector('label[for=' + id + ']').textContent.replace('*', '').trim()); }
     document.getElementById('admin-password-form')?.addEventListener('submit', function (event) { const current = document.getElementById('current-password'); const password = document.getElementById('new-password'); const confirm = document.getElementById('confirm-password'); document.querySelectorAll('.validation-message').forEach(item => item.textContent = ''); let valid = true; if (!current.value) { document.getElementById('current-password-error').textContent = 'Current password is required.'; valid = false; } const rule = /^(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/; if (!rule.test(password.value)) { document.getElementById('new-password-error').textContent = 'Use 8+ characters with uppercase, number, and special character.'; valid = false; } if (!confirm.value || confirm.value !== password.value) { document.getElementById('confirm-password-error').textContent = 'Passwords must match.'; valid = false; } if (!valid) event.preventDefault(); });
 </script>
 }

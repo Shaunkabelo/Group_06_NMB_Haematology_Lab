@@ -1,0 +1,248 @@
+@model IEnumerable<Group_06_NMB_Haematology_Diagnostic_Lab.Data.Models.PatientTrendResult>
+
+@{
+    Layout = "~/Views/Shared/_LayoutPatient.cshtml";
+    ViewData["Title"] = "Track Results";
+
+    var trendRows = (Model ?? Enumerable.Empty<Group_06_NMB_Haematology_Diagnostic_Lab.Data.Models.PatientTrendResult>())
+        .OrderBy(row => row.TestName)
+        .ThenBy(row => row.ResultDate)
+        .ToList();
+    var testOptions = trendRows
+        .GroupBy(row => new { row.TestTypeID, row.TestName })
+        .Select(group => group.First())
+        .OrderBy(row => row.TestName)
+        .ToList();
+    var firstDate = trendRows.Count > 0 ? trendRows.Min(row => row.ResultDate).ToString("yyyy-MM-dd") : "";
+    var lastDate = trendRows.Count > 0 ? trendRows.Max(row => row.ResultDate).ToString("yyyy-MM-dd") : "";
+    var trendJson = System.Text.Json.JsonSerializer.Serialize(trendRows.Select(row => new
+    {
+        testTypeId = row.TestTypeID,
+        testName = row.TestName,
+        unit = row.UnitOfMeasurement ?? "",
+        normalRangeMin = row.NormalRangeMin,
+        normalRangeMax = row.NormalRangeMax,
+        referenceRange = row.ReferenceRange,
+        value = row.ResultValue,
+        flag = row.ResultFlag,
+        date = row.ResultDate.ToString("yyyy-MM-dd"),
+        timestamp = row.ResultDate.ToString("yyyy-MM-ddTHH:mm:ss"),
+        displayDate = row.ResultDate.ToString("dd MMM yyyy HH:mm"),
+        requestNumber = row.RequestNumber
+    }));
+}
+
+<div class="page-body">
+    <div class="section-header">
+        <div>
+            <div class="section-sub">Select a test type and period to view released result trends.</div>
+        </div>
+    </div>
+
+    @if (trendRows.Count == 0)
+    {
+        <div class="card">
+            <div class="card-body">
+                <p>No released numeric test results are available yet.</p>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="filter-row">
+            <select class="form-control compact-select" id="test-select" onchange="renderChart()">
+                @foreach (var test in testOptions)
+                {
+                    <option value="@test.TestTypeID">@test.TestName @(!string.IsNullOrWhiteSpace(test.UnitOfMeasurement) ? $"({test.UnitOfMeasurement})" : "")</option>
+                }
+            </select>
+            <input id="start-date" type="date" class="form-control compact-date" value="@firstDate" onchange="renderChart()" />
+            <input id="end-date" type="date" class="form-control compact-date" value="@lastDate" onchange="renderChart()" />
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <span id="chart-title" class="card-title">Result Trend</span>
+                <span id="chart-range-badge" class="badge badge-teal"></span>
+            </div>
+            <div class="card-body">
+                <p id="chart-summary" class="section-sub" aria-live="polite"></p>
+                <div id="chart-area" class="chart-bg" style="overflow-x:auto"></div>
+                <p id="chart-detail" class="section-sub" aria-live="polite">Hover over or focus a point to see its details.</p>
+                <div style="display:flex;gap:20px;flex-wrap:wrap;margin-top:12px" aria-label="Chart legend">
+                    <span><span style="color:#0f766e">●</span> Normal</span>
+                    <span><span style="color:#b45309">●</span> Low</span>
+                    <span><span style="color:#b91c1c">●</span> High</span>
+                    <span><span style="color:#64748b">●</span> Unclassified</span>
+                    <span>Shaded area: normal range</span>
+                </div>
+                <p class="section-sub">Dates are spaced by time. The line connects recorded results; it does not show measurements between tests.</p>
+                <table class="section-gap">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Request</th>
+                            <th>Value</th>
+                            <th>Reference Range</th>
+                            <th>Flag</th>
+                        </tr>
+                    </thead>
+                    <tbody id="chart-tbody"></tbody>
+                </table>
+            </div>
+        </div>
+    }
+</div>
+
+@section Scripts {
+    <script>
+        const trendResults = @Html.Raw(trendJson);
+
+        function renderChart() {
+            const testSelect = document.getElementById('test-select');
+            if (!testSelect || trendResults.length === 0) return;
+
+            const testTypeId = Number(testSelect.value);
+            const startDate = document.getElementById('start-date').value;
+            const endDate = document.getElementById('end-date').value;
+            const rows = trendResults
+                .filter(row => row.testTypeId === testTypeId)
+                .filter(row => !startDate || row.date >= startDate)
+                .filter(row => !endDate || row.date <= endDate)
+                .sort((a, b) => a.timestamp.localeCompare(b.timestamp));
+
+            const selected = trendResults.find(row => row.testTypeId === testTypeId);
+            document.getElementById('chart-title').textContent = selected ? selected.testName + ' Trend' : 'Result Trend';
+            document.getElementById('chart-range-badge').textContent = selected ? 'Normal range: ' + selected.referenceRange : '';
+
+            document.getElementById('chart-detail').textContent = 'Hover over or focus a point to see its details.';
+            document.getElementById('chart-summary').textContent = '';
+            if (startDate && endDate && startDate > endDate) {
+                document.getElementById('chart-area').textContent = 'Choose an end date on or after the start date.';
+                document.getElementById('chart-tbody').replaceChildren();
+                return;
+            }
+            if (rows.length === 0) {
+                document.getElementById('chart-area').innerHTML = '<div class="section-sub">No results found for the selected period.</div>';
+                document.getElementById('chart-tbody').innerHTML = '';
+                return;
+            }
+
+            renderTrendGraph(rows, selected);
+            document.getElementById('chart-tbody').innerHTML = rows.map(row => {
+                const unit = row.unit ? ' ' + row.unit : '';
+                const badgeClass = row.flag === 'Low' ? 'badge-amber' : row.flag === 'High' ? 'badge-red' : 'badge-green';
+                return `<tr>
+                    <td>${row.displayDate}</td>
+                    <td>${row.requestNumber}</td>
+                    <td>${row.value}${unit}</td>
+                    <td>${row.referenceRange}</td>
+                    <td><span class="badge ${badgeClass}">${row.flag}</span></td>
+                </tr>`;
+            }).join('');
+        }
+
+        function renderTrendGraph(rows, selected) {
+            const area = document.getElementById('chart-area');
+            area.replaceChildren();
+            const values = rows.map(row => Number(row.value));
+            const hasMin = selected?.normalRangeMin != null;
+            const hasMax = selected?.normalRangeMax != null;
+            const bounds = [hasMin ? Number(selected.normalRangeMin) : null,
+                hasMax ? Number(selected.normalRangeMax) : null].filter(value => value !== null);
+            const low = Math.min(...values, ...bounds);
+            const high = Math.max(...values, ...bounds);
+            const margin = (high - low || Math.abs(high) || 1) * 0.15;
+            const min = low - margin;
+            const max = high + margin;
+            const width = 940, height = 410;
+            const left = 95, right = 35, top = 40, bottom = 80;
+            const plotWidth = width - left - right;
+            const plotHeight = height - top - bottom;
+            const times = rows.map(row => new Date(row.timestamp).getTime());
+            const firstTime = times[0], lastTime = times[times.length - 1];
+            const x = time => left + (lastTime === firstTime ? 0.5 :
+                (time - firstTime) / (lastTime - firstTime)) * plotWidth;
+            const y = value => top + (max - value) / (max - min) * plotHeight;
+            const format = value => Number(value).toLocaleString(undefined, { maximumSignificantDigits: 6 });
+            const unit = selected?.unit ? ' ' + selected.unit : '';
+            const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+            svg.setAttribute('viewBox', '0 0 ' + width + ' ' + height);
+            svg.setAttribute('role', 'group');
+            svg.setAttribute('aria-label', selected.testName + ' results over time. Exact values are in the table below.');
+            svg.style.cssText = 'display:block;width:100%;min-width:680px;height:auto';
+            const add = (tag, attributes, text, parent = svg) => {
+                const element = document.createElementNS(svg.namespaceURI, tag);
+                Object.entries(attributes).forEach(([key, value]) => element.setAttribute(key, value));
+                if (text != null) element.textContent = text;
+                parent.append(element);
+                return element;
+            };
+            add('title', {}, selected.testName + ' result trend');
+            add('desc', {}, 'Result values plotted against date and time. High and low results are colour coded. A single result is shown as a point.');
+            if (hasMin && hasMax) {
+                add('rect', { x: left, y: y(Number(selected.normalRangeMax)), width: plotWidth,
+                    height: Math.max(0, y(Number(selected.normalRangeMin)) - y(Number(selected.normalRangeMax))),
+                    fill: '#ccfbf1', opacity: '0.65' });
+            }
+            for (let tick = 0; tick <= 5; tick++) {
+                const value = min + (max - min) * tick / 5;
+                add('line', { x1: left, x2: width - right, y1: y(value), y2: y(value), stroke: '#cbd5e1', 'stroke-dasharray': '3 4' });
+                add('text', { x: left - 12, y: y(value) + 4, 'text-anchor': 'end', 'font-size': 12, fill: 'currentColor' }, format(value));
+            }
+            bounds.forEach((value, index) => {
+                add('line', { x1: left, x2: width - right, y1: y(value), y2: y(value), stroke: '#0f766e', 'stroke-dasharray': '6 4' });
+                add('text', { x: width - right, y: y(value) - 6, 'text-anchor': 'end', 'font-size': 11, fill: '#0f766e' },
+                    (hasMin && index === 0 ? 'Lower limit: ' : 'Upper limit: ') + format(value));
+            });
+            add('line', { x1: left, x2: width - right, y1: height - bottom, y2: height - bottom, stroke: '#64748b' });
+            const dateFormat = new Intl.DateTimeFormat('en-ZA', { day: '2-digit', month: 'short', year: 'numeric' });
+            const tickCount = firstTime === lastTime ? 1 : 5;
+            for (let index = 0; index < tickCount; index++) {
+                const time = tickCount === 1 ? firstTime : firstTime + (lastTime - firstTime) * index / (tickCount - 1);
+                const date = new Date(time);
+                const label = dateFormat.format(date);
+                add('text', { x: x(time), y: height - bottom + 24, 'text-anchor': 'middle', 'font-size': 11, fill: 'currentColor' }, label);
+                if (lastTime - firstTime < 86400000) {
+                    add('text', { x: x(time), y: height - bottom + 40, 'text-anchor': 'middle', 'font-size': 10, fill: 'currentColor' },
+                        date.toLocaleTimeString('en-ZA', { hour: '2-digit', minute: '2-digit' }));
+                }
+            }
+            add('text', { x: left, y: 18, 'font-size': 12, fill: 'currentColor' }, 'Result' + (unit ? ' (' + selected.unit + ')' : ''));
+            add('text', { x: left + plotWidth / 2, y: height - 10, 'text-anchor': 'middle', 'font-size': 12, fill: 'currentColor' }, 'Result date');
+            if (rows.length > 1) {
+                add('polyline', { points: values.map((value, index) => x(times[index]) + ',' + y(value)).join(' '),
+                    fill: 'none', stroke: '#2563eb', 'stroke-width': 2.5, 'stroke-linejoin': 'round' });
+            }
+            rows.forEach((row, index) => {
+                const color = row.flag === 'High' ? '#b91c1c' : row.flag === 'Low' ? '#b45309' :
+                    row.flag === 'Normal' ? '#0f766e' : '#64748b';
+                const detail = row.displayDate + ' — ' + format(row.value) + unit + ' — ' +
+                    row.flag + ' — Reference: ' + row.referenceRange + ' — ' + row.requestNumber;
+                const point = add('circle', { cx: x(times[index]), cy: y(values[index]), r: 6,
+                    fill: color, stroke: '#fff', 'stroke-width': 2, tabindex: 0, 'aria-label': detail });
+                add('title', {}, detail, point);
+                const showDetail = () => {
+                    document.getElementById('chart-detail').textContent = detail;
+                    point.setAttribute('r', '8');
+                };
+                point.addEventListener('mouseenter', showDetail);
+                point.addEventListener('focus', showDetail);
+                point.addEventListener('click', showDetail);
+                point.addEventListener('mouseleave', () => point.setAttribute('r', '6'));
+                point.addEventListener('blur', () => point.setAttribute('r', '6'));
+                const separated = (index === 0 || x(times[index]) - x(times[index - 1]) > 60) &&
+                    (index === rows.length - 1 || x(times[index + 1]) - x(times[index]) > 60);
+                if (separated) add('text', { x: x(times[index]), y: y(values[index]) - 14,
+                    'text-anchor': 'middle', 'font-size': 12, fill: color }, format(values[index]));
+            });
+            area.append(svg);
+            const change = values[values.length - 1] - values[0];
+            document.getElementById('chart-summary').textContent = rows.length + (rows.length === 1
+                ? ' result. Add another result to see a trend.'
+                : ' results. Latest: ' + format(values[values.length - 1]) + unit +
+                    '. Change from first result: ' + (change > 0 ? '+' : '') + format(change) + unit + '.');
+        }
+        renderChart();
+    </script>
+}

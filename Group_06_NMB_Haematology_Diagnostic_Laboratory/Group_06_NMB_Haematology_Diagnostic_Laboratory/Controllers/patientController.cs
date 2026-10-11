@@ -10,7 +10,7 @@ using System.Security.Claims;
 namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 {
     [Authorize(Roles = "Patient")]
-    public class PatientController : Controller
+    public partial class PatientController : Controller
     {
         private int CurrentPatientId => int.Parse(User.FindFirstValue("PatientID")!);
 
@@ -62,7 +62,12 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
                 TotalRequests = requests.Count,
                 InProgress = requests.Count(r => string.Equals(r.Status?.Trim(), "In progress", StringComparison.OrdinalIgnoreCase)),
                 Submitted = requests.Count(r => string.Equals(r.Status?.Trim(), "Submitted", StringComparison.OrdinalIgnoreCase)),
-                AbnormalFlags = await _patientRepository.GetPatientAbnormalResultCount(CurrentPatientId)
+                AbnormalFlags = await _patientRepository.GetPatientAbnormalResultCount(CurrentPatientId),
+                RecentRequests = requests
+                    .OrderByDescending(request => request.RequestDate)
+                    .ThenByDescending(request => request.TestRequestID)
+                    .Take(3)
+                    .ToList()
             });
         }
 
@@ -71,6 +76,19 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
         {
             var requests = await _patientRepository.GetPatientRequests(CurrentPatientId);
             return View(requests.ToList());
+        }
+
+        [HttpGet]
+        public IActionResult Report()
+        {
+            return View();
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> Trends()
+        {
+            var results = await _patientRepository.GetPatientTrendResults(CurrentPatientId);
+            return View(results.ToList());
         }
 
         [HttpGet]
@@ -114,7 +132,7 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
                 id = group.Key, name = group.First().DoctorName, email = group.First().Email,
                 hpcsaNumber = group.First().HPCSANumber, specialisation = group.First().Specialisation,
                 isActive = group.Any(row => row.IsActive),
-                requests = group.GroupBy(row => row.TestRequestID).Select(request => new {
+                requests = group.Where(row => row.IsActive || !group.Any(consent => consent.IsActive)).GroupBy(row => row.TestRequestID).Select(request => new {
                     id = request.Key, reference = request.First().RequestNumber,
                     selectedTestIds = request.Select(row => row.TestRequestTestTypeID).Distinct().ToArray()
                 }).ToArray()
@@ -126,7 +144,12 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
         public async Task<IActionResult> ConsentRequests()
         {
             var requests = await _patientRepository.GetReleasedConsentRequests(CurrentPatientId);
-            return Json(requests.Select(request => new { id = request.RequestID, reference = request.TestRequestID }));
+            return Json(requests.Select(request => new {
+                id = request.RequestID,
+                reference = request.TestRequestID,
+                doctorName = request.DoctorName,
+                requestDate = request.RequestDate?.ToString("dd MMM yyyy", System.Globalization.CultureInfo.InvariantCulture)
+            }));
         }
 
         [HttpGet]
@@ -146,6 +169,7 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
             return Json(results.Where(test => selectedTestIds.Contains(test.TestRequestTestTypeID))
                 .OrderBy(test => test.TestName, StringComparer.OrdinalIgnoreCase).Select(test => new
             {
+                id = test.TestRequestTestTypeID,
                 test = test.TestName,
                 result = test.ResultValue?.ToString("0.############################") ?? "Pending",
                 range = test.ReferenceRange,
@@ -175,13 +199,15 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
                 return Json(doctors.Select(doctor => new
                 {
                     id = doctor.DoctorID,
-                    name = $"Dr. {doctor.FirstLetter.Trim()}. {doctor.Surname.Trim()}",
-                    email = doctor.Email
-                }));
+                    name = $"Dr. {doctor.Name?.Trim()} {doctor.Surname?.Trim()}".Trim(),
+                    email = doctor.Email,
+                    hpcsaNumber = doctor.HPCSANumber
+                }).ToArray());
             }
-            catch (Exception)
+            catch (Exception exception)
             {
-                return StatusCode(500, new { message = "Unable to load doctors. Please try again." });
+                _logger.LogError(exception, "Failed to load active doctors for patient consent.");
+                return StatusCode(500, new { message = "Unable to load doctors from the database. Please retry." });
             }
         }
         private readonly IPatientRepository _patientRepository;
@@ -194,14 +220,20 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
                 return BadRequest();
             try
             {
-                await _patientRepository.RevokePatientConsents(CurrentPatientId, input.DoctorID,
-                    input.TestRequestTestTypeIDs.Distinct().ToArray());
-                return Ok();
-            }
-            catch (SqlException exception) when (exception.Number == 2812)
-            {
-                _logger.LogError(exception, "A stored procedure required for consent revocation is missing.");
-                return StatusCode(500, new { message = "Revocation is not configured in the database. Run the full RevokePatientConsent.sql script, including both procedures." });
+                var revoked = (await _patientRepository.RevokePatientConsents(CurrentPatientId, input.DoctorID,
+                    input.TestRequestTestTypeIDs.Distinct().ToArray())).ToList();
+                if (revoked.Count == 0)
+                    return Ok(new { emailSent = false, message = "No active access changed. No notification email was sent." });
+                try
+                {
+                    await _consentEmailService.SendRevokedAccessAsync(revoked, DateTime.UtcNow.AddHours(2));
+                    return Ok(new { emailSent = true, message = "Access revoked. The notification email was sent to the doctor." });
+                }
+                catch (Exception exception)
+                {
+                    _logger.LogError(exception, "Consent was revoked but the doctor notification email failed.");
+                    return Ok(new { emailSent = false, message = "Access was revoked, but the notification email could not be sent. Please contact support." });
+                }
             }
             catch (Exception exception)
             {
@@ -220,24 +252,60 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
             {
                 await _patientRepository.SavePatientConsents(CurrentPatientId, input.DoctorID,
                     input.TestRequestTestTypeIDs.Distinct().ToArray());
-                return Ok();
+                try
+                {
+                    var details = (await _patientRepository.GetConsentEmailDetails(CurrentPatientId,
+                        input.DoctorID, input.TestRequestTestTypeIDs.Distinct().ToArray())).ToList();
+                    if (details.Count != input.TestRequestTestTypeIDs.Distinct().Count())
+                        throw new InvalidOperationException("Saved consent details are unavailable for notification.");
+                    await _consentEmailService.SendGrantedAccessAsync(details);
+                    return Ok(new { emailSent = true, message = "Access granted. The notification email was sent to the doctor." });
+                }
+                catch (Exception exception)
+                {
+                    _logger.LogError(exception, "Consent was saved but the doctor notification email failed.");
+                    return Ok(new { emailSent = false, message = "Access was granted, but the notification email could not be sent. Please contact support." });
+                }
             }
-            catch (Exception)
+            catch (SqlException exception) when (exception.Number is 50001 or 50002 or 50003)
             {
+                _logger.LogWarning(exception, "Patient consent validation failed.");
+                var message = exception.Number switch
+                {
+                    50001 => "Select at least one test.",
+                    50002 => "This doctor is no longer available. Select another doctor.",
+                    _ => "A selected test is no longer available for sharing. Refresh the page and select your tests again."
+                };
+                return BadRequest(new { message });
+            }
+            catch (SqlException exception) when (exception.Number is 2812 or 207 or 208)
+            {
+                _logger.LogError(exception, "Consent database setup is incomplete. Check Database/DiagnosePatientConsent.sql and deploy both procedures in Database/SavePatientConsent.sql.");
+                return StatusCode(500, new { message = "Doctor access could not be saved because consent storage is not configured correctly. Please contact support." });
+            }
+            catch (Exception exception)
+            {
+                _logger.LogError(exception, "Failed to grant patient consent.");
                 return StatusCode(500, new { message = "Consent could not be saved. Please try again." });
             }
         }
         private readonly IWebHostEnvironment _environment;
         private readonly ILogger<PatientController> _logger;
+        private readonly Services.IConsentEmailService _consentEmailService;
+        private readonly Services.IRegistrationEmailService _registrationEmailService;
 
             public PatientController(
                 IPatientRepository patientRepository,
                 IWebHostEnvironment environment,
-                ILogger<PatientController> logger)
+                ILogger<PatientController> logger,
+                Services.IConsentEmailService consentEmailService,
+                Services.IRegistrationEmailService registrationEmailService)
             {
                 _patientRepository = patientRepository;
                 _environment = environment;
                 _logger = logger;
+                _consentEmailService = consentEmailService;
+                _registrationEmailService = registrationEmailService;
             }
 
             // GET: Patient/Register
@@ -306,6 +374,37 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
                 return View("Profile", model);
             }
         }
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ChangePassword([FromForm] UserPasswordChange model)
+        {
+            if (!ModelState.IsValid)
+            {
+                TempData["PasswordError"] = ModelState.Values.SelectMany(value => value.Errors)
+                    .Select(error => error.ErrorMessage).FirstOrDefault() ?? "Check all password fields.";
+                return RedirectToAction(nameof(Update));
+            }
+            try
+            {
+                await _patientRepository.ChangePatientPassword(CurrentPatientId, model);
+                TempData["PasswordSuccess"] = "Password changed successfully.";
+            }
+            catch (InvalidOperationException exception)
+            {
+                TempData["PasswordError"] = exception.Message;
+            }
+            catch (SqlException exception) when (exception.Number is 50001 or 50002 or 50003)
+            {
+                TempData["PasswordError"] = exception.Message;
+            }
+            catch (Exception exception)
+            {
+                _logger.LogError(exception, "Patient password change failed.");
+                TempData["PasswordError"] = "The password could not be updated. Please try again or contact support.";
+            }
+            return RedirectToAction(nameof(Update));
+        }
+
         // POST: Patient/Register
         [AllowAnonymous]
         [HttpPost]
@@ -323,6 +422,20 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 
                 TempData["RegistrationSuccess"] =
                     "Patient registered successfully. Please sign in.";
+
+                try
+                {
+                    await _registrationEmailService.SendAccountCreatedAsync(model.Email, model.Name,
+                        model.Surname, DateTime.UtcNow);
+                    TempData["RegistrationSuccess"] =
+                        "Your account was created successfully. A confirmation email was sent to your email address. Please sign in.";
+                }
+                catch (Exception exception)
+                {
+                    _logger.LogError(exception, "Patient registration succeeded but the confirmation email failed.");
+                    TempData["RegistrationSuccess"] =
+                        "Your account was created successfully, but the confirmation email could not be sent. You can still sign in.";
+                }
 
                 return RedirectToAction("Login", "Account");
             }
@@ -397,6 +510,14 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
             }
         }
 
+        private JsonResult DuplicateMedicalHistoryItem(string name)
+        {
+            return Json(new
+            {
+                duplicate = true,
+                message = $"{name} is already in your medical history. No need to add it again."
+            });
+        }
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> SaveMedication(string medicationName)
@@ -408,8 +529,20 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 
             try
             {
+                medicationName = medicationName.Trim();
+                var history = await _patientRepository.GetPatientMedicalInformation(CurrentPatientId);
+                if (history.Any(item => item.ItemType == "Medication" &&
+                    string.Equals(item.SelectedItem.Trim(), medicationName, StringComparison.OrdinalIgnoreCase)))
+                {
+                    return DuplicateMedicalHistoryItem(medicationName);
+                }
+
                 await _patientRepository.SavePatientMedication(CurrentPatientId, medicationName);
                 return Json(new { message = "Medication saved." });
+            }
+            catch (SqlException ex) when (ex.Number is 2601 or 2627)
+            {
+                return DuplicateMedicalHistoryItem(medicationName);
             }
             catch (InvalidOperationException ex)
             {
@@ -435,8 +568,20 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 
             try
             {
+                allergyName = allergyName.Trim();
+                var history = await _patientRepository.GetPatientMedicalInformation(CurrentPatientId);
+                if (history.Any(item => item.ItemType == "Allergy" &&
+                    string.Equals(item.SelectedItem.Trim(), allergyName, StringComparison.OrdinalIgnoreCase)))
+                {
+                    return DuplicateMedicalHistoryItem(allergyName);
+                }
+
                 await _patientRepository.SavePatientAllergy(CurrentPatientId, allergyName);
                 return Json(new { message = "Allergy saved." });
+            }
+            catch (SqlException ex) when (ex.Number is 2601 or 2627)
+            {
+                return DuplicateMedicalHistoryItem(allergyName);
             }
             catch (InvalidOperationException ex)
             {
@@ -462,8 +607,20 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 
             try
             {
+                conditionName = conditionName.Trim();
+                var history = await _patientRepository.GetPatientMedicalInformation(CurrentPatientId);
+                if (history.Any(item => item.ItemType == "Condition" &&
+                    string.Equals(item.SelectedItem.Trim(), conditionName, StringComparison.OrdinalIgnoreCase)))
+                {
+                    return DuplicateMedicalHistoryItem(conditionName);
+                }
+
                 await _patientRepository.SavePatientMedicalCondition(CurrentPatientId, conditionName);
                 return Json(new { message = "Medical condition saved." });
+            }
+            catch (SqlException ex) when (ex.Number is 2601 or 2627)
+            {
+                return DuplicateMedicalHistoryItem(conditionName);
             }
             catch (InvalidOperationException ex)
             {

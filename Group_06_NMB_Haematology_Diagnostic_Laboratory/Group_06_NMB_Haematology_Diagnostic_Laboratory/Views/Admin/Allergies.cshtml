@@ -29,7 +29,7 @@
         <table id="allergy-tbl">
           <thead><tr><th>Allergy Name</th><th>Category</th><th>Description</th><th>Patients</th><th>Status</th><th>Actions</th></tr></thead>
           <tbody>
-            @foreach (var allergy in ViewBag.Allergies as IEnumerable<Group_06_NMB_Haematology_Diagnostic_Lab.Data.Models.AllergyOption> ?? Enumerable.Empty<Group_06_NMB_Haematology_Diagnostic_Lab.Data.Models.AllergyOption>())
+            @foreach (var allergy in (ViewBag.Allergies as IEnumerable<Group_06_NMB_Haematology_Diagnostic_Lab.Data.Models.AllergyOption> ?? Enumerable.Empty<Group_06_NMB_Haematology_Diagnostic_Lab.Data.Models.AllergyOption>()).OrderBy(item => item.AllergyName.Trim(), StringComparer.CurrentCultureIgnoreCase))
             {
               <tr data-is-active="@allergy.IsActive.ToString().ToLowerInvariant()">
                 <td><strong>@allergy.AllergyName</strong></td>
