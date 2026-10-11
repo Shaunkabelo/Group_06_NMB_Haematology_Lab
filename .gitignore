@@ -427,3 +427,6 @@ FodyWeavers.xsd
 *.msix
 *.msm
 *.msp
+
+# Generated private patient reports
+**/App_Data/PatientReports/

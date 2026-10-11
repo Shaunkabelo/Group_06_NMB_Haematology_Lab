@@ -1,0 +1,78 @@
+@model IEnumerable<Group_06_NMB_Haematology_Diagnostic_Lab.Data.Models.UserListItem>
+@{
+    ViewData["Title"] = "System Users";
+    var users = Model?.ToList() ?? new List<Group_06_NMB_Haematology_Diagnostic_Lab.Data.Models.UserListItem>();
+}
+
+<div class="page-body">
+    <div class="section-header">
+        <div>
+            <div class="section-title">Registered Users</div>
+            <div class="section-sub">View all registered users across all system roles.</div>
+        </div>
+        <span class="badge badge-gray" style="padding:7px 12px;font-size:12px;">@users.Count Total Users</span>
+    </div>
+
+    <div class="stats-grid">
+        @foreach (var role in users.GroupBy(user => user.Role).OrderBy(group => group.Key))
+        {
+            <button class="stat-card clickable" type="button" onclick="filterUsersByRole('@role.Key')" style="--accent:var(--blue);text-align:left;border:0;">
+                <div class="stat-emoji">&#128101;</div>
+                <div class="stat-label">@role.Key</div>
+                <div class="stat-value">@role.Count()</div>
+                <div class="stat-sub">@role.Count(user => user.IsActive) active</div>
+            </button>
+        }
+    </div>
+
+    <br />
+    <div class="card">
+        <div class="tbl-top">
+            <div style="display:flex;gap:10px;align-items:center;">
+                <div class="tbl-search">&#128269; <input id="user-search" type="text" placeholder="Search users…" oninput="applyUserFilters()" /></div>
+                <select id="role-filter" class="form-control compact-select" onchange="applyUserFilters()">
+                    <option value="">All roles</option>
+                    @foreach (var role in users.Select(user => user.Role).Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(role => role))
+                    {
+                        <option value="@role">@role</option>
+                    }
+                </select>
+            </div>
+            <span class="badge badge-gray">@users.Count users</span>
+        </div>
+        <div style="overflow-x:auto;">
+            <table id="user-tbl">
+                <thead><tr><th>Name</th><th>Surname</th><th>Role</th><th>Email</th><th>Registered</th><th>Status</th><th>Actions</th></tr></thead>
+                <tbody>
+                    @foreach (var user in users)
+                    {
+                        <tr data-role="@user.Role">
+                            <td><strong>@user.Name</strong></td>
+                            <td>@user.Surname</td>
+                            <td><span class="badge badge-gray">@user.Role</span></td>
+                            <td class="td-muted">@user.Email</td>
+                            <td class="td-muted">@user.CreatedAt.ToString("dd MMM yyyy")</td>
+                            <td><span class="badge @(user.IsActive ? "badge-green" : "badge-gray")">@(user.IsActive ? "Active" : "Inactive")</span></td>
+                            <td>
+                                <div style="display:flex;gap:6px;">
+                                    <button class="btn btn-secondary btn-sm" type="button" data-user-id="@user.UserID" data-email="@user.Email" data-active="@user.IsActive.ToString().ToLowerInvariant()" onclick="toggleUserStatus(this)">@(user.IsActive ? "Deactivate" : "Activate")</button>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+@Html.AntiForgeryToken()
+<div id="toast"></div>
+
+@section Scripts {
+<script>
+    function filterUsersByRole(role) { document.getElementById('role-filter').value = role; applyUserFilters(); }
+    function applyUserFilters() { const search = document.getElementById('user-search').value.toLowerCase(); const role = document.getElementById('role-filter').value.toLowerCase(); document.querySelectorAll('#user-tbl tbody tr').forEach(row => { const matchesSearch = !search || row.textContent.toLowerCase().includes(search); const matchesRole = !role || row.dataset.role.toLowerCase() === role; row.style.display = matchesSearch && matchesRole ? '' : 'none'; }); }
+    const antiForgeryToken = () => document.querySelector('input[name="__RequestVerificationToken"]').value;
+    async function toggleUserStatus(button) { const userId = button.dataset.userId; const activate = button.dataset.active !== 'true'; const isActive = activate ? 1 : 0; const email = button.dataset.email; const action = activate ? 'activate' : 'deactivate'; if (!confirm(`${action.charAt(0).toUpperCase() + action.slice(1)} the user ${email}?`)) return; const data = new URLSearchParams({ userId, isActive:String(isActive), __RequestVerificationToken:antiForgeryToken() }); button.disabled = true; try { const response = await fetch('@Url.Action("SetUserStatus", "Admin")', { method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded; charset=UTF-8'}, body:data }); const result = await response.json().catch(() => ({})); if (!response.ok) { toast(result.message || 'Unable to update user status.'); button.disabled = false; return; } toast(result.message); window.location.reload(); } catch { toast('Unable to reach the server.'); button.disabled = false; } }
+</script>
+}

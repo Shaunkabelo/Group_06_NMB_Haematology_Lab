@@ -1,0 +1,380 @@
+@using Group_06_NMB_Haematology_Diagnostic_Lab.Data.Models
+
+@model PatientUpdate
+
+@{
+    Layout = "~/Views/Shared/_LayoutPatient.cshtml";
+    ViewData["Title"] = "My Profile";
+}
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success">
+        @TempData["SuccessMessage"]
+    </div>
+}
+
+@if (TempData["PasswordSuccess"] != null)
+{
+    <div class="alert alert-success">
+        @TempData["PasswordSuccess"]
+    </div>
+}
+
+@if (TempData["PasswordError"] != null)
+{
+    <div class="alert alert-danger">
+        @TempData["PasswordError"]
+    </div>
+}
+
+@if (!ViewData.ModelState.IsValid)
+{
+    <div class="alert alert-danger">
+        <h4>Please fix the following errors:</h4>
+        <ul>
+            @foreach (var modelState in ViewData.ModelState.Values)
+            {
+                foreach (var error in modelState.Errors)
+                {
+                    <li>@error.ErrorMessage</li>
+                }
+            }
+        </ul>
+    </div>
+}
+
+
+<div class="grid-2">
+
+    <!-- PERSONAL DETAILS -->
+
+    <div class="card">
+
+        <div class="card-header">
+            <span class="card-title">
+                Personal Details
+            </span>
+
+            <span class="badge badge-teal">
+                Active Patient
+            </span>
+        </div>
+
+        <div class="card-body">
+
+            <form asp-controller="Patient"
+                  asp-action="Update"
+                  method="post">
+
+
+                @Html.AntiForgeryToken()
+
+                <input type="hidden"
+                       asp-for="PatientId" />
+
+                <input type="hidden"
+                       asp-for="UserId" />
+
+
+                <div class="form-row">
+
+                    <div class="form-group">
+
+                        <label class="form-label">
+                            First Name
+                        </label>
+
+                        <input asp-for="Name" data-person-name
+                               id="p-fname"
+                               class="form-control" />
+
+                        <span asp-validation-for="Name"
+                              class="text-danger">
+                        </span>
+
+                    </div>
+
+
+                    <div class="form-group">
+
+                        <label class="form-label">
+                            Surname
+                        </label>
+
+                        <input asp-for="Surname" data-person-name
+                               id="p-lname"
+                               class="form-control" />
+
+                        <span asp-validation-for="Surname"
+                              class="text-danger">
+                        </span>
+
+                    </div>
+
+                </div>
+
+
+                <div class="form-group">
+
+                    <label class="form-label">
+                        Email Address / Username
+                    </label>
+
+                    <input asp-for="Email"
+                           id="p-email"
+                           type="email"
+                           required
+                           autocomplete="email"
+                           class="form-control" />
+
+                    <span asp-validation-for="Email"
+                          class="text-danger">
+                    </span>
+
+                </div>
+
+
+                <div class="form-row">
+
+                    <div class="form-group">
+
+                        <label class="form-label">
+                            Cellphone
+                        </label>
+
+                        <input asp-for="Cellphone" data-digits="10" inputmode="numeric" minlength="10" maxlength="10" pattern="[0-9]{10}"
+                               id="p-cell"
+                               class="form-control" />
+
+                        <span asp-validation-for="Cellphone"
+                              class="text-danger">
+                        </span>
+
+                    </div>
+
+
+                    <div class="form-group">
+
+                        <label class="form-label">
+                            Date of Birth
+                        </label>
+
+                        <input asp-for="DateOfBirth"
+                               type="date"
+                               class="form-control"
+                               readonly />
+
+                    </div>
+
+                </div>
+
+
+                <div class="form-group">
+
+                    <label class="form-label">
+                        Home Address
+                    </label>
+
+                    <input asp-for="HomeAddress"
+                           id="p-addr"
+                           data-address-autocomplete
+                           autocomplete="street-address"
+                           placeholder="Start typing your physical address"
+                           class="form-control" />
+
+                    <span asp-validation-for="HomeAddress"
+                          class="text-danger">
+                    </span>
+
+                </div>
+
+
+                <button id="profile-save-btn"
+                        class="btn btn-primary"
+                        type="submit">
+
+                    Save Personal Details
+
+                </button>
+
+            </form>
+
+        </div>
+
+    </div>
+
+
+    <!-- SECURITY -->
+
+    <div class="card">
+
+        <div class="card-header">
+            <span class="card-title">
+                Security
+            </span>
+        </div>
+
+        <div class="card-body">
+
+            <form asp-controller="Patient"
+                  asp-action="ChangePassword"
+                  method="post">
+
+                @Html.AntiForgeryToken()
+
+
+
+                <div class="form-group">
+
+                    <label class="form-label">
+                        Current Password
+                    </label>
+
+                    <div class="password-field">
+
+                        <input name="CurrentPassword"
+                               id="current-password"
+                               type="password"
+                               class="form-control" />
+
+
+                    </div>
+
+                </div>
+
+
+                <div class="form-group">
+
+                    <label class="form-label">
+                        New Password
+                    </label>
+
+                    <div class="password-field">
+
+                        <input name="NewPassword"
+                               id="profile-password"
+                               type="password"
+                               class="form-control"
+                               oninput="validatePassword('profile-password')" />
+
+
+                    </div>
+
+                    <div id="profile-password-hint"
+                         class="form-hint">
+
+                        Use 8+ characters, uppercase,
+                        number and special character.
+
+                    </div>
+
+                </div>
+
+
+                <div class="form-group">
+
+                    <label class="form-label">
+                        Confirm New Password
+                    </label>
+
+                    <input name="ConfirmPassword"
+                           id="profile-password-confirm"
+                           type="password"
+                           class="form-control" />
+
+                </div>
+
+
+                <button id="password-change-btn"
+                        class="btn btn-primary"
+                        type="submit">
+
+                    Change Password
+
+                </button>
+
+            </form>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- ACCOUNT PREFERENCES -->
+
+<div class="card section-gap">
+
+    <div class="card-header">
+        <span class="card-title">
+            Account Preferences
+        </span>
+    </div>
+
+    <div class="card-body preferences-list">
+
+        <label class="preference-row">
+
+            <span>
+                <strong>
+                    Email new test requests
+                </strong>
+
+                <small>
+                    Notify me when a doctor submits a request.
+                </small>
+            </span>
+
+            <input type="checkbox"
+                   checked />
+
+        </label>
+
+
+        <label class="preference-row">
+
+            <span>
+                <strong>
+                    Email released results
+                </strong>
+
+                <small>
+                    Notify me when results are verified and released.
+                </small>
+            </span>
+
+            <input type="checkbox"
+                   checked />
+
+        </label>
+
+
+        <label class="preference-row">
+
+            <span>
+                <strong>
+                    Two-factor authentication
+                </strong>
+
+                <small>
+                    Extra account protection after password login.
+                </small>
+            </span>
+
+            <input type="checkbox" />
+
+        </label>
+
+    </div>
+
+</div>
+
+
+@section Scripts
+{
+    <partial name="_ValidationScriptsPartial" />
+    <script src="~/js/person-input-validation.js" asp-append-version="true"></script>
+    <script src="~/js/address-autocomplete.js" asp-append-version="true"></script>
+}
