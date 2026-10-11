@@ -31,6 +31,12 @@ var salt = PasswordHelper.GenerateSalt();
 var hash = PasswordHelper.HashPassword(password, salt);
 Check(PasswordHelper.VerifyPassword(password, hash, salt), "PBKDF2 password verifies");
 Check(!PasswordHelper.VerifyPassword("wrong", hash, salt), "Wrong password rejected");
+var patientPasswordService = new PasswordService();
+var patientPassword = patientPasswordService.HashPassword(password);
+Check(PasswordHelper.VerifyPassword(password, patientPassword.Hash, patientPassword.Salt),
+    "Patient registration and password changes produce hashes accepted by shared login");
+Check(patientPasswordService.VerifyPassword(password, hash, salt),
+    "Patient password service verifies shared authentication hashes");
 var legacy = Convert.ToBase64String(SHA256.HashData(Encoding.UTF8.GetBytes(password + salt)));
 Check(PasswordHelper.VerifyPassword(password, legacy, salt), "Existing SHA-256 password still verifies");
 Check(!PasswordHelper.VerifyPassword(password, "placeholder", "placeholder"), "Seed placeholder hash rejected");
@@ -94,6 +100,7 @@ void Attach(Controller c)
 {
     c.ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext { User = principal, RequestServices = services } };
     c.ControllerContext.RouteData = new Microsoft.AspNetCore.Routing.RouteData();
+    c.ControllerContext.RouteData.Routers.Add(new TestRouter());
     c.ControllerContext.ActionDescriptor = new ControllerActionDescriptor();
     c.Url = new Microsoft.AspNetCore.Mvc.Routing.UrlHelper(c.ControllerContext);
     c.TempData = new TempDataDictionary(c.HttpContext, new TestTempData());
@@ -117,6 +124,33 @@ Check(controller.Continue() is RedirectToActionResult { ControllerName: "Doctor"
     "Authenticated continuation uses role destination");
 principal.AddIdentity(new ClaimsIdentity(new[] { new Claim("MustChangePassword", "True") }));
 Check(controller.Continue() is RedirectToActionResult { ActionName: "ChangePassword" }, "Required password change precedes dashboard");
+
+foreach (var role in new[] { "Patient", "Doctor", "LabTechnician", "LabManager", "Admin", "Unknown" })
+{
+    repository.CurrentUser.Role = role;
+    repository.PatientId = 123;
+    var lookupCount = repository.PatientLookups;
+    auth.SignedIn = null;
+    controller = Controller(); Attach(controller);
+    Check(await controller.Login("known@example.com", password) is RedirectToActionResult &&
+        auth.SignedIn?.FindFirstValue(ClaimTypes.Role) == role, $"Login preserves {role} role");
+    var patientClaims = auth.SignedIn!.FindAll("PatientID").ToArray();
+    Check(role == "Patient"
+        ? patientClaims.Length == 1 && patientClaims[0].Value == "123" &&
+          repository.PatientLookups == lookupCount + 1 && repository.PatientLookupUserId == 42
+        : patientClaims.Length == 0 && repository.PatientLookups == lookupCount,
+        $"{role} login uses patient lookup only when required, with UserID distinct from PatientID");
+}
+repository.CurrentUser.Role = "Patient";
+foreach (var missingId in new int?[] { null, 0, -1 })
+{
+    repository.PatientId = missingId;
+    auth.SignedIn = null;
+    controller = Controller(); Attach(controller);
+    Check(await controller.Login("known@example.com", password) is ViewResult &&
+        !controller.ModelState.IsValid && auth.SignedIn == null,
+        $"Patient login rejects invalid mapping: {missingId}");
+}
 
 var staff = DispatchProxy.Create<ILabManagerRepository, StaffRepositoryProxy>();
 var staffProxy = (StaffRepositoryProxy)(object)staff;
@@ -232,9 +266,15 @@ sealed class FakeRepository : IAuthenticationRepository
     public int Lookups { get; private set; }
     public int ResetCalls { get; private set; }
     public string? LastTokenHash { get; private set; }
-    public Task<User?> GetActiveUserByEmail(string email) { Lookups++; return Task.FromResult<User?>(null); }
+    public Task<User?> GetActiveUserByEmail(string email) { Lookups++; return Task.FromResult(CurrentUser); }
+    public int? PatientId { get; set; }
+    public int PatientLookups { get; private set; }
+    public int PatientLookupUserId { get; private set; }
+    public Task<int?> GetPatientIdByUserId(int userId)
+    { PatientLookups++; PatientLookupUserId = userId; return Task.FromResult(PatientId); }
     public Task RecordLogin(int id) => Task.CompletedTask;
-    public Task<AuthenticationState?> GetState(int id) => Task.FromResult<AuthenticationState?>(null);
+    public Task<AuthenticationState?> GetState(int id) => Task.FromResult(CurrentUser == null ? null :
+        new AuthenticationState { UserId = CurrentUser.UserId, Role = CurrentUser.Role, SecurityStamp = CurrentUser.SecurityStamp });
     public Task<bool> CreateReset(int id, string hash) => Task.FromResult(true);
     public Task<bool> ResetPassword(string tokenHash, string hash, string salt)
     {
@@ -250,6 +290,12 @@ sealed class TestActions : IActionDescriptorCollectionProvider
     public List<ActionDescriptor> Items { get; } = new() { new ControllerActionDescriptor { ControllerName = "LabManager", ActionName = "Dashboard" } };
     public ActionDescriptorCollection ActionDescriptors => new(Items, 0);
 }
+sealed class TestRouter : Microsoft.AspNetCore.Routing.IRouter
+{
+    public Task RouteAsync(Microsoft.AspNetCore.Routing.RouteContext context) => Task.CompletedTask;
+    public Microsoft.AspNetCore.Routing.VirtualPathData GetVirtualPath(Microsoft.AspNetCore.Routing.VirtualPathContext context)
+        => new(this, $"{context.Values["controller"]}/{context.Values["action"]}");
+}
 sealed class TestTempData : ITempDataProvider
 {
     public IDictionary<string, object> LoadTempData(HttpContext context) => new Dictionary<string, object>();
@@ -257,11 +303,13 @@ sealed class TestTempData : ITempDataProvider
 }
 sealed class TestAuthentication : IAuthenticationService
 {
+    public ClaimsPrincipal? SignedIn { get; set; }
     public bool SignedOut { get; private set; }
     public Task<AuthenticateResult> AuthenticateAsync(HttpContext c, string? s) => Task.FromResult(AuthenticateResult.NoResult());
     public Task ChallengeAsync(HttpContext c, string? s, AuthenticationProperties? p) => Task.CompletedTask;
     public Task ForbidAsync(HttpContext c, string? s, AuthenticationProperties? p) => Task.CompletedTask;
-    public Task SignInAsync(HttpContext c, string? s, ClaimsPrincipal u, AuthenticationProperties? p) => Task.CompletedTask;
+    public Task SignInAsync(HttpContext c, string? s, ClaimsPrincipal u, AuthenticationProperties? p)
+    { SignedIn = u; return Task.CompletedTask; }
     public Task SignOutAsync(HttpContext c, string? s, AuthenticationProperties? p) { SignedOut = true; return Task.CompletedTask; }
 }
 public class StaffRepositoryProxy : DispatchProxy

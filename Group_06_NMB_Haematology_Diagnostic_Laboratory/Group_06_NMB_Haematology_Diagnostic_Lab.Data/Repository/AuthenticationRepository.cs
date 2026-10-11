@@ -29,4 +29,13 @@ public class AuthenticationRepository(ISqlDataAccess db) : IAuthenticationReposi
 
     public async Task<bool> ChangePassword(int userId, string oldHash, string passwordHash, string passwordSalt) =>
         (await db.GetData<bool, object>("sp_Auth_ChangePassword", new { UserID = userId, OldHash = oldHash, PasswordHash = passwordHash, PasswordSalt = passwordSalt })).Single();
+
+    public async Task<int?> GetPatientIdByUserId(int userId)
+    {
+        var results = await db.GetData<int, object>(
+            "sp_Auth_GetPatientIdByUserId",
+            new { UserID = userId });
+
+        return results.Select(id => (int?)id).FirstOrDefault();
+    }
 }

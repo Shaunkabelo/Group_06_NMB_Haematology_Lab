@@ -142,6 +142,107 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.DataAccess
             }
         }
         //===========================================================================
+
+        // PATIENT SUBSYSTEM - MULTIPLE RESULT SETS
+        public async Task<(
+            IEnumerable<TFirst> First,
+            IEnumerable<TSecond> Second,
+            IEnumerable<TThird> Third
+        )> GetMultipleData<TFirst, TSecond, TThird, P>(
+            string spName,
+            P parameters,
+            string connectionId = "conn")
+        {
+            using IDbConnection connection =
+                new SqlConnection(_config.GetConnectionString(connectionId));
+
+            using var results = await connection.QueryMultipleAsync(
+                spName,
+                parameters,
+                commandType: CommandType.StoredProcedure);
+
+            var first = await results.ReadAsync<TFirst>();
+            var second = await results.ReadAsync<TSecond>();
+            var third = await results.ReadAsync<TThird>();
+
+            return (first, second, third);
+        }
+
+        // PATIENT SUBSYSTEM - SQL QUERY
+        public async Task<IEnumerable<T>> LoadData<T, U>(
+            string sql,
+            U parameters,
+            string connectionId = "conn")
+        {
+            using IDbConnection connection =
+                new SqlConnection(_config.GetConnectionString(connectionId));
+
+            return await connection.QueryAsync<T>(
+                sql,
+                parameters,
+                commandType: CommandType.Text);
+        }
+
+        // PATIENT SUBSYSTEM - INSERT, UPDATE, DELETE
+        public async Task<int> Save<T>(
+            string sql,
+            T parameters,
+            string connectionId = "conn")
+        {
+            using IDbConnection connection =
+                new SqlConnection(_config.GetConnectionString(connectionId));
+
+            return await connection.ExecuteAsync(
+                sql,
+                parameters,
+                commandType: CommandType.Text);
+        }
+
+        // PATIENT SUBSYSTEM - FIRST MATCHING RECORD
+        public async Task<T?> QueryFirstOrDefaultAsync<T>(
+            string query,
+            object? parameters = null,
+            string connectionId = "conn")
+        {
+            using IDbConnection connection =
+                new SqlConnection(_config.GetConnectionString(connectionId));
+
+            return await connection.QueryFirstOrDefaultAsync<T>(
+                query,
+                parameters,
+                commandType: CommandType.Text);
+        }
+
+        // PATIENT SUBSYSTEM - RETURN ID FROM STORED PROCEDURE
+        public async Task<T> SaveDataReturnId<T, U>(
+            string spName,
+            U parameters,
+            string connectionId = "conn")
+        {
+            using IDbConnection connection =
+                new SqlConnection(_config.GetConnectionString(connectionId));
+
+            return await connection.QuerySingleAsync<T>(
+                spName,
+                parameters,
+                commandType: CommandType.StoredProcedure);
+        }
+
+        // PATIENT SUBSYSTEM - RETURN SCALAR VALUE
+        public async Task<int> ExecuteScalarAsync<T>(
+            string sql,
+            T parameters,
+            string connectionId = "conn")
+        {
+            using IDbConnection connection =
+                new SqlConnection(_config.GetConnectionString(connectionId));
+
+            return await connection.ExecuteScalarAsync<int>(
+                sql,
+                parameters,
+                commandType: CommandType.Text);
+        }
+
     }
 
 }

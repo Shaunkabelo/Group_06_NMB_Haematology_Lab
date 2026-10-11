@@ -58,6 +58,23 @@ public class AccountController(IAuthenticationRepository repository, PasswordRes
             new("MustChangePassword", state.MustChangePassword.ToString()),
             new("SecurityStamp", state.SecurityStamp.ToString())
         };
+
+        if (string.Equals(state.Role, "Patient", StringComparison.OrdinalIgnoreCase))
+        {
+            var patientId = await repository.GetPatientIdByUserId(user.UserId);
+
+            if (!patientId.HasValue || patientId.Value <= 0)
+            {
+                ModelState.AddModelError(
+                    string.Empty,
+                    "Your patient account could not be verified. Please contact support.");
+
+                return View();
+            }
+
+            claims.Add(new Claim("PatientID", patientId.Value.ToString()));
+        }
+
         await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme,
             new ClaimsPrincipal(new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme)),
             new AuthenticationProperties

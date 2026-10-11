@@ -38,6 +38,12 @@ builder.Services.AddScoped<ITechResultsRepository, TechResultsRepository>();
 builder.Services.AddScoped<ITechVerifyRepository, TechVerifyRepository>();
 builder.Services.AddScoped<ITechReportsRepository, TechReportsRepository>();
 builder.Services.AddScoped<ITechProfileRepository, TechProfileRepository>();
+builder.Services.AddScoped<IPatientRepository, PatientRepository>();
+builder.Services.AddScoped<IPasswordService, PasswordService>();
+// Patient subsystem - email services
+builder.Services.AddScoped<IRegistrationEmailService, RegistrationEmailService>();
+builder.Services.AddScoped<IConsentEmailService, ConsentEmailService>();
+builder.Services.AddScoped<SmtpEmailSender>();
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
     {
