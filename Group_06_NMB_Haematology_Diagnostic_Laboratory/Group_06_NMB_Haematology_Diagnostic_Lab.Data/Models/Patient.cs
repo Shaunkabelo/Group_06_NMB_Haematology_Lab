@@ -12,19 +12,8 @@ public partial class Patient
     public int PatientId { get; set; }
 
     public int UserId { get; set; }
-    
-    public string  Name { get; set; }
-    public string Surname { get; set; }
-	public DateTime DateOfBirth { get; set; }
-	public string SaIdNumber { get; set; }
-	public string Gender { get; set; }
-	public int Age { get; set; }
-	public int Cellphone { get; set; }
 
-
-	public string Address { get; set; }
-	public string email { get; set; }
-	public virtual ICollection<PatientAllergy> PatientAllergy { get; set; } = new List<PatientAllergy>();
+    public virtual ICollection<PatientAllergy> PatientAllergy { get; set; } = new List<PatientAllergy>();
 
     public virtual ICollection<PatientCondition> PatientCondition { get; set; } = new List<PatientCondition>();
 

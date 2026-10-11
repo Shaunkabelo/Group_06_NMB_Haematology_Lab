@@ -10,8 +10,8 @@ public partial class TestRequest
     public int TestRequestId { get; set; }
 
     public int PatientId { get; set; }
-	public int DoctorId { get; set; }
-	
+
+    public int DoctorId { get; set; }
 
     public DateTime RequestDate { get; set; }
 
@@ -30,7 +30,7 @@ public partial class TestRequest
     public string CancelledBy { get; set; }
 
     public DateTime? CancelledDate { get; set; }
-    
+
     public string CancelReason { get; set; }
 
     public DateTime? CreatedAt { get; set; }
