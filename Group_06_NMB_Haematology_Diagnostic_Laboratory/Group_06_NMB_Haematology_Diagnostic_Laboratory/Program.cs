@@ -3,6 +3,7 @@ using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.RateLimiting;
 using Group_06_NMB_Haematology_Diagnostic_Lab.Data.DataAccess;
 using Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository;
+using Group_06_NMB_Haematology_Diagnostic_Lab.Data.Services;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using QuestPDF.Infrastructure;
 Dapper.DefaultTypeMap.MatchNamesWithUnderscores = true;
@@ -28,6 +29,15 @@ builder.Services.AddRateLimiter(options =>
 builder.Services.AddScoped<ISqlDataAccess, SqlDataAccess>();
 builder.Services.AddScoped<ILabManagerRepository, LabManagerRepository>();
 builder.Services.AddScoped<IAuthenticationRepository, AuthenticationRepository>();
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<ICurrentTechnicianService, CurrentTechnicianService>();
+builder.Services.AddScoped<ITechDashboardRepository, TechDashboardRepository>();
+builder.Services.AddScoped<ITechProcessRepository, TechProcessRepository>();
+builder.Services.AddScoped<ITechReceiveRepository, TechReceiveRepository>();
+builder.Services.AddScoped<ITechResultsRepository, TechResultsRepository>();
+builder.Services.AddScoped<ITechVerifyRepository, TechVerifyRepository>();
+builder.Services.AddScoped<ITechReportsRepository, TechReportsRepository>();
+builder.Services.AddScoped<ITechProfileRepository, TechProfileRepository>();
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
     {

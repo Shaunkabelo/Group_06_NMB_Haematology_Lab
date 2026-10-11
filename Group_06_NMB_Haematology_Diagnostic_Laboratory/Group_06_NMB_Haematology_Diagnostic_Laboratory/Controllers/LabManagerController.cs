@@ -1080,7 +1080,32 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
             }
 
             var temporaryPassword = PasswordHelper.GenerateTemporaryPassword();
-            await _repository.CreateTechnician(technician, temporaryPassword, selectedIds);
+            try
+            {
+                await _repository.CreateTechnician(technician, temporaryPassword, selectedIds);
+            }
+            catch (Microsoft.Data.SqlClient.SqlException ex) when (ex.Number == 2812)
+            {
+                _logger.LogError(ex, "Technician creation procedure is missing or unavailable.");
+                return StatusCode(StatusCodes.Status500InternalServerError, new
+                {
+                    errors = new Dictionary<string, string[]>
+                    {
+                        [""] = new[] { "Technician creation is not configured in the database. Apply Staff_AccountCreation.sql and TestType_TechnicianAssignments.sql, then try again." }
+                    }
+                });
+            }
+            catch (Microsoft.Data.SqlClient.SqlException ex)
+            {
+                _logger.LogError(ex, "Database failed while creating technician {Email}.", technician.User.Email);
+                return StatusCode(StatusCodes.Status500InternalServerError, new
+                {
+                    errors = new Dictionary<string, string[]>
+                    {
+                        [""] = new[] { "The technician could not be saved because the database rejected the request. Check the database setup and try again." }
+                    }
+                });
+            }
 
 
             await SendWelcomeEmail(technician.User, temporaryPassword);

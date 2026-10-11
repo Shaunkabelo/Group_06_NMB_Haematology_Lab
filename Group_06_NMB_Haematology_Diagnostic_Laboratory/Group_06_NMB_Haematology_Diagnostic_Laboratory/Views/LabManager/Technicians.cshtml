@@ -523,7 +523,7 @@
             "Save Technician";
 
         document.getElementById("technicianForm").action =
-            "/LabManager/CreateTechnician";
+            '@Url.Action("CreateTechnician", "LabManager")';
 
         document.getElementById("technicianForm").reset();
 
@@ -548,7 +548,7 @@
             "Update Technician";
 
         document.getElementById("technicianForm").action =
-            "/LabManager/EditTechnician";
+            '@Url.Action("EditTechnician", "LabManager")';
 
 
         document.getElementById("LabTechnicianId").value =

@@ -97,10 +97,6 @@ document.addEventListener("DOMContentLoaded", () => {
         form.addEventListener("submit", async event => {
             event.preventDefault();
             let valid = true; fields.forEach(field => { if (!field.disabled && !validate(field)) valid = false; });
-            const assignments = form.querySelector("#testTypeAssignmentSection");
-            if (assignments && !assignments.hidden && !assignments.querySelector("input:checked")) {
-                summary.textContent = "Select at least one test type for this technician."; summary.hidden = false; valid = false;
-            }
             if (!form.reportValidity()) valid = false;
             if (!valid) { form.querySelector(".is-invalid")?.focus(); return; }
             summary.hidden = true;
@@ -111,6 +107,9 @@ document.addEventListener("DOMContentLoaded", () => {
                 });
                 const data = response.headers.get("content-type")?.includes("application/json") ? await response.json() : null;
                 if (response.ok && data?.redirectUrl) { window.location.assign(data.redirectUrl); return; }
+                // MVC redirects can be followed by fetch as an HTML response when a
+                // deployment or proxy does not preserve the StaffForm request header.
+                if (response.ok && response.redirected) { window.location.assign(response.url); return; }
                 if (data?.errors) {
                     Object.entries(data.errors).forEach(([key, messages]) => {
                         const field = fields.find(f => f.name.toLowerCase() === key.toLowerCase());
