@@ -40,7 +40,8 @@ public class PasswordResetWorker(PasswordResetQueue queue, IServiceScopeFactory 
             }
             catch (Exception exception)
             {
-                logger.LogError("Password reset delivery failed ({FailureType}). Check database and email configuration.", exception.GetType().Name);
+                // Keep reset tokens out of logs, but retain SMTP/configuration details for hosted troubleshooting.
+                logger.LogError(exception, "Password reset delivery failed. Check database and email configuration.");
             }
         }
     }
