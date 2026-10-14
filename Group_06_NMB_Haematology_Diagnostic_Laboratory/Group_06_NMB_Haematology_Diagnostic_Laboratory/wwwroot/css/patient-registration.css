@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 body.public-page { min-height: 100vh; background: radial-gradient(ellipse at top left, #daf6ef, transparent 58%), radial-gradient(ellipse at bottom right, #e0edff, transparent 64%); }
 .patient-registration { min-height: 100vh; padding: 34px 42px 52px; color: #17334b; font-family: "Segoe UI", Arial, sans-serif; }
 .registration-shell { width: min(1180px, 100%); margin: 0 auto; }
@@ -17,3 +18,28 @@ body.public-page { min-height: 100vh; background: radial-gradient(ellipse at top
 .registration-footer { display: flex; justify-content: flex-end; gap: 12px; padding: 22px 38px; border-top: 1px solid #e2eaf1; background: #fbfdff; }.registration-cancel, .registration-create { border-radius: 9px; padding: 11px 17px; font: inherit; font-size: 13px; font-weight: 650; text-decoration: none; cursor: pointer; }.registration-cancel { border: 1px solid #cad7e1; background: #fff; color: #426078; }.registration-cancel:hover { background: #f1f6f8; color: #17334b; }.registration-create { border: 0; background: linear-gradient(100deg, #008b77, #237cb6); color: #fff; }.registration-create:hover { filter: brightness(.94); }
 .alert-success { margin-bottom: 20px; border: 1px solid #c8e7db; border-radius: 9px; padding: 13px; background: #eaf8f3; color: #205b49; font-size: 14px; }
 @media (max-width: 640px) { .patient-registration { padding: 25px 16px; }.registration-header { align-items: flex-start; margin-bottom: 28px; }.registration-sign-in { padding-top: 8px; text-align: right; }.registration-grid { grid-template-columns: 1fr; }.registration-body { padding: 23px 20px; }.registration-footer { padding: 18px 20px; }.registration-cancel, .registration-create { flex: 1; text-align: center; }.registration-heading h1 { font-size: 29px; } }
+=======
+body.public-page { background: #fff; }
+.patient-registration { font-family: Arial, sans-serif; color: #536170; background: #fff; }
+.registration-body { padding: 20px; }
+.registration-intro { margin: 0; color: #7b8997; font-size: 16px; }
+.registration-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px 18px; }
+.registration-wide { grid-column: 1 / -1; }
+.registration-field label { display: block; margin-bottom: 6px; font-size: 14px; font-weight: 700; }
+.required-mark { color: #dc5367; }
+.registration-field .form-control { min-height: 48px; padding: 10px 15px; border: 1px solid #e0e2e5; border-radius: 11px; font-size: 16px; }
+.registration-field .form-control:focus { border-color: #00bfa9; box-shadow: 0 0 0 3px rgba(0,191,169,.15); }
+.registration-field small { display: block; color: #7b8997; font-size: 14px; }
+.registration-password { position: relative; }
+.registration-password .form-control { width: 100%; min-width: 0; padding-right: 48px; }
+.registration-password .password-toggle { position: absolute; right: 6px; top: 50%; transform: translateY(-50%); display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; padding: 0; border: 0; border-radius: 6px; background: transparent; color: #536170; cursor: pointer; }
+.registration-password .password-toggle:focus-visible { outline: 2px solid #009f8e; outline-offset: 1px; }
+.registration-password input::-ms-reveal { display: none; }
+.registration-footer { display: flex; justify-content: flex-end; gap: 12px; padding: 20px; margin-top: 18px; border-top: 1px solid #e0e2e5; }
+.registration-cancel, .registration-create { padding: 10px 18px; border-radius: 10px; font-size: 16px; font-weight: 700; text-decoration: none; }
+.registration-cancel { background: #fff; border: 1px solid #e0e2e5; color: #536170; }
+.registration-create { background: #00bfa9; border: 1px solid #00bfa9; color: #fff; }
+.registration-create:hover { background: #009f8e; }
+.registration-cancel:hover { background: #f3f5f6; color: #354352; }
+@media (max-width: 600px) { .registration-grid { grid-template-columns: minmax(0, 1fr); } .registration-body, .registration-footer { padding: 16px; } }
+>>>>>>> parent of 449bbe0 (Revert "Merge branch 'subsystem/patient-management' into develop")
