@@ -26,7 +26,7 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
         // ------------------- GET/DISPLAY DOCTORS -----------
         public async Task<IEnumerable<Doctor>> GetDoctors(string filter = "Active")
         {
-            return await _db.GetData<Doctor, User, Doctor, dynamic>(
+            var doctors = await _db.GetData<Doctor, User, Doctor, dynamic>(
                 "sp_Doctor_GetAll",
                 (doctor, user) =>
                 {
@@ -39,6 +39,10 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
                 },
                 splitOn: "UserId"
             );
+
+            return doctors
+                .OrderBy(doctor => doctor.User?.Surname ?? string.Empty, StringComparer.OrdinalIgnoreCase)
+                .ThenBy(doctor => doctor.User?.Name ?? string.Empty, StringComparer.OrdinalIgnoreCase);
         }
         // -------------- CREATE/ADD DOCTORS ----------------
         public async Task CreateDoctor(Doctor doctor, string temporaryPassword)
@@ -146,7 +150,7 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
         //------------------------- DISPLAY TECHNICIANS
         public async Task<IEnumerable<LabTechnician>> GetTechnicians(string filter = "Active")
         {
-            return await _db.GetData<LabTechnician, User, LabTechnician, dynamic>(
+            var technicians = await _db.GetData<LabTechnician, User, LabTechnician, dynamic>(
                 "sp_LabTechnician_GetAll",
                 (technician, user) =>
                 {
@@ -159,6 +163,10 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
                 },
                 splitOn: "UserId"
             );
+
+            return technicians
+                .OrderBy(technician => technician.User?.Surname ?? string.Empty, StringComparer.OrdinalIgnoreCase)
+                .ThenBy(technician => technician.User?.Name ?? string.Empty, StringComparer.OrdinalIgnoreCase);
         }
 
         // ----------------SELECT TECH BY ID [For Delete & Update]------------------
@@ -285,7 +293,7 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
         // ------------------------- DISPLAY MANAGERS -------------------------
         public async Task<IEnumerable<LabManager>> GetManagers(string filter = "Active")
         {
-            return await _db.GetData<LabManager, User, LabManager, dynamic>(
+            var managers = await _db.GetData<LabManager, User, LabManager, dynamic>(
                 "sp_LabManager_GetAll",
                 (manager, user) =>
                 {
@@ -298,6 +306,10 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
                 },
                 splitOn: "UserId"
             );
+
+            return managers
+                .OrderBy(manager => manager.User?.Surname ?? string.Empty, StringComparer.OrdinalIgnoreCase)
+                .ThenBy(manager => manager.User?.Name ?? string.Empty, StringComparer.OrdinalIgnoreCase);
         }
 
         // ------------------------- GET MANAGER BY ID -------------------------
@@ -403,13 +415,15 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
         string filter = "Active",
          string search = "")
         {
-            return await _db.GetData<Supplier, dynamic>(
+            var suppliers = await _db.GetData<Supplier, dynamic>(
                 "sp_Supplier_GetAll",
                 new
                 {
                     Filter = filter,
                     Search = search
                 });
+
+            return suppliers.OrderBy(supplier => supplier.SupplierName ?? string.Empty, StringComparer.OrdinalIgnoreCase);
         }
 
         // ------------------------- GET SUPPLIER BY ID -------------------------
@@ -497,7 +511,7 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
                 consumable.Supplier = await GetSupplierById(consumable.SupplierId);
             }
 
-            return consumables;
+            return consumables.OrderBy(consumable => consumable.Name ?? string.Empty, StringComparer.OrdinalIgnoreCase);
         }
 
         // ------------------------- GET CONSUMABLE BY ID -------------------------
@@ -623,7 +637,9 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
                 }
             }
 
-            return orders;
+            return orders
+                .OrderBy(order => order.Supplier?.SupplierName ?? string.Empty, StringComparer.OrdinalIgnoreCase)
+                .ThenBy(order => order.OrderNumber ?? string.Empty, StringComparer.OrdinalIgnoreCase);
         }
 
         public async Task<StockOrder?> GetStockOrderById(int stockOrderId)
@@ -681,6 +697,10 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
                     }
                 });
             }
+
+            order.StockOrderItem = order.StockOrderItem
+                .OrderBy(item => item.Consumable?.Name ?? string.Empty, StringComparer.OrdinalIgnoreCase)
+                .ToList();
 
             return order;
         }
@@ -752,7 +772,7 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
                 consumable.Supplier = await GetSupplierById(consumable.SupplierId);
             }
 
-            return consumables;
+            return consumables.OrderBy(consumable => consumable.Name ?? string.Empty, StringComparer.OrdinalIgnoreCase);
         }
 
         private static T ReadValue<T>(IDictionary<string, object> row, string columnName)
@@ -782,7 +802,8 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
                 Search = search ?? ""
             };
 
-            return MapTestTypes(await _db.GetData<dynamic, object>("sp_TestType_GetAll", parameters));
+            return MapTestTypes(await _db.GetData<dynamic, object>("sp_TestType_GetAll", parameters))
+                .OrderBy(testType => testType.TestName ?? string.Empty, StringComparer.OrdinalIgnoreCase);
         }
 
 
@@ -1016,13 +1037,15 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
             string filter = "Active",
             string search = "")
         {
-            return await _db.GetData<TestCategory, object>(
+            var categories = await _db.GetData<TestCategory, object>(
                 "sp_TestCategory_GetAll",
                 new
                 {
                     Filter = filter,
                     Search = search
                 });
+
+            return categories.OrderBy(category => category.CategoryName ?? string.Empty, StringComparer.OrdinalIgnoreCase);
         }
 
         // ------------------- GET CATEGOTRY BY ID -----------
@@ -1094,13 +1117,15 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
             string filter = "Active",
             string search = "")
         {
-            return await _db.GetData<SampleType, object>(
+            var sampleTypes = await _db.GetData<SampleType, object>(
                 "sp_SampleType_GetAll",
                 new
                 {
                     Filter = filter,
                     Search = search
                 });
+
+            return sampleTypes.OrderBy(sampleType => sampleType.SampleTypeName ?? string.Empty, StringComparer.OrdinalIgnoreCase);
         }
 
         //-------------------- GET BY ID ---------------------------------

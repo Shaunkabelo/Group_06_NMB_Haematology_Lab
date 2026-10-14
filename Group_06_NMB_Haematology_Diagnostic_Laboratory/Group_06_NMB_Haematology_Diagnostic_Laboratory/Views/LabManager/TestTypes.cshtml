@@ -643,7 +643,7 @@
             "Save Test Type";
 
         document.getElementById("testTypeForm").action =
-            "/LabManager/CreateTestType";
+            '@Url.Action("CreateTestType", "LabManager")';
 
         document.getElementById("testTypeForm").reset();
 
@@ -666,7 +666,7 @@
             "Update Test Type";
 
         document.getElementById("testTypeForm").action =
-            "/LabManager/EditTestType";
+            '@Url.Action("EditTestType", "LabManager")';
 
 
         document.getElementById("TestTypeId").value =

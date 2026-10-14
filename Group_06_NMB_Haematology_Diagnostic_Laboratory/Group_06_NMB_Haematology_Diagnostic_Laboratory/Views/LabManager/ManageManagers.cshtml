@@ -425,7 +425,7 @@
             "Save Lab Manager";
 
         document.getElementById("managerForm").action =
-            "/LabManager/CreateManager";
+            '@Url.Action("CreateManager", "LabManager")';
 
         document.getElementById("managerForm").reset();
 
@@ -448,7 +448,7 @@
             "Update Manager";
 
         document.getElementById("managerForm").action =
-            "/LabManager/EditManager";
+            '@Url.Action("EditManager", "LabManager")';
 
         document.getElementById("LabManagerId").value =
             button.dataset.id;

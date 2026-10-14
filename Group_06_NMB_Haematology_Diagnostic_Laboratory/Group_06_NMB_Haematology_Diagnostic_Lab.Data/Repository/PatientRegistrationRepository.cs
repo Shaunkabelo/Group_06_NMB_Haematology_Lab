@@ -11,6 +11,11 @@ public class PatientRegistrationRepository(ISqlDataAccess db)
         string passwordHash,
         string passwordSalt)
     {
+        if (!patient.DateOfBirth.HasValue)
+        {
+            throw new ArgumentException("Date of birth is required.", nameof(patient));
+        }
+
         var result = await db.SaveDataAndReturn<string, object>(
             "dbo.spPatient_Register",
             new
@@ -23,7 +28,7 @@ public class PatientRegistrationRepository(ISqlDataAccess db)
                 patient.Cellphone,
                 HomeAddress = patient.HomeAddress,
                 SA_ID_Number = patient.SaIdNumber,
-                DateOfBirth = patient.DateOfBirth.Date
+                DateOfBirth = patient.DateOfBirth.Value.ToDateTime(TimeOnly.MinValue)
             });
 
         return result ?? throw new InvalidOperationException(

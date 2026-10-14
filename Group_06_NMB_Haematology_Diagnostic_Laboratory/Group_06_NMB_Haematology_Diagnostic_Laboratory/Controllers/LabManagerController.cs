@@ -201,6 +201,12 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
                 TempData["ErrorMessage"] = ex.Number == 50110 ? ex.Message : "The order was being changed. Refresh and try again.";
                 return RedirectToAction(nameof(Orders));
             }
+            catch (Microsoft.Data.SqlClient.SqlException ex)
+            {
+                _logger.LogError(ex, "Order {OrderId} workflow operation failed.", id);
+                TempData["ErrorMessage"] = "The order could not be updated because the database workflow is not installed or rejected the request. Run Database/Orders_Workflow.sql, then try again.";
+                return RedirectToAction(nameof(Orders));
+            }
             TempData["SuccessMessage"] = success;
             if (notification != null) await NotifySupplier(id, notification);
             return RedirectToAction(nameof(Orders));
@@ -216,9 +222,19 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
         }
 
         [HttpPost, ValidateAntiForgeryToken]
-        public Task<IActionResult> ReceiveOrder(int stockOrderId) =>
-            ChangeOrder(() => _repository.ReceiveStockOrder(stockOrderId), stockOrderId,
-                "All outstanding items received and stock updated.");
+        public async Task<IActionResult> ReceiveOrder(int stockOrderId)
+        {
+            var order = await _repository.GetStockOrderById(stockOrderId);
+            if (order == null) return NotFound();
+            if (!order.StockOrderItem.Any(item => string.Equals(item.Status, "Ordered", StringComparison.OrdinalIgnoreCase)))
+            {
+                TempData["ErrorMessage"] = "There are no remaining items to receive on this order.";
+                return RedirectToAction(nameof(Orders));
+            }
+
+            return await ChangeOrder(() => _repository.ReceiveStockOrder(stockOrderId), stockOrderId,
+                "All remaining items received and stock updated.");
+        }
 
         [HttpPost, ValidateAntiForgeryToken]
         public async Task<IActionResult> CancelOrderItem(int stockOrderItemId, string? cancelReason, int stockOrderId)
@@ -233,11 +249,18 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
         }
 
         [HttpPost, ValidateAntiForgeryToken]
-        public Task<IActionResult> CancelOrder(int stockOrderId, string? cancelReason)
+        public async Task<IActionResult> CancelOrder(int stockOrderId, string? cancelReason)
         {
             if (string.IsNullOrWhiteSpace(cancelReason) || cancelReason.Trim().Length > 255)
-            { TempData["ErrorMessage"] = "Enter a cancellation reason of 1–255 characters."; return Task.FromResult<IActionResult>(RedirectToAction(nameof(Orders))); }
-            return ChangeOrder(() => _repository.CancelStockOrder(stockOrderId, cancelReason.Trim()), stockOrderId,
+            { TempData["ErrorMessage"] = "Enter a cancellation reason of 1–255 characters."; return RedirectToAction(nameof(Orders)); }
+            var order = await _repository.GetStockOrderById(stockOrderId);
+            if (order == null) return NotFound();
+            if (!order.StockOrderItem.Any(item => string.Equals(item.Status, "Ordered", StringComparison.OrdinalIgnoreCase)))
+            {
+                TempData["ErrorMessage"] = "There are no remaining items to cancel on this order.";
+                return RedirectToAction(nameof(Orders));
+            }
+            return await ChangeOrder(() => _repository.CancelStockOrder(stockOrderId, cancelReason.Trim()), stockOrderId,
                 "Order cancelled. Received items were preserved; outstanding items were cancelled.",
                 $"The outstanding items on this order have been cancelled. Reason: {cancelReason.Trim()}");
         }

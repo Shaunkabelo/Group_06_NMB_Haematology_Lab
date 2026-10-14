@@ -2,7 +2,9 @@
 
 namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Models;
 
-public class PatientRegistrationViewModel
+// Retained only as a merge-history artefact.  The active registration contract
+// is PatientRegistrationViewModel in PatientRegistration.cs.
+internal sealed class LegacyPatientRegistrationViewModel
 {
     [Required]
     [StringLength(100)]

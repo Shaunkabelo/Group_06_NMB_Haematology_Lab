@@ -51,6 +51,14 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.DataAccess
 
 
         Task SaveData<T>(string spName, T parameters, string connectionId = "conn");
+
+        // Supports stored procedures that receive a table-valued Dapper parameter
+        // and return the newly created record identifier.
+        Task<T> SaveDataAndReturnWithTable<T>(
+            string spName,
+            DynamicParameters parameters,
+            string connectionId = "conn");
+
         // ===============================================================================
         //  SAVE DATA OVERLOAD METHODS
         Task<T> SaveDataAndReturn<T, P>(string spName, P parameters, string connectionId = "conn");
