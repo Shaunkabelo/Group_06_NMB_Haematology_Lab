@@ -24,6 +24,7 @@ builder.Services.AddRateLimiter(options =>
 builder.Services.AddScoped<ISqlDataAccess, SqlDataAccess>();
 builder.Services.AddScoped<IDoctorRepository, DoctorRepository>();
 builder.Services.AddScoped<IDoctorResultsRepository, DoctorResultsRepository>();
+builder.Services.AddScoped<IPatientRegistrationRepository, PatientRegistrationRepository>();
 builder.Services.AddScoped<IAuthenticationRepository, AuthenticationRepository>();
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>

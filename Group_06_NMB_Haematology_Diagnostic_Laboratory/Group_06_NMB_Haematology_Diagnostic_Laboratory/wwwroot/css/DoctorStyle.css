@@ -1566,6 +1566,13 @@ td {
     color: #2D3748;
 }
 
+.registration-result {
+    max-width: none;
+    margin: 0 0 16px;
+    padding: 10px 12px;
+    text-align: left;
+}
+
     .auth-message.error {
         border-color: rgba(255,71,87,.28);
         background: rgba(255,71,87,.08);

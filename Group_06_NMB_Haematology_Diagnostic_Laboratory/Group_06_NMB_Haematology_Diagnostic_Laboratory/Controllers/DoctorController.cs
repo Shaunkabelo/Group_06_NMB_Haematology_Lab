@@ -1,9 +1,12 @@
 ﻿using Group_06_NMB_Haematology_Diagnostic_Lab.Data.Models;
 using Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository;
+using Group_06_NMB_Haematology_Diagnostic_Lab.Data.Helpers;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using System.Security.Cryptography;
 using Group_06_NMB_Haematology_Diagnostic_Laboratory.Services;
+using System.Globalization;
 
 namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 {
@@ -12,13 +15,16 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 
 		private readonly IDoctorRepository _doctorRepository;
 		private readonly IDoctorResultsRepository _doctorResultsRepository;
+		private readonly IPatientRegistrationRepository _patientRegistrationRepository;
 
 		public DoctorController(
 			IDoctorRepository doctorRepository,
-			IDoctorResultsRepository doctorResultsRepository)
+			IDoctorResultsRepository doctorResultsRepository,
+			IPatientRegistrationRepository patientRegistrationRepository)
 		{
 			_doctorRepository = doctorRepository;
 			_doctorResultsRepository = doctorResultsRepository;
+			_patientRegistrationRepository = patientRegistrationRepository;
 		}
 		// ============================================================
 		//ALERTS
@@ -641,6 +647,97 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 		public IActionResult RegisterPatient()
 		{
 			return View();
+		}
+
+		[Authorize(Roles = "Doctor")]
+		[HttpPost]
+		[ValidateAntiForgeryToken]
+		[EnableRateLimiting("account")]
+		public async Task<IActionResult> RegisterPatient(
+			PatientRegistrationViewModel model)
+		{
+			if (!PasswordHelper.MeetsPolicy(model.Password))
+			{
+				ModelState.AddModelError(
+					nameof(model.Password),
+					"Password must contain at least 8 characters, an uppercase letter, a number and a non-whitespace special character.");
+			}
+
+			var saIdNumber = model.SaIdNumber ?? string.Empty;
+			if (model.DateOfBirth == default ||
+				model.DateOfBirth.Date > DateTime.Today ||
+				!string.Equals(
+					saIdNumber.Length >= 6 ? saIdNumber[..6] : "",
+					model.DateOfBirth.ToString("yyMMdd", CultureInfo.InvariantCulture),
+					StringComparison.Ordinal))
+			{
+				ModelState.AddModelError(
+					nameof(model.DateOfBirth),
+					"The date of birth must be a valid past date matching the first six digits of the SA ID number.");
+			}
+
+			if (!ModelState.IsValid)
+			{
+				return BadRequest(new
+				{
+					success = false,
+					message = "Please correct the registration details.",
+					errors = ModelState
+						.Where(entry => entry.Value?.Errors.Count > 0)
+						.ToDictionary(
+							entry => entry.Key,
+							entry => entry.Value!.Errors
+								.Select(error => error.ErrorMessage)
+								.ToArray())
+				});
+			}
+
+			var salt = PasswordHelper.GenerateSalt();
+			var passwordHash = PasswordHelper.HashPassword(model.Password, salt);
+
+			try
+			{
+				var result = await _patientRegistrationRepository.RegisterPatientAsync(
+					model,
+					passwordHash,
+					salt);
+
+				return result switch
+				{
+					"SUCCESS" => Ok(new
+					{
+						success = true,
+						message = "Patient account created successfully."
+					}),
+					"DUPLICATE_EMAIL" => Conflict(new
+					{
+						success = false,
+						message = "This email address is already registered."
+					}),
+					"DUPLICATE_ID" => Conflict(new
+					{
+						success = false,
+						message = "This SA ID number is already registered."
+					}),
+					_ => StatusCode(StatusCodes.Status500InternalServerError, new
+					{
+						success = false,
+						message = "Patient registration could not be completed."
+					})
+				};
+			}
+			catch (Exception exception)
+			{
+				HttpContext.RequestServices
+					.GetRequiredService<ILogger<DoctorController>>()
+					.LogError(exception, "Patient registration failed.");
+
+				return StatusCode(StatusCodes.Status500InternalServerError, new
+				{
+					success = false,
+					message = "An error occurred while registering the patient."
+				});
+			}
 		}
 
 		public IActionResult CreateRequest()
