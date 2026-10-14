@@ -1,0 +1,159 @@
+@using Group_06_NMB_Haematology_Diagnostic_Lab.Data.Models
+@model PatientRegistrationViewModel
+@{
+    ViewData["Title"] = "Register Patient";
+    Layout = "~/Views/Shared/_LayoutDoctor.cshtml";
+}
+
+<div class="page-body">
+    <div class="section-header">
+        <div class="section-title">Register Patient</div>
+        <div class="section-sub">Capture personal details and create login credentials using email as the username.</div>
+    </div>
+
+    <section class="card">
+        <div class="card-body">
+            <div id="registration-message" class="auth-message registration-result" role="status" aria-live="polite" hidden></div>
+
+            <form asp-controller="Doctor" asp-action="RegisterPatient" method="post" id="patientRegistrationForm">
+                @Html.AntiForgeryToken()
+                <div class="form-row">
+                    <div class="form-group">
+                        <label asp-for="Name" class="form-label">Name <span class="required">*</span></label>
+                        <input asp-for="Name" type="text" class="form-control" placeholder="e.g. Name" autocomplete="given-name" required>
+                        <span asp-validation-for="Name" class="form-hint"></span>
+                    </div>
+                    <div class="form-group">
+                        <label asp-for="Surname" class="form-label">Surname <span class="required">*</span></label>
+                        <input asp-for="Surname" type="text" class="form-control" placeholder="e.g. Surname" autocomplete="family-name" required>
+                        <span asp-validation-for="Surname" class="form-hint"></span>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label asp-for="SaIdNumber" class="form-label">South African ID Number <span class="required">*</span></label>
+                        <input asp-for="SaIdNumber" data-digits="13" inputmode="numeric" minlength="13" maxlength="13" pattern="[0-9]{13}" type="text" class="form-control" placeholder="13-digit SA ID" required>
+                        <div class="form-hint">Date of birth must match the first 6 digits.</div>
+                        <span asp-validation-for="SaIdNumber" class="form-hint"></span>
+                    </div>
+                    <div class="form-group">
+                        <label asp-for="DateOfBirth" class="form-label">Date of Birth <span class="required">*</span></label>
+                        <input asp-for="DateOfBirth" type="date" class="form-control" required>
+                        <span asp-validation-for="DateOfBirth" class="form-hint"></span>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label asp-for="Cellphone" class="form-label">Cellphone Number <span class="required">*</span></label>
+                        <input asp-for="Cellphone" data-digits="10" inputmode="numeric" minlength="10" maxlength="10" pattern="[0-9]{10}" type="tel" class="form-control" placeholder="e.g. 0677419669" autocomplete="tel" required>
+                        <span asp-validation-for="Cellphone" class="form-hint"></span>
+                    </div>
+                    <div class="form-group">
+                        <label asp-for="Email" class="form-label">Email Address / Username <span class="required">*</span></label>
+                        <input asp-for="Email" type="email" class="form-control" placeholder="patient@example.com" autocomplete="email" required>
+                        <span asp-validation-for="Email" class="form-hint"></span>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="HomeAddress" class="form-label">Home Address <span class="required">*</span></label>
+                    <input asp-for="HomeAddress" type="text" class="form-control" placeholder="Street address, suburb, city" autocomplete="street-address" required>
+                    <span asp-validation-for="HomeAddress" class="form-hint"></span>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label asp-for="Password" class="form-label">Password <span class="required">*</span></label>
+                        <input asp-for="Password" type="password" class="form-control" placeholder="Create password" autocomplete="new-password" required>
+                        <div class="form-hint">Use 8+ characters, uppercase, lowercase, number and special character.</div>
+                        <span asp-validation-for="Password" class="form-hint"></span>
+                    </div>
+                    <div class="form-group">
+                        <label asp-for="ConfirmPassword" class="form-label">Confirm Password <span class="required">*</span></label>
+                        <input asp-for="ConfirmPassword" type="password" class="form-control" placeholder="Confirm password" autocomplete="new-password" required>
+                        <span asp-validation-for="ConfirmPassword" class="form-hint"></span>
+                    </div>
+                </div>
+
+                <div class="btn-row">
+                    <button type="reset" class="btn btn-secondary">Clear form</button>
+                    <button type="submit" class="btn btn-primary" id="createPatientButton">Create Account</button>
+                </div>
+            </form>
+        </div>
+    </section>
+</div>
+
+@section Scripts {
+    <script>
+        const registrationForm = document.getElementById('patientRegistrationForm');
+        const registrationMessage = document.getElementById('registration-message');
+        const createPatientButton = document.getElementById('createPatientButton');
+
+        registrationForm.addEventListener('submit', async function (event) {
+            event.preventDefault();
+            registrationMessage.hidden = true;
+
+            createPatientButton.disabled = true;
+            createPatientButton.textContent = 'Creating account...';
+
+            try {
+                const response = await fetch(registrationForm.action, {
+                    method: 'POST',
+                    body: new FormData(registrationForm),
+                    credentials: 'same-origin',
+                    headers: { 'Accept': 'application/json' }
+                });
+
+                registrationForm.addEventListener('reset', function () {
+                    registrationMessage.hidden = true;
+                    registrationMessage.textContent = '';
+                    registrationMessage.classList.remove('success', 'error', 'info');
+                });
+
+                let data;
+                try {
+                    data = await response.json();
+                } catch {
+                    throw new Error('The server returned an unexpected response. Please try again.');
+                }
+
+                const validationMessages = data.errors
+                    ? Object.values(data.errors).flat().join(' ')
+                    : '';
+                const message = validationMessages || data.message ||
+                    'Registration could not be completed.';
+                const success = response.ok && data.success === true;
+                showRegistrationMessage(message, success);
+
+                if (success) {
+                    registrationForm.reset();
+                }
+            } catch (error) {
+                console.error('Patient registration error:', error);
+                showRegistrationMessage(
+                    error.message || 'Unable to contact the server. Please try again.',
+                    false);
+            } finally {
+                createPatientButton.disabled = false;
+                createPatientButton.textContent = 'Create Account';
+            }
+        });
+
+        document.querySelectorAll('[data-digits]').forEach(input => {
+            input.addEventListener('input', function () {
+                this.value = this.value.replace(/\D/g, '')
+                    .slice(0, Number(this.dataset.digits));
+            });
+        });
+
+        function showRegistrationMessage(message, success) {
+            registrationMessage.textContent = message;
+            registrationMessage.hidden = false;
+            registrationMessage.classList.remove('success', 'error', 'info');
+            registrationMessage.classList.add(success ? 'success' : 'error');
+        }
+    </script>
+}

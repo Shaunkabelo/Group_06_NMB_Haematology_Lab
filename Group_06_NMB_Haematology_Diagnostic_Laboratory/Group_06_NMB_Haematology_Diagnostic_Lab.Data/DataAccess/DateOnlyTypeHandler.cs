@@ -1,4 +1,3 @@
-using System;
 using System.Data;
 using Dapper;
 
@@ -9,7 +8,7 @@ public sealed class DateOnlyTypeHandler : SqlMapper.TypeHandler<DateOnly>
     public override DateOnly Parse(object value) => value switch
     {
         DateTime dateTime => DateOnly.FromDateTime(dateTime),
-        DateOnly dateOnly => dateOnly,
+        DateOnly date => date,
         _ => throw new DataException($"Cannot convert {value.GetType().Name} to DateOnly.")
     };
 

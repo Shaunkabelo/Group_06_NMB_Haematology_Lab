@@ -1,0 +1,61 @@
+@{
+    ViewData["Title"] = "Doctor Dashboard";
+    Layout = "~/Views/Shared/_LayoutDoctor.cshtml";
+}
+
+<div class="page-body" id="doctor-dashboard" data-dashboard-url="@Url.Action("GetDoctorDashboard", "Doctor")">
+    <div class="section-header">
+        <div class="section-title">Dashboard overview</div>
+        <div class="section-sub">A live summary of your requests, results, patients and abnormal alerts.</div>
+    </div>
+
+    <div id="dashboard-error" class="alert danger" role="alert" hidden></div>
+
+    <section class="stats-grid" aria-label="Dashboard summary">
+        <a asp-controller="Doctor" asp-action="Requests" class="stat-card teal clickable">
+            <div class="stat-label">Submitted Requests</div>
+            <div class="stat-value" id="dashboard-submitted-count" aria-live="polite">—</div>
+            <div class="stat-sub" id="dashboard-submitted-detail">Loading request totals…</div>
+        </a>
+        <a asp-controller="Doctor" asp-action="Results" class="stat-card blue clickable">
+            <div class="stat-label">Results Recorded</div>
+            <div class="stat-value" id="dashboard-results-count" aria-live="polite">—</div>
+            <div class="stat-sub">Requests with captured lab results</div>
+        </a>
+        <a asp-controller="Doctor" asp-action="Alerts" class="stat-card red clickable">
+            <div class="stat-label">Abnormal Alerts</div>
+            <div class="stat-value" id="dashboard-alerts-count" aria-live="polite">—</div>
+            <div class="stat-sub">Last 5 days</div>
+        </a>
+        <a asp-controller="Doctor" asp-action="Patients" class="stat-card amber clickable">
+            <div class="stat-label">Patients</div>
+            <div class="stat-value" id="dashboard-patients-count" aria-live="polite">—</div>
+            <div class="stat-sub">With requests submitted by you</div>
+        </a>
+    </section>
+
+    <section class="grid-2">
+        <div class="card">
+            <div class="card-header">
+                <span class="card-title">Recent Requests</span>
+                <a class="card-link" asp-controller="Doctor" asp-action="CreateRequest">Create request</a>
+            </div>
+            <div class="card-body list" id="dashboard-recent-requests" aria-live="polite">
+                <div class="list-row"><span>Loading requests…</span></div>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-header">
+                <span class="card-title">Abnormal Result Alerts</span>
+                <a class="card-link" asp-controller="Doctor" asp-action="Alerts">View all</a>
+            </div>
+            <div class="card-body" id="dashboard-recent-alerts" aria-live="polite">
+                <div class="alert warning">Loading abnormal alerts…</div>
+            </div>
+        </div>
+    </section>
+</div>
+
+@section Scripts {
+    <script src="~/js/doctor-dashboard.js" asp-append-version="true"></script>
+}

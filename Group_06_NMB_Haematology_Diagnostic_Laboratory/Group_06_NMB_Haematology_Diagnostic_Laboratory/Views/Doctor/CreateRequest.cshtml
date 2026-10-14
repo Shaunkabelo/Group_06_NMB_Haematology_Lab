@@ -1,0 +1,2939 @@
+﻿@{
+    ViewData["Title"] = "Create Test Request";
+    Layout = "~/Views/Shared/_LayoutDoctor.cshtml";
+}
+
+<div class="page-body">
+
+    <style>
+        .patient-extra-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 16px;
+            margin-top: 20px;
+        }
+
+        .patient-extra-grid .info-section {
+            background: #ffffff;
+            border: 1px solid #edf2f7;
+            border-radius: 12px;
+            padding: 14px 16px;
+        }
+
+        .patient-extra-grid h4 {
+            margin: 0;
+            color: #5f6f84;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.03em;
+            text-transform: uppercase;
+        }
+
+        .patient-history-list {
+            display: grid;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .history-item {
+            background: #f5f8fb;
+            border: 1px solid #e6edf5;
+            border-radius: 10px;
+            padding: 12px;
+        }
+
+        .history-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+
+        .history-header strong {
+            color: #1d2d3d;
+            font-size: 14px;
+        }
+
+        .history-meta {
+            color: #627287;
+            font-size: 12px;
+            line-height: 1.5;
+        }
+
+        @@media (max-width: 700px) {
+            .patient-extra-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+
+    <!-- ========================================================= -->
+    <!-- PAGE HEADER -->
+    <!-- ========================================================= -->
+
+    <div class="section-header">
+        <div class="section-title">
+            Create Test Request
+        </div>
+
+        <div class="section-sub">
+            Select a patient by SA ID number, review their medical details,
+            and assign samples for each requested test.
+        </div>
+    </div>
+
+
+    <section class="grid-2">
+
+        <!-- ===================================================== -->
+        <!-- LEFT SIDE -->
+        <!-- ===================================================== -->
+
+        <div class="card">
+
+            <div class="card-header">
+                <span class="card-title">
+                    Request Details
+                </span>
+            </div>
+
+
+            <div class="card-body">
+
+                <!-- ================================================= -->
+                <!-- PATIENT + URGENCY -->
+                <!-- ================================================= -->
+
+                <div class="form-row">
+
+                    <div class="form-group">
+
+                        <label class="form-label"
+                               for="patient-select">
+
+                            Enter Patient SA ID Number
+
+                        </label>
+
+                        <input id="patient-select"
+                               class="form-control"
+                               type="text"
+                               inputmode="numeric"
+                               maxlength="13"
+                               pattern="[0-9]*"
+                               autocomplete="off"
+                               placeholder="Enter patient SA ID" />
+
+                    </div>
+
+
+                    <div class="form-group">
+
+                        <label class="form-label"
+                               for="urgency-select">
+
+                            Urgency
+
+                        </label>
+
+                        <select id="urgency-select"
+                                class="form-control">
+
+                            <option value="Routine">
+                                Routine
+                            </option>
+
+                            <option value="Urgent">
+                                Urgent
+                            </option>
+
+                            <option value="STAT">
+                                STAT
+                            </option>
+
+                        </select>
+
+                    </div>
+
+                </div>
+
+
+                <!-- ================================================= -->
+                <!-- PATIENT INFORMATION -->
+                <!-- ================================================= -->
+
+                <div id="patient-info-panel"
+                     class="patient-info-panel"
+                     style="display:none;">
+
+                    <div class="info-section">
+
+                        <h4>
+                            Patient Information
+                        </h4>
+
+
+                        <div class="info-grid">
+
+                            <div class="info-item">
+
+                                <label>
+                                    SA ID Number
+                                </label>
+
+                                <span id="patient-sa-id">
+                                    N/A
+                                </span>
+
+                            </div>
+
+
+                            <div class="info-item">
+
+                                <label>
+                                    Name
+                                </label>
+
+                                <span id="patient-name">
+                                    N/A
+                                </span>
+
+                            </div>
+
+
+                            <div class="info-item">
+
+                                <label>
+                                    Date of Birth
+                                </label>
+
+                                <span id="patient-dob">
+                                    N/A
+                                </span>
+
+                            </div>
+
+
+                            <div class="info-item">
+
+                                <label>
+                                    Cellphone
+                                </label>
+
+                                <span id="patient-cellphone">
+                                    N/A
+                                </span>
+
+                            </div>
+
+
+                            <div class="info-item">
+
+                                <label>
+                                    Email
+                                </label>
+
+                                <span id="patient-email">
+                                    N/A
+                                </span>
+
+                            </div>
+
+
+                            <div class="info-item">
+
+                                <label>
+                                    Address
+                                </label>
+
+                                <span id="patient-address">
+                                    N/A
+                                </span>
+
+                            </div>
+
+                        </div>
+
+
+                        <!-- ================================================= -->
+                        <!-- MEDICAL CONDITIONS -->
+                        <!-- ================================================= -->
+
+                        <div class="info-section-box">
+
+                            <label class="section-label">
+                                Known Medical Conditions
+                            </label>
+
+                            <div id="patient-conditions"
+                                 class="info-text">
+
+                                None recorded
+
+                            </div>
+
+                        </div>
+
+
+                        <!-- ================================================= -->
+                        <!-- ALLERGIES -->
+                        <!-- ================================================= -->
+
+                        <div class="info-section-box">
+
+                            <label class="section-label">
+                                Allergies
+                            </label>
+
+                            <div id="patient-allergies"
+                                 class="info-text">
+
+                                None recorded
+
+                            </div>
+
+                        </div>
+
+
+                        <!-- ================================================= -->
+                        <!-- MEDICATION -->
+                        <!-- ================================================= -->
+
+                        <div class="info-section-box">
+
+                            <label class="section-label">
+                                Current Medications
+                            </label>
+
+                            <div id="patient-medication"
+                                 class="info-text">
+
+                                None recorded
+
+                            </div>
+
+                        </div>
+
+
+                        <div class="patient-extra-grid">
+
+                            <div class="info-section">
+
+                                <h4>
+                                    Test Request History
+                                </h4>
+
+                                <div id="patient-request-history"
+                                     class="patient-history-list">
+                                    No request history recorded.
+                                </div>
+
+                            </div>
+
+
+                            <div class="info-section">
+
+                                <h4>
+                                    Results Available with Patient Consent
+                                </h4>
+
+                                <div id="patient-consent-results"
+                                     class="patient-history-list">
+                                    No consented results available.
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <!-- ================================================= -->
+                <!-- CLINICAL NOTES -->
+                <!-- ================================================= -->
+
+                <div class="form-group">
+
+                    <label class="form-label"
+                           for="clinical-notes">
+
+                        Clinical Notes
+
+                    </label>
+
+                    <textarea id="clinical-notes"
+                              class="form-control"
+                              rows="4"
+                              placeholder="Enter relevant clinical context"></textarea>
+
+                </div>
+
+
+                <!-- ================================================= -->
+                <!-- TEST SELECTION -->
+                <!-- ================================================= -->
+
+                <div class="form-group">
+
+                    <label class="form-label">
+                        Requested Test Types
+                    </label>
+
+
+                    <div class="form-row test-selection-row">
+
+                        <!-- TEST CATEGORY -->
+
+                        <div class="form-group">
+
+                            <label class="form-label"
+                                   for="test-category-select">
+
+                                Test Category
+
+                            </label>
+
+                            <select id="test-category-select"
+                                    class="form-control">
+
+                                <option value="">
+                                    -- Select Category --
+                                </option>
+
+                            </select>
+
+                        </div>
+
+
+                        <!-- TEST -->
+
+                        <div class="form-group">
+
+                            <label class="form-label"
+                                   for="test-select">
+
+                                Test
+
+                            </label>
+
+                            <select id="test-select"
+                                    class="form-control"
+                                    disabled>
+
+                                <option value="">
+                                    -- Select a category first --
+                                </option>
+
+                            </select>
+
+                        </div>
+
+
+                        <!-- ADD TEST -->
+
+                        <button class="btn btn-primary add-test-button"
+                                type="button"
+                                id="add-test-button">
+
+                            Add Test
+
+                        </button>
+
+                    </div>
+
+
+                    <small class="form-hint">
+
+                        Select a category, choose a test,
+                        and add it to the request.
+                        Each selected test requires a sample barcode.
+
+                    </small>
+
+                </div>
+
+
+                <!-- ================================================= -->
+                <!-- BUTTONS -->
+                <!-- ================================================= -->
+
+                <div class="form-row">
+
+                    <button class="btn btn-secondary"
+                            type="button"
+                            id="back-button">
+
+                        Back to Requests
+
+                    </button>
+
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- ===================================================== -->
+        <!-- RIGHT SIDE -->
+        <!-- ===================================================== -->
+
+        <div class="card">
+
+            <div class="card-header">
+
+                <span class="card-title">
+                    Selected Tests & Samples
+                </span>
+
+            </div>
+
+
+            <div class="card-body sample-summary-card">
+
+                <div class="summary-help">
+
+                    For every selected test,
+                    enter the barcode from the sample tube used.
+
+                </div>
+
+
+                <div id="selected-tests-list"
+                     class="selected-tests-list">
+
+                    <div class="summary-empty">
+
+                        No tests selected.
+                        Choose a test type to build the sample list.
+
+                    </div>
+
+                </div>
+
+
+                <div class="selected-tests-actions">
+
+                    <button class="btn btn-primary"
+                            type="button"
+                            id="submit-request-button">
+
+                        Submit Request
+
+                    </button>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </section>
+
+</div>
+
+<div id="patient-not-found-modal"
+     role="dialog"
+     aria-modal="true"
+     aria-labelledby="patient-not-found-title"
+     style="display:none; position:fixed; inset:0; z-index:1000; align-items:center; justify-content:center; padding:16px; background:rgba(11,25,41,.55);">
+    <div class="modal modal-sm">
+        <div class="modal-header">
+            <span id="patient-not-found-title" class="modal-title">Patient not found</span>
+            <button class="modal-close" type="button" onclick="closePatientNotFoundModal()" aria-label="Close">&times;</button>
+        </div>
+        <div class="modal-body">
+            <p id="patient-not-found-message">This patient does not exist in the system.</p>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" type="button" onclick="closePatientNotFoundModal()">Close</button>
+            <a class="btn btn-primary" href="@Url.Action("Register", "Account")">Register Patient</a>
+        </div>
+    </div>
+</div>
+
+
+<script>
+
+    // =============================================================
+    // BACKEND ROUTES
+    // =============================================================
+
+    const routes = {
+
+        getPatients:
+            '@Url.Action("GetPatients", "Doctor")',
+
+        getPatient:
+            '@Url.Action("GetPatient", "Doctor")',
+
+        getTestCategories:
+            '@Url.Action("GetTestCategories", "Doctor")',
+
+        getTestsByCategory:
+            '@Url.Action("GetTestsByCategory", "Doctor")',
+
+        createTestRequest:
+            '@Url.Action("CreateTestRequest", "Doctor")',
+
+        requests:
+            '@Url.Action("Requests", "Doctor")'
+    };
+
+
+    // =============================================================
+    // DATA
+    // =============================================================
+
+    let patientList = [];
+
+    let selectedPatient = null;
+
+    const selectedTests = [];
+
+    const sampleBarcodes = {};
+
+    const sampleColorClasses = [
+        "sample-color-lavender",
+        "sample-color-blue",
+        "sample-color-red",
+        "sample-color-green",
+        "sample-color-gray",
+        "sample-color-gold"
+    ];
+
+    function getSampleColorClass(sampleTypeName) {
+
+        const sampleType =
+            (sampleTypeName || "sample").toLowerCase();
+
+        if (sampleType.includes("edta") || sampleType.includes("lavender") || sampleType.includes("purple")) {
+            return "sample-color-lavender";
+        }
+
+        if (sampleType.includes("citrate") || sampleType.includes("blue")) {
+            return "sample-color-blue";
+        }
+
+        if (sampleType.includes("serum") || sampleType.includes("red")) {
+            return "sample-color-red";
+        }
+
+        if (sampleType.includes("heparin") || sampleType.includes("green")) {
+            return "sample-color-green";
+        }
+
+        if (sampleType.includes("fluoride") || sampleType.includes("gray") || sampleType.includes("grey")) {
+            return "sample-color-gray";
+        }
+
+        if (sampleType.includes("gold") || sampleType.includes("gel")) {
+            return "sample-color-gold";
+        }
+
+        const colorIndex =
+            sampleType
+                .split("")
+                .reduce((total, character) => total + character.charCodeAt(0), 0)
+            % sampleColorClasses.length;
+
+        return sampleColorClasses[colorIndex];
+    }
+
+
+    // =============================================================
+    // PAGE LOAD
+    // =============================================================
+
+    document.addEventListener(
+        "DOMContentLoaded",
+        async function () {
+
+            await loadPatients();
+
+            await loadTestCategories();
+
+
+            document
+                .getElementById("patient-select")
+                .addEventListener(
+                    "change",
+                    loadPatientDetails
+                );
+
+
+            document
+                .getElementById("patient-select")
+                .addEventListener(
+                    "keydown",
+                    function (event) {
+                        if (event.key === "Enter") {
+                            event.preventDefault();
+                            loadPatientDetails();
+                        }
+                    }
+                );
+
+
+            const patientSaIdFromUrl =
+                new URLSearchParams(window.location.search)
+                    .get("saIdNumber");
+
+
+            if (patientSaIdFromUrl) {
+
+                const patientSelect =
+                    document.getElementById("patient-select");
+
+                patientSelect.value =
+                    sanitizeSaIdInput(patientSaIdFromUrl);
+
+                await loadPatientDetails();
+
+            }
+
+
+            document
+                .getElementById("test-category-select")
+                .addEventListener(
+                    "change",
+                    loadTestsForCategory
+                );
+
+
+            document
+                .getElementById("add-test-button")
+                .addEventListener(
+                    "click",
+                    addSelectedTest
+                );
+
+
+            document
+                .getElementById("submit-request-button")
+                .addEventListener(
+                    "click",
+                    submitRequest
+                );
+
+
+            document
+                .getElementById("back-button")
+                .addEventListener(
+                    "click",
+                    function () {
+
+                        window.location.href =
+                            routes.requests;
+
+                    }
+                );
+
+        }
+    );
+
+
+    // =============================================================
+    // LOAD PATIENTS
+    // =============================================================
+
+    async function loadPatients() {
+
+        const select =
+            document.getElementById(
+                "patient-select"
+            );
+
+        if (!select) {
+            return;
+        }
+
+        select.value = '';
+
+
+        try {
+
+            const response =
+                await fetch(
+                    routes.getPatients
+                );
+
+
+            console.log(
+                "GetPatients status:",
+                response.status
+            );
+
+
+            if (!response.ok) {
+
+                const errorText =
+                    await response.text();
+
+
+                console.error(
+                    "GetPatients error:",
+                    errorText
+                );
+
+
+                throw new Error(
+                    "Unable to load patients."
+                );
+
+            }
+
+
+            const data =
+                await response.json();
+
+
+            console.log(
+                "Patients returned:",
+                data
+            );
+
+
+            patientList =
+                Array.isArray(data)
+                    ? data
+                    : [];
+
+
+        }
+        catch (error) {
+
+            console.error(
+                "loadPatients:",
+                error
+            );
+
+
+            alert(
+                error.message ||
+                "Unable to load patient SA ID numbers."
+            );
+
+        }
+
+    }
+
+
+    function sanitizeSaIdInput(value) {
+        return String(value || "")
+            .replace(/\D/g, "")
+            .slice(0, 13);
+    }
+
+
+    function validateSaIdNumber(value) {
+        return /^\d{13}$/.test(value);
+    }
+
+
+    // =============================================================
+    // LOAD PATIENT DETAILS BY SA ID
+    // =============================================================
+
+    async function loadPatientDetails() {
+
+        const select =
+            document.getElementById(
+                "patient-select"
+            );
+
+        if (!select) {
+            return;
+        }
+
+        const saIdNumber =
+            sanitizeSaIdInput(select.value);
+
+        if (selectedPatient && selectedPatient.saIdNumber && selectedPatient.saIdNumber !== saIdNumber && saIdNumber) {
+            resetSelectedTests();
+        }
+
+        select.value =
+            saIdNumber;
+
+
+        const panel =
+            document.getElementById(
+                "patient-info-panel"
+            );
+
+
+        selectedPatient =
+            null;
+
+
+        if (!saIdNumber) {
+
+            clearPatientInformation();
+
+            panel.style.display =
+                "none";
+
+            return;
+
+        }
+
+
+        if (!validateSaIdNumber(saIdNumber)) {
+
+            clearPatientInformation();
+
+            panel.style.display =
+                "none";
+
+            alert("SA ID must contain exactly 13 numbers.");
+            select.focus();
+            return;
+
+        }
+
+
+        try {
+
+            const url =
+                `${routes.getPatient}` +
+                `?saIdNumber=` +
+                `${encodeURIComponent(saIdNumber)}`;
+
+
+            console.log(
+                "Loading patient:",
+                url
+            );
+
+
+            const response =
+                await fetch(url);
+
+
+            console.log(
+                "GetPatient status:",
+                response.status
+            );
+
+
+            if (!response.ok) {
+
+                if (response.status === 404) {
+                    showPatientNotFoundModal(saIdNumber);
+                    return;
+                }
+
+                let message =
+                    "Unable to load patient information.";
+
+
+                try {
+
+                    const errorData =
+                        await response.json();
+
+
+                    message =
+                        errorData.message
+                        ?? message;
+
+                }
+                catch {
+                }
+
+
+                throw new Error(
+                    message
+                );
+
+            }
+
+
+            const data =
+                await response.json();
+
+
+            console.log(
+                "Patient returned:",
+                data
+            );
+
+
+            // =====================================================
+            // INTERNAL PATIENT ID
+            // =====================================================
+
+            const patientId =
+                Number(
+                    data.patientId
+                    ?? data.patientID
+                    ?? data.PatientId
+                    ?? data.PatientID
+                    ?? 0
+                );
+
+
+            // Store full patient
+            selectedPatient = {
+
+                ...data,
+
+                patientId:
+                    patientId,
+
+                saIdNumber:
+                    data.saIdNumber
+                    ?? data.SaIdNumber
+                    ?? saIdNumber
+
+            };
+
+
+            console.log(
+                "Selected Patient:",
+                selectedPatient
+            );
+
+
+            // =====================================================
+            // NAME
+            // =====================================================
+
+            const name =
+                data.name
+                ?? data.Name
+                ?? data.firstName
+                ?? "";
+
+
+            const surname =
+                data.surname
+                ?? data.Surname
+                ?? data.lastName
+                ?? "";
+
+
+            document
+                .getElementById(
+                    "patient-name"
+                )
+                .textContent =
+                    `${name} ${surname}`.trim()
+                    || "N/A";
+
+
+            // =====================================================
+            // SA ID
+            // =====================================================
+
+            document
+                .getElementById(
+                    "patient-sa-id"
+                )
+                .textContent =
+                    selectedPatient.saIdNumber
+                    || "N/A";
+
+
+            // =====================================================
+            // DATE OF BIRTH
+            // =====================================================
+
+            const dob =
+                data.dateOfBirth
+                ?? data.DateOfBirth;
+
+
+            document
+                .getElementById(
+                    "patient-dob"
+                )
+                .textContent =
+                    formatDate(dob);
+
+
+            // =====================================================
+            // CELLPHONE
+            // =====================================================
+
+            const cellphone =
+                data.cellphone
+                ?? data.Cellphone
+                ?? data.contactNumber
+                ?? data.ContactNumber;
+
+
+            document
+                .getElementById(
+                    "patient-cellphone"
+                )
+                .textContent =
+                    cellphone || "N/A";
+
+
+            // =====================================================
+            // EMAIL
+            // =====================================================
+
+            const email =
+                data.email
+                ?? data.Email;
+
+
+            document
+                .getElementById(
+                    "patient-email"
+                )
+                .textContent =
+                    email || "N/A";
+
+
+            // =====================================================
+            // ADDRESS
+            // =====================================================
+
+            const address =
+                data.address
+                ?? data.Address
+                ?? data.homeAddress
+                ?? data.HomeAddress;
+
+
+            document
+                .getElementById(
+                    "patient-address"
+                )
+                .textContent =
+                    address || "N/A";
+
+
+            // =====================================================
+            // MEDICAL CONDITIONS
+            // =====================================================
+
+            const conditions =
+                data.knownMedicalConditions
+                ?? data.KnownMedicalConditions
+                ?? data.medicalConditions
+                ?? data.MedicalConditions
+                ?? data.conditions;
+
+
+            document
+                .getElementById(
+                    "patient-conditions"
+                )
+                .textContent =
+                    formatMedicalValue(
+                        conditions,
+                        [
+                            "conditionName",
+                            "medicalConditionName",
+                            "name"
+                        ]
+                    );
+
+
+            // =====================================================
+            // ALLERGIES
+            // =====================================================
+
+            const allergies =
+                data.allergies
+                ?? data.Allergies;
+
+
+            document
+                .getElementById(
+                    "patient-allergies"
+                )
+                .textContent =
+                    formatMedicalValue(
+                        allergies,
+                        [
+                            "allergyName",
+                            "name"
+                        ]
+                    );
+
+
+            // =====================================================
+            // MEDICATION
+            // =====================================================
+
+            const medication =
+                data.medication
+                ?? data.Medication
+                ?? data.medications
+                ?? data.Medications
+                ?? data.currentMedications;
+
+
+            document
+                .getElementById(
+                    "patient-medication"
+                )
+                .textContent =
+                    formatMedicalValue(
+                        medication,
+                        [
+                            "medicationName",
+                            "name"
+                        ]
+                    );
+
+
+                    renderPatientHistory(selectedPatient);
+
+
+            panel.style.display =
+                "block";
+
+
+            if (
+                !selectedPatient.patientId ||
+                selectedPatient.patientId <= 0
+            ) {
+
+                console.error(
+                    "PatientID was not returned by GetPatient.",
+                    data
+                );
+
+            }
+
+        }
+        catch (error) {
+
+            console.error(
+                "loadPatientDetails:",
+                error
+            );
+
+
+            selectedPatient =
+                null;
+
+
+            clearPatientInformation();
+
+
+            panel.style.display =
+                "none";
+
+
+            showPatientNotFoundModal(saIdNumber);
+
+        }
+
+    }
+
+
+    function showPatientNotFoundModal(saIdNumber) {
+
+        document.getElementById(
+            "patient-not-found-message"
+        ).textContent =
+            `Patient with SA ID ${saIdNumber} does not exist in the system.`;
+
+        document.getElementById(
+            "patient-not-found-modal"
+        ).style.display = "flex";
+
+    }
+
+
+    function closePatientNotFoundModal() {
+
+        document.getElementById(
+            "patient-not-found-modal"
+        ).style.display = "none";
+
+    }
+
+
+    function getStoredRequests() {
+
+        try {
+
+            const stored =
+                localStorage.getItem('doctorRequests');
+
+            if (!stored) {
+                return [];
+            }
+
+            const parsed =
+                JSON.parse(stored);
+
+            return Array.isArray(parsed)
+                ? parsed
+                : [];
+
+        }
+        catch (error) {
+
+            console.warn(
+                "Unable to parse stored doctor requests:",
+                error
+            );
+
+            return [];
+
+        }
+
+    }
+
+
+    function saveStoredRequests(requests) {
+
+        try {
+
+            localStorage.setItem(
+                "doctorRequests",
+                JSON.stringify(
+                    Array.isArray(requests)
+                        ? requests
+                        : []
+                )
+            );
+
+        }
+        catch (error) {
+
+            console.warn(
+                "Unable to save doctor requests:",
+                error
+            );
+
+        }
+
+    }
+
+
+    function resetSelectedTests() {
+
+        selectedTests.length = 0;
+
+        Object.keys(sampleBarcodes).forEach(
+            key => delete sampleBarcodes[key]
+        );
+
+        const list =
+            document.getElementById(
+                "selected-tests-list"
+            );
+
+        if (list) {
+            list.innerHTML =
+                '<div class="summary-empty">' +
+                'No tests selected. ' +
+                'Choose a test type to build the sample list.' +
+                '</div>';
+        }
+
+        const testSelect =
+            document.getElementById(
+                "test-select"
+            );
+
+        if (testSelect) {
+            testSelect.innerHTML =
+                '<option value="">' +
+                '-- Select a category first --' +
+                '</option>';
+            testSelect.disabled = true;
+        }
+
+    }
+
+
+    function renderPatientHistory(patient) {
+
+        const patientSaId =
+            String((patient && (patient.saIdNumber || patient.SaIdNumber)) || '').trim();
+
+        const patientName =
+            `${patient?.name || patient?.Name || ''} ${patient?.surname || patient?.Surname || ''}`
+                .trim()
+                .toLowerCase();
+
+        const requests =
+            getStoredRequests()
+                .filter(item => {
+
+                    const itemSaId =
+                        String(item.saIdNumber || item.patientSaId || '').trim();
+
+                    const itemName =
+                        String(item.patientName || '').trim().toLowerCase();
+
+                    return itemSaId && patientSaId
+                        ? itemSaId === patientSaId
+                        : itemName && patientName
+                            ? itemName === patientName
+                            : false;
+
+                })
+                .sort((a, b) =>
+                    new Date(b.createdAt || 0) - new Date(a.createdAt || 0)
+                );
+
+        const requestPanel =
+            document.getElementById('patient-request-history');
+
+        if (!requests.length) {
+
+            requestPanel.innerHTML =
+                '<div class="medical-empty">No request history recorded.</div>';
+
+        }
+        else {
+
+            requestPanel.innerHTML =
+                requests.map(item => {
+
+                    const tests =
+                        Array.isArray(item.tests)
+                            ? item.tests.join(', ')
+                            : 'No tests recorded';
+
+                    const status =
+                        item.status || 'Unknown';
+
+                    return `
+                        <div class="history-item">
+                            <div class="history-header">
+                                <strong>${escapeHtml(item.id || 'Request')}</strong>
+                                <span class="badge ${status.toLowerCase().includes('released') ? 'green' : status.toLowerCase().includes('cancel') ? 'red' : 'blue'}">${escapeHtml(status)}</span>
+                            </div>
+                            <div class="history-meta">${escapeHtml(item.urgency || 'Routine')} • ${escapeHtml(item.createdAt ? new Date(item.createdAt).toLocaleDateString() : 'Unknown date')}</div>
+                            <div class="history-meta">Tests: ${escapeHtml(tests)}</div>
+                        </div>
+                    `;
+
+                }).join('');
+
+        }
+
+        const consentedResults =
+            requests.filter(item => {
+
+                const consentGranted =
+                    item.consentGranted === true ||
+                    item.resultConsentGranted === true ||
+                    item.released === true;
+
+                const releasedByDoctor =
+                    String(item.status || '').toLowerCase() === 'released by doctor';
+
+                return consentGranted || releasedByDoctor;
+
+            });
+
+        const resultsPanel =
+            document.getElementById('patient-consent-results');
+
+        if (!consentedResults.length) {
+
+            resultsPanel.innerHTML =
+                '<div class="medical-empty">No consented results available.</div>';
+
+            return;
+
+        }
+
+        resultsPanel.innerHTML =
+            consentedResults.map(item => {
+
+                const tests =
+                    Array.isArray(item.tests)
+                        ? item.tests.join(', ')
+                        : 'No tests recorded';
+
+                const releasedDate =
+                    item.updatedAt || item.createdAt || new Date().toISOString();
+
+                return `
+                    <div class="history-item">
+                        <div class="history-header">
+                            <strong>${escapeHtml(item.id || 'Request')}</strong>
+                            <span class="badge green">Consented</span>
+                        </div>
+                        <div class="history-meta">Released: ${escapeHtml(new Date(releasedDate).toLocaleDateString())}</div>
+                        <div class="history-meta">Tests: ${escapeHtml(tests)}</div>
+                    </div>
+                `;
+
+            }).join('');
+
+    }
+
+
+    function escapeHtml(value) {
+
+        if (value === null || value === undefined) {
+
+            return '';
+
+        }
+
+        return String(value)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+
+    }
+
+
+    // =============================================================
+    // FORMAT MEDICAL VALUES
+    // =============================================================
+
+    function formatMedicalValue(
+        value,
+        nameProperties = []
+    ) {
+
+        if (
+            value === null ||
+            value === undefined ||
+            value === ""
+        ) {
+
+            return "None recorded";
+
+        }
+
+
+        // STRING_AGG from SQL
+        if (
+            typeof value === "string"
+        ) {
+
+            const names =
+                value.split(",")
+                    .map(item => item.trim())
+                    .filter(item => item);
+
+            return names.length
+                ? names.sort((a, b) => a.localeCompare(b, undefined, { sensitivity: "base" })).join(", ")
+                : "None recorded";
+
+        }
+
+
+        // List returned from API
+        if (
+            Array.isArray(value)
+        ) {
+
+            if (
+                value.length === 0
+            ) {
+
+                return "None recorded";
+
+            }
+
+
+            const names =
+                value.map(
+                    item => {
+
+                        if (
+                            typeof item ===
+                            "string"
+                        ) {
+
+                            return item;
+
+                        }
+
+
+                        for (
+                            const property
+                            of nameProperties
+                        ) {
+
+                            if (
+                                item[property]
+                            ) {
+
+                                return item[property];
+
+                            }
+
+
+                            const pascal =
+                                property
+                                    .charAt(0)
+                                    .toUpperCase()
+                                +
+                                property.slice(1);
+
+
+                            if (
+                                item[pascal]
+                            ) {
+
+                                return item[
+                                    pascal
+                                ];
+
+                            }
+
+                        }
+
+
+                        return "";
+
+                    }
+                )
+                .filter(
+                    item =>
+                        item &&
+                        String(item).trim()
+                );
+
+
+            if (
+                names.length === 0
+            ) {
+
+                return "None recorded";
+
+            }
+
+
+            return names
+                .sort((a, b) => String(a).localeCompare(String(b), undefined, { sensitivity: "base" }))
+                .join(", ");
+
+        }
+
+
+        return String(value);
+
+    }
+
+
+    // =============================================================
+    // FORMAT DATE
+    // =============================================================
+
+    function formatDate(value) {
+
+        if (!value) {
+
+            return "N/A";
+
+        }
+
+
+        const date =
+            new Date(value);
+
+
+        if (
+            Number.isNaN(
+                date.getTime()
+            )
+        ) {
+
+            return value;
+
+        }
+
+
+        return date.toLocaleDateString(
+            "en-ZA"
+        );
+
+    }
+
+
+    // =============================================================
+    // CLEAR PATIENT INFORMATION
+    // =============================================================
+
+    function clearPatientInformation() {
+
+        document
+            .getElementById(
+                "patient-sa-id"
+            )
+            .textContent =
+                "N/A";
+
+
+        document
+            .getElementById(
+                "patient-name"
+            )
+            .textContent =
+                "N/A";
+
+
+        document
+            .getElementById(
+                "patient-dob"
+            )
+            .textContent =
+                "N/A";
+
+
+        document
+            .getElementById(
+                "patient-cellphone"
+            )
+            .textContent =
+                "N/A";
+
+
+        document
+            .getElementById(
+                "patient-email"
+            )
+            .textContent =
+                "N/A";
+
+
+        document
+            .getElementById(
+                "patient-address"
+            )
+            .textContent =
+                "N/A";
+
+
+        document
+            .getElementById(
+                "patient-conditions"
+            )
+            .textContent =
+                "None recorded";
+
+
+        document
+            .getElementById(
+                "patient-allergies"
+            )
+            .textContent =
+                "None recorded";
+
+
+        document
+            .getElementById(
+                "patient-medication"
+            )
+            .textContent =
+                "None recorded";
+
+    }
+
+
+    // =============================================================
+    // LOAD TEST CATEGORIES
+    // =============================================================
+
+    async function loadTestCategories() {
+
+        const select =
+            document.getElementById(
+                "test-category-select"
+            );
+
+
+        select.innerHTML =
+            '<option value="">' +
+            '-- Select Category --' +
+            '</option>';
+
+
+        try {
+
+            const response =
+                await fetch(
+                    routes.getTestCategories
+                );
+
+
+            console.log(
+                "GetTestCategories status:",
+                response.status
+            );
+
+
+            if (!response.ok) {
+
+                const errorText =
+                    await response.text();
+
+
+                console.error(
+                    "GetTestCategories error:",
+                    errorText
+                );
+
+
+                throw new Error(
+                    "Unable to load test categories."
+                );
+
+            }
+
+
+            const data =
+                await response.json();
+
+
+            console.log(
+                "Categories returned:",
+                data
+            );
+
+
+            if (!Array.isArray(data)) {
+
+                throw new Error(
+                    "Invalid category data returned."
+                );
+
+            }
+
+
+            data.forEach(
+                category => {
+
+                    const categoryId =
+                        Number(
+                            category.testCategoryId
+                            ?? category.testCategoryID
+                            ?? category.TestCategoryId
+                            ?? category.TestCategoryID
+                            ?? 0
+                        );
+
+
+                    const categoryName =
+                        category.categoryName
+                        ?? category.CategoryName
+                        ?? "";
+
+
+                    if (
+                        categoryId <= 0 ||
+                        !categoryName
+                    ) {
+
+                        console.warn(
+                            "Invalid category:",
+                            category
+                        );
+
+                        return;
+
+                    }
+
+
+                    const option =
+                        document.createElement(
+                            "option"
+                        );
+
+
+                    option.value =
+                        categoryId;
+
+
+                    option.textContent =
+                        categoryName;
+
+
+                    select.appendChild(
+                        option
+                    );
+
+                }
+            );
+
+        }
+        catch (error) {
+
+            console.error(
+                "loadTestCategories:",
+                error
+            );
+
+
+            alert(
+                error.message ||
+                "Unable to load test categories."
+            );
+
+        }
+
+    }
+
+
+    // =============================================================
+    // LOAD TESTS BY CATEGORY
+    // =============================================================
+
+    async function loadTestsForCategory() {
+
+        const categoryId =
+            document
+                .getElementById(
+                    "test-category-select"
+                )
+                .value;
+
+
+        const testSelect =
+            document.getElementById(
+                "test-select"
+            );
+
+
+        if (!categoryId) {
+
+            testSelect.innerHTML =
+                '<option value="">' +
+                '-- Select a category first --' +
+                '</option>';
+
+
+            testSelect.disabled =
+                true;
+
+
+            return;
+
+        }
+
+
+        testSelect.disabled =
+            true;
+
+
+        testSelect.innerHTML =
+            '<option value="">' +
+            '-- Loading Tests --' +
+            '</option>';
+
+
+        try {
+
+            const url =
+                `${routes.getTestsByCategory}` +
+                `?testCategoryId=` +
+                `${encodeURIComponent(categoryId)}`;
+
+
+            console.log(
+                "Loading tests:",
+                url
+            );
+
+
+            const response =
+                await fetch(url);
+
+
+            console.log(
+                "GetTestsByCategory status:",
+                response.status
+            );
+
+
+            if (!response.ok) {
+
+                const errorText =
+                    await response.text();
+
+
+                console.error(
+                    "GetTestsByCategory error:",
+                    errorText
+                );
+
+
+                throw new Error(
+                    "Unable to load tests."
+                );
+
+            }
+
+
+            const data =
+                await response.json();
+
+
+            console.log(
+                "Tests returned:",
+                data
+            );
+
+
+            testSelect.innerHTML =
+                '<option value="">' +
+                '-- Select Test --' +
+                '</option>';
+
+
+            if (
+                !Array.isArray(data) ||
+                data.length === 0
+            ) {
+
+                testSelect.innerHTML =
+                    '<option value="">' +
+                    '-- No tests found --' +
+                    '</option>';
+
+
+                testSelect.disabled =
+                    true;
+
+
+                return;
+
+            }
+
+
+            data.forEach(
+                test => {
+
+                    // =================================================
+                    // TEST TYPE ID
+                    // =================================================
+
+                    const testTypeId =
+                        Number(
+                            test.testTypeId
+                            ?? test.testTypeID
+                            ?? test.TestTypeId
+                            ?? test.TestTypeID
+                            ?? 0
+                        );
+
+
+                    // =================================================
+                    // TEST NAME
+                    // =================================================
+
+                    const testName =
+                        test.testName
+                        ?? test.TestName
+                        ?? "";
+
+
+                    // =================================================
+                    // SAMPLE TYPE ID
+                    // =================================================
+
+                    const sampleTypeId =
+                        Number(
+                            test.sampleTypeId
+                            ?? test.sampleTypeID
+                            ?? test.SampleTypeId
+                            ?? test.SampleTypeID
+                            ?? 0
+                        );
+
+
+                    // =================================================
+                    // SAMPLE TYPE NAME
+                    // =================================================
+
+                    const sampleTypeName =
+                        test.sampleTypeName
+                        ?? test.SampleTypeName
+                        ?? "Sample";
+
+
+                    console.log(
+                        "Mapped test:",
+                        {
+                            testTypeId,
+                            testName,
+                            sampleTypeId,
+                            sampleTypeName
+                        }
+                    );
+
+
+                    if (
+                        testTypeId <= 0 ||
+                        !testName
+                    ) {
+
+                        console.warn(
+                            "Invalid test returned:",
+                            test
+                        );
+
+                        return;
+
+                    }
+
+
+                    const option =
+                        document.createElement(
+                            "option"
+                        );
+
+
+                    option.value =
+                        testTypeId;
+
+
+                    option.textContent =
+                        testName;
+
+
+                    option.dataset.sampleTypeId =
+                        sampleTypeId;
+
+
+                    option.dataset.sampleTypeName =
+                        sampleTypeName;
+
+
+                    // Disable already-added tests
+                    const alreadySelected =
+                        selectedTests.some(
+                            item =>
+                                item.testTypeId ===
+                                testTypeId
+                        );
+
+
+                    if (alreadySelected) {
+
+                        option.disabled =
+                            true;
+
+                    }
+
+
+                    testSelect.appendChild(
+                        option
+                    );
+
+                }
+            );
+
+
+            testSelect.disabled =
+                false;
+
+        }
+        catch (error) {
+
+            console.error(
+                "loadTestsForCategory:",
+                error
+            );
+
+
+            testSelect.innerHTML =
+                '<option value="">' +
+                '-- Unable to load tests --' +
+                '</option>';
+
+
+            testSelect.disabled =
+                true;
+
+
+            alert(
+                error.message ||
+                "Unable to load tests."
+            );
+
+        }
+
+    }
+
+
+    // =============================================================
+    // ADD SELECTED TEST
+    // =============================================================
+
+    function addSelectedTest() {
+
+        const testSelect =
+            document.getElementById(
+                "test-select"
+            );
+
+
+        const selectedOption =
+            testSelect.options[
+                testSelect.selectedIndex
+            ];
+
+
+        if (
+            !selectedOption ||
+            !selectedOption.value
+        ) {
+
+            alert(
+                "Please select a test."
+            );
+
+            return;
+
+        }
+
+
+        const testTypeId =
+            Number(
+                selectedOption.value
+            );
+
+
+        const testName =
+            selectedOption
+                .textContent
+                .trim();
+
+
+        const sampleTypeId =
+            Number(
+                selectedOption
+                    .dataset
+                    .sampleTypeId
+            );
+
+
+        const sampleTypeName =
+            selectedOption
+                .dataset
+                .sampleTypeName
+            || "Sample";
+
+
+        console.log(
+            "Adding selected test:",
+            {
+                testTypeId,
+                testName,
+                sampleTypeId,
+                sampleTypeName
+            }
+        );
+
+
+        // =========================================================
+        // VALID TEST
+        // =========================================================
+
+        if (
+            !testTypeId ||
+            testTypeId <= 0
+        ) {
+
+            alert(
+                "Invalid test selected."
+            );
+
+            return;
+
+        }
+
+
+        // =========================================================
+        // VALID SAMPLE TYPE
+        // =========================================================
+
+        if (
+            !sampleTypeId ||
+            sampleTypeId <= 0
+        ) {
+
+            console.error(
+                "SampleTypeID missing from selected test:",
+                selectedOption.dataset
+            );
+
+
+            alert(
+                "This test does not have a valid sample type."
+            );
+
+            return;
+
+        }
+
+
+        // =========================================================
+        // PREVENT DUPLICATES
+        // =========================================================
+
+        const alreadySelected =
+            selectedTests.some(
+                item =>
+                    item.testTypeId ===
+                    testTypeId
+            );
+
+
+        if (alreadySelected) {
+
+            alert(
+                "This test has already been selected."
+            );
+
+            return;
+
+        }
+
+
+        // =========================================================
+        // ADD TEST
+        // =========================================================
+
+        selectedTests.push(
+            {
+
+                testTypeId:
+                    testTypeId,
+
+                testName:
+                    testName,
+
+                sampleTypeId:
+                    sampleTypeId,
+
+                sampleTypeName:
+                    sampleTypeName
+
+            }
+        );
+
+
+        sampleBarcodes[
+            testTypeId
+        ] = "";
+
+
+        updateRequestSummary();
+
+
+        // Reload dropdown so selected test becomes disabled
+        loadTestsForCategory();
+
+    }
+
+
+    // =============================================================
+    // UPDATE REQUEST SUMMARY
+    // =============================================================
+
+    function updateRequestSummary() {
+
+        const list =
+            document.getElementById(
+                "selected-tests-list"
+            );
+
+
+        list.innerHTML =
+            "";
+
+
+        if (
+            selectedTests.length === 0
+        ) {
+
+            list.innerHTML =
+                '<div class="summary-empty">' +
+                'No tests selected. ' +
+                'Choose a test type to build the sample list.' +
+                '</div>';
+
+
+            return;
+
+        }
+
+
+        selectedTests.forEach(
+            test => {
+
+                const row =
+                    document.createElement(
+                        "div"
+                    );
+
+
+                row.className =
+                    "sample-summary-row";
+
+
+                // =================================================
+                // TEST DETAILS
+                // =================================================
+
+                const meta =
+                    document.createElement(
+                        "div"
+                    );
+
+
+                meta.className =
+                    "sample-summary-meta";
+
+
+                const nameContainer =
+                    document.createElement(
+                        "div"
+                    );
+
+
+                const name =
+                    document.createElement(
+                        "div"
+                    );
+
+
+                name.className =
+                    "sample-summary-label";
+
+
+                name.textContent =
+                    test.testName;
+
+
+                const sample =
+                    document.createElement(
+                        "small"
+                    );
+
+
+                sample.className =
+                    `vial-chip ${getSampleColorClass(test.sampleTypeName)}`;
+
+
+                sample.textContent =
+                    `${test.sampleTypeName} sample`;
+
+
+                nameContainer.appendChild(
+                    name
+                );
+
+
+                nameContainer.appendChild(
+                    sample
+                );
+
+
+                meta.appendChild(
+                    nameContainer
+                );
+
+
+                // =================================================
+                // BARCODE
+                // =================================================
+
+                const barcodeContainer =
+                    document.createElement(
+                        "div"
+                    );
+
+
+                barcodeContainer.className =
+                    "sample-summary-barcode";
+
+
+                const barcodeLabel =
+                    document.createElement(
+                        "label"
+                    );
+
+
+                barcodeLabel.className =
+                    "section-label";
+
+
+                barcodeLabel.textContent =
+                    "Barcode";
+
+
+                const input =
+                    document.createElement(
+                        "input"
+                    );
+
+
+                input.type =
+                    "text";
+
+
+                input.className =
+                    "form-control";
+
+
+                input.placeholder =
+                    "Enter sample barcode";
+
+
+                input.value =
+                    sampleBarcodes[
+                        test.testTypeId
+                    ] || "";
+
+
+                input.addEventListener(
+                    "input",
+                    function () {
+
+                        updateSampleBarcode(
+                            test.testTypeId,
+                            this.value
+                        );
+
+                    }
+                );
+
+
+                barcodeContainer.appendChild(
+                    barcodeLabel
+                );
+
+
+                barcodeContainer.appendChild(
+                    input
+                );
+
+
+                // =================================================
+                // REMOVE BUTTON
+                // =================================================
+
+                const removeButton =
+                    document.createElement(
+                        "button"
+                    );
+
+
+                removeButton.type =
+                    "button";
+
+
+                removeButton.className =
+                    "btn btn-secondary";
+
+
+                removeButton.textContent =
+                    "Remove";
+
+
+                removeButton.addEventListener(
+                    "click",
+                    function () {
+
+                        removeSelectedTest(
+                            test.testTypeId
+                        );
+
+                    }
+                );
+
+
+                // =================================================
+                // BUILD ROW
+                // =================================================
+
+                row.appendChild(
+                    meta
+                );
+
+
+                row.appendChild(
+                    barcodeContainer
+                );
+
+
+                row.appendChild(
+                    removeButton
+                );
+
+
+                list.appendChild(
+                    row
+                );
+
+            }
+        );
+
+    }
+
+
+    // =============================================================
+    // UPDATE BARCODE
+    // =============================================================
+
+    function updateSampleBarcode(
+        testTypeId,
+        value
+    ) {
+
+        sampleBarcodes[
+            testTypeId
+        ] = value;
+
+    }
+
+
+    // =============================================================
+    // REMOVE TEST
+    // =============================================================
+
+    function removeSelectedTest(
+        testTypeId
+    ) {
+
+        const index =
+            selectedTests.findIndex(
+                test =>
+                    test.testTypeId ===
+                    testTypeId
+            );
+
+
+        if (
+            index !== -1
+        ) {
+
+            selectedTests.splice(
+                index,
+                1
+            );
+
+        }
+
+
+        delete sampleBarcodes[
+            testTypeId
+        ];
+
+
+        updateRequestSummary();
+
+
+        loadTestsForCategory();
+
+    }
+
+
+    // =============================================================
+    // SUBMIT REQUEST
+    // =============================================================
+
+    async function submitRequest() {
+
+        // =========================================================
+        // PATIENT VALIDATION
+        // =========================================================
+
+        if (!selectedPatient) {
+
+            alert(
+                "Please select a patient."
+            );
+
+            return;
+
+        }
+
+
+        const patientId =
+            Number(
+                selectedPatient.patientId
+            );
+
+
+        if (
+            !patientId ||
+            patientId <= 0
+        ) {
+
+            console.error(
+                "Invalid selected patient:",
+                selectedPatient
+            );
+
+
+            alert(
+                "Selected patient does not have a valid Patient ID."
+            );
+
+            return;
+
+        }
+
+
+        // =========================================================
+        // REQUEST DETAILS
+        // =========================================================
+
+        const urgency =
+            document
+                .getElementById(
+                    "urgency-select"
+                )
+                .value;
+
+
+        const clinicalNotesInput =
+            document
+                .getElementById(
+                    "clinical-notes"
+                );
+
+        const clinicalNotes =
+            clinicalNotesInput
+                ? clinicalNotesInput.value.trim()
+                : "";
+
+
+        // =========================================================
+        // TEST VALIDATION
+        // =========================================================
+
+        if (
+            selectedTests.length === 0
+        ) {
+
+            alert(
+                "Please select at least one test."
+            );
+
+            return;
+
+        }
+
+
+        // =========================================================
+        // BARCODE VALIDATION
+        // =========================================================
+
+        const missingBarcode =
+            selectedTests.find(
+                test =>
+                    !String(
+                        sampleBarcodes[
+                            test.testTypeId
+                        ] || ""
+                    ).trim()
+            );
+
+
+        if (missingBarcode) {
+
+            alert(
+                `Please enter the barcode for ${missingBarcode.testName}.`
+            );
+
+            return;
+
+        }
+
+
+        // =========================================================
+        // CREATE REQUEST OBJECT
+        // =========================================================
+
+        const requestData = {
+
+            patientId:
+                patientId,
+
+            urgency:
+                urgency,
+
+            clinicalNotes:
+                clinicalNotes,
+
+            tests:
+                selectedTests.map(
+                    test => ({
+
+                        testTypeId:
+                            test.testTypeId,
+
+                        sampleTypeId:
+                            test.sampleTypeId,
+
+                        barcodeNumber:
+                            String(
+                                sampleBarcodes[
+                                    test.testTypeId
+                                ]
+                            ).trim()
+
+                    })
+                )
+
+        };
+
+
+        console.log(
+            "Request being submitted:",
+            requestData
+        );
+
+
+        // =========================================================
+        // SUBMIT TO CONTROLLER
+        // =========================================================
+
+        try {
+
+            const response =
+                await fetch(
+                    routes.createTestRequest,
+                    {
+
+                        method:
+                            "POST",
+
+                        headers: {
+
+                            "Content-Type":
+                                "application/json"
+
+                        },
+
+                        body:
+                            JSON.stringify(
+                                requestData
+                            )
+
+                    }
+                );
+
+
+            let result =
+                null;
+
+
+            try {
+
+                result =
+                    await response.json();
+
+            }
+            catch {
+            }
+
+
+            console.log(
+                "Create request response:",
+                result
+            );
+
+
+            if (!response.ok) {
+
+                throw new Error(
+                    result?.message
+                    ||
+                    "Unable to create test request."
+                );
+
+            }
+
+
+            if (
+                !result ||
+                result.success !== true
+            ) {
+
+                throw new Error(
+                    result?.message
+                    ||
+                    "Unable to create test request."
+                );
+
+            }
+
+            const storedRequests =
+                getStoredRequests();
+
+            const requestId =
+                String(
+                    result.testRequestId
+                    ?? result.requestId
+                    ?? `REQ-${Date.now()}`
+                );
+
+            storedRequests.push({
+                id: requestId,
+                patientId: patientId,
+                saIdNumber: selectedPatient?.saIdNumber || "",
+                patientName: selectedPatient
+                    ? `${selectedPatient.name || ""} ${selectedPatient.surname || ""}`.trim()
+                    : "Unknown",
+                status: "Submitted",
+                urgency,
+                clinicalNotes,
+                createdAt: new Date().toISOString(),
+                consentGranted: true,
+                tests: selectedTests.map(test => test.testName),
+                items: selectedTests.map(test => ({
+                    testType: test.testName,
+                    sampleBarcode: String(sampleBarcodes[test.testTypeId] || "").trim(),
+                    status: "Submitted"
+                }))
+            });
+
+            saveStoredRequests(storedRequests);
+
+
+            alert(
+                result.message
+                ||
+                "Test request created successfully."
+            );
+
+
+            window.location.href =
+                routes.requests;
+
+        }
+        catch (error) {
+
+            console.error(
+                "Create test request error:",
+                error
+            );
+
+
+            alert(
+                error.message
+                ||
+                "An error occurred while creating the test request."
+            );
+
+        }
+
+    }
+
+</script>
