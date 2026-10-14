@@ -90,7 +90,10 @@
             <div class="topbar-actions">
                 <input type="search" class="form-control search-control" placeholder="Search..." oninput="handleSearch(this.value)" aria-label="Search this page">
                 <button class="btn" type="button" onclick="showNotifications()">🔔</button>
-                <button class="btn btn-secondary" type="button" onclick="logoutUser()">Logout</button>
+                <form asp-controller="Account" asp-action="Logout" method="post" class="logout-form">
+                    @Html.AntiForgeryToken()
+                    <button class="btn btn-secondary" type="submit">Logout</button>
+                </form>
             </div>
         </header>
         @RenderBody()

@@ -81,7 +81,8 @@ public class AccountController(IAuthenticationRepository repository, PasswordRes
         return role switch
         {
             "Doctor" => RedirectToAction("Dashboard", "Doctor"),
-            "LabManager" or "Admin" => RedirectToAction("Dashboard", "LabManager"),
+            "LabManager" => RedirectToAction("Dashboard", "LabManager"),
+            "Admin" => RedirectToAction("Dashboard", "Admin"),
             _ => RedirectToAction("Index", "Home")
         };
     }

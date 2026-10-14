@@ -10,8 +10,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@title - NMB-HLabSys</title>
     <base href="@Url.Content("~/")" />
-    <link rel="stylesheet" href="~/css/style.css" asp-append-version="true" />
-    <script src="~/js/adminjavascript.js"></script>
+    <link rel="stylesheet" href="~/css/DoctorStyle.css" asp-append-version="true" />
 </head>
 <body>
     <nav class="sidebar">
@@ -21,14 +20,14 @@
             </div>
         </div>
         <div class="sidebar-section">Overview</div>
-        <a class="nav-item active" asp-controller="Admin" asp-action="Dashboard"><span class="nav-icon">&#9700;</span> Dashboard</a>
+        <a class="nav-item@(IsActive("Dashboard"))" asp-controller="Admin" asp-action="Dashboard"><span class="nav-icon">&#9700;</span> Dashboard</a>
         <div class="sidebar-section">Reference Data</div>
-        <a class="nav-item" asp-controller="Admin" asp-action="Condition"><span class="nav-icon">&#9874;</span> Conditions <span class="nav-badge" style="background:var(--blue)">48</span></a>
-        <a class="nav-item" asp-controller="Admin" asp-action="Allergies"><span class="nav-icon">&#9888;&#65039;</span> Allergies <span class="nav-badge" style="background:var(--blue)">31</span></a>
-        <a class="nav-item" asp-controller="Admin" asp-action="Medication"><span class="nav-icon">&#128279;</span> Medications <span class="nav-badge" style="background:var(--blue)">67</span></a>
+        <a class="nav-item@(IsActive("Condition"))" asp-controller="Admin" asp-action="Condition"><span class="nav-icon">&#9874;</span> Conditions</a>
+        <a class="nav-item@(IsActive("Allergies"))" asp-controller="Admin" asp-action="Allergies"><span class="nav-icon">&#9888;&#65039;</span> Allergies</a>
+        <a class="nav-item@(IsActive("Medication"))" asp-controller="Admin" asp-action="Medication"><span class="nav-icon">&#128279;</span> Medications</a>
         <div class="sidebar-section">System</div>
-        <a class="nav-item" asp-controller="Admin" asp-action="Users"><span class="nav-icon">&#128101;</span> System Users</a>
-        <a class="nav-item" asp-controller="Admin" asp-action="Audit"><span class="nav-icon">&#128203;</span> Audit Log</a>
+        <a class="nav-item@(IsActive("Users"))" asp-controller="Admin" asp-action="Users"><span class="nav-icon">&#128101;</span> System Users</a>
+        <a class="nav-item@(IsActive("Audit"))" asp-controller="Admin" asp-action="Audit"><span class="nav-icon">&#128203;</span> Audit Log</a>
         <div class="sidebar-footer">
             <div class="user-card">
                 <div class="avatar avatar-lg admin-avatar">SA</div>
@@ -46,14 +45,17 @@
             <div class="topbar-actions">
                 <input type="search" class="form-control search-control" placeholder="Search..." oninput="handleSearch(this.value)" aria-label="Search this page">
                 <button class="btn" type="button" onclick="showNotifications()">🔔</button>
-                <button class="btn btn-secondary" type="button" onclick="logoutUser()">Logout</button>
+                <form asp-controller="Account" asp-action="Logout" method="post" class="logout-form">
+                    @Html.AntiForgeryToken()
+                    <button class="btn btn-secondary" type="submit">Logout</button>
+                </form>
             </div>
         </header>
 
         @RenderBody()
     </main>
 
-    <script src="~/js/script.js" asp-append-version="true"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>
