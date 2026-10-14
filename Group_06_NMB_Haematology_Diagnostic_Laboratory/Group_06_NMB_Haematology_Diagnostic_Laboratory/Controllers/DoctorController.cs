@@ -3,6 +3,7 @@ using Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Cryptography;
+using Group_06_NMB_Haematology_Diagnostic_Laboratory.Services;
 
 namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 {
@@ -428,6 +429,7 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 				});
 			}
 		}
+		[Authorize(Roles = "Doctor")]
 		[HttpGet]
 		public async Task<IActionResult> GetReportRequests(
 			DateTime startDate,
@@ -459,16 +461,22 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 					await _doctorRepository.GetDoctorReportAsync(
 						doctorId,
 						startDate,
-						endDate);
+						endDate.Date.AddDays(1).AddTicks(-1));
 
-				return Json(requests);
+				var requestList = requests.ToList();
+				var pdf = DoctorRequestsPdfReport.Build(
+					requestList,
+					startDate.Date,
+					endDate.Date,
+					DateTime.Now);
+				return File(pdf, "application/pdf", $"doctor-test-requests-{startDate:yyyyMMdd}-to-{endDate:yyyyMMdd}.pdf");
 			}
-			catch (Exception ex)
+			catch (Exception)
 			{
 				return StatusCode(500, new
 				{
 					success = false,
-					message = ex.Message
+					message = "The report could not be generated. Please try again."
 				});
 			}
 		}
@@ -512,9 +520,89 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 		// PAGES
 		// ============================================================
 
+		[Authorize(Roles = "Doctor")]
 		public IActionResult Dashboard()
 		{
 			return View();
+		}
+
+		[Authorize(Roles = "Doctor")]
+		[HttpGet]
+		public async Task<IActionResult> GetDoctorDashboard()
+		{
+			var userIdValue = User.FindFirst(
+				System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+			if (!int.TryParse(userIdValue, out var userId))
+				return Unauthorized();
+
+			try
+			{
+				var doctorId = await _doctorRepository.GetDoctorIdByUserIdAsync(userId);
+				if (!doctorId.HasValue)
+					return Forbid();
+
+				var today = DateTime.Today;
+				var requests = (await _doctorRepository.GetDoctorReportAsync(
+					doctorId.Value,
+					new DateTime(1900, 1, 1),
+					today.AddDays(1).AddTicks(-1))).ToList();
+				var results = (await _doctorResultsRepository.GetDoctorResultsAsync(doctorId.Value)).ToList();
+				var alerts = (await _doctorResultsRepository.GetAbnormalAlertsAsync(
+					doctorId.Value,
+					today.AddDays(-4),
+					today.AddDays(1).AddTicks(-1))).ToList();
+
+				var submitted = requests.Where(r => string.Equals(r.Status, "Submitted", StringComparison.OrdinalIgnoreCase)).ToList();
+				var resultsRecorded = results
+					.Where(r => r.ResultValue.HasValue || !string.IsNullOrWhiteSpace(r.ResultText))
+					.Select(r => r.TestRequestId)
+					.Distinct()
+					.Count();
+				var patientCount = requests
+					.Select(r => string.IsNullOrWhiteSpace(r.PatientSaIdNumber)
+						? r.PatientName?.Trim()
+						: r.PatientSaIdNumber.Trim())
+					.Where(key => !string.IsNullOrWhiteSpace(key))
+					.Distinct(StringComparer.OrdinalIgnoreCase)
+					.Count();
+
+				return Json(new
+				{
+					submittedRequests = submitted.Count,
+					urgentRequests = submitted.Count(r => string.Equals(r.Urgency, "Urgent", StringComparison.OrdinalIgnoreCase)),
+					statRequests = submitted.Count(r => string.Equals(r.Urgency, "STAT", StringComparison.OrdinalIgnoreCase)),
+					resultsRecorded,
+					abnormalAlerts = alerts.Count,
+					patients = patientCount,
+					recentRequests = requests
+						.OrderByDescending(r => r.RequestDate)
+						.Take(5)
+						.Select(r => new
+						{
+							id = r.TestRequestId,
+							patientName = r.PatientName,
+							tests = r.Tests,
+							requestDate = r.RequestDate,
+							urgency = r.Urgency,
+							status = r.Status
+						}),
+					recentAlerts = alerts
+						.OrderByDescending(a => a.CaptureDateTime)
+						.Take(5)
+						.Select(a => new
+						{
+							patientName = a.PatientName,
+							testName = a.TestName,
+							requestId = a.TestRequestId,
+							captureDateTime = a.CaptureDateTime,
+							urgency = a.Urgency
+						})
+				});
+			}
+			catch (Exception)
+			{
+				return StatusCode(500, new { message = "The dashboard data could not be loaded. Please try again." });
+			}
 		}
 
 		[HttpGet]
