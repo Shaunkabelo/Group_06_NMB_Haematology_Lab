@@ -749,6 +749,9 @@
                 "patient-select"
             );
 
+        if (!select) {
+            return;
+        }
 
         select.value = '';
 
@@ -844,9 +847,16 @@
                 "patient-select"
             );
 
+        if (!select) {
+            return;
+        }
 
         const saIdNumber =
             sanitizeSaIdInput(select.value);
+
+        if (selectedPatient && selectedPatient.saIdNumber && selectedPatient.saIdNumber !== saIdNumber && saIdNumber) {
+            resetSelectedTests();
+        }
 
         select.value =
             saIdNumber;
@@ -1255,18 +1265,90 @@
             const stored =
                 localStorage.getItem('doctorRequests');
 
+            if (!stored) {
+                return [];
+            }
+
             const parsed =
-                stored ? JSON.parse(stored) : [];
+                JSON.parse(stored);
 
             return Array.isArray(parsed)
                 ? parsed
                 : [];
 
         }
-        catch {
+        catch (error) {
+
+            console.warn(
+                "Unable to parse stored doctor requests:",
+                error
+            );
 
             return [];
 
+        }
+
+    }
+
+
+    function saveStoredRequests(requests) {
+
+        try {
+
+            localStorage.setItem(
+                "doctorRequests",
+                JSON.stringify(
+                    Array.isArray(requests)
+                        ? requests
+                        : []
+                )
+            );
+
+        }
+        catch (error) {
+
+            console.warn(
+                "Unable to save doctor requests:",
+                error
+            );
+
+        }
+
+    }
+
+
+    function resetSelectedTests() {
+
+        selectedTests.length = 0;
+
+        Object.keys(sampleBarcodes).forEach(
+            key => delete sampleBarcodes[key]
+        );
+
+        const list =
+            document.getElementById(
+                "selected-tests-list"
+            );
+
+        if (list) {
+            list.innerHTML =
+                '<div class="summary-empty">' +
+                'No tests selected. ' +
+                'Choose a test type to build the sample list.' +
+                '</div>';
+        }
+
+        const testSelect =
+            document.getElementById(
+                "test-select"
+            );
+
+        if (testSelect) {
+            testSelect.innerHTML =
+                '<option value="">' +
+                '-- Select a category first --' +
+                '</option>';
+            testSelect.disabled = true;
         }
 
     }
@@ -2619,13 +2701,16 @@
                 .value;
 
 
-        const clinicalNotes =
+        const clinicalNotesInput =
             document
                 .getElementById(
                     "clinical-notes"
-                )
-                .value
-                .trim();
+                );
+
+        const clinicalNotes =
+            clinicalNotesInput
+                ? clinicalNotesInput.value.trim()
+                : "";
 
 
         // =========================================================
@@ -2790,9 +2875,7 @@
             }
 
             const storedRequests =
-                JSON.parse(
-                    localStorage.getItem("doctorRequests") || "[]"
-                );
+                getStoredRequests();
 
             const requestId =
                 String(
@@ -2821,10 +2904,7 @@
                 }))
             });
 
-            localStorage.setItem(
-                "doctorRequests",
-                JSON.stringify(storedRequests)
-            );
+            saveStoredRequests(storedRequests);
 
 
             alert(
