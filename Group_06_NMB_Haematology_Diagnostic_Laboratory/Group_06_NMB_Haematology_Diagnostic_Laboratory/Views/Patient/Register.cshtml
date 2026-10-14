@@ -5,6 +5,19 @@
 }
 <link rel="stylesheet" href="~/css/patient-registration.css" asp-append-version="true" />
 <section class="patient-registration">
+    <div class="registration-shell">
+        <header class="registration-header">
+            <a class="registration-brand" asp-controller="Home" asp-action="Index" aria-label="NMB-HLabSys home">
+                <span aria-hidden="true">HL</span>
+                <div><strong>NMB-HLabSys</strong><small>Laboratory management system</small></div>
+            </a>
+            <a class="registration-sign-in" asp-controller="Account" asp-action="Login">Already registered? Sign in</a>
+        </header>
+        <div class="registration-heading">
+            <span class="registration-eyebrow">Patient portal</span>
+            <h1>Create your patient account</h1>
+            <p>Your email address will be used as your username.</p>
+        </div>
     <form asp-controller="Patient" asp-action="Register" method="post" id="patientRegistrationForm">
         <div class="registration-body">
             <p class="registration-intro">Capture personal details and create login credentials using email as username.</p>
@@ -110,6 +123,7 @@
             <button type="submit" class="registration-create" id="register-btn">Create Account</button>
         </div>
     </form>
+    </div>
 </section>
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
