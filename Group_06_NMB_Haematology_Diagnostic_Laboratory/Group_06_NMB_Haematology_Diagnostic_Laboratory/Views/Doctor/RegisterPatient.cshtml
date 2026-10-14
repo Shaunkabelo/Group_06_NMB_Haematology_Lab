@@ -1,0 +1,77 @@
+@{
+    ViewData["Title"] = "Register Patient";
+    Layout = "~/Views/Shared/_LayoutDoctor.cshtml";
+}
+
+<div class="page-body">
+    <div class="section-header">
+        <div class="section-title">Register Patient</div>
+        <div class="section-sub">Capture personal details and create login credentials using email as the username.</div>
+    </div>
+
+    <section class="card">
+        <div class="card-body">
+            <div class="auth-message info" role="status">
+                Patient account creation is not connected yet. Information entered here will not be saved.
+            </div>
+
+            <form id="patientRegistrationForm">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label" for="Name">Name <span class="required">*</span></label>
+                        <input id="Name" name="Name" type="text" class="form-control" placeholder="e.g. Name" autocomplete="given-name" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="Surname">Surname <span class="required">*</span></label>
+                        <input id="Surname" name="Surname" type="text" class="form-control" placeholder="e.g. Surname" autocomplete="family-name" required>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label" for="SaIdNumber">South African ID Number <span class="required">*</span></label>
+                        <input id="SaIdNumber" name="SaIdNumber" data-digits="13" inputmode="numeric" minlength="13" maxlength="13" pattern="[0-9]{13}" type="text" class="form-control" placeholder="13-digit SA ID" required>
+                        <div class="form-hint">Date of birth must match the first 6 digits.</div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="DateOfBirth">Date of Birth <span class="required">*</span></label>
+                        <input id="DateOfBirth" name="DateOfBirth" type="date" class="form-control" required>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label" for="Cellphone">Cellphone Number <span class="required">*</span></label>
+                        <input id="Cellphone" name="Cellphone" data-digits="10" inputmode="numeric" minlength="10" maxlength="10" pattern="[0-9]{10}" type="tel" class="form-control" placeholder="e.g. 0677419669" autocomplete="tel" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="Email">Email Address / Username <span class="required">*</span></label>
+                        <input id="Email" name="Email" type="email" class="form-control" placeholder="patient@example.com" autocomplete="email" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="HomeAddress">Home Address <span class="required">*</span></label>
+                    <input id="HomeAddress" name="HomeAddress" type="text" class="form-control" placeholder="Street address, suburb, city" autocomplete="street-address" required>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label" for="Password">Password <span class="required">*</span></label>
+                        <input id="Password" name="Password" type="password" class="form-control" placeholder="Create password" autocomplete="new-password" required>
+                        <div class="form-hint">Use 8+ characters, uppercase, number and special character.</div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="ConfirmPassword">Confirm Password <span class="required">*</span></label>
+                        <input id="ConfirmPassword" name="ConfirmPassword" type="password" class="form-control" placeholder="Confirm password" autocomplete="new-password" required>
+                    </div>
+                </div>
+
+                <div class="btn-row">
+                    <button type="button" class="btn btn-secondary" onclick="document.getElementById('patientRegistrationForm').reset()">Clear form</button>
+                    <button type="button" class="btn btn-primary" disabled title="Patient account creation is not connected yet">Create Account</button>
+                </div>
+            </form>
+        </div>
+    </section>
+</div>

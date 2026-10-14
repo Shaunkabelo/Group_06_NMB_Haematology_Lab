@@ -636,6 +636,13 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 			return View("Accounts");
 		}
 
+		[Authorize(Roles = "Doctor")]
+		[HttpGet]
+		public IActionResult RegisterPatient()
+		{
+			return View();
+		}
+
 		public IActionResult CreateRequest()
 		{
 			return View();
