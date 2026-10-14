@@ -1,0 +1,126 @@
+@{
+    ViewData["Title"] = "Medications";
+}
+<div class="main">
+    @* <div class="topbar">
+    <div class="topbar-title">Medications</div>
+    <div class="topbar-search"><span>&#128269;</span><input type="text" placeholder="Search reference data…" /></div>
+    <button class="btn btn-amber" style="font-size:13px;padding:7px 14px;text-decoration:none;" onclick="openAddMedication()">+ Add Medication</button>
+    <button class="btn-notif">&#128276; <span class="notif-dot">2</span></button>
+    <div class="avatar avatar-md admin-avatar">SA</div> *@
+</div>
+<div class="page-body">
+    <div class="section-header">
+        <!--<div><div class="section-title">Medications</div>--><div class="section-sub">Manage categorised medications referenced in patient records</div>
+
+        <button class="btn btn" style="font-size:13px;padding:7px 14px;text-decoration:none;" onclick="openAddMedication()">+ Add Medication</button>
+    </div>
+
+</div>
+<div class="card">
+    <div class="tbl-top">
+        <div style="display:flex;gap:10px;align-items:center;">
+            <div class="tbl-search">&#128269;  <input type="text" placeholder="Search medications…" oninput="filterTable('med-tbl',this.value)" /></div>
+            <select id="medication-category-filter" class="form-control compact-select" onchange="filterTable('med-tbl', document.querySelector('#med-tbl').closest('.card').querySelector('.tbl-search input').value)">
+                <option value="All">All categories</option>
+                @foreach (var category in ViewBag.MedicationCategories as IEnumerable<string> ?? Enumerable.Empty<string>())
+                {
+                    <option value="@category">@category</option>
+                }
+            </select>
+        </div>
+        <span class="badge badge-gray">@((ViewBag.Medications as IEnumerable<Group_06_NMB_Haematology_Diagnostic_Lab.Data.Models.MedicationWithPatientCount>)?.Count() ?? 0) entries</span>
+    </div>
+    <div style="overflow-x:auto;">
+        <table id="med-tbl">
+            <thead><tr><th>Medication Name</th><th>Category</th><th>Description</th><th>Patients</th><th>Status</th><th>Actions</th></tr></thead>
+            <tbody>
+                @foreach (var medication in (ViewBag.Medications as IEnumerable<Group_06_NMB_Haematology_Diagnostic_Lab.Data.Models.MedicationWithPatientCount> ?? Enumerable.Empty<Group_06_NMB_Haematology_Diagnostic_Lab.Data.Models.MedicationWithPatientCount>()).OrderBy(item => item.MedicationName.Trim(), StringComparer.CurrentCultureIgnoreCase))
+                {
+                    <tr data-is-active="@medication.IsActive.ToString().ToLowerInvariant()" data-description="@medication.MedicationDescription">
+                        <td><strong>@medication.MedicationName</strong></td>
+                        <td><span class="pill-m">@medication.Category</span></td>
+                        <td class="td-muted">@medication.MedicationDescription</td>
+                        <td>@medication.TotalPatients</td>
+<td><span class="badge @(medication.IsActive ? "badge-green" : "badge-gray")">@(medication.IsActive ? "Active" : "Inactive")</span></td>
+                        <td><div style="display:flex;gap:6px;"><button class="btn btn-secondary btn-sm" onclick="editMedication(this)">Edit</button><button class="btn btn-secondary btn-sm" type="button" onclick="toggleMedicationStatus(this)">@(medication.IsActive ? "Deactivate" : "Activate")</button></div></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+</div>
+</div>
+<div id="modal-add" class="modal-overlay">
+    <div class="modal">
+        <div class="modal-header"><span class="modal-title">Add Medication</span><button class="modal-close" onclick="closeModal('modal-add')">&#x2715;</button></div>
+        <div class="modal-body">
+            <div class="form-row">
+                <div class="form-group"><label class="form-label">Medication Name *</label><input id="inp-name" class="form-control" type="text" placeholder="e.g. Metformin" /></div>
+                <div class="form-group">
+                    <label class="form-label">Category *</label>
+                    <select id="inp-category" class="form-control">
+                        @foreach (var category in ViewBag.MedicationCategories as IEnumerable<string> ?? Enumerable.Empty<string>())
+                        {
+                            <option value="@category">@category</option>
+                        }
+                    </select>
+                </div>
+            </div>
+            <div class="form-group"><label class="form-label">Description / Indication</label><textarea id="inp-desc" class="form-control" rows="3" placeholder="Brief clinical description…"></textarea></div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeModal('modal-add')">Cancel</button>
+            <button class="btn btn-amber" onclick="saveMed()">Save Medication</button>
+        </div>
+    </div>
+</div>
+@Html.AntiForgeryToken()
+<div id="toast"></div>
+@section Scripts {
+    <script>
+        let currentMedicationEditRow = null;
+        function openModal(id) { document.getElementById(id).classList.add('open'); }
+        function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+        document.addEventListener('click', e => { if (e.target.classList.contains('modal-overlay')) e.target.classList.remove('open'); });
+        function getActiveCategory() { const select = document.getElementById('medication-category-filter'); return select ? select.value.toLowerCase() : 'all'; }
+        function updateMedicationFilter(tableId, search) { const lq = (search || '').toLowerCase(); const activeCategory = getActiveCategory(); document.querySelectorAll('#' + tableId + ' tbody tr').forEach(r => { const rowText = r.textContent.toLowerCase(); const catText = r.cells[1].textContent.trim().toLowerCase(); const matchesSearch = !lq || rowText.includes(lq); const matchesCategory = activeCategory === 'all' || catText === activeCategory; r.style.display = matchesSearch && matchesCategory ? '' : 'none'; }); }
+        function filterTable(tableId, q) { updateMedicationFilter(tableId, q); }
+        function openAddMedication() { currentMedicationEditRow = null; document.getElementById('inp-name').value = ''; const categorySelect = document.getElementById('inp-category'); if (categorySelect.options.length) categorySelect.selectedIndex = 0; document.getElementById('inp-desc').value = ''; document.querySelector('#modal-add .modal-title').textContent = 'Add Medication'; document.querySelector('#modal-add .modal-footer .btn-amber').textContent = 'Save Medication'; openModal('modal-add'); }
+        function editMedication(btn) { currentMedicationEditRow = btn.closest('tr'); if (!currentMedicationEditRow) return; const cells = currentMedicationEditRow.cells; document.getElementById('inp-name').value = cells[0].textContent.trim(); document.getElementById('inp-category').value = cells[1].textContent.trim(); document.getElementById('inp-desc').value = currentMedicationEditRow.dataset.description || ''; document.querySelector('#modal-add .modal-title').textContent = 'Edit Medication'; document.querySelector('#modal-add .modal-footer .btn-amber').textContent = 'Update Medication'; openModal('modal-add'); }
+        async function saveMed() {
+            const n = document.getElementById('inp-name').value.trim(); const nameOk = validateText('inp-name', 'Medication name', 3, 150, /^[A-Za-z0-9 /()'.,-]+$/); const descOk = validateOptionalText('inp-desc', 'Description', 500, /^[A-Za-z0-9 /()'.,;:-]+$/); if (!nameOk.ok || !descOk.ok) return; if (hasDuplicateName('med-tbl', n, currentMedicationEditRow)) { setFieldError(document.getElementById('inp-name'), 'Medication name must be unique.'); return; } const category = document.getElementById('inp-category').value; const description = document.getElementById('inp-desc').value.trim(); const token = document.querySelector('input[name="__RequestVerificationToken"]').value; if (currentMedicationEditRow) { const oldMedicationName = currentMedicationEditRow.cells[0].textContent.trim(); const data = new URLSearchParams({ oldMedicationName, medicationName: n, categoryName: category, description, __RequestVerificationToken: token }); const response = await fetch('@Url.Action("UpdateMedication", "Admin")', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' }, body: data }); const result = await response.json().catch(() => ({})); if (!response.ok) { toast(result.message || 'Unable to update medication.'); return; } toast(result.message || 'Medication updated.'); window.location.reload(); return; } else { const data = new URLSearchParams({ medicationName: n, categoryName: category, description, __RequestVerificationToken: token }); const response = await fetch('@Url.Action("AddMedication", "Admin")', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' }, body: data }); const result = await response.json().catch(() => ({})); if (!response.ok) { toast(result.message || 'Unable to add medication.'); return; } toast(result.message || 'Medication added.'); window.location.reload(); return; }
+            document.getElementById('inp-name').value = ''; document.getElementById('inp-desc').value = ''; updateMedicationFilter('med-tbl', document.querySelector('#med-tbl').closest('.card').querySelector('.tbl-search input').value); closeModal('modal-add');
+        }
+            async function toggleMedicationStatus(button) {
+            const row = button.closest('tr');
+            if (!row) return;
+            const medicationName = row.cells[0].textContent.trim();
+            const activate = row.dataset.isActive !== 'true';
+            const action = activate ? 'Activate' : 'Deactivate';
+            if (!confirm(`${action} the medication ${medicationName}?`)) return;
+            const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+            const data = new URLSearchParams({medicationName, isActive: String(activate ? 1 : 0), __RequestVerificationToken: token});
+            button.disabled = true;
+            try {
+                const response = await fetch('@Url.Action("SetMedicationStatus", "Admin")', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'},
+                    body: data
+                });
+                const result = await response.json().catch(() => ({}));
+                if (!response.ok) {
+                    toast(result.message || 'Unable to update medication status.');
+                    button.disabled = false;
+                    return;
+                }
+                toast(result.message);
+                window.location.reload();
+            } catch {
+                toast('Unable to reach the server.');
+                button.disabled = false;
+            }
+        }
+</script>
+}

@@ -6,7 +6,7 @@
 <div class="landing-shell">
     <nav class="landing-nav">
         <a class="landing-brand" asp-controller="Home" asp-action="Index"><span class="brand-mark">HL</span> NMB-HLabSys</a>
-        <a class="landing-login" data-auth-transition asp-controller="Account" asp-action="Login">Sign in <span aria-hidden="true">→</span></a>
+        <a class="landing-login" href="@Url.Action("Login", "Account")">Sign in <span aria-hidden="true">→</span></a>
     </nav>
 
     <main class="landing-content">
@@ -14,7 +14,7 @@
             <p class="auth-eyebrow">Nelson Mandela Bay Haematology Diagnostic Laboratory</p>
             <h1>One clear place for the work behind every result.</h1>
             <p class="landing-lede">NMB-HLabSys brings test catalogues, staff management and consumable control into one focused laboratory workspace.</p>
-            <a class="landing-cta" data-auth-transition asp-controller="Account" asp-action="Login">Enter the workspace <span aria-hidden="true">↗</span></a>
+            <a class="landing-cta" href="@Url.Action("Login", "Account")">Enter the workspace <span aria-hidden="true">↗</span></a>
         </div>
         <div class="landing-visual" aria-hidden="true">
             <div class="visual-line visual-line-one"></div>
