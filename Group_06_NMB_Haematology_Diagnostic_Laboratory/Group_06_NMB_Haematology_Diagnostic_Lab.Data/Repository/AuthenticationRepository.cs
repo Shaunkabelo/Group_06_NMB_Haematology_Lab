@@ -38,4 +38,18 @@ public class AuthenticationRepository(ISqlDataAccess db) : IAuthenticationReposi
 
         return results.Select(id => (int?)id).FirstOrDefault();
     }
+
+    public async Task<int?> GetAdminIdByUserId(int userId)
+    {
+        return await db.QueryFirstOrDefaultAsync<int?>(
+            """
+            SELECT a.AdminID
+            FROM dbo.Admin AS a
+            INNER JOIN dbo.[User] AS u ON u.UserID = a.UserID
+            WHERE a.UserID = @UserID
+              AND u.IsActive = 1
+              AND u.[Role] = 'Admin';
+            """,
+            new { UserID = userId });
+    }
 }

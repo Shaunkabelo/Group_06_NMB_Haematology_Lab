@@ -75,6 +75,22 @@ public class AccountController(IAuthenticationRepository repository, PasswordRes
             claims.Add(new Claim("PatientID", patientId.Value.ToString()));
         }
 
+        if (string.Equals(state.Role, "Admin", StringComparison.OrdinalIgnoreCase))
+        {
+            var adminId = await repository.GetAdminIdByUserId(user.UserId);
+
+            if (!adminId.HasValue || adminId.Value <= 0)
+            {
+                ModelState.AddModelError(
+                    string.Empty,
+                    "Your administrator account could not be verified. Please contact support.");
+
+                return View();
+            }
+
+            claims.Add(new Claim("AdminID", adminId.Value.ToString()));
+        }
+
         await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme,
             new ClaimsPrincipal(new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme)),
             new AuthenticationProperties

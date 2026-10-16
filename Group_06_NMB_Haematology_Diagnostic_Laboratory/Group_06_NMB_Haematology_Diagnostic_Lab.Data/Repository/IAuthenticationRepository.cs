@@ -6,6 +6,7 @@ public interface IAuthenticationRepository
     Task<User?> GetActiveUserByEmail(string email);
     Task<User?> GetActiveUserById(int userId);
     Task<int?> GetPatientIdByUserId(int userId);
+    Task<int?> GetAdminIdByUserId(int userId);
     Task<bool> UpdateProfile(int userId, Guid securityStamp, string name, string surname, string email, string? cellphone, string? homeAddress);
     Task RecordLogin(int userId);
     Task<AuthenticationState?> GetState(int userId);
