@@ -7,7 +7,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@title - NMB-HLabSys</title>
-    <base href="@Url.Content("~/")" />
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/DoctorStyle.css" asp-append-version="true" />
 </head>
 <body>
@@ -16,7 +16,7 @@
         <nav class="nav-menu">
             <div class="sidebar-section">Laboratory</div>
             <a asp-controller="LabManager" asp-action="Dashboard" class="nav-item active">
-                <span class="nav-icon" aria-hidden="true">⌂</span>
+                <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 3h8v8H3V3Zm10 0h8v5h-8V3ZM13 10h8v11h-8V10ZM3 13h8v8H3v-8Z" /></svg></span>
                 Dashboard
             </a>
         </nav>

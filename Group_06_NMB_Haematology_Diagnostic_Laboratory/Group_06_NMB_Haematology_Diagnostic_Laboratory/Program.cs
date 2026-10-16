@@ -8,6 +8,13 @@ Dapper.DefaultTypeMap.MatchNamesWithUnderscores = true;
 
 var builder = WebApplication.CreateBuilder(args);
 
+var sqlConnectionString = builder.Configuration.GetConnectionString("conn");
+if (string.IsNullOrWhiteSpace(sqlConnectionString))
+{
+    throw new InvalidOperationException(
+        "The SQL connection string is not configured. Set ConnectionStrings:conn in user secrets locally or ConnectionStrings__conn in the deployed environment.");
+}
+
 // Add services to the container.
 builder.Services.AddControllersWithViews();
 builder.Services.AddScoped<IAccountEmailSender, SmtpAccountEmailSender>();
