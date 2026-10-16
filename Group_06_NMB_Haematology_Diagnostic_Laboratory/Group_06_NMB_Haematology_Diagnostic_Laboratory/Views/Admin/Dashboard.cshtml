@@ -60,7 +60,7 @@
       <a class="stat-card clickable" asp-controller="Admin" asp-action="Conditions" style="--accent:var(--blue)"><div class="stat-emoji">&#9874;</div><div class="stat-label">Medical Conditions</div><div class="stat-value">@ViewBag.MedicalConditionCount</div><div class="stat-sub">Across @Model.MedicalConditionCategories.Count() categories</div></a>
       <a class="stat-card clickable" asp-controller="Admin" asp-action="Allergies" style="--accent:var(--red)"><div class="stat-emoji">&#9888;&#65039;</div><div class="stat-label">Allergies</div><div class="stat-value">@ViewBag.AllergyCount</div><div class="stat-sub">Listed allergies</div></a>
       <a class="stat-card clickable" asp-controller="Admin" asp-action="Medication" style="--accent:var(--teal)"><div class="stat-emoji">&#128279;</div><div class="stat-label">Medications</div><div class="stat-value">@ViewBag.MedicationCount</div><div class="stat-sub">Listed medications</div></a>
-      <a class="stat-card clickable" asp-controller="Admin" asp-action="Users" style="--accent:#F5A623"><div class="stat-emoji">&#128101;</div><div class="stat-label">Registered Users</div><div class="stat-value">@ViewBag.UserCount</div><div class="stat-sub">Total system users</div></a>
+      <a class="stat-card clickable" asp-controller="Admin" asp-action="Categories" style="--accent:#F5A623"><div class="stat-emoji">&#128194;</div><div class="stat-label">Categories</div><div class="stat-value">@totalCategories</div><div class="stat-sub">Condition, allergy and medication categories</div></a>
     </div>
     <div>
         <br>
