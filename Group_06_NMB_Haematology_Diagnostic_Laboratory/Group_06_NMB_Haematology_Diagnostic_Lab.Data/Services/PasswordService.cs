@@ -27,7 +27,7 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Services
             string password,
             string storedHash,
             string storedSalt)
-        {s
+        {
             return Group_06_NMB_Haematology_Diagnostic_Lab.Data.Helpers.PasswordHelper
                 .VerifyPassword(password, storedHash, storedSalt);
         }

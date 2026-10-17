@@ -163,8 +163,20 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
 
         public Task<IEnumerable<PatientRequestDetail>> GetPatientRequestProgress(int patientId, int testRequestId)
         {
-            return _db.GetData<PatientRequestDetail, object>(
-                "dbo.sp_Patient_GetTestRequestProgress",
+            return _db.LoadData<PatientRequestDetail, object>(
+                """
+                SELECT tt.TestName, trtt.Status AS TestStatus,
+                lt.LabTechnicianID, lt.StartDateTime,
+                NULLIF(LTRIM(RTRIM(CONCAT(u.Name, ' ', u.Surname))), '') AS LabTechnicianName
+                FROM dbo.TestRequest tr
+                INNER JOIN dbo.TestRequestTestType trtt ON tr.TestRequestID = trtt.TestRequestID
+                INNER JOIN dbo.TestType tt ON trtt.TestTypeID = tt.TestTypeID
+                LEFT JOIN dbo.LabTest lt ON trtt.TestRequestTestTypeID = lt.TestRequestTestTypeID
+                LEFT JOIN dbo.LabTechnician tech ON tech.LabTechnicianID = lt.LabTechnicianID
+                LEFT JOIN dbo.[User] u ON u.UserID = tech.UserID
+                WHERE tr.TestRequestID = @TestRequestID AND tr.PatientID = @PatientID
+                ORDER BY tt.TestName ASC;
+                """,
                 new { PatientID = patientId, TestRequestID = testRequestId });
         }
 
