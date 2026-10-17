@@ -17,6 +17,7 @@ if (string.IsNullOrWhiteSpace(sqlConnectionString))
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
+builder.Services.AddScoped<AccountNavigation>();
 builder.Services.AddScoped<IAccountEmailSender, SmtpAccountEmailSender>();
 builder.Services.AddScoped<AccountCookieEvents>();
 builder.Services.AddSingleton<PasswordResetQueue>();

@@ -25,10 +25,10 @@
     </section>
 
     <section class="alerts-priority-grid">
-        <div class="priority-tile abnormal"><div>Abnormal</div><strong id="alerts-abnormal-count">0</strong></div>
-        <div class="priority-tile urgent"><div>Urgent</div><strong id="alerts-urgent-count">0</strong></div>
-        <div class="priority-tile routine"><div>Routine</div><strong id="alerts-routine-count">0</strong></div>
-        <div class="priority-tile stat"><div>STAT</div><strong id="alerts-stat-count">0</strong></div>
+        <button class="priority-tile abnormal is-selected" type="button" data-alert-filter="all" aria-pressed="true"><div>Abnormal</div><strong id="alerts-abnormal-count">0</strong></button>
+        <button class="priority-tile urgent" type="button" data-alert-filter="urgent" aria-pressed="false"><div>Urgent</div><strong id="alerts-urgent-count">0</strong></button>
+        <button class="priority-tile routine" type="button" data-alert-filter="routine" aria-pressed="false"><div>Routine</div><strong id="alerts-routine-count">0</strong></button>
+        <button class="priority-tile stat" type="button" data-alert-filter="stat" aria-pressed="false"><div>STAT</div><strong id="alerts-stat-count">0</strong></button>
     </section>
 
     <section id="alerts-empty-panel" class="alerts-empty-panel" hidden>
@@ -53,6 +53,25 @@
 <style>
     .doctor-alerts-page .alerts-table {
         width: 100%;
+    }
+
+    .doctor-alerts-page .priority-tile {
+        width: 100%;
+        color: inherit;
+        font: inherit;
+        text-align: left;
+        cursor: pointer;
+        transition: box-shadow 120ms ease, transform 120ms ease;
+    }
+
+    .doctor-alerts-page .priority-tile:hover,
+    .doctor-alerts-page .priority-tile.is-selected {
+        box-shadow: 0 0 0 2px #245b8f;
+    }
+
+    .doctor-alerts-page .priority-tile:focus-visible {
+        outline: 3px solid #245b8f;
+        outline-offset: 3px;
     }
 
     .doctor-alerts-page .alert-row {
@@ -109,6 +128,8 @@
     const alertsUrl = '@Url.Action("GetDoctorAlerts", "Doctor")';
     const requestDetailsUrl = '@Url.Action("RequestDetails", "Doctor")';
     let alertLoadVersion = 0;
+    let selectedAlertFilter = 'all';
+    let loadedAbnormalAlerts = [];
 
     function addDays(date, days) {
         const next = new Date(date);
@@ -162,23 +183,32 @@
     }
 
     function displayAlerts(alerts) {
+        loadedAbnormalAlerts = alerts;
+        updatePriorityCounts(alerts);
+        renderVisibleAlerts();
+    }
+
+    function renderVisibleAlerts() {
         const tablePanel = document.getElementById('alerts-table-panel');
         const emptyPanel = document.getElementById('alerts-empty-panel');
         const tbody = document.getElementById('alerts-tbody');
-        updatePriorityCounts(alerts);
+        const visibleAlerts = selectedAlertFilter === 'all'
+            ? loadedAbnormalAlerts
+            : loadedAbnormalAlerts.filter(item => String(item.urgency ?? '').toLowerCase() === selectedAlertFilter);
 
-        if (!alerts.length) {
+        if (!visibleAlerts.length) {
             tablePanel.hidden = true;
             emptyPanel.hidden = false;
-            document.getElementById('alerts-empty-text').textContent =
-                'No abnormal results were found for the selected period.';
+            document.getElementById('alerts-empty-text').textContent = loadedAbnormalAlerts.length
+                ? `No ${selectedAlertFilter.toUpperCase()} abnormal results were found for the selected period.`
+                : 'No abnormal results were found for the selected period.';
             tbody.innerHTML = '';
             return;
         }
 
         tablePanel.hidden = false;
         emptyPanel.hidden = true;
-        tbody.innerHTML = alerts.map(item => {
+        tbody.innerHTML = visibleAlerts.map(item => {
             const id = Number(item.testRequestId);
             if (!Number.isSafeInteger(id) || id <= 0) return '';
             const urgency = String(item.urgency ?? '').toLowerCase();
@@ -240,6 +270,7 @@
             if (version !== alertLoadVersion) return;
             console.error('Doctor alerts:', error);
             updatePriorityCounts([]);
+            loadedAbnormalAlerts = [];
             tbody.innerHTML = '';
             tablePanel.hidden = true;
             emptyPanel.hidden = false;
@@ -263,6 +294,17 @@
         document.getElementById('alerts-start-date').value = toDateInputValue(addDays(today, -5));
         document.getElementById('alerts-end-date').value = toDateInputValue(today);
         const tbody = document.getElementById('alerts-tbody');
+        document.querySelectorAll('[data-alert-filter]').forEach(button => {
+            button.addEventListener('click', () => {
+                selectedAlertFilter = button.dataset.alertFilter || 'all';
+                document.querySelectorAll('[data-alert-filter]').forEach(card => {
+                    const selected = card === button;
+                    card.classList.toggle('is-selected', selected);
+                    card.setAttribute('aria-pressed', String(selected));
+                });
+                renderVisibleAlerts();
+            });
+        });
         tbody.addEventListener('click', event => {
             const row = event.target.closest('.alert-row');
             if (row) openAlertRequest(row);

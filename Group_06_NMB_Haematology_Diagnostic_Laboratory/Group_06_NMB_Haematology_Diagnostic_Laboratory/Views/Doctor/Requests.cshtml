@@ -29,7 +29,7 @@
                     <option>STAT</option>
                 </select>
             </div>
-            <a class="btn btn-primary" href="/Doctor/CreateRequest">+ New Test Request</a>
+            <a class="btn btn-primary" asp-controller="Doctor" asp-action="CreateRequest">+ New Test Request</a>
         </div>
     </div>
 
@@ -135,7 +135,17 @@
             <button class="modal-close" type="button" onclick="closeCancelRequestModal()">×</button>
         </div>
         <div class="modal-body">
+            @Html.AntiForgeryToken()
             <p id="cancel-request-summary" style="margin-bottom: 14px; color: #4A5563;"></p>
+            <div class="form-group">
+                <label class="form-label" for="cancelled-by">Cancelled by</label>
+                <input id="cancelled-by" class="form-control" value="@(User.Identity?.Name ?? "Doctor")" readonly />
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="cancelled-date">Cancellation date and time</label>
+                <input id="cancelled-date" class="form-control" readonly />
+                <small>Preview; SQL Server records the cancellation date and time when you confirm.</small>
+            </div>
             <div class="form-group">
                 <label class="form-label" for="cancel-request-reason">Reason for cancellation</label>
                 <textarea id="cancel-request-reason" class="form-control" rows="5" placeholder="Enter the reason for cancelling this test request..." required></textarea>
@@ -150,6 +160,8 @@
 
 <script>
     const requestStorageKey = 'doctorRequests';
+    const cancelRequestUrl = new URL('@Url.Action("CancelTestRequest", "Doctor")', window.location.origin).toString();
+    const requestDetailsUrl = '@Url.Action("RequestDetails", "Doctor")';
     let pendingCancelRequestId = null;
 
     function getStoredRequests() {
@@ -273,7 +285,7 @@
         requests.slice().reverse().forEach(request => {
             const displayStatus = normalizeStatus(request.status);
             const canCancel = canDoctorCancel(request.status);
-            const cancelButton = canCancel ? ` <button type="button" class="btn btn-sm btn-danger" onclick="openCancelRequestModal('${request.id}')">Cancel</button>` : '';
+            const cancelButton = canCancel ? ` <button type="button" class="btn btn-sm btn-danger" data-cancel-request="${String(request.id)}">Cancel</button>` : '';
             const cancellationDate = formatCancellationDate(request.cancelledDate || request.cancelledAt || request.cancelledOn);
             const cancellationNote = displayStatus === 'Cancelled'
                 ? `<span class="cancel-reason-note">Reason: ${request.cancellationReason || 'No reason captured.'}${isTechnicianCancelled(request) ? ' Cancelled by lab technician.' : ''} Date: ${cancellationDate}</span>`
@@ -287,7 +299,7 @@
                 <td><span class="${getBadgeClass(displayStatus, 'status')}">${displayStatus}</span>${cancellationNote}</td>
                 <td>${Array.isArray(request.tests) ? request.tests.length + ' test(s)' : '0 test(s)'}</td>
                 <td>
-                    <a class="btn btn-sm btn-primary" href="/Doctor/RequestDetails?id=${request.id}">View</a>${cancelButton}
+                    <a class="btn btn-sm btn-primary" href="${requestDetailsUrl}?id=${encodeURIComponent(request.id)}">View</a>${cancelButton}
                 </td>
             `;
             tbody.appendChild(row);
@@ -295,13 +307,14 @@
     }
 
     function openCancelRequestModal(requestId) {
-        const request = (getStoredRequests() || []).find(item => item.id === requestId);
-        if (!request) return;
-
+        const request = getStoredRequests().find(item => String(item.id) === String(requestId));
         pendingCancelRequestId = requestId;
-        document.getElementById('cancel-request-summary').textContent = `${request.id} for ${request.patientName}`;
+        document.getElementById('cancel-request-summary').textContent = request
+            ? `${request.id} for ${request.patientName || 'patient'}`
+            : `Test request ${requestId}`;
         document.getElementById('cancel-request-reason').value = '';
         document.getElementById('cancel-request-reason').classList.remove('field-error');
+        document.getElementById('cancelled-date').value = new Date().toLocaleString();
         const modal = document.getElementById('modal-cancel-request');
         modal.classList.add('is-open');
         modal.setAttribute('aria-hidden', 'false');
@@ -319,7 +332,23 @@
         document.getElementById('cancel-request-reason').classList.remove('field-error');
     }
 
-    function submitCancelRequest() {
+    function toast(message, type = 'info') {
+        let notice = document.getElementById('requests-toast');
+        if (!notice) {
+            notice = document.createElement('div');
+            notice.id = 'requests-toast';
+            notice.setAttribute('role', 'status');
+            notice.style.cssText = 'position:fixed;right:24px;bottom:24px;z-index:2000;max-width:min(420px,calc(100vw - 32px));padding:14px 18px;border-radius:10px;color:#fff;box-shadow:0 8px 24px rgba(0,0,0,.2);font-size:14px;';
+            document.body.appendChild(notice);
+        }
+        notice.textContent = message;
+        notice.style.background = type === 'error' ? '#a4262c' : type === 'warning' ? '#8a5a00' : '#176b4d';
+        notice.hidden = false;
+        clearTimeout(notice.hideTimer);
+        notice.hideTimer = setTimeout(() => { notice.hidden = true; }, 4500);
+    }
+
+    async function submitCancelRequest() {
         const reasonInput = document.getElementById('cancel-request-reason');
         const reason = reasonInput.value.trim();
         if (!reason) {
@@ -330,31 +359,78 @@
         }
         reasonInput.classList.remove('field-error');
 
-        const requests = getStoredRequests() || [];
-        const updated = requests.map(request => {
-            if (request.id === pendingCancelRequestId) {
-                const cancelledDate = new Date().toISOString();
-                return {
-                    ...request,
-                    status: 'Cancelled',
-                    cancellationReason: reason,
-                    cancelledAt: cancelledDate,
-                    cancelledDate: cancelledDate,
-                    CancelledDate: cancelledDate,
-                    cancelledBy: 'Doctor'
-                };
+        const testRequestId = Number(pendingCancelRequestId);
+        if (!Number.isSafeInteger(testRequestId) || testRequestId <= 0) {
+            toast('This request has no valid database ID. Reload the request from the database before cancelling it.', 'error');
+            return;
+        }
+
+        const antiforgeryToken = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+        if (!antiforgeryToken) {
+            toast('Security token is missing. Refresh the page and try again.', 'error');
+            return;
+        }
+
+        const cancelButton = document.querySelector('#modal-cancel-request .btn-danger');
+        cancelButton.disabled = true;
+        try {
+            const response = await fetch(cancelRequestUrl, {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'RequestVerificationToken': antiforgeryToken,
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({ testRequestId, reason })
+            });
+            const responseText = await response.text();
+            let result = {};
+            try {
+                result = responseText ? JSON.parse(responseText) : {};
+            } catch {
+                throw new Error(`The server returned an unexpected response (HTTP ${response.status}).`);
             }
-            return request;
-        });
-        saveStoredRequests(updated);
-        closeCancelRequestModal();
-        renderRequests();
-        toast('Test request cancelled.', 'warning');
+            if (!response.ok || result.success !== true) {
+                throw new Error(result.message || `Could not save cancellation (HTTP ${response.status}).`);
+            }
+
+            const requests = getStoredRequests() || [];
+            const updated = requests.map(request => {
+                if (String(request.id) === String(pendingCancelRequestId)) {
+                    const cancelledDate = new Date().toISOString();
+                    return {
+                        ...request,
+                        status: 'Cancelled',
+                        cancellationReason: reason,
+                        cancelledAt: cancelledDate,
+                        cancelledDate: cancelledDate,
+                        CancelledDate: cancelledDate,
+                        cancelledBy: document.getElementById('cancelled-by').value || 'Doctor'
+                    };
+                }
+                return request;
+            });
+            saveStoredRequests(updated);
+            closeCancelRequestModal();
+            renderRequests();
+            toast(result.message || 'Test request cancelled.', 'warning');
+        } catch (error) {
+            toast(error.message || 'Unable to cancel this request.', 'error');
+        } finally {
+            cancelButton.disabled = false;
+        }
     }
 
     document.addEventListener('DOMContentLoaded', () => {
         ensureStoredRequests();
         renderRequests();
+        document.getElementById('requests-tbody')?.addEventListener('click', event => {
+            const cancelButton = event.target.closest('[data-cancel-request]');
+            if (cancelButton) {
+                openCancelRequestModal(cancelButton.dataset.cancelRequest);
+            }
+        });
         document.getElementById('requests-search')?.addEventListener('input', renderRequests);
         document.getElementById('requests-filter-status')?.addEventListener('change', renderRequests);
         document.getElementById('requests-filter-urgency')?.addEventListener('change', renderRequests);

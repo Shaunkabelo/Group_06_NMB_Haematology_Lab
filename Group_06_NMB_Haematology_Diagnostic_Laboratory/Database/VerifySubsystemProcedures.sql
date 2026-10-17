@@ -28,6 +28,7 @@ INSERT INTO @RequiredProcedures (ProcedureName) VALUES
     (N'spSample_Insert'),
     (N'spTestRequestTestType_Insert'),
     (N'spTestRequest_Create'),
+    (N'spTestRequest_CancelByDoctor'),
     (N'spMedicalCondition_GetAll'),
     (N'spMedicalCondition_GetCategories'),
     (N'spMedicalCondition_GetByCategory'),
