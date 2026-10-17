@@ -2,7 +2,7 @@
 <div style="overflow-x:auto">
     <table>
         <thead>
-            <tr><th>Test</th><th>Test Status</th><th>Lab Technician ID</th><th>Started</th></tr>
+            <tr><th>Test</th><th>Test Status</th><th>Lab Technician Name</th><th>Started</th></tr>
         </thead>
         <tbody>
             @foreach (var test in Model)
@@ -10,7 +10,7 @@
                 <tr>
                     <td>@test.TestName</td>
                     <td>@test.TestStatus</td>
-                    <td>@(test.LabTechnicianID?.ToString() ?? "Not assigned")</td>
+                    <td>@(string.IsNullOrWhiteSpace(test.LabTechnicianName) ? "Not assigned" : test.LabTechnicianName)</td>
                     <td>@(test.StartDateTime?.ToString("dd MMM yyyy HH:mm") ?? "Not started")</td>
                 </tr>
             }
