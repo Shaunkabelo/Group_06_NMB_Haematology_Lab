@@ -2,6 +2,7 @@
 -- The procedure records the authenticated doctor's username, SQL Server date/time, and reason.
 CREATE OR ALTER PROCEDURE dbo.spTestRequest_CancelByDoctor
     @TestRequestID INT,
+    @DoctorID INT,
     @CancelledBy NVARCHAR(200),
     @CancelReason NVARCHAR(500)
 AS
