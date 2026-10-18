@@ -31,6 +31,11 @@ builder.Services.AddRateLimiter(options =>
 });
 builder.Services.AddScoped<ISqlDataAccess, SqlDataAccess>();
 builder.Services.AddScoped<IDoctorRepository, DoctorRepository>();
+builder.Services.AddScoped<IDoctorWorkflowRepository, DoctorWorkflowRepository>();
+builder.Services.AddDataProtection();
+builder.Services.AddSingleton<DoctorEmailProtector>();
+builder.Services.AddScoped<IDoctorEmailSender, DoctorEmailSender>();
+builder.Services.AddHostedService<DoctorEmailWorker>();
 builder.Services.AddScoped<IDoctorResultsRepository, DoctorResultsRepository>();
 builder.Services.AddScoped<IPatientRegistrationRepository, PatientRegistrationRepository>();
 builder.Services.AddScoped<IAuthenticationRepository, AuthenticationRepository>();

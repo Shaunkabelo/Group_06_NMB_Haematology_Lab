@@ -1,4 +1,4 @@
-﻿@{
+@{
     ViewData["Title"] = "Create Test Request";
     Layout = "~/Views/Shared/_LayoutDoctor.cshtml";
 }
@@ -552,7 +552,7 @@
         </div>
         <div class="modal-footer">
             <button class="btn btn-secondary" type="button" onclick="closePatientNotFoundModal()">Close</button>
-            <a class="btn btn-primary" href="@Url.Action("Register", "Account")">Register Patient</a>
+            <a class="btn btn-primary" href="@Url.Action("RegisterPatient", "Doctor")">Register Patient</a>
         </div>
     </div>
 </div>
@@ -1258,65 +1258,6 @@
     }
 
 
-    function getStoredRequests() {
-
-        try {
-
-            const stored =
-                localStorage.getItem('doctorRequests');
-
-            if (!stored) {
-                return [];
-            }
-
-            const parsed =
-                JSON.parse(stored);
-
-            return Array.isArray(parsed)
-                ? parsed
-                : [];
-
-        }
-        catch (error) {
-
-            console.warn(
-                "Unable to parse stored doctor requests:",
-                error
-            );
-
-            return [];
-
-        }
-
-    }
-
-
-    function saveStoredRequests(requests) {
-
-        try {
-
-            localStorage.setItem(
-                "doctorRequests",
-                JSON.stringify(
-                    Array.isArray(requests)
-                        ? requests
-                        : []
-                )
-            );
-
-        }
-        catch (error) {
-
-            console.warn(
-                "Unable to save doctor requests:",
-                error
-            );
-
-        }
-
-    }
-
-
     function resetSelectedTests() {
 
         selectedTests.length = 0;
@@ -1355,126 +1296,8 @@
 
 
     function renderPatientHistory(patient) {
-
-        const patientSaId =
-            String((patient && (patient.saIdNumber || patient.SaIdNumber)) || '').trim();
-
-        const patientName =
-            `${patient?.name || patient?.Name || ''} ${patient?.surname || patient?.Surname || ''}`
-                .trim()
-                .toLowerCase();
-
-        const requests =
-            getStoredRequests()
-                .filter(item => {
-
-                    const itemSaId =
-                        String(item.saIdNumber || item.patientSaId || '').trim();
-
-                    const itemName =
-                        String(item.patientName || '').trim().toLowerCase();
-
-                    return itemSaId && patientSaId
-                        ? itemSaId === patientSaId
-                        : itemName && patientName
-                            ? itemName === patientName
-                            : false;
-
-                })
-                .sort((a, b) =>
-                    new Date(b.createdAt || 0) - new Date(a.createdAt || 0)
-                );
-
-        const requestPanel =
-            document.getElementById('patient-request-history');
-
-        if (!requests.length) {
-
-            requestPanel.innerHTML =
-                '<div class="medical-empty">No request history recorded.</div>';
-
-        }
-        else {
-
-            requestPanel.innerHTML =
-                requests.map(item => {
-
-                    const tests =
-                        Array.isArray(item.tests)
-                            ? item.tests.join(', ')
-                            : 'No tests recorded';
-
-                    const status =
-                        item.status || 'Unknown';
-
-                    return `
-                        <div class="history-item">
-                            <div class="history-header">
-                                <strong>${escapeHtml(item.id || 'Request')}</strong>
-                                <span class="badge ${status.toLowerCase().includes('released') ? 'green' : status.toLowerCase().includes('cancel') ? 'red' : 'blue'}">${escapeHtml(status)}</span>
-                            </div>
-                            <div class="history-meta">${escapeHtml(item.urgency || 'Routine')} • ${escapeHtml(item.createdAt ? new Date(item.createdAt).toLocaleDateString() : 'Unknown date')}</div>
-                            <div class="history-meta">Tests: ${escapeHtml(tests)}</div>
-                        </div>
-                    `;
-
-                }).join('');
-
-        }
-
-        const consentedResults =
-            requests.filter(item => {
-
-                const consentGranted =
-                    item.consentGranted === true ||
-                    item.resultConsentGranted === true ||
-                    item.released === true;
-
-                const releasedByDoctor =
-                    String(item.status || '').toLowerCase() === 'released by doctor';
-
-                return consentGranted || releasedByDoctor;
-
-            });
-
-        const resultsPanel =
-            document.getElementById('patient-consent-results');
-
-        if (!consentedResults.length) {
-
-            resultsPanel.innerHTML =
-                '<div class="medical-empty">No consented results available.</div>';
-
-            return;
-
-        }
-
-        resultsPanel.innerHTML =
-            consentedResults.map(item => {
-
-                const tests =
-                    Array.isArray(item.tests)
-                        ? item.tests.join(', ')
-                        : 'No tests recorded';
-
-                const releasedDate =
-                    item.updatedAt || item.createdAt || new Date().toISOString();
-
-                return `
-                    <div class="history-item">
-                        <div class="history-header">
-                            <strong>${escapeHtml(item.id || 'Request')}</strong>
-                            <span class="badge green">Consented</span>
-                        </div>
-                        <div class="history-meta">Released: ${escapeHtml(new Date(releasedDate).toLocaleDateString())}</div>
-                        <div class="history-meta">Tests: ${escapeHtml(tests)}</div>
-                    </div>
-                `;
-
-            }).join('');
-
+        return window.loadDoctorPatientHistory(patient, 'patient-');
     }
-
 
     function escapeHtml(value) {
 
@@ -2873,39 +2696,6 @@
                 );
 
             }
-
-            const storedRequests =
-                getStoredRequests();
-
-            const requestId =
-                String(
-                    result.testRequestId
-                    ?? result.requestId
-                    ?? `REQ-${Date.now()}`
-                );
-
-            storedRequests.push({
-                id: requestId,
-                patientId: patientId,
-                saIdNumber: selectedPatient?.saIdNumber || "",
-                patientName: selectedPatient
-                    ? `${selectedPatient.name || ""} ${selectedPatient.surname || ""}`.trim()
-                    : "Unknown",
-                status: "Submitted",
-                urgency,
-                clinicalNotes,
-                createdAt: new Date().toISOString(),
-                consentGranted: true,
-                tests: selectedTests.map(test => test.testName),
-                items: selectedTests.map(test => ({
-                    testType: test.testName,
-                    sampleBarcode: String(sampleBarcodes[test.testTypeId] || "").trim(),
-                    status: "Submitted"
-                }))
-            });
-
-            saveStoredRequests(storedRequests);
-
 
             alert(
                 result.message

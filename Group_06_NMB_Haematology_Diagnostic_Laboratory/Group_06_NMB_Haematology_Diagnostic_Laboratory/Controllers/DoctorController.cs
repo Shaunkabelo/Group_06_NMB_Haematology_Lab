@@ -1,10 +1,9 @@
-﻿using Group_06_NMB_Haematology_Diagnostic_Lab.Data.Models;
+using Group_06_NMB_Haematology_Diagnostic_Lab.Data.Models;
 using Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository;
 using Group_06_NMB_Haematology_Diagnostic_Lab.Data.Helpers;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
-using System.Security.Cryptography;
 using Group_06_NMB_Haematology_Diagnostic_Laboratory.Services;
 using System.Globalization;
 
@@ -16,21 +15,28 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 		public string Reason { get; set; } = string.Empty;
 	}
 
-	public class DoctorController : Controller
+	[Authorize(Roles = "Doctor")]
+	[AutoValidateAntiforgeryToken]
+	[ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
+	public partial class DoctorController : Controller
 	{
 
 		private readonly IDoctorRepository _doctorRepository;
-		private readonly IDoctorResultsRepository _doctorResultsRepository;
-		private readonly IPatientRegistrationRepository _patientRegistrationRepository;
+        private readonly IDoctorWorkflowRepository _workflow;
+        private readonly IAuthenticationRepository _authentication;
+        private readonly DoctorEmailProtector _emailProtector;
+        private readonly IConfiguration _configuration;
 
 		public DoctorController(
 			IDoctorRepository doctorRepository,
-			IDoctorResultsRepository doctorResultsRepository,
-			IPatientRegistrationRepository patientRegistrationRepository)
+            IDoctorWorkflowRepository workflow, IAuthenticationRepository authentication,
+            DoctorEmailProtector emailProtector, IConfiguration configuration)
 		{
 			_doctorRepository = doctorRepository;
-			_doctorResultsRepository = doctorResultsRepository;
-			_patientRegistrationRepository = patientRegistrationRepository;
+            _workflow = workflow;
+            _authentication = authentication;
+            _emailProtector = emailProtector;
+            _configuration = configuration;
 		}
 		// ============================================================
 		//ALERTS
@@ -43,10 +49,10 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 		{
 			var today = DateTime.Today;
 
-			var start = (startDate ?? today.AddDays(-5)).Date;
+			var start = (startDate ?? today.AddDays(-4)).Date;
 			var end = (endDate ?? today).Date;
 
-			if (start > end)
+			if (start > end || end == DateTime.MaxValue.Date)
 			{
 				return BadRequest(new
 				{
@@ -71,11 +77,11 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 				return Forbid();
 			}
 
-			var alerts = await _doctorResultsRepository
-				.GetAbnormalAlertsAsync(
+			var alerts = await _workflow
+				.Alerts(
 					doctorId.Value,
 					start,
-					end
+					end.AddDays(1)
 				);
 
 			return Json(alerts);
@@ -104,204 +110,27 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 				return Forbid();
 			}
 
-			var results = await _doctorResultsRepository
-				.GetDoctorResultsAsync(doctorId.Value);
+			var results = await _workflow.Results(doctorId.Value);
 
 			return Json(results);
 		}
-		private bool VerifyPassword(string password, string storedHash, string storedSalt)
-		{
-			byte[] saltBytes =
-				Convert.FromBase64String(
-					storedSalt);
-
-			using var pbkdf2 =
-				new Rfc2898DeriveBytes(
-					password,
-					saltBytes,
-					100000,
-					HashAlgorithmName.SHA256);
-
-			byte[] hash =
-				pbkdf2.GetBytes(32);
-
-			string calculatedHash =
-				Convert.ToBase64String(hash);
-
-			return calculatedHash ==
-				   storedHash;
-		}
-		private (string Hash, string Salt)
-	HashPassword(
-		string password)
-		{
-			byte[] salt =
-				RandomNumberGenerator
-					.GetBytes(16);
-
-			using var pbkdf2 =
-				new Rfc2898DeriveBytes(
-					password,
-					salt,
-					100000,
-					HashAlgorithmName.SHA256);
-
-			byte[] hash =
-				pbkdf2.GetBytes(32);
-
-			return
-			(
-				Convert.ToBase64String(hash),
-				Convert.ToBase64String(salt)
-			);
-		}
-		[HttpPost]
-		public async Task<IActionResult>
-	ChangeDoctorPassword(
-		[FromBody]
-		ChangePasswordDto model)
-		{
-			try
-			{
-				if (model == null)
-				{
-					return BadRequest(new
-					{
-						success = false,
-						message =
-							"Password information is required."
-					});
-				}
-
-
-				if (string.IsNullOrWhiteSpace(
-					model.CurrentPassword))
-				{
-					return BadRequest(new
-					{
-						success = false,
-						message =
-							"Current password is required."
-					});
-				}
-
-
-				if (string.IsNullOrWhiteSpace(
-					model.NewPassword))
-				{
-					return BadRequest(new
-					{
-						success = false,
-						message =
-							"New password is required."
-					});
-				}
-
-
-				if (model.NewPassword !=
-					model.ConfirmPassword)
-				{
-					return BadRequest(new
-					{
-						success = false,
-						message =
-							"New password and confirm password do not match."
-					});
-				}
-
-
-				if (model.NewPassword.Length < 8)
-				{
-					return BadRequest(new
-					{
-						success = false,
-						message =
-							"Password must be at least 8 characters long."
-					});
-				}
-
-
-				int userId =
-					GetLoggedInUserId();
-
-
-				var user =
-					await _doctorRepository
-						.GetUserByIdAsync(
-							userId);
-
-
-				if (user == null)
-				{
-					return NotFound(new
-					{
-						success = false,
-						message =
-							"User account was not found."
-					});
-				}
-
-
-				bool currentPasswordCorrect =
-					VerifyPassword(
-						model.CurrentPassword,
-						user.PasswordHash,
-						user.PasswordSalt);
-
-
-				if (!currentPasswordCorrect)
-				{
-					return BadRequest(new
-					{
-						success = false,
-						message =
-							"Current password is incorrect."
-					});
-				}
-
-
-				var passwordData =
-					HashPassword(
-						model.NewPassword);
-
-
-				bool updated =
-					await _doctorRepository
-						.UpdatePasswordAsync(
-							userId,
-							passwordData.Hash,
-							passwordData.Salt);
-
-
-				if (!updated)
-				{
-					return BadRequest(new
-					{
-						success = false,
-						message =
-							"Password could not be updated."
-					});
-				}
-
-
-				return Json(new
-				{
-					success = true,
-					message =
-						"Password updated successfully."
-				});
-			}
-			catch (Exception ex)
-			{
-				return StatusCode(
-					500,
-					new
-					{
-						success = false,
-						message = ex.Message
-					});
-			}
-		}
+        [HttpPost, EnableRateLimiting("account")]
+        public async Task<IActionResult> ChangeDoctorPassword([FromBody] ChangePasswordDto model)
+        {
+            if (model == null || string.IsNullOrEmpty(model.CurrentPassword) || model.CurrentPassword.Length > 128 ||
+                !PasswordHelper.MeetsPolicy(model.NewPassword) || model.NewPassword != model.ConfirmPassword)
+                return BadRequest(new { message = "Use 8-128 characters, an uppercase letter, a number and a special character; confirm the password." });
+            var user = await _authentication.GetActiveUserById(GetLoggedInUserId());
+            if (user == null || !PasswordHelper.VerifyPassword(model.CurrentPassword, user.PasswordHash, user.PasswordSalt))
+                return BadRequest(new { message = "Current password is incorrect." });
+            if (PasswordHelper.VerifyPassword(model.NewPassword, user.PasswordHash, user.PasswordSalt))
+                return BadRequest(new { message = "Choose a different password." });
+            var salt = PasswordHelper.GenerateSalt();
+            if (!await _authentication.ChangePassword(user.UserId, user.PasswordHash, PasswordHelper.HashPassword(model.NewPassword, salt), salt))
+                return Conflict(new { message = "Your account changed. Sign in again." });
+            await Microsoft.AspNetCore.Authentication.AuthenticationHttpContextExtensions.SignOutAsync(HttpContext);
+            return Ok(new { success = true, message = "Password changed. Sign in again.", redirectUrl = Url.Action("Login", "Account") });
+        }
 		private int GetLoggedInUserId()
 		{
 			var userIdClaim =
@@ -329,85 +158,9 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 
 			return userId;
 		}
-		[HttpPost]
-		public async Task<IActionResult> UpdateDoctorAccount(
-	[FromBody] UpdateDoctorAccountDto model)
-		{
-			try
-			{
-				if (model == null)
-				{
-					return BadRequest(new
-					{
-						success = false,
-						message = "Profile information is required."
-					});
-				}
-
-				if (string.IsNullOrWhiteSpace(model.Name))
-				{
-					return BadRequest(new
-					{
-						success = false,
-						message = "Name is required."
-					});
-				}
-
-				if (string.IsNullOrWhiteSpace(model.Surname))
-				{
-					return BadRequest(new
-					{
-						success = false,
-						message = "Surname is required."
-					});
-				}
-
-				if (string.IsNullOrWhiteSpace(model.Email))
-				{
-					return BadRequest(new
-					{
-						success = false,
-						message = "Email is required."
-					});
-				}
-
-
-				int userId =
-					GetLoggedInUserId();
-
-
-				bool updated =
-					await _doctorRepository
-						.UpdateDoctorAccountAsync(
-							userId,
-							model);
-
-
-				if (!updated)
-				{
-					return BadRequest(new
-					{
-						success = false,
-						message = "Profile could not be updated."
-					});
-				}
-
-
-				return Json(new
-				{
-					success = true,
-					message = "Profile updated successfully."
-				});
-			}
-			catch (Exception ex)
-			{
-				return StatusCode(500, new
-				{
-					success = false,
-					message = ex.Message
-				});
-			}
-		}
+        [HttpPost]
+        public IActionResult UpdateDoctorAccount([FromBody] UpdateDoctorAccountDto model) =>
+            BadRequest(new { message = "Use My profile to update your account securely.", redirectUrl = Url.Action("Profile", "Account") });
 		[HttpGet]
 		public async Task<IActionResult> GetDoctorAccount()
 		{
@@ -432,12 +185,12 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 
 				return Json(doctor);
 			}
-			catch (Exception ex)
+			catch (Exception)
 			{
 				return StatusCode(500, new
 				{
 					success = false,
-					message = ex.Message
+					message = "The operation could not be completed. Please contact support."
 				});
 			}
 		}
@@ -471,11 +224,9 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 				if (!doctorId.HasValue)
 					return Forbid();
 
-				var requests =
-					await _doctorRepository.GetDoctorReportAsync(
-						doctorId.Value,
-						startDate,
-						endDate.Date.AddDays(1).AddTicks(-1));
+                var requests = (await _workflow.Requests(doctorId.Value))
+                    .Where(r => r.CreatedAt.Date >= startDate.Date && r.CreatedAt.Date <= endDate.Date)
+                    .Select(ToReport);
 
 				var requestList = requests.ToList();
 				var pdf = DoctorRequestsPdfReport.Build(
@@ -556,15 +307,9 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 					return Forbid();
 
 				var today = DateTime.Today;
-				var requests = (await _doctorRepository.GetDoctorReportAsync(
-					doctorId.Value,
-					new DateTime(1900, 1, 1),
-					today.AddDays(1).AddTicks(-1))).ToList();
-				var results = (await _doctorResultsRepository.GetDoctorResultsAsync(doctorId.Value)).ToList();
-				var alerts = (await _doctorResultsRepository.GetAbnormalAlertsAsync(
-					doctorId.Value,
-					today.AddDays(-4),
-					today.AddDays(1).AddTicks(-1))).ToList();
+                var requests = (await _workflow.Requests(doctorId.Value)).Select(ToReport).ToList();
+                var results = (await _workflow.Results(doctorId.Value)).ToList();
+                var alerts = (await _workflow.Alerts(doctorId.Value, today.AddDays(-4), today.AddDays(1))).ToList();
 
 				var submitted = requests.Where(r => string.Equals(r.Status, "Submitted", StringComparison.OrdinalIgnoreCase)).ToList();
 				var resultsRecorded = results
@@ -653,7 +398,7 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 		[Authorize(Roles = "Doctor")]
 		public IActionResult Account()
 		{
-			return View("Accounts");
+			return RedirectToAction("Profile", "Account");
 		}
 
 		[Authorize(Roles = "Doctor")]
@@ -670,12 +415,11 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 		public async Task<IActionResult> RegisterPatient(
 			PatientRegistrationViewModel model)
 		{
-			if (!PasswordHelper.MeetsPolicy(model.Password))
-			{
-				ModelState.AddModelError(
-					nameof(model.Password),
-					"Password must contain at least 8 characters, an uppercase letter, a number and a non-whitespace special character.");
-			}
+            // Doctor-created accounts receive a generated temporary password, never a submitted one.
+            ModelState.Remove(nameof(model.Password));
+            ModelState.Remove(nameof(model.ConfirmPassword));
+            model.Password = PasswordHelper.GenerateTemporaryPassword();
+            model.ConfirmPassword = model.Password;
 
 			var saIdNumber = model.SaIdNumber ?? string.Empty;
 			if (model.DateOfBirth == default ||
@@ -711,17 +455,20 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 
 			try
 			{
-				var result = await _patientRegistrationRepository.RegisterPatientAsync(
-					model,
-					passwordHash,
-					salt);
+				var baseUrl = _configuration["AccountSecurity:PublicBaseUrl"];
+                if (!Uri.TryCreate(baseUrl, UriKind.Absolute, out var uri) || uri.Scheme != "https" ||
+                    !string.IsNullOrEmpty(uri.UserInfo) || !string.IsNullOrEmpty(uri.Query) || !string.IsNullOrEmpty(uri.Fragment))
+                    return StatusCode(503, new { message = "Account email is not configured. Contact the administrator." });
+                var notification = _emailProtector.Protect(new DoctorEmail(model.Email, "Your NMB-HLabSys account",
+                    $"Hello {model.Name},\n\nUsername: {model.Email}\nTemporary password: {model.Password}\n\nSign in at {baseUrl.TrimEnd('/')}/Account/Login and change your password.\nUse Forgot password if you need a new password."));
+                var result = await _workflow.Register(model, passwordHash, salt, notification);
 
 				return result switch
 				{
 					"SUCCESS" => Ok(new
 					{
 						success = true,
-						message = "Patient account created successfully."
+						message = "Patient account created. A temporary password email has been queued. Capture medical history from Patients."
 					}),
 					"DUPLICATE_EMAIL" => Conflict(new
 					{
@@ -785,14 +532,14 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 
 				return Json(patients);
 			}
-			catch (Exception ex)
+			catch (Exception)
 			{
 				return StatusCode(500, new
 				{
 					success = false,
 					message =
 						"An error occurred while loading patients.",
-					error = ex.Message
+					error = "The operation could not be completed. Please contact support."
 				});
 			}
 		}
@@ -836,14 +583,14 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 
 				return Json(patient);
 			}
-			catch (Exception ex)
+			catch (Exception)
 			{
 				return StatusCode(500, new
 				{
 					success = false,
 					message =
 						"An error occurred while loading the patient.",
-					error = ex.Message
+					error = "The operation could not be completed. Please contact support."
 				});
 			}
 		}
@@ -865,14 +612,14 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 
 				return Json(categories);
 			}
-			catch (Exception ex)
+			catch (Exception)
 			{
 				return StatusCode(500, new
 				{
 					success = false,
 					message =
 						"An error occurred while loading condition categories.",
-					error = ex.Message
+					error = "The operation could not be completed. Please contact support."
 				});
 			}
 		}
@@ -907,14 +654,14 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 
 				return Json(conditions);
 			}
-			catch (Exception ex)
+			catch (Exception)
 			{
 				return StatusCode(500, new
 				{
 					success = false,
 					message =
 						"An error occurred while loading conditions.",
-					error = ex.Message
+					error = "The operation could not be completed. Please contact support."
 				});
 			}
 		}
@@ -959,14 +706,14 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 						"Medical condition added successfully."
 				});
 			}
-			catch (Exception ex)
+			catch (Exception)
 			{
 				return StatusCode(500, new
 				{
 					success = false,
 					message =
 						"An error occurred while adding the medical condition.",
-					error = ex.Message
+					error = "The operation could not be completed. Please contact support."
 				});
 			}
 		}
@@ -1004,14 +751,14 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 						"Medical condition removed successfully."
 				});
 			}
-			catch (Exception ex)
+			catch (Exception)
 			{
 				return StatusCode(500, new
 				{
 					success = false,
 					message =
 						"An error occurred while removing the medical condition.",
-					error = ex.Message
+					error = "The operation could not be completed. Please contact support."
 				});
 			}
 		}
@@ -1033,14 +780,14 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 
 				return Json(categories);
 			}
-			catch (Exception ex)
+			catch (Exception)
 			{
 				return StatusCode(500, new
 				{
 					success = false,
 					message =
 						"An error occurred while loading allergy categories.",
-					error = ex.Message
+					error = "The operation could not be completed. Please contact support."
 				});
 			}
 		}
@@ -1075,14 +822,14 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 
 				return Json(allergies);
 			}
-			catch (Exception ex)
+			catch (Exception)
 			{
 				return StatusCode(500, new
 				{
 					success = false,
 					message =
 						"An error occurred while loading allergies.",
-					error = ex.Message
+					error = "The operation could not be completed. Please contact support."
 				});
 			}
 		}
@@ -1127,14 +874,14 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 						"Allergy added successfully."
 				});
 			}
-			catch (Exception ex)
+			catch (Exception)
 			{
 				return StatusCode(500, new
 				{
 					success = false,
 					message =
 						"An error occurred while adding the allergy.",
-					error = ex.Message
+					error = "The operation could not be completed. Please contact support."
 				});
 			}
 		}
@@ -1172,14 +919,14 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 						"Allergy removed successfully."
 				});
 			}
-			catch (Exception ex)
+			catch (Exception)
 			{
 				return StatusCode(500, new
 				{
 					success = false,
 					message =
 						"An error occurred while removing the allergy.",
-					error = ex.Message
+					error = "The operation could not be completed. Please contact support."
 				});
 			}
 		}
@@ -1201,14 +948,14 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 
 				return Json(categories);
 			}
-			catch (Exception ex)
+			catch (Exception)
 			{
 				return StatusCode(500, new
 				{
 					success = false,
 					message =
 						"An error occurred while loading medication categories.",
-					error = ex.Message
+					error = "The operation could not be completed. Please contact support."
 				});
 			}
 		}
@@ -1243,14 +990,14 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 
 				return Json(medications);
 			}
-			catch (Exception ex)
+			catch (Exception)
 			{
 				return StatusCode(500, new
 				{
 					success = false,
 					message =
 						"An error occurred while loading medications.",
-					error = ex.Message
+					error = "The operation could not be completed. Please contact support."
 				});
 			}
 		}
@@ -1295,14 +1042,14 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 						"Medication added successfully."
 				});
 			}
-			catch (Exception ex)
+			catch (Exception)
 			{
 				return StatusCode(500, new
 				{
 					success = false,
 					message =
 						"An error occurred while adding medication.",
-					error = ex.Message
+					error = "The operation could not be completed. Please contact support."
 				});
 			}
 		}
@@ -1340,14 +1087,14 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 						"Medication removed successfully."
 				});
 			}
-			catch (Exception ex)
+			catch (Exception)
 			{
 				return StatusCode(500, new
 				{
 					success = false,
 					message =
 						"An error occurred while removing medication.",
-					error = ex.Message
+					error = "The operation could not be completed. Please contact support."
 				});
 			}
 		}
@@ -1369,14 +1116,14 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 
 				return Json(categories);
 			}
-			catch (Exception ex)
+			catch (Exception)
 			{
 				return StatusCode(500, new
 				{
 					success = false,
 					message =
 						"An error occurred while loading test categories.",
-					error = ex.Message
+					error = "The operation could not be completed. Please contact support."
 				});
 			}
 		}
@@ -1410,14 +1157,14 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 
 				return Json(tests);
 			}
-			catch (Exception ex)
+			catch (Exception)
 			{
 				return StatusCode(500, new
 				{
 					success = false,
 					message =
 						"An error occurred while loading tests.",
-					error = ex.Message
+					error = "The operation could not be completed. Please contact support."
 				});
 			}
 		}
@@ -1454,7 +1201,7 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 					return Forbid();
 				}
 
-				var cancelledBy = User.Identity?.Name;
+				var cancelledBy = $"Doctor:{GetLoggedInUserId()}";
 				if (string.IsNullOrWhiteSpace(cancelledBy))
 				{
 					cancelledBy = "Doctor";
@@ -1499,7 +1246,7 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 				return StatusCode(StatusCodes.Status500InternalServerError, new
 				{
 					success = false,
-					message = "Cancellation could not be saved. Please check the cancellation repository method and dbo.spTestRequest_CancelByDoctor in the connected database."
+					message = "Cancellation could not be saved. Please try again or contact support."
 				});
 			}
 		}
@@ -1528,7 +1275,13 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 				// PATIENT
 				// ----------------------------------------------------
 
-				if (model.PatientId <= 0)
+				if (!new[] { "Routine", "Urgent", "STAT" }.Contains(model.Urgency, StringComparer.OrdinalIgnoreCase) ||
+                    (model.ClinicalNotes?.Length ?? 0) > 2000)
+                    return BadRequest(new { message = "Select Routine, Urgent or STAT and keep clinical notes within 2000 characters." });
+                model.Urgency = model.Urgency.Equals("STAT", StringComparison.OrdinalIgnoreCase) ? "STAT" :
+                    model.Urgency.Equals("Urgent", StringComparison.OrdinalIgnoreCase) ? "Urgent" : "Routine";
+                model.ClinicalNotes ??= "";
+                if (model.PatientId <= 0)
 				{
 					return BadRequest(new
 					{
@@ -1557,7 +1310,10 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 				}
 
 
-				foreach (var test in model.Tests)
+				if (model.Tests.Count > 100 || model.Tests.Any(t => t == null) ||
+                    model.Tests.Select(t => t.TestTypeId).Distinct().Count() != model.Tests.Count)
+                    return BadRequest(new { message = "Choose up to 100 distinct tests." });
+                foreach (var test in model.Tests)
 				{
 					if (
 						test.TestTypeId <= 0 ||
@@ -1574,8 +1330,7 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 
 
 					if (
-						string.IsNullOrWhiteSpace(
-							test.BarcodeNumber)
+						string.IsNullOrWhiteSpace(test.BarcodeNumber) || test.BarcodeNumber.Length > 50
 					)
 					{
 						return BadRequest(new
@@ -1607,15 +1362,14 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 				// CREATE REQUEST
 				// ----------------------------------------------------
 
-				int testRequestId =
-					await _doctorRepository.CreateTestRequestAsync(
-						model.PatientId,
-						doctorId.Value,
-						DateTime.Now,
-						model.Urgency,
-						model.ClinicalNotes,
-						model.Tests
-					);
+                foreach (var test in model.Tests) test.BarcodeNumber = test.BarcodeNumber.Trim();
+                if (model.Tests.GroupBy(t => t.BarcodeNumber).Any(g => g.Select(t => t.SampleTypeId).Distinct().Count() > 1))
+                    return BadRequest(new { message = "A barcode cannot identify different sample types." });
+                var patient = await _workflow.Patient(model.PatientId);
+                if (patient == null) return BadRequest(new { message = "Select an active patient." });
+                var notification = _emailProtector.Protect(new DoctorEmail(patient.Email, "New laboratory test request",
+                    "Your doctor submitted laboratory test request #{{RequestID}}. Sign in to track its progress."));
+                int testRequestId = await _workflow.Create(doctorId.Value, model, notification);
 
 
 				return Ok(new
@@ -1624,16 +1378,16 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 					testRequestId =
 						testRequestId,
 					message =
-						"Test request created successfully."
+						"Test request created. Patient notification queued."
 				});
 			}
-			catch (Exception ex)
+            catch (ArgumentException ex) { return BadRequest(new { message = ex.Message }); }
+			catch (Exception)
 			{
 				return StatusCode(500, new
 				{
 					success = false,
-					message =
-						ex.Message
+					message = "The operation could not be completed. Please contact support."
 				});
 			}
 		}
