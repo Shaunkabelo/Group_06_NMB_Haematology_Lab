@@ -21,7 +21,7 @@ public class AccountNavigation(IConfiguration configuration, IActionDescriptorCo
                 "LabManager" => ("LabManager", "Dashboard"),
                 "Admin" => ("Admin", "Dashboard"),
                 "Doctor" => ("Doctor", "Dashboard"),
-                "LabTechnician" => ("TechDashboard", "Index"),
+                "LabTechnician" => ("LabTechnician", "Dashboard"),
                 "Patient" => ("Patient", "Dashboard"),
                 _ => ("Account", "Workspace")
             };

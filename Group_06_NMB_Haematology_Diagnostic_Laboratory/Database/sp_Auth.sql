@@ -1,4 +1,6 @@
-USE [GRP_04_06_db]
+-- Legacy partial authentication script. Do not rely on this file for deployment:
+-- it omits password-reset procedures. Select the application database in SSMS,
+-- then run Authentication_PasswordRecovery.sql instead.
 GO
 
 CREATE OR ALTER PROCEDURE dbo.sp_Auth_GetActiveUserByEmail

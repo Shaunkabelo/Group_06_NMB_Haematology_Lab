@@ -10,6 +10,12 @@ using System.Globalization;
 
 namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 {
+	public sealed class CancelTestRequestInput
+	{
+		public int TestRequestId { get; set; }
+		public string Reason { get; set; } = string.Empty;
+	}
+
 	public class DoctorController : Controller
 	{
 
@@ -103,28 +109,28 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 
 			return Json(results);
 		}
-		private bool VerifyPassword(string password,string storedHash,string storedSalt)
-				{
-					byte[] saltBytes =
-						Convert.FromBase64String(
-							storedSalt);
+		private bool VerifyPassword(string password, string storedHash, string storedSalt)
+		{
+			byte[] saltBytes =
+				Convert.FromBase64String(
+					storedSalt);
 
-					using var pbkdf2 =
-						new Rfc2898DeriveBytes(
-							password,
-							saltBytes,
-							100000,
-							HashAlgorithmName.SHA256);
+			using var pbkdf2 =
+				new Rfc2898DeriveBytes(
+					password,
+					saltBytes,
+					100000,
+					HashAlgorithmName.SHA256);
 
-					byte[] hash =
-						pbkdf2.GetBytes(32);
+			byte[] hash =
+				pbkdf2.GetBytes(32);
 
-					string calculatedHash =
-						Convert.ToBase64String(hash);
+			string calculatedHash =
+				Convert.ToBase64String(hash);
 
-					return calculatedHash ==
-						   storedHash;
-				}
+			return calculatedHash ==
+				   storedHash;
+		}
 		private (string Hash, string Salt)
 	HashPassword(
 		string password)
@@ -461,11 +467,13 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 					});
 				}
 
-				int doctorId = GetLoggedInDoctorId();
+				var doctorId = await GetLoggedInDoctorIdAsync();
+				if (!doctorId.HasValue)
+					return Forbid();
 
 				var requests =
 					await _doctorRepository.GetDoctorReportAsync(
-						doctorId,
+						doctorId.Value,
 						startDate,
 						endDate.Date.AddDays(1).AddTicks(-1));
 
@@ -490,7 +498,7 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 		// LOGGED IN DOCTOR
 		// ============================================================
 
-		private int GetLoggedInDoctorId()
+		private async Task<int?> GetLoggedInDoctorIdAsync()
 		{
 			var userIdClaim =
 				User.FindFirst(
@@ -516,9 +524,9 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 					"The logged-in user is not a doctor.");
 			}
 
-			// In the current database design doctors are stored in dbo.[User].
-			// TestRequest.DoctorID therefore uses the logged-in doctor's UserID.
-			return userId;
+			// UserID and DoctorID are separate keys. TestRequest.DoctorID references
+			// dbo.Doctor, so always resolve the related Doctor row for this user.
+			return await _doctorRepository.GetDoctorIdByUserIdAsync(userId);
 		}
 
 
@@ -611,32 +619,38 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 			}
 		}
 
+		[Authorize(Roles = "Doctor")]
 		[HttpGet]
 		public IActionResult Patients()
 		{
 			return View();
 		}
 
+		[Authorize(Roles = "Doctor")]
 		public IActionResult Requests()
 		{
 			return View();
 		}
 
+		[Authorize(Roles = "Doctor")]
 		public IActionResult Results()
 		{
 			return View();
 		}
 
+		[Authorize(Roles = "Doctor")]
 		public IActionResult Alerts()
 		{
 			return View();
 		}
 
+		[Authorize(Roles = "Doctor")]
 		public IActionResult Reports()
 		{
 			return View();
 		}
 
+		[Authorize(Roles = "Doctor")]
 		public IActionResult Account()
 		{
 			return View("Accounts");
@@ -740,12 +754,14 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 			}
 		}
 
+		[Authorize(Roles = "Doctor")]
 		public IActionResult CreateRequest()
 		{
 			return View();
 		}
 
 		[HttpGet]
+		[Authorize(Roles = "Doctor")]
 		public IActionResult RequestDetails(string id)
 		{
 			ViewData["RequestId"] = id;
@@ -1411,6 +1427,84 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 		// CREATE TEST REQUEST
 		// ============================================================
 
+		[Authorize(Roles = "Doctor")]
+		[HttpPost]
+		[ValidateAntiForgeryToken]
+		public async Task<IActionResult> CancelTestRequest([FromBody] CancelTestRequestInput input)
+		{
+			if (input == null ||
+				input.TestRequestId <= 0 ||
+				string.IsNullOrWhiteSpace(input.Reason) ||
+				input.Reason.Trim().Length > 500)
+			{
+				return BadRequest(new
+				{
+					success = false,
+					message = "Enter a cancellation reason of 1 to 500 characters."
+				});
+			}
+
+			try
+			{
+				// Resolve the DoctorID linked to the authenticated user's UserID.
+				var doctorId = await GetLoggedInDoctorIdAsync();
+
+				if (!doctorId.HasValue)
+				{
+					return Forbid();
+				}
+
+				var cancelledBy = User.Identity?.Name;
+				if (string.IsNullOrWhiteSpace(cancelledBy))
+				{
+					cancelledBy = "Doctor";
+				}
+
+				var result = await _doctorRepository.CancelTestRequestAsync(
+					input.TestRequestId,
+					doctorId.Value,
+					cancelledBy,
+					input.Reason.Trim());
+
+				if (result == 1)
+				{
+					return Ok(new
+					{
+						success = true,
+						message = "Test request cancelled."
+					});
+				}
+
+				if (result == 2)
+				{
+					return Conflict(new
+					{
+						success = false,
+						message = "This request can no longer be cancelled."
+					});
+				}
+
+				return NotFound(new
+				{
+					success = false,
+					message = "Request not found for this doctor."
+				});
+			}
+			catch (Exception ex)
+			{
+				HttpContext.RequestServices
+					.GetRequiredService<ILogger<DoctorController>>()
+					.LogError(ex, "Failed to cancel test request {TestRequestId}.", input.TestRequestId);
+
+				return StatusCode(StatusCodes.Status500InternalServerError, new
+				{
+					success = false,
+					message = "Cancellation could not be saved. Please check the cancellation repository method and dbo.spTestRequest_CancelByDoctor in the connected database."
+				});
+			}
+		}
+
+		[Authorize(Roles = "Doctor")]
 		[HttpPost]
 		public async Task<IActionResult>
 			CreateTestRequest(
@@ -1498,8 +1592,15 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 				// LOGGED IN DOCTOR
 				// ----------------------------------------------------
 
-				int doctorId =
-					GetLoggedInDoctorId();
+				var doctorId = await GetLoggedInDoctorIdAsync();
+				if (!doctorId.HasValue)
+				{
+					return Conflict(new
+					{
+						success = false,
+						message = "This doctor account is not linked to a doctor record. Contact the laboratory administrator."
+					});
+				}
 
 
 				// ----------------------------------------------------
@@ -1509,7 +1610,7 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 				int testRequestId =
 					await _doctorRepository.CreateTestRequestAsync(
 						model.PatientId,
-						doctorId,
+						doctorId.Value,
 						DateTime.Now,
 						model.Urgency,
 						model.ClinicalNotes,

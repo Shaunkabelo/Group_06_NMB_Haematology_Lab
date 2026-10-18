@@ -134,6 +134,15 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
 							EndDate = endDate
 						});
 				}
+		//===============================
+		// Cancel Test Request
+		//===============================
+		public Task<int> CancelTestRequestAsync(int testRequestId, int doctorId, string cancelledBy, string reason)
+		{
+			return _db.SaveDataAndReturn<int, dynamic>(
+				"dbo.spTestRequest_CancelByDoctor",
+				new { TestRequestID = testRequestId, DoctorID = doctorId, CancelledBy = cancelledBy, CancelReason = reason });
+		}
 		//================================
 		// Doctorp
 		//================================
@@ -442,7 +451,10 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
 				});
 		}
 
-
+		//===========================================================
+		//Cancel Test Request
+		//==========================================================
+		
 
 
 		//public async Task<bool>AddAsync(Doctor doctor)

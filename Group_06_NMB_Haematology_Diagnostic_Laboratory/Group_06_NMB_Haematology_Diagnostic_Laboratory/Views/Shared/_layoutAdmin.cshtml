@@ -1,4 +1,4 @@
-@{
+﻿@{
     var currentAction = ViewContext.RouteData.Values["action"]?.ToString() ?? "";
     var title = ViewData["Title"]?.ToString() ?? "Admin Panel";
     string IsActive(string action) => string.Equals(currentAction, action, StringComparison.OrdinalIgnoreCase) ? " active" : "";
@@ -9,33 +9,33 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@title - NMB-HLabSys</title>
-    <base href="@Url.Content("~/")" />
-    <link rel="stylesheet" href="~/css/style.css" asp-append-version="true" />
-    <script src="~/js/AdminJavaScript.js"></script>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/DoctorStyle.css" asp-append-version="true" />
 </head>
 <body>
     <nav class="sidebar">
         <div class="sidebar-brand">
             <div class="brand-badge">
-                <div class="brand-text">🧬 NMB-HLabSys</div>
+                <div class="brand-text"><span class="brand-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M9 3h6v2h-1v5.2l5.3 8.1A1.8 1.8 0 0 1 17.8 21H6.2a1.8 1.8 0 0 1-1.5-2.7L10 10.2V5H9V3Zm3 7.8-5.6 8.4h11.2L12 10.8Z" /></svg></span> NMB-HLabSys</div>
             </div>
         </div>
         <div class="sidebar-section">Overview</div>
-        <a class="nav-item@(IsActive("Dashboard"))" asp-controller="Admin" asp-action="Dashboard"><span class="nav-icon">&#9700;</span> Dashboard</a>
+        <a class="nav-item@(IsActive("Dashboard"))" asp-controller="Admin" asp-action="Dashboard"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 3h8v8H3V3Zm10 0h8v5h-8V3ZM13 10h8v11h-8V10ZM3 13h8v8H3v-8Z" /></svg></span> Dashboard</a>
         <div class="sidebar-section">Reference Data</div>
-        <a class="nav-item@(IsActive("Conditions"))" asp-controller="Admin" asp-action="Conditions"><span class="nav-icon">&#9874;</span> Conditions <span class="nav-badge">@ViewBag.MedicalConditionCount</span></a>
-        <a class="nav-item@(IsActive("Allergies"))" asp-controller="Admin" asp-action="Allergies"><span class="nav-icon">&#9888;&#65039;</span> Allergies <span class="nav-badge">@ViewBag.AllergyCount</span></a>
-        <a class="nav-item@(IsActive("Medication"))" asp-controller="Admin" asp-action="Medication"><span class="nav-icon">&#128279;</span> Medications <span class="nav-badge">@ViewBag.MedicationCount</span></a>
-        <a class="nav-item@(IsActive("Categories"))" asp-controller="Admin" asp-action="Categories"><span class="nav-icon">&#128193;</span> Categories</a>
+        <a class="nav-item@(IsActive("Condition"))" asp-controller="Admin" asp-action="Condition"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M10 2h4v2h-1v5.2l5.4 9A2.5 2.5 0 0 1 16.3 22H7.7a2.5 2.5 0 0 1-2.1-3.8l5.4-9V4h-1V2Zm2 8.8-4.7 7.8a.5.5 0 0 0 .4.8h8.6a.5.5 0 0 0 .4-.8L12 10.8Z" /></svg></span> Conditions</a>
+        <a class="nav-item@(IsActive("Allergies"))" asp-controller="Admin" asp-action="Allergies"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 2 1.5 21h21L12 2Zm0 5 6.9 12H5.1L12 7Zm-1 3v5h2v-5h-2Zm0 6v2h2v-2h-2Z" /></svg></span> Allergies</a>
+        <a class="nav-item@(IsActive("Medication"))" asp-controller="Admin" asp-action="Medication"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M7.1 3a5.5 5.5 0 0 0-3.9 9.4l8.4 8.4a5.5 5.5 0 0 0 7.8-7.8L11 4.6A5.5 5.5 0 0 0 7.1 3Zm0 2a3.5 3.5 0 0 1 2.5 1l2.2 2.2-5 5-2.2-2.2a3.5 3.5 0 0 1 2.5-6Zm6.1 4.6 4.8 4.8a3.5 3.5 0 0 1-5 5l-4.8-4.8 5-5Z" /></svg></span> Medications</a>
         <div class="sidebar-section">System</div>
-        <a class="nav-item@(IsActive("Profile"))" asp-controller="Admin" asp-action="Profile"><span class="nav-icon">&#128100;</span> Profile</a>
+        <a class="nav-item@(IsActive("Users"))" asp-controller="Admin" asp-action="Users"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M9 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm0 2c-4 0-7 2-7 4.5V21h14v-2.5C16 16 13 14 9 14Zm9-2a3.5 3.5 0 1 0-2.8-5.6 5.9 5.9 0 0 1 0 7.2c.8.3 1.8.4 2.8.4Zm0 2c-.6 0-1.2 0-1.8.2 1.7 1 2.8 2.4 2.8 4.3V21h3v-2.5c0-2.5-1.7-4.5-4-4.5Z" /></svg></span> System Users</a>
+        <a class="nav-item@(IsActive("Audit"))" asp-controller="Admin" asp-action="Audit"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 2h9l5 5v15H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2Zm8 2v4h4l-4-4ZM8 12h8v2H8v-2Zm0 4h8v2H8v-2Z" /></svg></span> Audit Log</a>
         <div class="sidebar-footer">
-            <a class="user-card" asp-controller="Admin" asp-action="Profile" style="text-decoration:none;color:inherit;">
+            <div class="user-card">
+                <div class="avatar avatar-lg admin-avatar">SA</div>
                 <div class="user-info">
-                    <strong>@ViewData["AdminDisplayName"]</strong>
-                    <small>@User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value</small>
+                    <div class="user-name">System Admin</div>
+                    <div class="user-role">Administrator</div>
                 </div>
-            </a>
+            </div>
         </div>
     </nav>
 
@@ -43,22 +43,19 @@
         <header class="topbar">
             <h1 class="page-title">@title</h1>
             <div class="topbar-actions">
-                <input type="search" id="admin-page-search" class="form-control search-control" placeholder="Search this page..." aria-label="Search this page" aria-describedby="admin-search-status">
-                <button class="btn" type="button" onclick="showNotifications()">🔔</button>
-                <form asp-controller="Account" asp-action="Logout" method="post">
+                <input type="search" class="form-control search-control" placeholder="Search..." oninput="handleSearch(this.value)" aria-label="Search this page">
+                <button class="btn notification-button" type="button" onclick="showNotifications()" aria-label="Show notifications"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9Zm-8 12a2 2 0 0 0 4 0h-4Z" /></svg></button>
+                <form asp-controller="Account" asp-action="Logout" method="post" class="logout-form">
+                    @Html.AntiForgeryToken()
                     <button class="btn btn-secondary" type="submit">Logout</button>
                 </form>
             </div>
         </header>
 
-        <p id="admin-search-status" role="status" aria-live="polite" hidden></p>
-        <div id="admin-search-content">
-            @RenderBody()
-        </div>
+        @RenderBody()
     </main>
 
-    <script src="~/js/script.js" asp-append-version="true"></script>
-    <script src="~/js/admin-page-search.js" asp-append-version="true"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>
