@@ -115,6 +115,11 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
 			string urgency,
 			string clinicalNotes,
 			List<CreateTestRequestItem> tests);
+		Task<int> CancelTestRequestAsync(
+			int testRequestId,
+			int doctorId,
+			string cancelledBy,
+			string reason);
 		Task<int> AddTestRequestTestTypeAsync(
 			int testRequestId,
 			int testTypeId);

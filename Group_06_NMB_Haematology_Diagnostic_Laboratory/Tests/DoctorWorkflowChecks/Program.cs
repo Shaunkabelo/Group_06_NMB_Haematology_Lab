@@ -238,7 +238,7 @@ Check((await client.GetAsync("/Doctor/GetDoctorAlerts?startDate=2026-10-19&endDa
     "Reversed alert date range is rejected");
 
 var registration = new Dictionary<string,string> { ["Name"] = "Test", ["Surname"] = "Patient", ["Email"] = "patient@example.com",
-    ["Cellphone"] = "0123456789", ["HomeAddress"] = "Test street", ["SaIdNumber"] = "9001015009087", ["DateOfBirth"] = "1990-01-01" };
+    ["Cellphone"] = "0123456789", ["HomeAddress"] = "Test street", ["SaIdNumber"] = "9001015009086", ["DateOfBirth"] = "1990-01-01" };
 var registered = await client.PostAsync("/Doctor/RegisterPatient", new FormUrlEncodedContent(registration));
 Check(registered.IsSuccessStatusCode && state.Registrations == 1, "Doctor registration succeeds without user-supplied password");
 Check(PasswordHelper.MeetsPolicy(state.TemporaryPassword) && PasswordHelper.VerifyPassword(state.TemporaryPassword, state.Hash, state.Salt),

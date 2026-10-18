@@ -301,6 +301,23 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
 			);
 		}
 
+		public Task<int> CancelTestRequestAsync(
+			int testRequestId,
+			int doctorId,
+			string cancelledBy,
+			string reason)
+		{
+			return _db.SaveDataAndReturn<int, object>(
+				"dbo.spTestRequest_CancelByDoctor",
+				new
+				{
+					TestRequestID = testRequestId,
+					DoctorID = doctorId,
+					CancelledBy = cancelledBy,
+					CancelReason = reason
+				});
+		}
+
 		// ============================================================
 		// MEDICAL CONDITIONS
 		// ============================================================

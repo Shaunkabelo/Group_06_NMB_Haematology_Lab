@@ -422,11 +422,11 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
             model.ConfirmPassword = model.Password;
 
 			var saIdNumber = model.SaIdNumber ?? string.Empty;
-			if (model.DateOfBirth == default ||
-				model.DateOfBirth.Date > DateTime.Today ||
+			if (!model.DateOfBirth.HasValue ||
+				model.DateOfBirth.Value > DateOnly.FromDateTime(DateTime.Today) ||
 				!string.Equals(
 					saIdNumber.Length >= 6 ? saIdNumber[..6] : "",
-					model.DateOfBirth.ToString("yyMMdd", CultureInfo.InvariantCulture),
+					model.DateOfBirth.Value.ToString("yyMMdd", CultureInfo.InvariantCulture),
 					StringComparison.Ordinal))
 			{
 				ModelState.AddModelError(
