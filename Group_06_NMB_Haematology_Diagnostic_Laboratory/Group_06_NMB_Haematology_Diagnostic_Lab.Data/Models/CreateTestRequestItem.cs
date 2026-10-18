@@ -12,6 +12,6 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Models
 
 		public int SampleTypeId { get; set; }
 
-		public string BarcodeNumber { get; set; }
+		public string BarcodeNumber { get; set; } = string.Empty;
 	}
 }

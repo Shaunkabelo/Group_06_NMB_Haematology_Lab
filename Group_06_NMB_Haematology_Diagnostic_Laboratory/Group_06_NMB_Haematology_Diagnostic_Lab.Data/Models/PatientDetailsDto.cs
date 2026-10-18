@@ -12,19 +12,19 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Models
 
 		public int UserId { get; set; }
 
-		public string Name { get; set; }
+		public string Name { get; set; } = string.Empty;
 
-		public string Surname { get; set; }
+		public string Surname { get; set; } = string.Empty;
 
-		public string SaIdNumber { get; set; }
+		public string SaIdNumber { get; set; } = string.Empty;
 
 		public DateTime? DateOfBirth { get; set; }
 
-		public string Cellphone { get; set; }
+		public string Cellphone { get; set; } = string.Empty;
 
-		public string Address { get; set; }
+		public string Address { get; set; } = string.Empty;
 
-		public string Email { get; set; }
+		public string Email { get; set; } = string.Empty;
 
 		public string? KnownMedicalConditions { get; set; }
 

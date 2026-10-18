@@ -72,7 +72,7 @@ public class AccountController(IAuthenticationRepository repository, PasswordRes
                 return View();
             }
 
-            claims.Add(new Claim("PatientID", patientId.Value.ToString()));
+            claims.Add(new System.Security.Claims.Claim("PatientID", patientId.Value.ToString()));
         }
 
         if (string.Equals(state.Role, "Admin", StringComparison.OrdinalIgnoreCase))
@@ -88,7 +88,7 @@ public class AccountController(IAuthenticationRepository repository, PasswordRes
                 return View();
             }
 
-            claims.Add(new Claim("AdminID", adminId.Value.ToString()));
+            claims.Add(new System.Security.Claims.Claim("AdminID", adminId.Value.ToString()));
         }
 
         await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme,
