@@ -5,7 +5,7 @@ using Group_06_NMB_Haematology_Diagnostic_Lab.Data.Models;
 namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Services;
 
 /// <summary>Creates a compact, printable PDF summary of a doctor's requests.</summary>
-public static class DoctorRequestsPdfReport
+public static partial class DoctorRequestsPdfReport
 {
     private const float PageWidth = 842;
     private const float PageHeight = 595;
@@ -149,7 +149,7 @@ public static class DoctorRequestsPdfReport
         return result.Count == 0 ? new List<string> { "Not recorded" } : result;
     }
 
-    private static bool IsUrgent(string? urgency) => urgency?.Contains("urgent", StringComparison.OrdinalIgnoreCase) == true;
+    private static bool IsUrgent(string? urgency) => string.Equals(urgency, "Urgent", StringComparison.OrdinalIgnoreCase) || string.Equals(urgency, "STAT", StringComparison.OrdinalIgnoreCase);
     private static bool IsPending(string? status) => status?.Contains("pending", StringComparison.OrdinalIgnoreCase) == true || status?.Contains("submitted", StringComparison.OrdinalIgnoreCase) == true;
 
     private static void Text(StringBuilder content, float x, float y, int size, string value, bool bold = false)

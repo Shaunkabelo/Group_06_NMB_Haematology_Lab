@@ -1,0 +1,74 @@
+@{
+    ViewData["Title"] = "Request Details";
+    Layout = "~/Views/Shared/_LayoutDoctor.cshtml";
+}
+
+<div class="page-body">
+    <div class="section-header">
+        <div class="section-title">Request Details</div>
+        <div id="request-meta" class="section-sub"></div>
+    </div>
+
+    <div id="cancellation-panel"></div>
+
+    <div class="card">
+        <div class="card-header"><span class="card-title">Requested Tests</span></div>
+        <div class="card-body">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Test Type</th>
+                        <th>Sample Barcode</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody id="tests-list"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="card" style="margin-top: 1rem;">
+        <div class="card-header"><span class="card-title">Captured Results for this Request</span></div>
+        <div class="card-body">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Summary</th>
+                        <th>Verified</th>
+                        <th>Created</th>
+                    </tr>
+                </thead>
+                <tbody id="request-results-list"></tbody>
+            </table>
+        </div>
+        <div class="card-footer"><a class="btn" asp-controller="Doctor" asp-action="Requests">Back to Requests</a></div>
+    </div>
+</div>
+
+<script>
+    const detailUrl = '@Url.Action("GetRequestData", "Doctor")';
+    async function loadDetails() {
+        const id = new URLSearchParams(location.search).get('id');
+        const meta = document.getElementById('request-meta');
+        try {
+            const response = await fetch(`${detailUrl}?id=${encodeURIComponent(id)}`, { cache: 'no-store' });
+            if (!response.ok || response.redirected) throw new Error('Request not found or access is no longer available.');
+            const data = await response.json(), request = data.request;
+            meta.textContent = `#${request.id} ? ${request.patientName} ? ${request.status}`;
+            document.getElementById('cancellation-panel').textContent = request.cancellationReason
+                ? `Cancelled: ${request.cancellationReason} (${new Date(request.cancelledDate).toLocaleString()})` : '';
+            function row(body, values) {
+                const tr = document.createElement('tr');
+                values.forEach(value => { const td = document.createElement('td'); td.textContent = value ?? ''; tr.append(td); });
+                body.append(tr);
+            }
+            const tests = document.getElementById('tests-list'); tests.replaceChildren();
+            data.items.forEach(item => row(tests, [item.testType, item.sampleBarcode, item.status]));
+            const results = document.getElementById('request-results-list'); results.replaceChildren();
+            data.results.forEach(r => row(results, [`${r.testName}: ${r.resultValue ?? r.resultText ?? ''} ${r.unitOfMeasurement || ''}${r.isAbnormal ? ' ? ABNORMAL' : ''}`,
+                r.verificationStatus || 'Not verified', r.captureDateTime ? new Date(r.captureDateTime).toLocaleString() : '']));
+            if (!data.results.length) row(results, ['No results captured yet.', '', '']);
+        } catch (error) { meta.textContent = error.message; }
+    }
+    loadDetails();
+</script>

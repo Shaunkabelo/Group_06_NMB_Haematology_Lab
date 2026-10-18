@@ -8,6 +8,9 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Models
 {
 	public class DoctorResultRowDto
 	{
+        public string UnitOfMeasurement { get; set; } = "";
+        public decimal? NormalRangeMin { get; set; }
+        public decimal? NormalRangeMax { get; set; }
 		public int TestRequestId { get; set; }
 
 		public DateTime RequestDate { get; set; }

@@ -62,7 +62,9 @@ Check(temporary.All(PasswordHelper.MeetsPolicy) && temporary.Distinct().Count() 
     "Generated passwords are unique and satisfy policy");
 
 var repository = new FakeRepository();
-AccountController Controller() => new(repository, new PasswordResetQueue(), NullLogger<AccountController>.Instance);
+var actions = new TestActions();
+var navigation = new AccountNavigation(new ConfigurationBuilder().Build(), actions);
+AccountController Controller() => new(repository, new PasswordResetQueue(), NullLogger<AccountController>.Instance, navigation);
 var controller = Controller();
 Check(await controller.Login("invalid-email", password) is ViewResult && repository.Lookups == 0,
     "Malformed login rejected before database access");
@@ -113,11 +115,12 @@ AccountController LoginController(bool signedIn = false)
 bool DoctorDashboard(IActionResult result) => result is RedirectToActionResult { ControllerName: "Doctor", ActionName: "Dashboard" };
 Check(DoctorDashboard(await LoginController().Login("doctor@example.com", password)) && authentication.SignIns == 1,
     "Successful doctor login issues a session and redirects to doctor dashboard");
-Check(DoctorDashboard(LoginController(true).Login()), "Signed-in doctor visiting login reaches dashboard");
+Check(LoginController(true).Login() is RedirectToActionResult { ActionName: "Continue" } &&
+    DoctorDashboard(LoginController(true).Continue()), "Signed-in doctor continues to the role dashboard");
 Check(DoctorDashboard(await LoginController().Login("doctor@example.com", password, returnUrl: "/Account/Login")),
     "Login return URL does not redirect doctor back to login");
-Check(await LoginController().Login("doctor@example.com", password, returnUrl: "/Doctor/Requests") is LocalRedirectResult { Url: "/Doctor/Requests" },
-    "Login preserves local return URL");
+Check(DoctorDashboard(await LoginController().Login("doctor@example.com", password, returnUrl: "/Doctor/Requests")),
+    "Login follows the existing restricted return URL policy");
 Check(DoctorDashboard(await LoginController().Login("doctor@example.com", password, returnUrl: "https://example.com")),
     "Login rejects external return URL");
 repository.State.MustChangePassword = true;
@@ -138,6 +141,8 @@ sealed class FakeRepository : IAuthenticationRepository
     public int ResetCalls { get; private set; }
     public string? LastTokenHash { get; private set; }
     public Task<User?> GetActiveUserByEmail(string email) { Lookups++; return Task.FromResult(LoginUser); }
+    public Task<User?> GetActiveUserById(int id) => Task.FromResult(LoginUser);
+    public Task<bool> UpdateProfile(int id, Guid stamp, string name, string surname, string email, string? phone, string? address) => Task.FromResult(true);
     public Task RecordLogin(int id) => Task.CompletedTask;
     public Task<AuthenticationState?> GetState(int id) => Task.FromResult(State);
     public Task<bool> CreateReset(int id, string hash) => Task.FromResult(true);
@@ -169,4 +174,11 @@ sealed class FakeAuthenticationService : IAuthenticationService
     public Task SignInAsync(HttpContext context, string? scheme, ClaimsPrincipal principal, AuthenticationProperties? properties)
     { SignIns++; return Task.CompletedTask; }
     public Task SignOutAsync(HttpContext context, string? scheme, AuthenticationProperties? properties) => Task.CompletedTask;
+}
+
+sealed class TestActions : Microsoft.AspNetCore.Mvc.Infrastructure.IActionDescriptorCollectionProvider
+{
+    public Microsoft.AspNetCore.Mvc.Infrastructure.ActionDescriptorCollection ActionDescriptors => new(new[] {
+        new Microsoft.AspNetCore.Mvc.Controllers.ControllerActionDescriptor { ControllerName = "Doctor", ActionName = "Dashboard" }
+    }, 0);
 }
