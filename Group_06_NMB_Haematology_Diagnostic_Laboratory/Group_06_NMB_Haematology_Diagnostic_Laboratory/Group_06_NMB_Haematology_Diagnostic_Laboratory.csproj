@@ -27,5 +27,11 @@
     <ProjectReference Include="..\Group_06_NMB_Haematology_Diagnostic_Lab.Data\Group_06_NMB_Haematology_Diagnostic_Lab.Data.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Content Update="wwwroot\**\*">
+      <CopyToPublishDirectory>Always</CopyToPublishDirectory>
+    </Content>
+  </ItemGroup>
+
 </Project>
 
