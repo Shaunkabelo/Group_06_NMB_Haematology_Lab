@@ -9,14 +9,14 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@title - NMB-HLabSys</title>
-    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <base href="@Url.Content("~/")" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/DoctorStyle.css" asp-append-version="true" />
 </head>
 <body>
     <aside class="sidebar">
         <div class="sidebar-brand">
-            <span class="brand-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M9 3h6v2h-1v5.2l5.3 8.1A1.8 1.8 0 0 1 17.8 21H6.2a1.8 1.8 0 0 1-1.5-2.7L10 10.2V5H9V3Zm3 7.8-5.6 8.4h11.2L12 10.8Z" /></svg></span> NMB-HLabSys
+            <span class="brand-icon">🧬</span> NMB-HLabSys
         </div>
         <nav class="nav-menu">
             <div class="sidebar-section">Doctor</div>
@@ -89,7 +89,7 @@
             <h1 class="page-title">@title</h1>
             <div class="topbar-actions">
                 <input type="search" class="form-control search-control" placeholder="Search..." oninput="handleSearch(this.value)" aria-label="Search this page">
-                <button class="btn notification-button" type="button" onclick="showNotifications()" aria-label="Show notifications"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9Zm-8 12a2 2 0 0 0 4 0h-4Z" /></svg></button>
+                <button class="btn" type="button" onclick="showNotifications()">🔔</button>
                 <form asp-controller="Account" asp-action="Logout" method="post" class="logout-form">
                     @Html.AntiForgeryToken()
                     <button class="btn btn-secondary" type="submit">Logout</button>

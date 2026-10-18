@@ -19,21 +19,28 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
 		//=========================
 		// Account
 		//==========================
-		Task<DoctorAccountDto?> GetDoctorAccountAsync(int userId);
+		Task<DoctorAccountDto?> GetDoctorAccountAsync(
+	int userId);
 
-		Task<bool> UpdateDoctorAccountAsync(int userId,UpdateDoctorAccountDto model);
+		Task<bool> UpdateDoctorAccountAsync(
+			int userId,
+			UpdateDoctorAccountDto model);
 
 		Task<User?> GetUserByIdAsync(int userId);
 
-		Task<bool> UpdatePasswordAsync(int userId,string passwordHash,string passwordSalt);
+		Task<bool> UpdatePasswordAsync(
+			int userId,
+			string passwordHash,
+			string passwordSalt);
 		// =========================
 		// PATIENT
 		// =========================
 
 		Task<IEnumerable<DoctorReportDto>>
-	GetDoctorReportAsync(int doctorId,DateTime startDate,DateTime endDate);
-		Task<int> CancelTestRequestAsync(int testRequestId, int doctorId, string cancelledBy, string reason);
-	   //Task<bool> CancelRequestAsync(int testRequestId,int doctorId,string reason);
+	GetDoctorReportAsync(
+		int doctorId,
+		DateTime startDate,
+		DateTime endDate);
 		Task<IEnumerable<Patient>> GetPatientsAsync();
 
 		Task<Patient?> GetPatientByIdAsync(int patientId);
@@ -121,7 +128,7 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
 
 		Task<IEnumerable<TestTypeDto>>GetTestsByCategoryAsync(int testCategoryId);
 		Task<Doctor?> GetDoctorByUserIdAsync(int userId);
-		
+
 		//Task<bool> AddAsync(Doctor doctor);
 		//Task<bool> UpdateAsync(Doctor doctor);
 		//Task<Doctor> GetByIdAsync(int doctorId);
