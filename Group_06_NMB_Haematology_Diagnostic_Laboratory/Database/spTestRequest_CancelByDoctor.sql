@@ -16,7 +16,7 @@ BEGIN
         CancelReason = @CancelReason
     WHERE TestRequestID = @TestRequestID
       AND DoctorID = @DoctorID
-      AND Status IN (N'Submitted', N'Samples Received');
+      AND Status IN (N'Submitted', N'Samples Received', N'Sample(s) received');
 
     IF @@ROWCOUNT = 1
     BEGIN

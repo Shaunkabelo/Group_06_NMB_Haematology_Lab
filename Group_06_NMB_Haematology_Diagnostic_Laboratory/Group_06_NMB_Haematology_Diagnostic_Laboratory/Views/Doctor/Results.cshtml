@@ -1,4 +1,4 @@
-﻿@{
+@{
     ViewData["Title"] = "Results";
     Layout = "~/Views/Shared/_LayoutDoctor.cshtml";
 }
@@ -24,6 +24,22 @@
     <div id="results-list"></div>
 </div>
 
+<div id="result-message" role="status" class="card-body"></div>
+<dialog id="result-delivery-dialog">
+    <form id="result-delivery-form">
+        <h2 id="result-delivery-title">Release results</h2>
+        <label for="result-note">Note to patient</label>
+        <textarea id="result-note" class="form-control" maxlength="2000" required rows="5"></textarea>
+        <label for="result-delivery">Patient notification</label>
+        <select id="result-delivery" class="form-control">
+            <option value="Results">Email results PDF with this note</option>
+            <option value="Appointment">Email appointment invitation without attachment</option>
+        </select>
+        <p>Release makes the verified results available to the patient. Only release after reviewing every result.</p>
+        <button type="button" class="btn btn-secondary" onclick="document.getElementById('result-delivery-dialog').close()">Cancel</button>
+        <button id="result-send" type="submit" class="btn btn-primary">Confirm</button>
+    </form>
+</dialog>
 <style>
     .modal-overlay {
         position: fixed;
@@ -281,8 +297,13 @@
 
 <script>
     // Loads real laboratory results from the DoctorController endpoint.
-    // Release and email operations remain unavailable until server-side workflows exist.
+
     const resultsUrl = '@Url.Action("GetDoctorResults", "Doctor")';
+    const resultPdfUrl = '@Url.Action("DownloadResultPdf", "Doctor")';
+    const releaseResultsUrl = '@Url.Action("ReleaseResults", "Doctor")';
+    const emailResultsUrl = '@Url.Action("EmailResults", "Doctor")';
+    let selectedDeliveryRequest = null;
+    let selectedDeliveryIsRelease = true;
     const expandedResultCards = new Set();
     let resultRequests = [];
 
@@ -412,8 +433,8 @@
                     ${hasAbnormal ? '<div class="result-warning">Contains abnormal results</div>' : ''}
                     <div class="result-card-body">${testsHtml}</div>
                     <div class="result-actions">
-                        <button class="btn btn-secondary" type="button" disabled title="Requires backend email integration">Request Appointment</button>
-                        <button class="btn btn-primary" type="button" disabled title="Requires secure release, PDF and email integration">${released ? 'Released by doctor' : 'Release Results'}</button>
+                        <a class="btn btn-secondary" href="${resultPdfUrl}?id=${item.id}">Download results PDF</a>
+                        <button class="btn btn-primary" type="button" onclick="openResultDelivery(${item.id}, ${!released})">${released ? 'Email patient' : 'Release Results'}</button>
                     </div>
                 </div>
             `;
@@ -426,5 +447,35 @@
         renderResultCards();
     }
 
+    function openResultDelivery(id, release) {
+        selectedDeliveryRequest = id;
+        selectedDeliveryIsRelease = release;
+        document.getElementById('result-delivery-title').textContent = `${release ? 'Release results' : 'Email patient'} ? #${id}`;
+        document.getElementById('result-note').value = '';
+        document.getElementById('result-delivery-dialog').showModal();
+    }
+    document.getElementById('result-delivery-form').addEventListener('submit', async event => {
+        event.preventDefault();
+        const button = document.getElementById('result-send');
+        const message = document.getElementById('result-message');
+        if (button.disabled) return;
+        button.disabled = true;
+        try {
+            const response = await fetch(selectedDeliveryIsRelease ? releaseResultsUrl : emailResultsUrl, {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ testRequestId: selectedDeliveryRequest,
+                    note: document.getElementById('result-note').value,
+                    delivery: document.getElementById('result-delivery').value })
+            });
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.message || 'Unable to send results.');
+            document.getElementById('result-delivery-dialog').close();
+            message.textContent = data.message;
+            await loadDoctorResults();
+        } catch (error) {
+            document.getElementById('result-delivery-dialog').close();
+            message.textContent = error.message;
+        } finally { button.disabled = false; }
+    });
     document.addEventListener('DOMContentLoaded', loadDoctorResults);
 </script>

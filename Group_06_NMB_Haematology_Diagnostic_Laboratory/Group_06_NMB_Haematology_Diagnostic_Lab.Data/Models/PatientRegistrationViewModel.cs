@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 
 namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Models;
 
@@ -28,7 +28,7 @@ public class PatientRegistrationViewModel
 
     [Required]
     [EmailAddress]
-    [StringLength(254)]
+    [StringLength(150)]
     public string Email { get; set; } = "";
 
     [Required]

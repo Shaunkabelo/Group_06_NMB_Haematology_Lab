@@ -1,4 +1,4 @@
-﻿@{
+@{
     ViewData["Title"] = "Doctor Alerts";
     Layout = "~/Views/Shared/_LayoutDoctor.cshtml";
 }
@@ -162,7 +162,7 @@
     function getSelectedDateRange() {
         const today = new Date();
         const start = document.getElementById('alerts-start-date').value ||
-            toDateInputValue(addDays(today, -5));
+            toDateInputValue(addDays(today, -4));
         const end = document.getElementById('alerts-end-date').value ||
             toDateInputValue(today);
         return { start, end };
@@ -241,7 +241,7 @@
         }
 
         const today = new Date();
-        const defaultStart = toDateInputValue(addDays(today, -5));
+        const defaultStart = toDateInputValue(addDays(today, -4));
         const defaultEnd = toDateInputValue(today);
         document.getElementById('alerts-range-note').textContent =
             start === defaultStart && end === defaultEnd
@@ -291,7 +291,7 @@
 
     document.addEventListener('DOMContentLoaded', () => {
         const today = new Date();
-        document.getElementById('alerts-start-date').value = toDateInputValue(addDays(today, -5));
+        document.getElementById('alerts-start-date').value = toDateInputValue(addDays(today, -4));
         document.getElementById('alerts-end-date').value = toDateInputValue(today);
         const tbody = document.getElementById('alerts-tbody');
         document.querySelectorAll('[data-alert-filter]').forEach(button => {
