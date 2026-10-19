@@ -664,6 +664,86 @@ tr:hover {
 .td-actions {
 }
 
+.staff-summary-row {
+    cursor: pointer;
+}
+
+.staff-summary-row:focus {
+    outline: 2px solid var(--blue);
+    outline-offset: -2px;
+}
+
+.staff-detail-row:hover {
+    background: transparent;
+}
+
+.staff-detail-cell {
+    padding: 0;
+    background: #f8fafc;
+}
+
+.staff-detail-content {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+    gap: 18px;
+    padding: 18px 20px;
+    border-top: 1px solid var(--border);
+}
+
+.staff-detail-content h6 {
+    margin: 0 0 8px;
+    color: var(--blue);
+}
+
+.staff-detail-content dl {
+    margin: 0;
+}
+
+.staff-detail-content dt {
+    margin-top: 8px;
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.staff-detail-content dd {
+    margin: 2px 0 0;
+    overflow-wrap: anywhere;
+}
+
+.staff-detail-list {
+    margin: 0;
+    padding-left: 18px;
+}
+
+.staff-detail-list li + li {
+    margin-top: 6px;
+}
+
+.assignment-summary {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    max-width: 100%;
+}
+
+.assignment-summary > :first-child {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.assignment-more {
+    flex: 0 0 auto;
+    padding: 1px 6px;
+    border-radius: 999px;
+    background: rgba(21, 94, 130, .12);
+    color: var(--blue);
+    font-size: 12px;
+    font-weight: 700;
+}
+
 
 /* =========================================================
    BUTTONS

@@ -175,9 +175,19 @@
                 {
                     var assignedIds = assignmentLookup[testType.TestTypeId].Select(a => a.LabTechnicianId).Distinct().ToArray();
                     var activeCount = assignedIds.Count(id => technicianLookup.TryGetValue(id, out var tech) && tech.User.IsActive);
-                    var inactiveCount = assignedIds.Length - activeCount;
+                    var assignedTechnicians = assignedIds
+                        .Where(id => technicianLookup.ContainsKey(id))
+                        .Select(id => technicianLookup[id])
+                        .OrderByDescending(technician => technician.User.IsActive)
+                        .ThenBy(technician => technician.User.Name)
+                        .ThenBy(technician => technician.User.Surname)
+                        .ToList();
+                    var primaryAssignedTechnician = assignedTechnicians.FirstOrDefault();
+                    var additionalAssignedTechnicians = assignedTechnicians.Skip(1).ToList();
 
-                    <tr>
+                    <tr class="staff-summary-row" tabindex="0" role="button"
+                        data-details-target="test-type-details-@testType.TestTypeId" aria-expanded="false"
+                        aria-controls="test-type-details-@testType.TestTypeId" title="Show test type details">
 
                         <td>
                             @testType.TestName
@@ -234,11 +244,20 @@
                         </td>
 
                         <td>
-                            <button type="button" class="btn btn-sm technician-status @(activeCount == 0 ? "technician-status-empty" : "technician-status-assigned")"
-                                    data-bs-toggle="offcanvas" data-bs-target="#testTechniciansPanel"
-                                    onclick="openTestTechnicians(@testType.TestTypeId, false)">
-                                @(activeCount == 0 ? "No active technicians" : $"{activeCount} technician{(activeCount == 1 ? "" : "s")}")
-                            </button>
+                            @if (primaryAssignedTechnician is not null)
+                            {
+                                <span class="assignment-summary technician-status @(primaryAssignedTechnician.User.IsActive ? "technician-status-assigned" : "technician-status-empty")">
+                                    <span>@primaryAssignedTechnician.User.Name @primaryAssignedTechnician.User.Surname</span>
+                                    @if (additionalAssignedTechnicians.Any())
+                                    {
+                                        <span class="assignment-more">+@additionalAssignedTechnicians.Count</span>
+                                    }
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="technician-status technician-status-empty">No technicians assigned</span>
+                            }
 
                         </td>
                         <td>
@@ -341,6 +360,44 @@
 
                         </td>
 
+                    </tr>
+                    <tr id="test-type-details-@testType.TestTypeId" class="staff-detail-row" hidden>
+                        <td colspan="11" class="staff-detail-cell">
+                            <div class="staff-detail-content">
+                                @if (additionalAssignedTechnicians.Any())
+                                {
+                                    <section>
+                                        <h6>Additional assigned technicians</h6>
+                                        <ul class="staff-detail-list">
+                                            @foreach (var technician in additionalAssignedTechnicians)
+                                            {
+                                                <li>
+                                                    @technician.User.Name @technician.User.Surname
+                                                    @if (!technician.User.IsActive)
+                                                    {
+                                                        <span class="text-muted">(Inactive)</span>
+                                                    }
+                                                </li>
+                                            }
+                                        </ul>
+                                    </section>
+                                }
+                                else
+                                {
+                                    <section>
+                                        <h6>Additional assigned technicians</h6>
+                                        <p class="text-muted mb-0">No additional technicians are assigned.</p>
+                                    </section>
+                                }
+                                @if (activeCount == 0)
+                                {
+                                    <section>
+                                        <h6>Assignment status</h6>
+                                        <p class="mb-0 text-danger fw-semibold">No active technicians assigned.</p>
+                                    </section>
+                                }
+                            </div>
+                        </td>
                     </tr>
                 }
 
@@ -864,6 +921,7 @@
         if (event.target.dataset.editing === "true") document.getElementById("assignmentTechnicianSearch").focus();
     });
 </script>
+<script src="~/js/staff-details.js" asp-append-version="true"></script>
 
 
 @section Styles {
@@ -884,8 +942,6 @@
         #testTypesTable .technician-status { border:1px solid; padding:6px 10px; font-weight:600; text-align:left; white-space:nowrap; }
         #testTypesTable .technician-status-empty { color:#a51d2d; background:#fff0f2; border-color:#efb3bb; }
         #testTypesTable .technician-status-assigned { color:#146339; background:#eaf7ef; border-color:#9ed4b3; }
-        #testTypesTable .technician-status:hover { filter:brightness(.96); }
-        #testTypesTable .technician-status:focus-visible { outline:3px solid #285ea8; outline-offset:2px; }
         #testTechniciansPanel [hidden] { display:none !important; }
     </style>
 }

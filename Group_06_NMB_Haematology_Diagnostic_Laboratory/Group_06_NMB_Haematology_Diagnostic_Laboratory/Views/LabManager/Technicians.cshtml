@@ -119,8 +119,16 @@
                     var assignedIds = technicianTestTypes.TryGetValue(technician.LabTechnicianId, out var ids)
                     ? ids
                     : new HashSet<int>();
-                    var assignedTestTypes = testTypes.Where(testType => assignedIds.Contains(testType.TestTypeId)).ToList();
-                    <tr>
+                    var assignedTestTypes = testTypes
+                        .Where(testType => assignedIds.Contains(testType.TestTypeId))
+                        .OrderBy(testType => testType.TestCategory?.CategoryName)
+                        .ThenBy(testType => testType.TestName)
+                        .ToList();
+                    var primaryAssignedTestType = assignedTestTypes.FirstOrDefault();
+                    var additionalAssignedTestTypes = assignedTestTypes.Skip(1).ToList();
+                    <tr class="staff-summary-row" tabindex="0" role="button"
+                        data-details-target="technician-details-@technician.LabTechnicianId" aria-expanded="false"
+                        aria-controls="technician-details-@technician.LabTechnicianId" title="Show technician details">
 
                         <td>@technician.User.Name</td>
 
@@ -133,9 +141,15 @@
                         <td>@technician.User.SaIdNumber</td>
 
                         <td>
-                            @if (assignedTestTypes.Any())
+                            @if (primaryAssignedTestType is not null)
                             {
-                                @string.Join(", ", assignedTestTypes.Select(testType => testType.TestName))
+                                <span class="assignment-summary">
+                                    <span>@primaryAssignedTestType.TestName</span>
+                                    @if (additionalAssignedTestTypes.Any())
+                                    {
+                                        <span class="assignment-more">+@additionalAssignedTestTypes.Count</span>
+                                    }
+                                </span>
                             }
                             else
                             {
@@ -251,6 +265,43 @@
 
                         </td>
 
+                    </tr>
+                    <tr id="technician-details-@technician.LabTechnicianId" class="staff-detail-row" hidden>
+                        <td colspan="8" class="staff-detail-cell">
+                            <div class="staff-detail-content">
+                                <section>
+                                    <h6>Technician details</h6>
+                                    <dl>
+                                        <dt>Employee number</dt><dd>@technician.EmployeeNumber</dd>
+                                        <dt>Date of birth</dt><dd>@(technician.User.DateOfBirth?.ToString("dd MMM yyyy") ?? "Not captured")</dd>
+                                    </dl>
+                                </section>
+                                @if (additionalAssignedTestTypes.Any())
+                                {
+                                    <section>
+                                        <h6>Additional assigned test types</h6>
+                                        <ul class="staff-detail-list">
+                                            @foreach (var testType in additionalAssignedTestTypes)
+                                            {
+                                                <li>@testType.TestName <span class="text-muted">(@(testType.TestCategory?.CategoryName ?? "Uncategorised"))</span></li>
+                                            }
+                                        </ul>
+                                    </section>
+                                }
+                                <section>
+                                    <h6>Residential address</h6>
+                                    @if (technician.User.StructuredAddress is { } address)
+                                    {
+                                        <dl>
+                                            <dt>Address</dt><dd>@address.AddressLine1 @if (!string.IsNullOrWhiteSpace(address.AddressLine2)) { <br />@address.AddressLine2 }</dd>
+                                            <dt>Area</dt><dd>@address.SuburbName, @address.TownCityName, @address.ProvinceName</dd>
+                                            <dt>Area code</dt><dd>@address.AreaCode</dd>
+                                        </dl>
+                                    }
+                                    else { <p class="text-muted mb-0">No structured address captured yet.</p> }
+                                </section>
+                            </div>
+                        </td>
                     </tr>
                 }
 
@@ -670,6 +721,7 @@
     });
 </script>
 <script src="~/js/structured-address.js" asp-append-version="true"></script>
+<script src="~/js/staff-details.js" asp-append-version="true"></script>
 
 
 

@@ -108,7 +108,9 @@
 
                 @foreach (var doctor in Model)
                 {
-                    <tr>
+                    <tr class="staff-summary-row" tabindex="0" role="button"
+                        data-details-target="doctor-details-@doctor.DoctorId" aria-expanded="false"
+                        aria-controls="doctor-details-@doctor.DoctorId" title="Show doctor details">
 
                         <td>@doctor.User.Name</td>
 
@@ -201,6 +203,31 @@
 
                         </td>
 
+                    </tr>
+                    <tr id="doctor-details-@doctor.DoctorId" class="staff-detail-row" hidden>
+                        <td colspan="7" class="staff-detail-cell">
+                            <div class="staff-detail-content">
+                                <section>
+                                    <h6>Doctor details</h6>
+                                    <dl>
+                                        <dt>HPCSA number</dt><dd>@doctor.HpcsaNumber</dd>
+                                        <dt>Date of birth</dt><dd>@(doctor.User.DateOfBirth?.ToString("dd MMM yyyy") ?? "Not captured")</dd>
+                                    </dl>
+                                </section>
+                                <section>
+                                    <h6>Residential address</h6>
+                                    @if (doctor.User.StructuredAddress is { } address)
+                                    {
+                                        <dl>
+                                            <dt>Address</dt><dd>@address.AddressLine1 @if (!string.IsNullOrWhiteSpace(address.AddressLine2)) { <br />@address.AddressLine2 }</dd>
+                                            <dt>Area</dt><dd>@address.SuburbName, @address.TownCityName, @address.ProvinceName</dd>
+                                            <dt>Area code</dt><dd>@address.AreaCode</dd>
+                                        </dl>
+                                    }
+                                    else { <p class="text-muted mb-0">No structured address captured yet.</p> }
+                                </section>
+                            </div>
+                        </td>
                     </tr>
                 }
 
@@ -474,5 +501,6 @@
 
 </script>
 <script src="~/js/structured-address.js" asp-append-version="true"></script>
+<script src="~/js/staff-details.js" asp-append-version="true"></script>
 
 
