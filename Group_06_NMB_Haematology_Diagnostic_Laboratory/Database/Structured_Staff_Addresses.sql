@@ -180,7 +180,7 @@ BEGIN
         IF NOT EXISTS (SELECT 1 FROM dbo.Suburb WHERE SuburbID = @SuburbID AND IsActive = 1) THROW 51002, 'The selected suburb is not active.', 1;
         DECLARE @UserID INT = (SELECT UserID FROM dbo.Doctor WHERE DoctorID = @DoctorID);
         IF @UserID IS NULL THROW 51003, 'Doctor was not found.', 1;
-        UPDATE dbo.[User] SET Name=@Name,Surname=@Surname,Email=@Email,Cellphone=@Cellphone,HomeAddress=@HomeAddress,SA_ID_Number=@SA_ID_Number,DateOfBirth=@DateOfBirth,UpdatedAt=SYSUTCDATETIME() WHERE UserID=@UserID;
+        UPDATE dbo.[User] SET Name=@Name,Surname=@Surname,Email=@Email,Cellphone=@Cellphone,HomeAddress=COALESCE(@HomeAddress,HomeAddress),SA_ID_Number=@SA_ID_Number,DateOfBirth=@DateOfBirth,UpdatedAt=SYSUTCDATETIME() WHERE UserID=@UserID;
         UPDATE dbo.Doctor SET HPCSA_Number=@HPCSA_Number WHERE DoctorID=@DoctorID;
         MERGE dbo.UserAddress AS target USING (SELECT @UserID UserID) AS source ON target.UserID=source.UserID
         WHEN MATCHED THEN UPDATE SET AddressLine1=@AddressLine1,AddressLine2=NULLIF(@AddressLine2,N''),SuburbID=@SuburbID,UpdatedAt=SYSUTCDATETIME()
@@ -221,7 +221,7 @@ BEGIN
         IF NOT EXISTS (SELECT 1 FROM dbo.Suburb WHERE SuburbID=@SuburbID AND IsActive=1) THROW 51002, 'The selected suburb is not active.', 1;
         DECLARE @UserID INT=(SELECT UserID FROM dbo.LabManager WHERE LabManagerID=@LabManagerID);
         IF @UserID IS NULL THROW 51003, 'Lab manager was not found.', 1;
-        UPDATE dbo.[User] SET Name=@Name,Surname=@Surname,Email=@Email,Cellphone=@Cellphone,HomeAddress=@HomeAddress,SA_ID_Number=@SA_ID_Number,DateOfBirth=@DateOfBirth,UpdatedAt=SYSUTCDATETIME() WHERE UserID=@UserID;
+        UPDATE dbo.[User] SET Name=@Name,Surname=@Surname,Email=@Email,Cellphone=@Cellphone,HomeAddress=COALESCE(@HomeAddress,HomeAddress),SA_ID_Number=@SA_ID_Number,DateOfBirth=@DateOfBirth,UpdatedAt=SYSUTCDATETIME() WHERE UserID=@UserID;
         MERGE dbo.UserAddress AS target USING (SELECT @UserID UserID) AS source ON target.UserID=source.UserID
         WHEN MATCHED THEN UPDATE SET AddressLine1=@AddressLine1,AddressLine2=NULLIF(@AddressLine2,N''),SuburbID=@SuburbID,UpdatedAt=SYSUTCDATETIME()
         WHEN NOT MATCHED THEN INSERT(UserID,AddressLine1,AddressLine2,SuburbID) VALUES(@UserID,@AddressLine1,NULLIF(@AddressLine2,N''),@SuburbID);
@@ -262,7 +262,7 @@ BEGIN
         IF NOT EXISTS (SELECT 1 FROM dbo.Suburb WHERE SuburbID=@SuburbID AND IsActive=1) THROW 51002, 'The selected suburb is not active.', 1;
         DECLARE @UserID INT=(SELECT UserID FROM dbo.LabTechnician WHERE LabTechnicianID=@LabTechnicianID);
         IF @UserID IS NULL THROW 51003, 'Lab technician was not found.', 1;
-        UPDATE dbo.[User] SET Name=@Name,Surname=@Surname,Email=@Email,Cellphone=@Cellphone,HomeAddress=@HomeAddress,SA_ID_Number=@SA_ID_Number,DateOfBirth=@DateOfBirth,UpdatedAt=SYSUTCDATETIME() WHERE UserID=@UserID;
+        UPDATE dbo.[User] SET Name=@Name,Surname=@Surname,Email=@Email,Cellphone=@Cellphone,HomeAddress=COALESCE(@HomeAddress,HomeAddress),SA_ID_Number=@SA_ID_Number,DateOfBirth=@DateOfBirth,UpdatedAt=SYSUTCDATETIME() WHERE UserID=@UserID;
         UPDATE dbo.LabTechnician SET EmployeeNumber=@EmployeeNumber WHERE LabTechnicianID=@LabTechnicianID;
         MERGE dbo.UserAddress AS target USING (SELECT @UserID UserID) AS source ON target.UserID=source.UserID
         WHEN MATCHED THEN UPDATE SET AddressLine1=@AddressLine1,AddressLine2=NULLIF(@AddressLine2,N''),SuburbID=@SuburbID,UpdatedAt=SYSUTCDATETIME()

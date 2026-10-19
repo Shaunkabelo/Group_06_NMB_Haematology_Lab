@@ -369,7 +369,7 @@
             "Save Supplier";
 
         document.getElementById("supplierForm").action =
-            "/LabManager/CreateSupplier";
+            '@Url.Action("CreateSupplier", "LabManager")';
 
         document.getElementById("supplierForm").reset();
 
@@ -386,7 +386,7 @@
             "Update Supplier";
 
         document.getElementById("supplierForm").action =
-            "/LabManager/EditSupplier";
+            '@Url.Action("EditSupplier", "LabManager")';
 
 
         document.getElementById("SupplierId").value =

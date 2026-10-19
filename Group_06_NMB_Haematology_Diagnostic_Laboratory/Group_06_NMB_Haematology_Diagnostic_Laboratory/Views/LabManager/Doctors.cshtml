@@ -414,7 +414,7 @@
             "Save Doctor";
 
         document.getElementById("doctorForm").action =
-            "/LabManager/CreateDoctor";
+            '@Url.Action("CreateDoctor", "LabManager")';
 
         document.getElementById("doctorForm").reset();
         structuredAddress.reset("doctorAddress");
@@ -436,7 +436,7 @@
             "Update Doctor";
 
         document.getElementById("doctorForm").action =
-            "/LabManager/EditDoctor";
+            '@Url.Action("EditDoctor", "LabManager")';
 
 
         document.getElementById("DoctorId").value =

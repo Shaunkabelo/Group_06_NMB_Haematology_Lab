@@ -387,7 +387,7 @@
             "Save Category";
 
         document.getElementById("categoryForm").action =
-            "/LabManager/CreateTestCategory";
+            '@Url.Action("CreateTestCategory", "LabManager")';
 
         document.getElementById("categoryForm").reset();
 
@@ -408,7 +408,7 @@
             "Update Category";
 
         document.getElementById("categoryForm").action =
-            "/LabManager/EditTestCategory";
+            '@Url.Action("EditTestCategory", "LabManager")';
 
 
         document.getElementById("TestCategoryId").value =

@@ -20,16 +20,27 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
             _db = db;
         }
 
-        private async Task AttachStructuredAddresses(IEnumerable<User> users)
+        // The generated staff procedures return the legacy User columns.  Addresses
+        // live in UserAddress, so attach them consistently after each staff lookup.
+        private async Task PopulateStructuredAddresses(IEnumerable<User?> users)
         {
             var addresses = (await _db.GetData<UserAddress, object>(
                 "sp_Address_GetAllUserAddresses", new { }))
-                .ToDictionary(address => address.UserId);
+                .GroupBy(address => address.UserId)
+                .ToDictionary(group => group.Key, group => group.First());
 
             foreach (var user in users.Where(user => user != null))
-                if (addresses.TryGetValue(user.UserId, out var address))
-                    user.StructuredAddress = address;
+                user!.StructuredAddress = addresses.GetValueOrDefault(user.UserId);
         }
+
+        public Task<IEnumerable<Province>> GetProvinces() =>
+            _db.GetData<Province, object>("sp_Address_GetProvinces", new { });
+
+        public Task<IEnumerable<TownCity>> GetTownCities(int provinceId) =>
+            _db.GetData<TownCity, object>("sp_Address_GetTownCitiesByProvince", new { ProvinceID = provinceId });
+
+        public Task<IEnumerable<Suburb>> GetSuburbs(int townCityId) =>
+            _db.GetData<Suburb, object>("sp_Address_GetSuburbsByTownCity", new { TownCityID = townCityId });
 
         // ============================== DOCTOR ================================================================
         //=======================================================================================================
@@ -37,7 +48,7 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
         // ------------------- GET/DISPLAY DOCTORS -----------
         public async Task<IEnumerable<Doctor>> GetDoctors(string filter = "Active")
         {
-            var doctors = (await _db.GetData<Doctor, User, Doctor, dynamic>(
+            var doctors = await _db.GetData<Doctor, User, Doctor, dynamic>(
                 "sp_Doctor_GetAll",
                 (doctor, user) =>
                 {
@@ -48,9 +59,15 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
                 {
                     Filter = filter
                 },
-                splitOn: "UserId")).ToList();
-            await AttachStructuredAddresses(doctors.Select(doctor => doctor.User));
-            return doctors;
+                splitOn: "UserId"
+            );
+
+            var doctorList = doctors.ToList();
+            await PopulateStructuredAddresses(doctorList.Select(doctor => doctor.User));
+
+            return doctorList
+                .OrderBy(doctor => doctor.User?.Surname ?? string.Empty, StringComparer.OrdinalIgnoreCase)
+                .ThenBy(doctor => doctor.User?.Name ?? string.Empty, StringComparer.OrdinalIgnoreCase);
         }
         // -------------- CREATE/ADD DOCTORS ----------------
         public async Task CreateDoctor(Doctor doctor, string temporaryPassword)
@@ -75,16 +92,16 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
                     PasswordSalt = salt,
 
                     doctor.User.Cellphone,
-                    doctor.User.HomeAddress,
-                    AddressLine1 = doctor.User.StructuredAddress?.AddressLine1,
-                    AddressLine2 = doctor.User.StructuredAddress?.AddressLine2,
-                    SuburbID = doctor.User.StructuredAddress?.SuburbId,
+                    HomeAddress = (string?)null,
 
                     SA_ID_Number = doctor.User.SaIdNumber,
 
                     doctor.User.DateOfBirth,
 
-                    HPCSA_Number = doctor.HpcsaNumber
+                    HPCSA_Number = doctor.HpcsaNumber,
+                    AddressLine1 = doctor.User.StructuredAddress?.AddressLine1,
+                    AddressLine2 = doctor.User.StructuredAddress?.AddressLine2,
+                    SuburbID = doctor.User.StructuredAddress?.SuburbId
                 });
         }
         //-------------------------- DET DOCTOR BY ID [For Delete & Update]
@@ -105,7 +122,7 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
             );
 
             var result = doctor.FirstOrDefault();
-            if (result?.User != null) await AttachStructuredAddresses(new[] { result.User });
+            if (result?.User != null) await PopulateStructuredAddresses(new[] { result.User });
             return result;
         }
         // ---------------------- UPDATE DOCTOR ----------------------
@@ -121,16 +138,16 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
                     doctor.User.Surname,
                     doctor.User.Email,
                     doctor.User.Cellphone,
-                    doctor.User.HomeAddress,
-                    AddressLine1 = doctor.User.StructuredAddress?.AddressLine1,
-                    AddressLine2 = doctor.User.StructuredAddress?.AddressLine2,
-                    SuburbID = doctor.User.StructuredAddress?.SuburbId,
+                    HomeAddress = (string?)null,
 
                     SA_ID_Number = doctor.User.SaIdNumber,
 
                     doctor.User.DateOfBirth,
 
-                    HPCSA_Number = doctor.HpcsaNumber
+                    HPCSA_Number = doctor.HpcsaNumber,
+                    AddressLine1 = doctor.User.StructuredAddress?.AddressLine1,
+                    AddressLine2 = doctor.User.StructuredAddress?.AddressLine2,
+                    SuburbID = doctor.User.StructuredAddress?.SuburbId
                 });
         }
         // --------------DELETE DOCTOR------[Soft delete]
@@ -166,7 +183,7 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
         //------------------------- DISPLAY TECHNICIANS
         public async Task<IEnumerable<LabTechnician>> GetTechnicians(string filter = "Active")
         {
-            var technicians = (await _db.GetData<LabTechnician, User, LabTechnician, dynamic>(
+            var technicians = await _db.GetData<LabTechnician, User, LabTechnician, dynamic>(
                 "sp_LabTechnician_GetAll",
                 (technician, user) =>
                 {
@@ -177,9 +194,15 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
                 {
                     Filter = filter
                 },
-                splitOn: "UserId")).ToList();
-            await AttachStructuredAddresses(technicians.Select(technician => technician.User));
-            return technicians;
+                splitOn: "UserId"
+            );
+
+            var technicianList = technicians.ToList();
+            await PopulateStructuredAddresses(technicianList.Select(technician => technician.User));
+
+            return technicianList
+                .OrderBy(technician => technician.User?.Surname ?? string.Empty, StringComparer.OrdinalIgnoreCase)
+                .ThenBy(technician => technician.User?.Name ?? string.Empty, StringComparer.OrdinalIgnoreCase);
         }
 
         // ----------------SELECT TECH BY ID [For Delete & Update]------------------
@@ -200,7 +223,7 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
             );
 
             var result = technician.FirstOrDefault();
-            if (result?.User != null) await AttachStructuredAddresses(new[] { result.User });
+            if (result?.User != null) await PopulateStructuredAddresses(new[] { result.User });
             return result;
         }
 
@@ -221,11 +244,11 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
                 {
                     technician.User.Name, technician.User.Surname, technician.User.Email,
                     PasswordHash = hash, PasswordSalt = salt, technician.User.Cellphone,
-                    technician.User.HomeAddress, SA_ID_Number = technician.User.SaIdNumber,
+                    HomeAddress = (string?)null, SA_ID_Number = technician.User.SaIdNumber,
+                    technician.User.DateOfBirth, technician.EmployeeNumber,
                     AddressLine1 = technician.User.StructuredAddress?.AddressLine1,
                     AddressLine2 = technician.User.StructuredAddress?.AddressLine2,
-                    SuburbID = technician.User.StructuredAddress?.SuburbId,
-                    technician.User.DateOfBirth, technician.EmployeeNumber
+                    SuburbID = technician.User.StructuredAddress?.SuburbId
                 }, transaction, commandType: CommandType.StoredProcedure);
                 await connection.ExecuteAsync("sp_LabTechnicianTestType_Replace", new
                 {
@@ -247,16 +270,16 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
                     technician.User.Surname,
                     technician.User.Email,
                     technician.User.Cellphone,
-                    technician.User.HomeAddress,
-                    AddressLine1 = technician.User.StructuredAddress?.AddressLine1,
-                    AddressLine2 = technician.User.StructuredAddress?.AddressLine2,
-                    SuburbID = technician.User.StructuredAddress?.SuburbId,
+                    HomeAddress = (string?)null,
 
                     SA_ID_Number = technician.User.SaIdNumber,
 
                     technician.User.DateOfBirth,
 
                     technician.EmployeeNumber,
+                    AddressLine1 = technician.User.StructuredAddress?.AddressLine1,
+                    AddressLine2 = technician.User.StructuredAddress?.AddressLine2,
+                    SuburbID = technician.User.StructuredAddress?.SuburbId,
 
 
                 });
@@ -314,7 +337,7 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
         // ------------------------- DISPLAY MANAGERS -------------------------
         public async Task<IEnumerable<LabManager>> GetManagers(string filter = "Active")
         {
-            var managers = (await _db.GetData<LabManager, User, LabManager, dynamic>(
+            var managers = await _db.GetData<LabManager, User, LabManager, dynamic>(
                 "sp_LabManager_GetAll",
                 (manager, user) =>
                 {
@@ -325,9 +348,15 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
                 {
                     Filter = filter
                 },
-                splitOn: "UserId")).ToList();
-            await AttachStructuredAddresses(managers.Select(manager => manager.User));
-            return managers;
+                splitOn: "UserId"
+            );
+
+            var managerList = managers.ToList();
+            await PopulateStructuredAddresses(managerList.Select(manager => manager.User));
+
+            return managerList
+                .OrderBy(manager => manager.User?.Surname ?? string.Empty, StringComparer.OrdinalIgnoreCase)
+                .ThenBy(manager => manager.User?.Name ?? string.Empty, StringComparer.OrdinalIgnoreCase);
         }
 
         // ------------------------- GET MANAGER BY ID -------------------------
@@ -348,7 +377,7 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
             );
 
             var result = manager.FirstOrDefault();
-            if (result?.User != null) await AttachStructuredAddresses(new[] { result.User });
+            if (result?.User != null) await PopulateStructuredAddresses(new[] { result.User });
             return result;
         }
 
@@ -375,14 +404,14 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
                     PasswordSalt = salt,
 
                     manager.User.Cellphone,
-                    manager.User.HomeAddress,
-                    AddressLine1 = manager.User.StructuredAddress?.AddressLine1,
-                    AddressLine2 = manager.User.StructuredAddress?.AddressLine2,
-                    SuburbID = manager.User.StructuredAddress?.SuburbId,
+                    HomeAddress = (string?)null,
 
                     SA_ID_Number = manager.User.SaIdNumber,
 
-                    manager.User.DateOfBirth
+                    manager.User.DateOfBirth,
+                    AddressLine1 = manager.User.StructuredAddress?.AddressLine1,
+                    AddressLine2 = manager.User.StructuredAddress?.AddressLine2,
+                    SuburbID = manager.User.StructuredAddress?.SuburbId
                 });
         }
 
@@ -399,14 +428,14 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
                     manager.User.Surname,
                     manager.User.Email,
                     manager.User.Cellphone,
-                    manager.User.HomeAddress,
-                    AddressLine1 = manager.User.StructuredAddress?.AddressLine1,
-                    AddressLine2 = manager.User.StructuredAddress?.AddressLine2,
-                    SuburbID = manager.User.StructuredAddress?.SuburbId,
+                    HomeAddress = (string?)null,
 
                     SA_ID_Number = manager.User.SaIdNumber,
 
-                    manager.User.DateOfBirth
+                    manager.User.DateOfBirth,
+                    AddressLine1 = manager.User.StructuredAddress?.AddressLine1,
+                    AddressLine2 = manager.User.StructuredAddress?.AddressLine2,
+                    SuburbID = manager.User.StructuredAddress?.SuburbId
                 });
         }
 
@@ -432,15 +461,6 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
                 });
         }
 
-        public Task<IEnumerable<Province>> GetProvinces() =>
-            _db.GetData<Province, object>("sp_Address_GetProvinces", new { });
-
-        public Task<IEnumerable<TownCity>> GetTownCities(int provinceId) =>
-            _db.GetData<TownCity, object>("sp_Address_GetTownCitiesByProvince", new { ProvinceID = provinceId });
-
-        public Task<IEnumerable<Suburb>> GetSuburbs(int townCityId) =>
-            _db.GetData<Suburb, object>("sp_Address_GetSuburbsByTownCity", new { TownCityID = townCityId });
-
 
         //================================ SUPPLIER ======================================================
         //================================================================================================
@@ -450,13 +470,15 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
         string filter = "Active",
          string search = "")
         {
-            return await _db.GetData<Supplier, dynamic>(
+            var suppliers = await _db.GetData<Supplier, dynamic>(
                 "sp_Supplier_GetAll",
                 new
                 {
                     Filter = filter,
                     Search = search
                 });
+
+            return suppliers.OrderBy(supplier => supplier.SupplierName ?? string.Empty, StringComparer.OrdinalIgnoreCase);
         }
 
         // ------------------------- GET SUPPLIER BY ID -------------------------
@@ -544,7 +566,7 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
                 consumable.Supplier = await GetSupplierById(consumable.SupplierId);
             }
 
-            return consumables;
+            return consumables.OrderBy(consumable => consumable.Name ?? string.Empty, StringComparer.OrdinalIgnoreCase);
         }
 
         // ------------------------- GET CONSUMABLE BY ID -------------------------
@@ -670,7 +692,9 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
                 }
             }
 
-            return orders;
+            return orders
+                .OrderBy(order => order.Supplier?.SupplierName ?? string.Empty, StringComparer.OrdinalIgnoreCase)
+                .ThenBy(order => order.OrderNumber ?? string.Empty, StringComparer.OrdinalIgnoreCase);
         }
 
         public async Task<StockOrder?> GetStockOrderById(int stockOrderId)
@@ -728,6 +752,10 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
                     }
                 });
             }
+
+            order.StockOrderItem = order.StockOrderItem
+                .OrderBy(item => item.Consumable?.Name ?? string.Empty, StringComparer.OrdinalIgnoreCase)
+                .ToList();
 
             return order;
         }
@@ -799,7 +827,7 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
                 consumable.Supplier = await GetSupplierById(consumable.SupplierId);
             }
 
-            return consumables;
+            return consumables.OrderBy(consumable => consumable.Name ?? string.Empty, StringComparer.OrdinalIgnoreCase);
         }
 
         private static T ReadValue<T>(IDictionary<string, object> row, string columnName)
@@ -829,7 +857,8 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
                 Search = search ?? ""
             };
 
-            return MapTestTypes(await _db.GetData<dynamic, object>("sp_TestType_GetAll", parameters));
+            return MapTestTypes(await _db.GetData<dynamic, object>("sp_TestType_GetAll", parameters))
+                .OrderBy(testType => testType.TestName ?? string.Empty, StringComparer.OrdinalIgnoreCase);
         }
 
 
@@ -1063,13 +1092,15 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
             string filter = "Active",
             string search = "")
         {
-            return await _db.GetData<TestCategory, object>(
+            var categories = await _db.GetData<TestCategory, object>(
                 "sp_TestCategory_GetAll",
                 new
                 {
                     Filter = filter,
                     Search = search
                 });
+
+            return categories.OrderBy(category => category.CategoryName ?? string.Empty, StringComparer.OrdinalIgnoreCase);
         }
 
         // ------------------- GET CATEGOTRY BY ID -----------
@@ -1141,13 +1172,15 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
             string filter = "Active",
             string search = "")
         {
-            return await _db.GetData<SampleType, object>(
+            var sampleTypes = await _db.GetData<SampleType, object>(
                 "sp_SampleType_GetAll",
                 new
                 {
                     Filter = filter,
                     Search = search
                 });
+
+            return sampleTypes.OrderBy(sampleType => sampleType.SampleTypeName ?? string.Empty, StringComparer.OrdinalIgnoreCase);
         }
 
         //-------------------- GET BY ID ---------------------------------

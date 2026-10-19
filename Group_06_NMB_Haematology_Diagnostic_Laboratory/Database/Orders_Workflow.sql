@@ -97,6 +97,9 @@ AS BEGIN
  DECLARE @Status nvarchar(30),@Now datetime2=SYSUTCDATETIME();
  SELECT @Status=Status FROM dbo.StockOrder WITH(UPDLOCK,HOLDLOCK) WHERE StockOrderID=@StockOrderID;
  IF @Status IS NULL OR @Status NOT IN (''Ordered'',''Partially complete'') THROW 50110,''Only an open order can be cancelled. Refresh the page.'',1;
+ DECLARE @OutstandingCount int=(SELECT COUNT(*) FROM dbo.StockOrderItem WITH(UPDLOCK,HOLDLOCK) WHERE StockOrderID=@StockOrderID AND Status=''Ordered'');
+ IF @OutstandingCount=0 THROW 50110,''There are no remaining items to cancel. Refresh the page.'',1;
+ -- Received lines are preserved. Only outstanding lines are cancelled.
  UPDATE dbo.StockOrderItem SET Status=''Cancelled'',CancelReason=@CancelReason,CancelledDate=@Now WHERE StockOrderID=@StockOrderID AND Status=''Ordered'';
  UPDATE dbo.StockOrder SET Status=''Cancelled'',CancelReason=@CancelReason,CancelledDate=@Now,CompletionDate=NULL WHERE StockOrderID=@StockOrderID;
  COMMIT;

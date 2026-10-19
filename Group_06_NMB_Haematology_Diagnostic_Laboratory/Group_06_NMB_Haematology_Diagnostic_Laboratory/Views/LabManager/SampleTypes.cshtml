@@ -367,7 +367,7 @@
             "Save Sample Type";
 
         document.getElementById("sampleTypeForm").action =
-            "/LabManager/CreateSampleType";
+            '@Url.Action("CreateSampleType", "LabManager")';
 
         document.getElementById("sampleTypeForm").reset();
 
@@ -388,7 +388,7 @@
             "Update Sample Type";
 
         document.getElementById("sampleTypeForm").action =
-            "/LabManager/EditSampleType";
+            '@Url.Action("EditSampleType", "LabManager")';
 
 
         document.getElementById("SampleTypeId").value =
