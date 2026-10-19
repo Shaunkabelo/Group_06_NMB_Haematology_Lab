@@ -20,6 +20,28 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
             _db = db;
         }
 
+        // The generated staff procedures return the legacy User columns.  Addresses
+        // live in UserAddress, so attach them consistently after each staff lookup.
+        private async Task PopulateStructuredAddresses(IEnumerable<User?> users)
+        {
+            var addresses = (await _db.GetData<UserAddress, object>(
+                "sp_Address_GetAllUserAddresses", new { }))
+                .GroupBy(address => address.UserId)
+                .ToDictionary(group => group.Key, group => group.First());
+
+            foreach (var user in users.Where(user => user != null))
+                user!.StructuredAddress = addresses.GetValueOrDefault(user.UserId);
+        }
+
+        public Task<IEnumerable<Province>> GetProvinces() =>
+            _db.GetData<Province, object>("sp_Address_GetProvinces", new { });
+
+        public Task<IEnumerable<TownCity>> GetTownCities(int provinceId) =>
+            _db.GetData<TownCity, object>("sp_Address_GetTownCitiesByProvince", new { ProvinceID = provinceId });
+
+        public Task<IEnumerable<Suburb>> GetSuburbs(int townCityId) =>
+            _db.GetData<Suburb, object>("sp_Address_GetSuburbsByTownCity", new { TownCityID = townCityId });
+
         // ============================== DOCTOR ================================================================
         //=======================================================================================================
 
@@ -40,7 +62,10 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
                 splitOn: "UserId"
             );
 
-            return doctors
+            var doctorList = doctors.ToList();
+            await PopulateStructuredAddresses(doctorList.Select(doctor => doctor.User));
+
+            return doctorList
                 .OrderBy(doctor => doctor.User?.Surname ?? string.Empty, StringComparer.OrdinalIgnoreCase)
                 .ThenBy(doctor => doctor.User?.Name ?? string.Empty, StringComparer.OrdinalIgnoreCase);
         }
@@ -67,13 +92,16 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
                     PasswordSalt = salt,
 
                     doctor.User.Cellphone,
-                    doctor.User.HomeAddress,
+                    HomeAddress = (string?)null,
 
                     SA_ID_Number = doctor.User.SaIdNumber,
 
                     doctor.User.DateOfBirth,
 
-                    HPCSA_Number = doctor.HpcsaNumber
+                    HPCSA_Number = doctor.HpcsaNumber,
+                    AddressLine1 = doctor.User.StructuredAddress?.AddressLine1,
+                    AddressLine2 = doctor.User.StructuredAddress?.AddressLine2,
+                    SuburbID = doctor.User.StructuredAddress?.SuburbId
                 });
         }
         //-------------------------- DET DOCTOR BY ID [For Delete & Update]
@@ -93,7 +121,9 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
                 splitOn: "UserID"
             );
 
-            return doctor.FirstOrDefault();
+            var result = doctor.FirstOrDefault();
+            if (result?.User != null) await PopulateStructuredAddresses(new[] { result.User });
+            return result;
         }
         // ---------------------- UPDATE DOCTOR ----------------------
         public async Task UpdateDoctor(Doctor doctor)
@@ -108,13 +138,16 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
                     doctor.User.Surname,
                     doctor.User.Email,
                     doctor.User.Cellphone,
-                    doctor.User.HomeAddress,
+                    HomeAddress = (string?)null,
 
                     SA_ID_Number = doctor.User.SaIdNumber,
 
                     doctor.User.DateOfBirth,
 
-                    HPCSA_Number = doctor.HpcsaNumber
+                    HPCSA_Number = doctor.HpcsaNumber,
+                    AddressLine1 = doctor.User.StructuredAddress?.AddressLine1,
+                    AddressLine2 = doctor.User.StructuredAddress?.AddressLine2,
+                    SuburbID = doctor.User.StructuredAddress?.SuburbId
                 });
         }
         // --------------DELETE DOCTOR------[Soft delete]
@@ -164,7 +197,10 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
                 splitOn: "UserId"
             );
 
-            return technicians
+            var technicianList = technicians.ToList();
+            await PopulateStructuredAddresses(technicianList.Select(technician => technician.User));
+
+            return technicianList
                 .OrderBy(technician => technician.User?.Surname ?? string.Empty, StringComparer.OrdinalIgnoreCase)
                 .ThenBy(technician => technician.User?.Name ?? string.Empty, StringComparer.OrdinalIgnoreCase);
         }
@@ -186,7 +222,9 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
                 splitOn: "UserId"
             );
 
-            return technician.FirstOrDefault();
+            var result = technician.FirstOrDefault();
+            if (result?.User != null) await PopulateStructuredAddresses(new[] { result.User });
+            return result;
         }
 
         // ------------------------   CREATE / ADD TECHNICIAN --------------------------------
@@ -206,8 +244,11 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
                 {
                     technician.User.Name, technician.User.Surname, technician.User.Email,
                     PasswordHash = hash, PasswordSalt = salt, technician.User.Cellphone,
-                    technician.User.HomeAddress, SA_ID_Number = technician.User.SaIdNumber,
-                    technician.User.DateOfBirth, technician.EmployeeNumber
+                    HomeAddress = (string?)null, SA_ID_Number = technician.User.SaIdNumber,
+                    technician.User.DateOfBirth, technician.EmployeeNumber,
+                    AddressLine1 = technician.User.StructuredAddress?.AddressLine1,
+                    AddressLine2 = technician.User.StructuredAddress?.AddressLine2,
+                    SuburbID = technician.User.StructuredAddress?.SuburbId
                 }, transaction, commandType: CommandType.StoredProcedure);
                 await connection.ExecuteAsync("sp_LabTechnicianTestType_Replace", new
                 {
@@ -229,13 +270,16 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
                     technician.User.Surname,
                     technician.User.Email,
                     technician.User.Cellphone,
-                    technician.User.HomeAddress,
+                    HomeAddress = (string?)null,
 
                     SA_ID_Number = technician.User.SaIdNumber,
 
                     technician.User.DateOfBirth,
 
                     technician.EmployeeNumber,
+                    AddressLine1 = technician.User.StructuredAddress?.AddressLine1,
+                    AddressLine2 = technician.User.StructuredAddress?.AddressLine2,
+                    SuburbID = technician.User.StructuredAddress?.SuburbId,
 
 
                 });
@@ -307,7 +351,10 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
                 splitOn: "UserId"
             );
 
-            return managers
+            var managerList = managers.ToList();
+            await PopulateStructuredAddresses(managerList.Select(manager => manager.User));
+
+            return managerList
                 .OrderBy(manager => manager.User?.Surname ?? string.Empty, StringComparer.OrdinalIgnoreCase)
                 .ThenBy(manager => manager.User?.Name ?? string.Empty, StringComparer.OrdinalIgnoreCase);
         }
@@ -329,7 +376,9 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
                 splitOn: "UserId"
             );
 
-            return manager.FirstOrDefault();
+            var result = manager.FirstOrDefault();
+            if (result?.User != null) await PopulateStructuredAddresses(new[] { result.User });
+            return result;
         }
 
         // ------------------------- CREATE MANAGER -------------------------
@@ -355,11 +404,14 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
                     PasswordSalt = salt,
 
                     manager.User.Cellphone,
-                    manager.User.HomeAddress,
+                    HomeAddress = (string?)null,
 
                     SA_ID_Number = manager.User.SaIdNumber,
 
-                    manager.User.DateOfBirth
+                    manager.User.DateOfBirth,
+                    AddressLine1 = manager.User.StructuredAddress?.AddressLine1,
+                    AddressLine2 = manager.User.StructuredAddress?.AddressLine2,
+                    SuburbID = manager.User.StructuredAddress?.SuburbId
                 });
         }
 
@@ -376,11 +428,14 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
                     manager.User.Surname,
                     manager.User.Email,
                     manager.User.Cellphone,
-                    manager.User.HomeAddress,
+                    HomeAddress = (string?)null,
 
                     SA_ID_Number = manager.User.SaIdNumber,
 
-                    manager.User.DateOfBirth
+                    manager.User.DateOfBirth,
+                    AddressLine1 = manager.User.StructuredAddress?.AddressLine1,
+                    AddressLine2 = manager.User.StructuredAddress?.AddressLine2,
+                    SuburbID = manager.User.StructuredAddress?.SuburbId
                 });
         }
 

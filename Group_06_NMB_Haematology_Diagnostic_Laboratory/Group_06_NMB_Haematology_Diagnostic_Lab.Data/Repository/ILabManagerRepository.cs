@@ -45,6 +45,10 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
         Task DeleteManager(int managerId);
         Task ReactivateManager(int managerId);
 
+        Task<IEnumerable<Province>> GetProvinces();
+        Task<IEnumerable<TownCity>> GetTownCities(int provinceId);
+        Task<IEnumerable<Suburb>> GetSuburbs(int townCityId);
+
         // ============================ SUPPLIER ============================
 
         Task<IEnumerable<Supplier>> GetSuppliers(string filter = "Active", string search = "");

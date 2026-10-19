@@ -18,6 +18,11 @@ public static class StaffInputValidator
         user.Cellphone = user.Cellphone?.Trim() ?? "";
         user.SaIdNumber = user.SaIdNumber?.Trim() ?? "";
         user.HomeAddress = user.HomeAddress?.Trim() ?? "";
+        if (user.StructuredAddress != null)
+        {
+            user.StructuredAddress.AddressLine1 = user.StructuredAddress.AddressLine1?.Trim() ?? "";
+            user.StructuredAddress.AddressLine2 = user.StructuredAddress.AddressLine2?.Trim();
+        }
         foreach (var item in new[] { ("User.Name", user.Name, "First name"), ("User.Surname", user.Surname, "Surname") })
         {
             if (item.Item2.Length == 0) Error(item.Item1, item.Item3 + " is required.");
@@ -36,7 +41,14 @@ public static class StaffInputValidator
         else if (user.DateOfBirth.Value.Date > DateTime.Today) Error("User.DateOfBirth", "Date of birth cannot be in the future.");
         else if (!errors.ContainsKey("User.SaIdNumber") && user.SaIdNumber[..6] != user.DateOfBirth.Value.ToString("yyMMdd"))
             Error("User.SaIdNumber", "The first 6 ID digits must match the date of birth (YYMMDD).");
-        if (user.HomeAddress.Length > 255) Error("User.HomeAddress", "Home address must be 255 characters or fewer.");
+        if (user.StructuredAddress == null || user.StructuredAddress.AddressLine1.Length == 0)
+            Error("User.StructuredAddress.AddressLine1", "Address line 1 is required.");
+        else if (user.StructuredAddress.AddressLine1.Length > 150)
+            Error("User.StructuredAddress.AddressLine1", "Address line 1 must be 150 characters or fewer.");
+        if (user.StructuredAddress?.AddressLine2?.Length > 150)
+            Error("User.StructuredAddress.AddressLine2", "Address line 2 must be 150 characters or fewer.");
+        if (user.StructuredAddress?.SuburbId <= 0)
+            Error("User.StructuredAddress.SuburbId", "Select a suburb.");
         if (doctor && (string.IsNullOrWhiteSpace(hpcsa) || hpcsa.Trim().Length > 20))
             Error("HpcsaNumber", "HPCSA number is required and must be 20 characters or fewer.");
         if (technician && (string.IsNullOrWhiteSpace(employee) || employee.Trim().Length > 50))

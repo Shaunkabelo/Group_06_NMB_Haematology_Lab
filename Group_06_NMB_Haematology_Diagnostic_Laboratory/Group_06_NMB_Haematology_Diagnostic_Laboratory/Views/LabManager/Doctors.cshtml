@@ -108,7 +108,9 @@
 
                 @foreach (var doctor in Model)
                 {
-                    <tr>
+                    <tr class="staff-summary-row" tabindex="0" role="button"
+                        data-details-target="doctor-details-@doctor.DoctorId" aria-expanded="false"
+                        aria-controls="doctor-details-@doctor.DoctorId" title="Show doctor details">
 
                         <td>@doctor.User.Name</td>
 
@@ -140,7 +142,11 @@
                                     data-cellphone="@doctor.User.Cellphone"
                                     data-dob="@doctor.User.DateOfBirth?.ToString("yyyy-MM-dd")"
                                     data-said="@doctor.User.SaIdNumber"
-                                    data-address="@doctor.User.HomeAddress"
+                                    data-address-line1="@doctor.User.StructuredAddress?.AddressLine1"
+                                    data-address-line2="@doctor.User.StructuredAddress?.AddressLine2"
+                                    data-province-id="@doctor.User.StructuredAddress?.ProvinceId"
+                                    data-town-city-id="@doctor.User.StructuredAddress?.TownCityId"
+                                    data-suburb-id="@doctor.User.StructuredAddress?.SuburbId"
                                     data-hpcsa="@doctor.HpcsaNumber">
 
                                 Edit
@@ -197,6 +203,31 @@
 
                         </td>
 
+                    </tr>
+                    <tr id="doctor-details-@doctor.DoctorId" class="staff-detail-row" hidden>
+                        <td colspan="7" class="staff-detail-cell">
+                            <div class="staff-detail-content">
+                                <section>
+                                    <h6>Doctor details</h6>
+                                    <dl>
+                                        <dt>HPCSA number</dt><dd>@doctor.HpcsaNumber</dd>
+                                        <dt>Date of birth</dt><dd>@(doctor.User.DateOfBirth?.ToString("dd MMM yyyy") ?? "Not captured")</dd>
+                                    </dl>
+                                </section>
+                                <section>
+                                    <h6>Residential address</h6>
+                                    @if (doctor.User.StructuredAddress is { } address)
+                                    {
+                                        <dl>
+                                            <dt>Address</dt><dd>@address.AddressLine1 @if (!string.IsNullOrWhiteSpace(address.AddressLine2)) { <br />@address.AddressLine2 }</dd>
+                                            <dt>Area</dt><dd>@address.SuburbName, @address.TownCityName, @address.ProvinceName</dd>
+                                            <dt>Area code</dt><dd>@address.AreaCode</dd>
+                                        </dl>
+                                    }
+                                    else { <p class="text-muted mb-0">No structured address captured yet.</p> }
+                                </section>
+                            </div>
+                        </td>
                     </tr>
                 }
 
@@ -347,19 +378,7 @@
             </div>
 
 
-            <!-- HOME ADDRESS -->
-
-            <div class="form-group">
-
-                <label class="form-label">
-                    Home Address
-                </label>
-
-                <textarea id="HomeAddress"
-                          class="form-control"
-                          name="User.HomeAddress" maxlength="255"></textarea>
-
-            </div>
+            <partial name="_StructuredAddressFields" view-data='new ViewDataDictionary(ViewData) { { "AddressPrefix", "doctorAddress" } }' />
 
 
             <!-- HPCSA NUMBER -->
@@ -425,6 +444,7 @@
             '@Url.Action("CreateDoctor", "LabManager")';
 
         document.getElementById("doctorForm").reset();
+        structuredAddress.reset("doctorAddress");
 
         document.getElementById("DoctorId").value = "0";
     }
@@ -467,13 +487,20 @@
         document.getElementById("SaIdNumber").value =
             button.dataset.said;
 
-        document.getElementById("HomeAddress").value =
-            button.dataset.address;
+        structuredAddress.set("doctorAddress", {
+            line1: button.dataset.addressLine1,
+            line2: button.dataset.addressLine2,
+            provinceId: button.dataset.provinceId,
+            townCityId: button.dataset.townCityId,
+            suburbId: button.dataset.suburbId
+        });
 
         document.getElementById("HpcsaNumber").value =
             button.dataset.hpcsa;
     }
 
 </script>
+<script src="~/js/structured-address.js" asp-append-version="true"></script>
+<script src="~/js/staff-details.js" asp-append-version="true"></script>
 
 

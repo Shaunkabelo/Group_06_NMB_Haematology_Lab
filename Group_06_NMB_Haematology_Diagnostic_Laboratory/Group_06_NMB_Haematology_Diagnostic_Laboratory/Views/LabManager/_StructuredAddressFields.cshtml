@@ -1,0 +1,46 @@
+@using Group_06_NMB_Haematology_Diagnostic_Lab.Data.Models
+@{
+    var prefix = (string?)ViewData["AddressPrefix"] ?? "address";
+    var provinces = (IEnumerable<Province>?)ViewBag.Provinces ?? Enumerable.Empty<Province>();
+}
+<div class="border-top pt-3 mt-3" data-structured-address data-address-prefix="@prefix"
+     data-towns-url="@Url.Action("AddressTownCities", "LabManager")"
+     data-suburbs-url="@Url.Action("AddressSuburbs", "LabManager")">
+    <h6 class="mb-3">Residential Address</h6>
+    <div class="form-group">
+        <label class="form-label" for="@prefix-AddressLine1">Address line 1</label>
+        <input id="@prefix-AddressLine1" class="form-control" name="User.StructuredAddress.AddressLine1" maxlength="150" required autocomplete="address-line1" />
+    </div>
+    <div class="form-group">
+        <label class="form-label" for="@prefix-AddressLine2">Address line 2 <span class="text-muted">(optional)</span></label>
+        <input id="@prefix-AddressLine2" class="form-control" name="User.StructuredAddress.AddressLine2" maxlength="150" autocomplete="address-line2" />
+    </div>
+    <div class="form-group">
+        <label class="form-label" for="@prefix-Province">Province</label>
+        <select id="@prefix-Province" class="form-select" required>
+            <option value="">Select a province</option>
+            @foreach (var province in provinces)
+            {
+                <option value="@province.ProvinceId">@province.ProvinceName</option>
+            }
+        </select>
+    </div>
+    <div class="form-group">
+        <label class="form-label" for="@prefix-TownCity">Town / city</label>
+        <select id="@prefix-TownCity" class="form-select" required disabled>
+            <option value="">Select a province first</option>
+        </select>
+    </div>
+    <div class="form-row">
+        <div class="form-group">
+            <label class="form-label" for="@prefix-Suburb">Suburb</label>
+            <select id="@prefix-Suburb" class="form-select" name="User.StructuredAddress.SuburbId" required disabled>
+                <option value="">Select a town / city first</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label class="form-label" for="@prefix-AreaCode">Area code</label>
+            <input id="@prefix-AreaCode" class="form-control" readonly aria-readonly="true" />
+        </div>
+    </div>
+</div>

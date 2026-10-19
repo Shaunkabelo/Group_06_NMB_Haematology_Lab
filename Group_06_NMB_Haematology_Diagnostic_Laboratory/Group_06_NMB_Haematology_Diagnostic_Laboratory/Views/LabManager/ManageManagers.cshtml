@@ -105,7 +105,9 @@
 
                 @foreach (var manager in Model)
                 {
-                    <tr>
+                    <tr class="staff-summary-row" tabindex="0" role="button"
+                        data-details-target="manager-details-@manager.LabManagerId" aria-expanded="false"
+                        aria-controls="manager-details-@manager.LabManagerId" title="Show lab manager details">
 
                         <td>@manager.User.Name</td>
 
@@ -150,7 +152,11 @@
                                         data-cellphone="@manager.User.Cellphone"
                                         data-dob="@manager.User.DateOfBirth?.ToString("yyyy-MM-dd")"
                                         data-said="@manager.User.SaIdNumber"
-                                        data-address="@manager.User.HomeAddress">
+                                        data-address-line1="@manager.User.StructuredAddress?.AddressLine1"
+                                        data-address-line2="@manager.User.StructuredAddress?.AddressLine2"
+                                        data-province-id="@manager.User.StructuredAddress?.ProvinceId"
+                                        data-town-city-id="@manager.User.StructuredAddress?.TownCityId"
+                                        data-suburb-id="@manager.User.StructuredAddress?.SuburbId">
 
                                     Edit
 
@@ -212,6 +218,30 @@
 
                         </td>
 
+                    </tr>
+                    <tr id="manager-details-@manager.LabManagerId" class="staff-detail-row" hidden>
+                        <td colspan="7" class="staff-detail-cell">
+                            <div class="staff-detail-content">
+                                <section>
+                                    <h6>Lab manager details</h6>
+                                    <dl>
+                                        <dt>Date of birth</dt><dd>@(manager.User.DateOfBirth?.ToString("dd MMM yyyy") ?? "Not captured")</dd>
+                                    </dl>
+                                </section>
+                                <section>
+                                    <h6>Residential address</h6>
+                                    @if (manager.User.StructuredAddress is { } address)
+                                    {
+                                        <dl>
+                                            <dt>Address</dt><dd>@address.AddressLine1 @if (!string.IsNullOrWhiteSpace(address.AddressLine2)) { <br />@address.AddressLine2 }</dd>
+                                            <dt>Area</dt><dd>@address.SuburbName, @address.TownCityName, @address.ProvinceName</dd>
+                                            <dt>Area code</dt><dd>@address.AreaCode</dd>
+                                        </dl>
+                                    }
+                                    else { <p class="text-muted mb-0">No structured address captured yet.</p> }
+                                </section>
+                            </div>
+                        </td>
                     </tr>
                 }
 
@@ -363,19 +393,7 @@
             </div>
 
 
-            <!-- HOME ADDRESS -->
-
-            <div class="form-group">
-
-                <label class="form-label">
-                    Home Address
-                </label>
-
-                <textarea id="HomeAddress"
-                          class="form-control"
-                          name="User.HomeAddress" maxlength="255"></textarea>
-
-            </div>
+            <partial name="_StructuredAddressFields" view-data='new ViewDataDictionary(ViewData) { { "AddressPrefix", "managerAddress" } }' />
 
 
             <!-- SUBMIT -->
@@ -428,6 +446,7 @@
             '@Url.Action("CreateManager", "LabManager")';
 
         document.getElementById("managerForm").reset();
+        structuredAddress.reset("managerAddress");
 
         document.getElementById("LabManagerId").value = "0";
 
@@ -471,8 +490,13 @@
         document.getElementById("ManagerSaIdNumber").value =
             button.dataset.said;
 
-        document.getElementById("HomeAddress").value =
-            button.dataset.address;
+        structuredAddress.set("managerAddress", {
+            line1: button.dataset.addressLine1,
+            line2: button.dataset.addressLine2,
+            provinceId: button.dataset.provinceId,
+            townCityId: button.dataset.townCityId,
+            suburbId: button.dataset.suburbId
+        });
 
         clearValidation();
     }
@@ -538,5 +562,7 @@
     }
 
 </script>
+<script src="~/js/structured-address.js" asp-append-version="true"></script>
+<script src="~/js/staff-details.js" asp-append-version="true"></script>
 
 
