@@ -131,6 +131,8 @@
     let alertLoadVersion = 0;
     let selectedAlertFilter = 'all';
     let loadedAlerts = [];
+    // Only the saved technician flag qualifies a result as abnormal.
+    const isFlaggedAbnormal = item => item.isAbnormal === true;
 
     function addDays(date, days) {
         const next = new Date(date);
@@ -168,7 +170,7 @@
 
     function updatePriorityCounts(alerts) {
         document.getElementById('alerts-total-count').textContent = alerts.length;
-        const counts = { abnormal: alerts.filter(item => item.isAbnormal === true).length, urgent: 0, routine: 0, stat: 0 };
+        const counts = { abnormal: alerts.filter(isFlaggedAbnormal).length, urgent: 0, routine: 0, stat: 0 };
         for (const item of alerts) {
             const urgency = String(item.urgency ?? '').trim().toLowerCase();
             if (urgency === 'urgent') counts.urgent++;
@@ -191,9 +193,15 @@
         const tablePanel = document.getElementById('alerts-table-panel');
         const emptyPanel = document.getElementById('alerts-empty-panel');
         const tbody = document.getElementById('alerts-tbody');
-        const visibleAlerts = selectedAlertFilter === 'all'
-            ? loadedAlerts
-            : loadedAlerts.filter(item => selectedAlertFilter === 'abnormal' ? item.isAbnormal === true : String(item.urgency ?? '').trim().toLowerCase() === selectedAlertFilter);
+        let visibleAlerts;
+        if (selectedAlertFilter === 'abnormal') {
+            visibleAlerts = loadedAlerts.filter(isFlaggedAbnormal);
+        } else if (selectedAlertFilter === 'all') {
+            visibleAlerts = loadedAlerts;
+        } else {
+            visibleAlerts = loadedAlerts.filter(item =>
+                String(item.urgency ?? '').trim().toLowerCase() === selectedAlertFilter);
+        }
 
         if (!visibleAlerts.length) {
             tablePanel.hidden = true;
@@ -219,7 +227,7 @@
                     <td data-label="Patient">${escapeHtml(item.patientName)}</td>
                     <td data-label="Test">${escapeHtml(item.testName)}</td>
                     <td data-label="Flag"><span class="badge ${badge}">
-                        ${item.isAbnormal ? 'Abnormal' : 'Normal'} (${escapeHtml(item.urgency || 'Unspecified')})
+                        ${isFlaggedAbnormal(item) ? 'Abnormal' : 'Not flagged abnormal'} (${escapeHtml(item.urgency || 'Unspecified')})
                     </span></td>
                 </tr>`;
         }).join('');
