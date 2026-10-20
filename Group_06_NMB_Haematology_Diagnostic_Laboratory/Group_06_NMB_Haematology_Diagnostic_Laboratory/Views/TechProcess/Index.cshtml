@@ -242,7 +242,10 @@
             document.getElementById('modal-body').innerHTML = 'Loading...';
             document.getElementById('modal-trtt-id').value = testRequestTestTypeId;
 
-            const res = await fetch('/TechProcess/GetTestModalData?testRequestTestTypeId=' + testRequestTestTypeId);
+                    const res = await fetch(
+            '@Url.Action("GetTestModalData", "TechProcess")?testRequestTestTypeId=' +
+            encodeURIComponent(testRequestTestTypeId)
+        );
             if (!res.ok) {
                 document.getElementById('modal-body').innerHTML = '<p style="color:#FF4757">Could not load test details.</p>';
                 return;

@@ -63,6 +63,7 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.ViewModels
         public DateTime EventDate { get; set; }
         public string ByName { get; set; } = string.Empty;
         public string EventType { get; set; } = string.Empty;
+        public decimal? ResultValue { get; set; }
     }
 
     public class TechVerifyIndexModel

@@ -25,6 +25,7 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
         public int SampleTypeId { get; set; }
         public string SampleTypeName { get; set; } = string.Empty;
         public bool SampleReceived { get; set; }
+        public string? BarcodeNumber { get; set; }
     }
 
     public class TechReceiveRepository : ITechReceiveRepository
@@ -63,7 +64,8 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
                             TurnaroundTimeMinutes = x.TurnaroundTimeMinutes,
                             SampleTypeId = x.SampleTypeId,
                             SampleTypeName = x.SampleTypeName,
-                            SampleReceived = x.SampleReceived
+                            SampleReceived = x.SampleReceived,
+                            BarcodeNumber = x.BarcodeNumber
                         }).ToList()
                     };
                 })
