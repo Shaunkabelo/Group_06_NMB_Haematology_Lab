@@ -120,10 +120,9 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
 					"SELECT * FROM TestRequest";
 
 				return await _db
-					.GetData<TestRequest, dynamic>(
+					.LoadData<TestRequest, dynamic>(
 						sql,
-						new { },
-						commandType: CommandType.Text);
+						new { });
 			}
 			catch
 			{
@@ -144,14 +143,13 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
 
 				var result =
 					await _db
-						.GetData<TestRequest, dynamic>(
+						.LoadData<TestRequest, dynamic>(
 							sql,
 							new
 							{
 								TestRequestID =
 									testRequestId
-							},
-							commandType: CommandType.Text);
+							});
 
 				return result.FirstOrDefault();
 			}
@@ -171,14 +169,13 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
 					@"DELETE FROM TestRequest
                       WHERE TestRequestID = @TestRequestID";
 
-				await _db.SaveData(
+				await _db.Save(
 					sql,
 					new
 					{
 						TestRequestID =
 							testRequestId
-					},
-					commandType: CommandType.Text);
+					});
 
 				return true;
 			}
@@ -208,14 +205,13 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
 
 				var result =
 					await _db
-						.GetData<TestRequest, dynamic>(
+						.LoadData<TestRequest, dynamic>(
 							sql,
 							new
 							{
 								TestRequestID =
 									testRequestId
-							},
-							commandType: CommandType.Text);
+							});
 
 				return result.Any();
 			}
