@@ -185,10 +185,12 @@
                 <div class="form-group">
                     <label class="form-label" id="resubmit-value-label">Corrected Value</label>
                     <input class="form-control"
-                           type="number"
-                           step="any"
+                           type="text"
+                           inputmode="decimal"
                            name="resultValue"
                            id="resubmit-result-value"
+                           placeholder="e.g. 7.1 or 7,1"
+                           pattern="-?[0-9]+([.,][0-9]{1,4})?"
                            required />
                 </div>
                 
@@ -443,7 +445,7 @@
                 document.getElementById('resubmit-result-value');
 
             resultInput.required = true;
-            resultInput.step = 'any';
+            
 
             body.textContent = 'Loading...';
             history.innerHTML = '';

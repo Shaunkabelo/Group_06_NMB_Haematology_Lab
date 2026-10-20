@@ -4,6 +4,7 @@ using Group_06_NMB_Haematology_Diagnostic_Lab.Data.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
+using System.Globalization;
 
 namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 {
@@ -80,82 +81,46 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
             });
         }
 
-        [HttpGet]
-        public async Task<IActionResult> GetResubmitModalData(int testResultId)
-        {
-            var labTechnicianId = await _currentTech.GetLabTechnicianIdAsync();
-
-            var returned = await _repo.GetReturnedForReviewAsync(labTechnicianId);
-            var item = returned.FirstOrDefault(r => r.TestResultId == testResultId);
-            if (item == null) return NotFound();
-
-            var history = await _repo.GetVerificationHistoryAsync(testResultId);
-
-            return Json(new
-            {
-                testResultId,
-                item.RequestNumber,
-                item.TestName,
-                item.UnitOfMeasurement,
-                item.NormalRangeMin,
-                item.NormalRangeMax,
-                item.ResultValue,
-                item.ResultText,
-                item.ReviewerNote,
-                item.ReturnedByName,
-                history = history.Select(h => new
-                {
-                    h.Status,
-                    h.Notes,
-                    h.ResultValue,
-                    h.EventType,
-                    byName = h.ByName,
-                    eventDate = h.EventDate.ToString("dd MMM yyyy HH:mm:ss")
-                })
-            });
-        }
-
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> SubmitDecision(int testResultId, string decision, string? notes)
-        {
-            var labTechnicianId = await _currentTech.GetLabTechnicianIdAsync();
-
-            if (decision == "Return" && string.IsNullOrWhiteSpace(notes))
-            {
-                TempData["Error"] = "A note is required when returning a result for review.";
-                return RedirectToAction(nameof(Index));
-            }
-
-            try
-            {
-                await _repo.SubmitDecisionAsync(testResultId, labTechnicianId, decision, notes);
-                TempData["Success"] = decision == "Verify" ? "Result verified." : "Result returned to technician for review.";
-            }
-            catch (SqlException ex)
-            {
-                TempData["Error"] = ex.Message.Contains("cannot verify")
-                    ? "You can't verify a test you performed yourself."
-                    : "An error occurred while submitting your decision.";
-            }
-
-            return RedirectToAction(nameof(Index));
-        }
-
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ResubmitResult(
-    int testResultId,
-    decimal? resultValue,
-    string responseNote)
+     int testResultId,
+     string? resultValue,
+     string? responseNote)
         {
-            var labTechnicianId = await _currentTech.GetLabTechnicianIdAsync();
+            var labTechnicianId =
+                await _currentTech.GetLabTechnicianIdAsync();
 
-            if (!ModelState.IsValid || !resultValue.HasValue)
+            var normalisedValue = resultValue?.Trim().Replace(',', '.');
+
+            const NumberStyles styles =
+                NumberStyles.AllowLeadingSign |
+                NumberStyles.AllowDecimalPoint;
+
+            if (!ModelState.IsValid ||
+                !decimal.TryParse(
+                    normalisedValue,
+                    styles,
+                    CultureInfo.InvariantCulture,
+                    out var numericResult))
             {
-                TempData["Error"] = "Enter a valid numeric result, for example 12 or 12.5.";
+                TempData["Error"] =
+                    "Enter a valid numeric result, for example 7.1 or 7,1.";
+
                 return RedirectToAction(nameof(Index));
             }
+
+            if (numericResult < -99999999.9999m ||
+                numericResult > 99999999.9999m ||
+                decimal.Round(numericResult, 4) != numericResult)
+            {
+                TempData["Error"] =
+                    "The result must have no more than eight whole-number " +
+                    "digits and four decimal places.";
+
+                return RedirectToAction(nameof(Index));
+            }
+
             if (string.IsNullOrWhiteSpace(responseNote))
             {
                 TempData["Error"] = "Explain what correction was made.";
@@ -165,15 +130,19 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
             try
             {
                 await _repo.ResubmitResultAsync(
-    testResultId,
-    resultValue,
-    null,
-    responseNote.Trim(),
-    labTechnicianId);
+                    testResultId,
+                    numericResult,
+                    null,
+                    responseNote.Trim(),
+                    labTechnicianId);
+
+                TempData["Success"] =
+                    "Corrected result resubmitted for verification.";
             }
             catch (SqlException)
             {
-                TempData["Error"] = "An error occurred while resubmitting the result.";
+                TempData["Error"] =
+                    "An error occurred while resubmitting the result.";
             }
 
             return RedirectToAction(nameof(Index));
