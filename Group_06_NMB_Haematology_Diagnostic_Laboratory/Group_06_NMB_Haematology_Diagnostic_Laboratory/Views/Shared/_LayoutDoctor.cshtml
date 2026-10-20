@@ -12,13 +12,14 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@title - NMB-HLabSys</title>
-    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/DoctorStyle.css" asp-append-version="true" />
     <script src="~/js/doctor-history.js" asp-append-version="true"
         data-history-url="@Url.Action("GetPatientHistory", "Doctor")"
         data-details-url="@Url.Action("RequestDetails", "Doctor")"
         data-pdf-url="@Url.Action("DownloadResultPdf", "Doctor")"></script>
+    @await RenderSectionAsync("Styles", required: false)
 </head>
 <body>
     <aside class="sidebar">

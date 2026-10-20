@@ -82,8 +82,7 @@ public sealed class DoctorWorkflowRepository(IConfiguration configuration) : IDo
         SELECT r.TestRequestID, r.RequestDate, r.Status AS RequestStatus, r.Urgency, r.ReleaseDate,
             CONCAT(u.Name, ' ', u.Surname) AS PatientName, u.SA_ID_Number AS PatientSaId,
             tt.TestName, lt.LabTestID, res.TestResultID, res.ResultValue, res.ResultText, res.Notes,
-            CAST(CASE WHEN res.IsAbnormal = 1 OR res.ResultValue < tt.NormalRangeMin
-                OR res.ResultValue > tt.NormalRangeMax THEN 1 ELSE 0 END AS BIT) AS IsAbnormal,
+            CAST(CASE WHEN res.IsAbnormal = 1 THEN 1 ELSE 0 END AS BIT) AS IsAbnormal,
             res.CaptureDateTime,
             CASE WHEN v.Status = 'Verified' AND (rt.Status <> 'Verified' OR rt.Status IS NULL
                 OR v.VerificationDateTime IS NULL OR res.CaptureDateTime IS NULL
@@ -115,8 +114,9 @@ public sealed class DoctorWorkflowRepository(IConfiguration configuration) : IDo
         using var db = Connection();
         return await db.QueryAsync<DoctorAlertDto>(ResultSelect + """
              WHERE r.DoctorID = @DoctorID AND res.CaptureDateTime >= @Start AND res.CaptureDateTime < @End
-             AND (res.IsAbnormal = 1 OR res.ResultValue < tt.NormalRangeMin OR res.ResultValue > tt.NormalRangeMax)
-             ORDER BY res.CaptureDateTime DESC
+             ORDER BY CASE UPPER(LTRIM(RTRIM(r.Urgency)))
+                 WHEN 'STAT' THEN 0 WHEN 'URGENT' THEN 1 WHEN 'ROUTINE' THEN 2 ELSE 3 END,
+                 res.CaptureDateTime DESC, res.TestResultID DESC
             """, new { DoctorID = doctorId, Start = start, End = endExclusive });
     }
 

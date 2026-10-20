@@ -5,8 +5,8 @@
 
 <div class="page-body doctor-alerts-page">
     <div class="section-header">
-        <div class="section-title alert-page-title">Abnormal Results Alerts</div>
-        <div class="section-sub">Review abnormal test results</div>
+        <div class="section-title alert-page-title">Results Alerts</div>
+        <div class="section-sub">Review all test results by urgency</div>
     </div>
 
     <section class="alerts-filter-panel">
@@ -21,11 +21,12 @@
             </div>
             <button id="alerts-apply-btn" class="btn btn-primary" type="button" onclick="renderAlerts()">Apply</button>
         </div>
-        <div id="alerts-range-note" class="alerts-range-note">Showing alerts from last 5 days</div>
+        <div id="alerts-range-note" class="alerts-range-note">Showing all results</div>
     </section>
 
     <section class="alerts-priority-grid">
-        <button class="priority-tile abnormal is-selected" type="button" data-alert-filter="all" aria-pressed="true"><div>Abnormal</div><strong id="alerts-abnormal-count">0</strong></button>
+        <button class="priority-tile routine is-selected" type="button" data-alert-filter="all" aria-pressed="true"><div>All Results</div><strong id="alerts-total-count">0</strong></button>
+        <button class="priority-tile abnormal" type="button" data-alert-filter="abnormal" aria-pressed="false"><div>Abnormal</div><strong id="alerts-abnormal-count">0</strong></button>
         <button class="priority-tile urgent" type="button" data-alert-filter="urgent" aria-pressed="false"><div>Urgent</div><strong id="alerts-urgent-count">0</strong></button>
         <button class="priority-tile routine" type="button" data-alert-filter="routine" aria-pressed="false"><div>Routine</div><strong id="alerts-routine-count">0</strong></button>
         <button class="priority-tile stat" type="button" data-alert-filter="stat" aria-pressed="false"><div>STAT</div><strong id="alerts-stat-count">0</strong></button>
@@ -33,7 +34,7 @@
 
     <section id="alerts-empty-panel" class="alerts-empty-panel" hidden>
         <div class="alerts-empty-icon">!</div>
-        <div id="alerts-empty-text" class="alerts-empty-text" role="status">No abnormal results were found for the selected period.</div>
+        <div id="alerts-empty-text" class="alerts-empty-text" role="status">No results were found for the selected period.</div>
     </section>
 
     <section id="alerts-table-panel" class="alerts-table-panel">
@@ -43,7 +44,7 @@
                     <tr><th>Date</th><th>Patient</th><th>Test</th><th>Flag</th></tr>
                 </thead>
                 <tbody id="alerts-tbody">
-                    <tr><td colspan="4">Loading abnormal results...</td></tr>
+                    <tr><td colspan="4">Loading results...</td></tr>
                 </tbody>
             </table>
         </div>
@@ -129,7 +130,7 @@
     const requestDetailsUrl = '@Url.Action("RequestDetails", "Doctor")';
     let alertLoadVersion = 0;
     let selectedAlertFilter = 'all';
-    let loadedAbnormalAlerts = [];
+    let loadedAlerts = [];
 
     function addDays(date, days) {
         const next = new Date(date);
@@ -160,18 +161,16 @@
     }
 
     function getSelectedDateRange() {
-        const today = new Date();
-        const start = document.getElementById('alerts-start-date').value ||
-            toDateInputValue(addDays(today, -4));
-        const end = document.getElementById('alerts-end-date').value ||
-            toDateInputValue(today);
+        const start = document.getElementById('alerts-start-date').value;
+        const end = document.getElementById('alerts-end-date').value;
         return { start, end };
     }
 
     function updatePriorityCounts(alerts) {
-        const counts = { abnormal: alerts.length, urgent: 0, routine: 0, stat: 0 };
+        document.getElementById('alerts-total-count').textContent = alerts.length;
+        const counts = { abnormal: alerts.filter(item => item.isAbnormal === true).length, urgent: 0, routine: 0, stat: 0 };
         for (const item of alerts) {
-            const urgency = String(item.urgency ?? '').toLowerCase();
+            const urgency = String(item.urgency ?? '').trim().toLowerCase();
             if (urgency === 'urgent') counts.urgent++;
             else if (urgency === 'routine') counts.routine++;
             else if (urgency === 'stat') counts.stat++;
@@ -183,7 +182,7 @@
     }
 
     function displayAlerts(alerts) {
-        loadedAbnormalAlerts = alerts;
+        loadedAlerts = alerts;
         updatePriorityCounts(alerts);
         renderVisibleAlerts();
     }
@@ -193,15 +192,15 @@
         const emptyPanel = document.getElementById('alerts-empty-panel');
         const tbody = document.getElementById('alerts-tbody');
         const visibleAlerts = selectedAlertFilter === 'all'
-            ? loadedAbnormalAlerts
-            : loadedAbnormalAlerts.filter(item => String(item.urgency ?? '').toLowerCase() === selectedAlertFilter);
+            ? loadedAlerts
+            : loadedAlerts.filter(item => selectedAlertFilter === 'abnormal' ? item.isAbnormal === true : String(item.urgency ?? '').trim().toLowerCase() === selectedAlertFilter);
 
         if (!visibleAlerts.length) {
             tablePanel.hidden = true;
             emptyPanel.hidden = false;
-            document.getElementById('alerts-empty-text').textContent = loadedAbnormalAlerts.length
-                ? `No ${selectedAlertFilter.toUpperCase()} abnormal results were found for the selected period.`
-                : 'No abnormal results were found for the selected period.';
+            document.getElementById('alerts-empty-text').textContent = loadedAlerts.length
+                ? `No ${selectedAlertFilter.toUpperCase()} results were found for the selected period.`
+                : 'No results were found for the selected period.';
             tbody.innerHTML = '';
             return;
         }
@@ -211,7 +210,7 @@
         tbody.innerHTML = visibleAlerts.map(item => {
             const id = Number(item.testRequestId);
             if (!Number.isSafeInteger(id) || id <= 0) return '';
-            const urgency = String(item.urgency ?? '').toLowerCase();
+            const urgency = String(item.urgency ?? '').trim().toLowerCase();
             const badge = urgency === 'stat' ? 'red' : urgency === 'urgent' ? 'amber' : 'blue';
             return `
                 <tr class="alert-row" tabindex="0" data-request-id="${id}"
@@ -220,7 +219,7 @@
                     <td data-label="Patient">${escapeHtml(item.patientName)}</td>
                     <td data-label="Test">${escapeHtml(item.testName)}</td>
                     <td data-label="Flag"><span class="badge ${badge}">
-                        Abnormal (${escapeHtml(item.urgency || 'Unspecified')})
+                        ${item.isAbnormal ? 'Abnormal' : 'Normal'} (${escapeHtml(item.urgency || 'Unspecified')})
                     </span></td>
                 </tr>`;
         }).join('');
@@ -234,29 +233,23 @@
         const tbody = document.getElementById('alerts-tbody');
         const applyButton = document.getElementById('alerts-apply-btn');
 
-        if (start > end) {
+        if (start && end && start > end) {
             document.getElementById('alerts-range-note').textContent =
                 'Start date must be on or before end date.';
             return;
         }
 
-        const today = new Date();
-        const defaultStart = toDateInputValue(addDays(today, -4));
-        const defaultEnd = toDateInputValue(today);
-        document.getElementById('alerts-range-note').textContent =
-            start === defaultStart && end === defaultEnd
-                ? 'Showing alerts from last 5 days'
-                : `Showing alerts from ${start} to ${end}`;
+        document.getElementById('alerts-range-note').textContent = !start && !end ? 'Showing all results' : 'Showing results from ' + (start || 'the beginning') + ' to ' + (end || 'the latest result');
 
         applyButton.disabled = true;
         tablePanel.hidden = false;
         emptyPanel.hidden = true;
-        tbody.innerHTML = '<tr><td colspan="4">Loading abnormal results...</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="4">Loading results...</td></tr>';
 
         try {
             const url = new URL(alertsUrl, window.location.origin);
-            url.searchParams.set('startDate', start);
-            url.searchParams.set('endDate', end);
+            if (start) url.searchParams.set('startDate', start);
+            if (end) url.searchParams.set('endDate', end);
             const response = await fetch(url, {
                 credentials: 'same-origin',
                 headers: { 'Accept': 'application/json' }
@@ -265,12 +258,12 @@
             const alerts = await response.json();
             if (!Array.isArray(alerts)) throw new Error('Invalid response from alerts endpoint.');
             if (version !== alertLoadVersion) return;
-            displayAlerts(alerts.filter(item => item.isAbnormal === true));
+            displayAlerts(alerts);
         } catch (error) {
             if (version !== alertLoadVersion) return;
             console.error('Doctor alerts:', error);
             updatePriorityCounts([]);
-            loadedAbnormalAlerts = [];
+            loadedAlerts = [];
             tbody.innerHTML = '';
             tablePanel.hidden = true;
             emptyPanel.hidden = false;
@@ -290,9 +283,7 @@
     }
 
     document.addEventListener('DOMContentLoaded', () => {
-        const today = new Date();
-        document.getElementById('alerts-start-date').value = toDateInputValue(addDays(today, -4));
-        document.getElementById('alerts-end-date').value = toDateInputValue(today);
+
         const tbody = document.getElementById('alerts-tbody');
         document.querySelectorAll('[data-alert-filter]').forEach(button => {
             button.addEventListener('click', () => {
@@ -317,6 +308,7 @@
             openAlertRequest(row);
         });
         renderAlerts();
+        setInterval(() => { if (!document.hidden && !document.getElementById('alerts-apply-btn').disabled) renderAlerts(); }, 30000);
     });
 </script>
                                                               

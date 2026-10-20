@@ -48,7 +48,7 @@
 <script>
     const detailUrl = '@Url.Action("GetRequestData", "Doctor")';
     async function loadDetails() {
-        const id = new URLSearchParams(location.search).get('id');
+        const id = @ViewData["RequestId"];
         const meta = document.getElementById('request-meta');
         try {
             const response = await fetch(`${detailUrl}?id=${encodeURIComponent(id)}`, { cache: 'no-store' });

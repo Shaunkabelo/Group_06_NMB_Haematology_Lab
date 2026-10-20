@@ -1,4 +1,5 @@
-﻿body {
+body {
+    margin: 0;
     font-family: 'DM Sans', sans-serif;
     background: var(--bg);
     color: #1A2A3A;
@@ -996,7 +997,12 @@ td {
         outline: none;
     }
 
-.modal {
+.modal-overlay > .modal {
+    display: block;
+    position: relative;
+    inset: auto;
+    height: auto;
+    padding: 0;
     width: min(560px, calc(100vw - 32px));
     max-height: calc(100vh - 40px);
     overflow: auto;
@@ -1005,11 +1011,11 @@ td {
     box-shadow: 0 22px 70px rgba(10,30,60,.25);
 }
 
-.modal-sm {
+.modal-overlay > .modal-sm {
     width: min(420px, calc(100vw - 32px));
 }
 
-.modal-md {
+.modal-overlay > .modal-md {
     width: min(520px, calc(100vw - 32px));
 }
 
@@ -1919,3 +1925,21 @@ td {
     .pill-close:hover {
         opacity: 0.7;
     }
+
+/* Native dialogs stay hidden until opened with showModal(). */
+dialog {
+    width: min(560px, calc(100vw - 32px));
+    max-height: calc(100vh - 40px);
+    margin: auto;
+    padding: 24px;
+    overflow: auto;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: #FFFFFF;
+    color: #1A2A3A;
+    box-shadow: 0 22px 70px rgba(10, 30, 60, .25);
+}
+
+dialog::backdrop { background: rgba(11, 25, 41, .58); }
+.main-content, .grid-2 > *, .grid-3 > * { min-width: 0; }
+.sidebar { overflow-y: auto; }

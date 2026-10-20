@@ -6,6 +6,9 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 	[Authorize(Roles = "Admin")]
 	public class AdminController : Controller
 	{
+        [HttpGet]
+        public IActionResult Index() => RedirectToAction(nameof(Dashboard));
+
 		public IActionResult Dashboard()
 		{
 			return AdminPage("Admin Dashboard", "Overview of the laboratory administration workspace.");

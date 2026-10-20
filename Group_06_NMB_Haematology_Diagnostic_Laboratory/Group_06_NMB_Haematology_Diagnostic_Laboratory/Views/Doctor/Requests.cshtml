@@ -34,6 +34,7 @@
     </div>
 
     <div id="technician-cancel-alerts"></div>
+    <p id="request-action-message" role="status" aria-live="polite" tabindex="-1" hidden></p>
 
     <div class="card" style="margin-bottom: 20px;">
         <div class="card-header"><span class="card-title">Progress Status Guide</span></div>
@@ -70,19 +71,31 @@
 </div>
 
 <style>
-    .modal-overlay {
-        position: fixed;
-        inset: 0;
-        z-index: 1000;
-        display: none;
-        align-items: center;
-        justify-content: center;
-        padding: 20px;
-        background: rgba(11, 25, 41, 0.58);
+    .doctor-cancel-dialog {
+        width: min(520px, calc(100vw - 32px));
+        max-height: calc(100vh - 40px);
+        margin: auto;
+        padding: 0;
+        border: 0;
+        border-radius: 12px;
+        background: #fff;
+        color: #1A2A3A;
+        box-shadow: 0 22px 70px rgba(10, 30, 60, .25);
     }
 
-    .modal-overlay.is-open {
-        display: flex;
+    .doctor-cancel-dialog::backdrop {
+        background: rgba(11, 25, 41, .58);
+    }
+
+    #cancel-request-error {
+        color: #a71930;
+        margin-top: 12px;
+    }
+
+    #request-action-message {
+        padding: 12px 16px;
+        background: #e9f8f2;
+        border-radius: 8px;
     }
 
     .status-guide {
@@ -128,11 +141,11 @@
     }
 </style>
 
-<div class="modal-overlay" id="modal-cancel-request">
-    <div class="modal modal-md">
+<dialog class="doctor-cancel-dialog" id="cancel-request-dialog" aria-labelledby="cancel-request-title" aria-describedby="cancel-request-summary">
+    <form id="cancel-request-form">
         <div class="modal-header">
-            <span class="modal-title">Cancel Test Request</span>
-            <button class="modal-close" type="button" onclick="closeCancelRequestModal()">×</button>
+            <h2 class="modal-title" id="cancel-request-title">Cancel Test Request</h2>
+            <button class="modal-close" type="button" data-close-cancel aria-label="Close cancellation popup">&times;</button>
         </div>
         <div class="modal-body">
             @Html.AntiForgeryToken()
@@ -148,15 +161,17 @@
             </div>
             <div class="form-group">
                 <label class="form-label" for="cancel-request-reason">Reason for cancellation</label>
-                <textarea id="cancel-request-reason" class="form-control" rows="5" placeholder="Enter the reason for cancelling this test request..." required></textarea>
+                <textarea id="cancel-request-reason" name="reason" class="form-control" rows="5" maxlength="500" placeholder="Enter the reason for cancelling this test request..." aria-describedby="cancel-reason-hint cancel-request-error" required></textarea>
+                <small id="cancel-reason-hint">Enter a reason of 1 to 500 characters.</small>
             </div>
+            <p id="cancel-request-error" role="alert" hidden></p>
         </div>
         <div class="modal-footer">
-            <button class="btn btn-secondary" type="button" onclick="closeCancelRequestModal()">Keep Request</button>
-            <button class="btn btn-danger" type="button" onclick="submitCancelRequest()">Cancel Request</button>
+            <button class="btn btn-secondary" type="button" data-close-cancel>Keep Request</button>
+            <button class="btn btn-danger" id="confirm-cancel-request" type="submit">Cancel Request</button>
         </div>
-    </div>
-</div>
+    </form>
+</dialog>
 
 <script id="doctor-requests-script" src="~/js/doctor-requests.js" asp-append-version="true"
     data-list-url="@Url.Action("GetRequests", "Doctor")"
