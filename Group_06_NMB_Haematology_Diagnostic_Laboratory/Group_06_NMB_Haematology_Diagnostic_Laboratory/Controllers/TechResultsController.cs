@@ -44,19 +44,28 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> CaptureResult(int labTestId, decimal? resultValue, string? resultText, string? notes)
+        public async Task<IActionResult> CaptureResult(
+     int labTestId,
+     decimal? resultValue,
+     string? notes)
         {
             var labTechnicianId = await _currentTech.GetLabTechnicianIdAsync();
 
-            if (resultValue == null && string.IsNullOrWhiteSpace(resultText))
+            if (!ModelState.IsValid || !resultValue.HasValue)
             {
-                TempData["Error"] = "Enter a result value or text before submitting.";
+                TempData["Error"] = "Enter a valid numeric result, for example 12 or 12.5.";
                 return RedirectToAction(nameof(Index), new { labTestId });
             }
 
             try
             {
-                var isAbnormal = await _repo.CaptureResultAsync(labTestId, resultValue, resultText, notes, labTechnicianId);
+                var isAbnormal = await _repo.CaptureResultAsync(
+                    labTestId,
+                    resultValue,
+                    null,
+                    notes?.Trim(),
+                    labTechnicianId);
+
                 TempData["Success"] = isAbnormal
                     ? "Result submitted — flagged as abnormal (outside normal range)."
                     : "Result submitted for verification.";

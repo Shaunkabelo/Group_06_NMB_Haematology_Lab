@@ -98,9 +98,13 @@
                                                                   style="display:flex;gap:8px;align-items:center" onclick="event.stopPropagation()">
                                                                 <input type="hidden" name="testRequestId" value="@req.TestRequestId" />
                                                                 <input type="hidden" name="sampleTypeId" value="@s.SampleTypeId" />
-                                                                <input type="text" name="barcodeNumber" class="form-control form-control-sm barcode-input"
-                                                                       value="BC-@(req.TestRequestId.ToString("0000"))-@(s.SampleTypeId)"
-                                                                       required style="max-width:180px" />
+                                                                <input type="text"
+                                                                       name="barcodeNumber"
+                                                                       class="form-control form-control-sm barcode-input"
+                                                                       value="@s.BarcodeNumber"
+                                                                       required
+                                                                       maxlength="50"
+                                                                       style="max-width:180px" />
                                                                 <button type="submit" class="btn btn-sm btn-success">✔ Receive</button>
                                                             </form>
                                                         }

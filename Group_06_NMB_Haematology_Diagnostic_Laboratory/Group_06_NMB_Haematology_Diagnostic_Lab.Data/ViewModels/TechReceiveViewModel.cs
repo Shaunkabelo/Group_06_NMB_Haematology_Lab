@@ -15,6 +15,7 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.ViewModels
         public int SampleTypeId { get; set; }
         public string SampleTypeName { get; set; } = string.Empty;
         public bool SampleReceived { get; set; }
+        public string? BarcodeNumber { get; set; }
     }
 
     public class PendingRequestModel

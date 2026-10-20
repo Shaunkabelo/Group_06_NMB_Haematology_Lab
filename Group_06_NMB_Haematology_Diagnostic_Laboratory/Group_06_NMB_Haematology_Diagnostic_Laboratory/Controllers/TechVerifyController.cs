@@ -68,7 +68,15 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
                 conditions = medicalInfo.Where(m => m.Category == "Condition").Select(m => m.Name),
                 allergies = medicalInfo.Where(m => m.Category == "Allergy").Select(m => m.Name),
                 medications = medicalInfo.Where(m => m.Category == "Medication").Select(m => m.Name),
-                history = history.Select(h => new { h.Status, h.Notes, byName = h.ByName, eventDate = h.EventDate.ToString("dd MMM HH:mm") })
+                history = history.Select(h => new
+                {
+                    h.Status,
+                    h.Notes,
+                    h.ResultValue,
+                    h.EventType,
+                    byName = h.ByName,
+                    eventDate = h.EventDate.ToString("dd MMM yyyy HH:mm:ss")
+                })
             });
         }
 
@@ -95,7 +103,15 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
                 item.ResultText,
                 item.ReviewerNote,
                 item.ReturnedByName,
-                history = history.Select(h => new { h.Status, h.Notes, byName = h.ByName, eventDate = h.EventDate.ToString("dd MMM HH:mm") })
+                history = history.Select(h => new
+                {
+                    h.Status,
+                    h.Notes,
+                    h.ResultValue,
+                    h.EventType,
+                    byName = h.ByName,
+                    eventDate = h.EventDate.ToString("dd MMM yyyy HH:mm:ss")
+                })
             });
         }
 
@@ -128,13 +144,16 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> ResubmitResult(int testResultId, decimal? resultValue, string? resultText, string responseNote)
+        public async Task<IActionResult> ResubmitResult(
+    int testResultId,
+    decimal? resultValue,
+    string responseNote)
         {
             var labTechnicianId = await _currentTech.GetLabTechnicianIdAsync();
 
-            if (resultValue == null && string.IsNullOrWhiteSpace(resultText))
+            if (!ModelState.IsValid || !resultValue.HasValue)
             {
-                TempData["Error"] = "Enter a corrected value or text.";
+                TempData["Error"] = "Enter a valid numeric result, for example 12 or 12.5.";
                 return RedirectToAction(nameof(Index));
             }
             if (string.IsNullOrWhiteSpace(responseNote))
@@ -145,8 +164,12 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 
             try
             {
-                await _repo.ResubmitResultAsync(testResultId, resultValue, resultText, responseNote, labTechnicianId);
-                TempData["Success"] = "Corrected result resubmitted for verification.";
+                await _repo.ResubmitResultAsync(
+    testResultId,
+    resultValue,
+    null,
+    responseNote.Trim(),
+    labTechnicianId);
             }
             catch (SqlException)
             {

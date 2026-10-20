@@ -184,12 +184,14 @@
             <div style="padding:0 20px 20px">
                 <div class="form-group">
                     <label class="form-label" id="resubmit-value-label">Corrected Value</label>
-                    <input class="form-control" type="number" step="0.0001" name="resultValue" id="resubmit-result-value" />
+                    <input class="form-control"
+                           type="number"
+                           step="any"
+                           name="resultValue"
+                           id="resubmit-result-value"
+                           required />
                 </div>
-                <div class="form-group">
-                    <label class="form-label">Or corrected text</label>
-                    <input class="form-control" name="resultText" id="resubmit-result-text" />
-                </div>
+                
                 <div class="form-group">
                     <label class="form-label">Your Response Note *</label>
                     <textarea class="form-control" name="responseNote" rows="3" placeholder="Explain the correction made..." required></textarea>
@@ -213,10 +215,46 @@
             document.getElementById(panelId).classList.add('active');
         }
 
+                function escapeHtml(value) {
+            const element = document.createElement('span');
+            element.textContent = value == null ? '' : String(value);
+            return element.innerHTML;
+        }
+
         function historyHtml(history) {
-            if (!history.length) return '';
-            const items = history.map(h => `<div class="history-item"><strong>${h.status}</strong> by ${h.byName} at ${h.eventDate}${h.notes ? ' — ' + h.notes : ''}</div>`).join('');
-            return `<div class="form-label">Verification History</div><div style="background:#F5F7FA;border-radius:8px;padding:10px;margin-bottom:14px">${items}</div>`;
+            if (!history || !history.length) {
+                return '<p>No previous reviews or corrections.</p>';
+            }
+
+            const items = history.map(h => `
+                <div style="padding:10px 0;border-bottom:1px solid #E3E8F0">
+                    <div>
+                        <strong>${escapeHtml(h.status)}</strong>
+                        · ${escapeHtml(h.eventType)}
+                    </div>
+                    <div style="margin-top:4px">
+                        <strong>Result:</strong>
+                        ${h.resultValue == null
+                            ? 'Not recorded in historical data'
+                            : escapeHtml(h.resultValue)}
+                    </div>
+                    <div style="margin-top:4px">
+                        <strong>By:</strong> ${escapeHtml(h.byName)}
+                        <br>
+                        <strong>Date:</strong> ${escapeHtml(h.eventDate)}
+                    </div>
+                    <div style="margin-top:4px;white-space:pre-wrap"><strong>Notes:</strong> ${escapeHtml(h.notes || 'No notes')}</div>
+                </div>
+            `).join('');
+
+            return `
+                <div class="form-label">Full Result and Review History</div>
+                <div style="background:#F5F7FA;border-radius:8px;
+                            padding:10px;margin-bottom:14px">
+                    ${items}
+                </div>
+            `;
+        }
         }
 
         function medicalInfoHtml(d) {
@@ -236,7 +274,10 @@
             document.getElementById('verify-modal-body').innerHTML = 'Loading...';
             document.getElementById('verify-test-result-id').value = testResultId;
 
-            const res = await fetch('/TechVerify/GetVerifyModalData?testResultId=' + testResultId);
+                    const res = await fetch(
+            '@Url.Action("GetVerifyModalData", "TechVerify")?testResultId=' +
+            encodeURIComponent(testResultId)
+        );
             if (!res.ok) {
                 document.getElementById('verify-modal-body').innerHTML = '<p style="color:#FF4757">Could not load details.</p>';
                 return;
@@ -265,10 +306,27 @@
 
                 async function openResubmitModal(testResultId) {
             document.getElementById('resubmit-modal-overlay').style.display = 'flex';
-            document.getElementById('resubmit-modal-body').innerHTML = 'Loading...';
+                    document.getElementById('resubmit-modal-body').innerHTML = `
+            <div style="background:#F5F7FA;border-radius:8px;
+                        padding:12px;margin-bottom:14px">
+                <strong>Current Submitted Result:</strong>
+                ${escapeHtml(d.resultValue ?? 'Not recorded')}
+                ${escapeHtml(d.unitOfMeasurement ?? '')}
+            </div>
+
+            <div style="background:rgba(245,166,35,0.1);
+                        border:1px solid #F5A623;border-radius:8px;
+                        padding:12px;margin-bottom:14px">
+                <strong>${escapeHtml(d.returnedByName)}'s Note:</strong>
+                <div style="margin-top:4px;white-space:pre-wrap">${escapeHtml(d.reviewerNote)}</div>
+            </div>
+        `;
             document.getElementById('resubmit-test-result-id').value = testResultId;
 
-            const res = await fetch('/TechVerify/GetResubmitModalData?testResultId=' + testResultId);
+                    const res = await fetch(
+            '@Url.Action("GetResubmitModalData", "TechVerify")?testResultId=' +
+            encodeURIComponent(testResultId)
+        );
             if (!res.ok) {
                 document.getElementById('resubmit-modal-body').innerHTML = '<p style="color:#FF4757">Could not load details.</p>';
                 return;
@@ -278,7 +336,7 @@
             document.getElementById('resubmit-modal-title').textContent = d.requestNumber + ' — ' + d.testName;
             document.getElementById('resubmit-value-label').textContent = 'Corrected Value (' + (d.unitOfMeasurement ?? '') + ') — Normal range: ' + (d.normalRangeMin ?? '—') + '–' + (d.normalRangeMax ?? '—');
             document.getElementById('resubmit-result-value').value = d.resultValue ?? '';
-            document.getElementById('resubmit-result-text').value = d.resultText ?? '';
+            
 
             document.getElementById('resubmit-modal-body').innerHTML = `
                 <div style="background:rgba(245,166,35,0.1);border:1px solid #F5A623;border-radius:8px;padding:12px;margin-bottom:14px">
