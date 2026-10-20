@@ -9,46 +9,89 @@
         <div class="section-sub">Create and track laboratory test requests</div>
     </div>
 
+    <!-- Search, filters and new request button -->
     <div class="card" style="margin-bottom: 20px;">
-        <div class="card-body" style="display: grid; grid-template-columns: 1fr auto; gap: 16px; align-items: center;">
+        <div class="card-body"
+             style="display: grid; grid-template-columns: 1fr auto; gap: 16px; align-items: center;">
+
             <div style="display: grid; grid-template-columns: 1fr minmax(140px, 1fr) minmax(140px, 1fr); gap: 12px; align-items: center;">
-                <input id="requests-search" class="form-control" type="search" placeholder="Search requests..." aria-label="Search requests" />
+                <input id="requests-search"
+                       class="form-control"
+                       type="search"
+                       placeholder="Search requests..."
+                       aria-label="Search requests" />
+
                 <select id="requests-filter-status" class="form-control">
                     <option value="">All statuses</option>
-                    <option>Submitted</option>
-                    <option>Samples Received</option>
-                    <option>In progress</option>
-                    <option>Completed</option>
-                    <option>Released by doctor</option>
-                    <option>Cancelled</option>
+                    <option value="Submitted">Submitted</option>
+                    <option value="Samples Received">Samples Received</option>
+                    <option value="In progress">In progress</option>
+                    <option value="Completed">Completed</option>
+                    <option value="Released by doctor">Released by doctor</option>
+                    <option value="Cancelled">Cancelled</option>
                 </select>
+
                 <select id="requests-filter-urgency" class="form-control">
                     <option value="">All urgencies</option>
-                    <option>Routine</option>
-                    <option>Urgent</option>
-                    <option>STAT</option>
+                    <option value="Routine">Routine</option>
+                    <option value="Urgent">Urgent</option>
+                    <option value="STAT">STAT</option>
                 </select>
             </div>
-            <a class="btn btn-primary" asp-controller="Doctor" asp-action="CreateRequest">+ New Test Request</a>
+
+            <a class="btn btn-primary"
+               asp-controller="Doctor"
+               asp-action="CreateRequest">
+                + New Test Request
+            </a>
         </div>
     </div>
 
-    <div id="technician-cancel-alerts"></div>
+    <!-- Success and error messages -->
+    <div id="technician-cancel-alerts" aria-live="polite"></div>
 
+    <!-- Status guide -->
     <div class="card" style="margin-bottom: 20px;">
-        <div class="card-header"><span class="card-title">Progress Status Guide</span></div>
+        <div class="card-header">
+            <span class="card-title">Progress Status Guide</span>
+        </div>
+
         <div class="card-body">
             <div class="status-guide">
-                <div><span class="badge blue">Submitted</span><span>Doctor has submitted the test request.</span></div>
-                <div><span class="badge amber">Samples Received</span><span>Lab technician has marked the samples as received.</span></div>
-                <div><span class="badge blue">In progress</span><span>At least one test type has been selected by a lab technician.</span></div>
-                <div><span class="badge green">Completed</span><span>All tests have been completed and results captured.</span></div>
-                <div><span class="badge green">Released by doctor</span><span>Doctor has made the results available to the patient.</span></div>
-                <div><span class="badge red">Cancelled</span><span>The cancellation reason is captured and kept with the request.</span></div>
+                <div>
+                    <span class="badge blue">Submitted</span>
+                    <span>Doctor has submitted the test request.</span>
+                </div>
+
+                <div>
+                    <span class="badge amber">Samples Received</span>
+                    <span>Lab technician has marked the samples as received.</span>
+                </div>
+
+                <div>
+                    <span class="badge blue">In progress</span>
+                    <span>At least one test type has been selected by a lab technician.</span>
+                </div>
+
+                <div>
+                    <span class="badge green">Completed</span>
+                    <span>All tests have been completed and results captured.</span>
+                </div>
+
+                <div>
+                    <span class="badge green">Released by doctor</span>
+                    <span>Doctor has made the results available to the patient.</span>
+                </div>
+
+                <div>
+                    <span class="badge red">Cancelled</span>
+                    <span>The cancellation reason is captured and kept with the request.</span>
+                </div>
             </div>
         </div>
     </div>
 
+    <!-- Test requests table -->
     <div class="card">
         <div class="table-wrap">
             <table>
@@ -63,8 +106,110 @@
                         <th>Actions</th>
                     </tr>
                 </thead>
-                <tbody id="requests-tbody"></tbody>
+
+                <tbody id="requests-tbody">
+                    <tr>
+                        <td colspan="7" style="text-align: center; padding: 24px;">
+                            Loading test requests...
+                        </td>
+                    </tr>
+                </tbody>
             </table>
+        </div>
+    </div>
+</div>
+
+<!-- Cancel test request popup -->
+<div class="modal-overlay"
+     id="modal-cancel-request"
+     role="dialog"
+     aria-modal="true"
+     aria-labelledby="cancel-request-title"
+     aria-hidden="true">
+
+    <div class="modal modal-md">
+        <div class="modal-header">
+            <span class="modal-title" id="cancel-request-title">
+                Cancel Test Request
+            </span>
+
+            <button class="modal-close"
+                    type="button"
+                    aria-label="Close cancellation popup"
+                    onclick="closeCancelRequestModal()">
+                ×
+            </button>
+        </div>
+
+        <div class="modal-body">
+            @Html.AntiForgeryToken()
+
+            <p id="cancel-request-summary"
+               style="margin-bottom: 14px; color: #4A5563;">
+            </p>
+
+            <div class="form-group">
+                <label class="form-label" for="cancelled-by">
+                    Cancelled by
+                </label>
+
+                <input id="cancelled-by"
+                       class="form-control"
+                       value="@(User.Identity?.Name ?? "Doctor")"
+                       readonly />
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="cancelled-date">
+                    Cancellation date and time
+                </label>
+
+                <input id="cancelled-date"
+                       class="form-control"
+                       readonly />
+
+                <small>
+                    The actual cancellation time is recorded by the server when cancellation succeeds.
+                </small>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="cancel-request-reason">
+                    Reason for cancellation
+                </label>
+
+                <textarea id="cancel-request-reason"
+                          class="form-control"
+                          rows="5"
+                          maxlength="500"
+                          placeholder="Enter the reason for cancelling this test request..."
+                          required></textarea>
+
+                <small class="cancel-reason-note">
+                    A reason is required. Maximum 500 characters.
+                </small>
+            </div>
+
+            <div id="cancel-modal-error"
+                 class="cancel-modal-error"
+                 role="alert"
+                 hidden>
+            </div>
+        </div>
+
+        <div class="modal-footer">
+            <button class="btn btn-secondary"
+                    type="button"
+                    onclick="closeCancelRequestModal()">
+                Keep Request
+            </button>
+
+            <button id="confirm-cancel-button"
+                    class="btn btn-danger"
+                    type="button"
+                    onclick="submitCancelRequest()">
+                Cancel Request
+            </button>
         </div>
     </div>
 </div>
@@ -79,11 +224,21 @@
         justify-content: center;
         padding: 20px;
         background: rgba(11, 25, 41, 0.58);
+        overflow-y: auto;
     }
 
-    .modal-overlay.is-open {
-        display: flex;
-    }
+        .modal-overlay.is-open {
+            display: flex;
+        }
+
+        .modal-overlay .modal {
+            width: 100%;
+            max-width: 560px;
+            max-height: calc(100vh - 40px);
+            overflow-y: auto;
+            background: #fff;
+            border-radius: 12px;
+        }
 
     .status-guide {
         display: grid;
@@ -101,9 +256,7 @@
         }
 
     .technician-cancel-alert {
-        border: 1px solid rgba(255, 71, 87, 0.22);
-        background: #FFF2F3;
-        color: #7A1E28;
+        border: 1px solid rgba(32, 92, 54, 0.2);
         border-radius: 10px;
         margin-bottom: 16px;
         padding: 14px 16px;
@@ -117,7 +270,30 @@
         margin-top: 4px;
     }
 
-    @@media (max-width: 720px) {
+    .cancel-modal-error {
+        margin-top: 12px;
+        padding: 10px 12px;
+        border-radius: 8px;
+        background: #FFF2F3;
+        color: #7A1E28;
+        font-size: 13px;
+    }
+
+    #requests-tbody .btn {
+        margin: 2px;
+        white-space: nowrap;
+    }
+
+    #confirm-cancel-button:disabled {
+        opacity: 0.65;
+        cursor: not-allowed;
+    }
+
+    @@media (max-width: 900px) {
+        .card-body {
+            overflow-x: auto;
+        }
+
         .status-guide {
             grid-template-columns: 1fr;
         }
@@ -126,39 +302,396 @@
                 grid-template-columns: 1fr;
             }
     }
+
+    @@media (max-width: 720px) {
+        .modal-overlay {
+            padding: 10px;
+        }
+
+            .modal-overlay .modal {
+                max-height: calc(100vh - 20px);
+            }
+    }
 </style>
 
-<div class="modal-overlay" id="modal-cancel-request">
-    <div class="modal modal-md">
-        <div class="modal-header">
-            <span class="modal-title">Cancel Test Request</span>
-            <button class="modal-close" type="button" onclick="closeCancelRequestModal()">×</button>
-        </div>
-        <div class="modal-body">
-            @Html.AntiForgeryToken()
-            <p id="cancel-request-summary" style="margin-bottom: 14px; color: #4A5563;"></p>
-            <div class="form-group">
-                <label class="form-label" for="cancelled-by">Cancelled by</label>
-                <input id="cancelled-by" class="form-control" value="@(User.Identity?.Name ?? "Doctor")" readonly />
-            </div>
-            <div class="form-group">
-                <label class="form-label" for="cancelled-date">Cancellation date and time</label>
-                <input id="cancelled-date" class="form-control" readonly />
-                <small>The cancellation time is recorded when you confirm.</small>
-            </div>
-            <div class="form-group">
-                <label class="form-label" for="cancel-request-reason">Reason for cancellation</label>
-                <textarea id="cancel-request-reason" class="form-control" rows="5" placeholder="Enter the reason for cancelling this test request..." required></textarea>
-            </div>
-        </div>
-        <div class="modal-footer">
-            <button class="btn btn-secondary" type="button" onclick="closeCancelRequestModal()">Keep Request</button>
-            <button class="btn btn-danger" type="button" onclick="submitCancelRequest()">Cancel Request</button>
-        </div>
-    </div>
-</div>
+<script>
+    (() => {
+        "use strict";
 
-<script id="doctor-requests-script" src="~/js/doctor-requests.js" asp-append-version="true"
-    data-list-url="@Url.Action("GetRequests", "Doctor")"
-    data-details-url="@Url.Action("RequestDetails", "Doctor")"
-    data-cancel-url="@Url.Action("CancelTestRequest", "Doctor")"></script>
+        // Generate URLs through ASP.NET routing so the application
+        // continues working when deployed under a virtual directory.
+        const listUrl = '@Url.Action("GetRequests", "Doctor")';
+        const detailsUrl = '@Url.Action("RequestDetails", "Doctor")';
+        const cancelUrl = '@Url.Action("CancelTestRequest", "Doctor")';
+
+        const tbody = document.getElementById("requests-tbody");
+        const modal = document.getElementById("modal-cancel-request");
+        const summary = document.getElementById("cancel-request-summary");
+        const reasonInput = document.getElementById("cancel-request-reason");
+        const cancelledDateInput = document.getElementById("cancelled-date");
+        const alerts = document.getElementById("technician-cancel-alerts");
+        const modalError = document.getElementById("cancel-modal-error");
+        const confirmButton = document.getElementById("confirm-cancel-button");
+
+        const searchInput = document.getElementById("requests-search");
+        const statusFilter = document.getElementById("requests-filter-status");
+        const urgencyFilter = document.getElementById("requests-filter-urgency");
+
+        let requests = [];
+        let selectedRequestId = null;
+        let isSubmitting = false;
+
+        // Safely encode values before adding them to HTML.
+        function escapeHtml(value) {
+            return String(value ?? "").replace(/[&<>"']/g, character => ({
+                "&": "&amp;",
+                "<": "&lt;",
+                ">": "&gt;",
+                '"': "&quot;",
+                "'": "&#39;"
+            })[character]);
+        }
+
+        function showMessage(message, isError = false) {
+            alerts.replaceChildren();
+
+            const notice = document.createElement("div");
+            notice.className = "technician-cancel-alert";
+            notice.style.background = isError ? "#FFF2F3" : "#EFFAF2";
+            notice.style.color = isError ? "#7A1E28" : "#205C36";
+            notice.textContent = message;
+
+            alerts.appendChild(notice);
+        }
+
+        function showModalError(message) {
+            modalError.textContent = message;
+            modalError.hidden = false;
+        }
+
+        function clearModalError() {
+            modalError.textContent = "";
+            modalError.hidden = true;
+        }
+
+        function getAntiForgeryToken() {
+            return document.querySelector(
+                'input[name="__RequestVerificationToken"]'
+            )?.value ?? "";
+        }
+
+        // Must match the statuses accepted by the server-side procedure.
+        function canCancel(request) {
+            const status = String(request.status ?? "").trim().toLowerCase();
+
+            return status === "submitted" ||
+                   status === "samples received";
+        }
+
+        function formatDate(value) {
+            if (!value) return "—";
+
+            const date = new Date(value);
+
+            if (Number.isNaN(date.getTime())) {
+                return "—";
+            }
+
+            return date.toLocaleString();
+        }
+
+        // Filter the requests currently loaded from the backend.
+        function renderRequests() {
+            const search = searchInput.value.trim().toLowerCase();
+            const selectedStatus = statusFilter.value.trim().toLowerCase();
+            const selectedUrgency = urgencyFilter.value.trim().toLowerCase();
+
+            const filteredRequests = requests.filter(request => {
+                const searchableText = [
+                    request.id,
+                    request.patientName,
+                    request.status,
+                    request.urgency,
+                    request.tests
+                ].join(" ").toLowerCase();
+
+                const matchesSearch = searchableText.includes(search);
+
+                const matchesStatus =
+                    !selectedStatus ||
+                    String(request.status ?? "").trim().toLowerCase() === selectedStatus;
+
+                const matchesUrgency =
+                    !selectedUrgency ||
+                    String(request.urgency ?? "").trim().toLowerCase() === selectedUrgency;
+
+                return matchesSearch && matchesStatus && matchesUrgency;
+            });
+
+            if (filteredRequests.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="7" style="text-align:center;padding:24px;">
+                            No test requests found.
+                        </td>
+                    </tr>`;
+                return;
+            }
+
+            tbody.innerHTML = filteredRequests.map(request => {
+                const id = Number(request.id);
+
+                const tests = Array.isArray(request.tests)
+                    ? request.tests.join(", ")
+                    : String(request.tests ?? "—");
+
+                const cancelButton = canCancel(request)
+                    ? `<button type="button"
+                               class="btn btn-danger"
+                               data-cancel-request="${id}">
+                           Cancel
+                       </button>`
+                    : "";
+
+                const viewUrl =
+                    `${detailsUrl}?id=${encodeURIComponent(id)}`;
+
+                return `
+                    <tr>
+                        <td>${escapeHtml(id)}</td>
+                        <td>${escapeHtml(request.patientName || "—")}</td>
+                        <td>${escapeHtml(formatDate(request.requestDate ?? request.createdAt))}</td>
+                        <td>${escapeHtml(request.urgency || "—")}</td>
+                        <td>${escapeHtml(request.status || "—")}</td>
+                        <td>${escapeHtml(tests)}</td>
+                        <td>
+                            <a class="btn btn-primary"
+                               href="${escapeHtml(viewUrl)}">
+                                View
+                            </a>
+                            ${cancelButton}
+                        </td>
+                    </tr>`;
+            }).join("");
+        }
+
+        // Request the latest list from the controller.
+        async function loadRequests() {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="7" style="text-align:center;padding:24px;">
+                        Loading test requests...
+                    </td>
+                </tr>`;
+
+            try {
+                const response = await fetch(listUrl, {
+                    method: "GET",
+                    credentials: "same-origin",
+                    headers: {
+                        "Accept": "application/json"
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(
+                        `Unable to load test requests (HTTP ${response.status}).`
+                    );
+                }
+
+                const data = await response.json();
+
+                if (!Array.isArray(data)) {
+                    throw new Error("The server returned an invalid request list.");
+                }
+
+                requests = data;
+                renderRequests();
+
+            } catch (error) {
+                console.error("Loading test requests failed:", error);
+
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="7" style="text-align:center;padding:24px;">
+                            Could not load test requests. Refresh the page or check the server.
+                        </td>
+                    </tr>`;
+            }
+        }
+
+        // Open the popup after checking the selected request.
+        function openCancelRequestModal(requestId) {
+            const request = requests.find(
+                item => Number(item.id) === Number(requestId)
+            );
+
+            if (!request) {
+                showMessage(
+                    "Test request not found. Refresh the page and try again.",
+                    true
+                );
+                return;
+            }
+
+            if (!canCancel(request)) {
+                showMessage(
+                    "This request can no longer be cancelled.",
+                    true
+                );
+                return;
+            }
+
+            selectedRequestId = Number(request.id);
+            reasonInput.value = "";
+            clearModalError();
+
+            summary.textContent =
+                `Cancel request #${request.id} for ${request.patientName || "this patient"}?`;
+
+            // This is a display preview only. The database records the
+            // authoritative time when the cancellation is saved.
+            cancelledDateInput.value = new Date().toLocaleString();
+
+            modal.classList.add("is-open");
+            modal.setAttribute("aria-hidden", "false");
+            document.body.style.overflow = "hidden";
+
+            reasonInput.focus();
+        }
+
+        // Close the popup without changing the database.
+        window.closeCancelRequestModal = function () {
+            if (isSubmitting) {
+                return;
+            }
+
+            modal.classList.remove("is-open");
+            modal.setAttribute("aria-hidden", "true");
+            document.body.style.overflow = "";
+
+            selectedRequestId = null;
+            reasonInput.value = "";
+            clearModalError();
+        };
+
+        // Submit the cancellation to the ASP.NET controller.
+        window.submitCancelRequest = async function () {
+            if (isSubmitting) {
+                return;
+            }
+
+            if (!selectedRequestId) {
+                showModalError("Select a test request before cancelling.");
+                return;
+            }
+
+            const reason = reasonInput.value.trim();
+
+            if (!reason || reason.length > 500) {
+                showModalError(
+                    "Enter a cancellation reason between 1 and 500 characters."
+                );
+                reasonInput.focus();
+                return;
+            }
+
+            const token = getAntiForgeryToken();
+
+            if (!token) {
+                showModalError(
+                    "Security token not found. Refresh the page and try again."
+                );
+                return;
+            }
+
+            isSubmitting = true;
+            confirmButton.disabled = true;
+            confirmButton.textContent = "Cancelling...";
+            clearModalError();
+
+            try {
+                const response = await fetch(cancelUrl, {
+                    method: "POST",
+                    credentials: "same-origin",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "RequestVerificationToken": token,
+                        "Accept": "application/json"
+                    },
+                    body: JSON.stringify({
+                        testRequestId: selectedRequestId,
+                        reason: reason
+                    })
+                });
+
+                const result = await response.json().catch(() => ({}));
+
+                if (!response.ok || result.success !== true) {
+                    throw new Error(
+                        result.message ||
+                        `Cancellation failed (HTTP ${response.status}).`
+                    );
+                }
+
+                // Close the popup only after the server confirms success.
+                modal.classList.remove("is-open");
+                modal.setAttribute("aria-hidden", "true");
+                document.body.style.overflow = "";
+
+                selectedRequestId = null;
+                reasonInput.value = "";
+
+                showMessage(
+                    result.message || "Test request cancelled successfully."
+                );
+
+                // Fetch the updated status from the server.
+                await loadRequests();
+
+            } catch (error) {
+                console.error("Cancellation failed:", error);
+
+                showModalError(
+                    error.message || "Cancellation failed. Please try again."
+                );
+
+            } finally {
+                isSubmitting = false;
+                confirmButton.disabled = false;
+                confirmButton.textContent = "Cancel Request";
+            }
+        };
+
+        // Handle Cancel buttons added dynamically to the table.
+        tbody.addEventListener("click", event => {
+            const button = event.target.closest("[data-cancel-request]");
+
+            if (button) {
+                openCancelRequestModal(button.dataset.cancelRequest);
+            }
+        });
+
+        // Search and filters update the displayed rows.
+        searchInput.addEventListener("input", renderRequests);
+        statusFilter.addEventListener("change", renderRequests);
+        urgencyFilter.addEventListener("change", renderRequests);
+
+        // Clicking the dark overlay closes the popup.
+        modal.addEventListener("click", event => {
+            if (event.target === modal) {
+                window.closeCancelRequestModal();
+            }
+        });
+
+        // Escape closes the popup when no cancellation is in progress.
+        document.addEventListener("keydown", event => {
+            if (event.key === "Escape" && modal.classList.contains("is-open")) {
+                window.closeCancelRequestModal();
+            }
+        });
+
+        // Load requests when the page finishes loading.
+        loadRequests();
+    })();
+</script>

@@ -13,7 +13,11 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.DataAccess
     public interface ISqlDataAccess
     {
 
-        Task<IEnumerable<T>> GetData<T, P>(string spName, P parameters, string connectionId = "conn");
+        Task<IEnumerable<T>> GetData<T, P>(
+            string query,
+            P parameters,
+            string connectionId = "conn",
+            CommandType commandType = CommandType.StoredProcedure);
 
 
         // ===============================================================================
@@ -52,7 +56,11 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.DataAccess
 
 
 
-		Task SaveData<T>(string spName, T parameters, string connectionId = "conn");
+		Task SaveData<T>(
+            string query,
+            T parameters,
+            string connectionId = "conn",
+            CommandType commandType = CommandType.StoredProcedure);
         // ===============================================================================
         //  SAVE DATA OVERLOAD METHODS
         Task<T> SaveDataAndReturn<T, P>(string spName, P parameters, string connectionId = "conn");

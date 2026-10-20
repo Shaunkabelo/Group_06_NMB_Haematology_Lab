@@ -14,7 +14,6 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 		public int TestRequestId { get; set; }
 		public string Reason { get; set; } = string.Empty;
 	}
-
 	[Authorize(Roles = "Doctor")]
 	[AutoValidateAntiforgeryToken]
 	[ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
