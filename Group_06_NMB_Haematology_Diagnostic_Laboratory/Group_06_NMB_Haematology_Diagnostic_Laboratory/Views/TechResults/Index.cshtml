@@ -129,9 +129,11 @@
                                             <td>@t.TestName</td>
                                             <td style="width:140px">
                                                 <input class="form-control"
-                                                       type="number"
-                                                       step="any"
+                                                       type="text"
+                                                       inputmode="decimal"
                                                        name="resultValue"
+                                                       placeholder="e.g. 7.1 or 7,1"
+                                                       pattern="-?[0-9]+([.,][0-9]{1,4})?"
                                                        required />
                                             </td>
                                             <td>@t.UnitOfMeasurement</td>
