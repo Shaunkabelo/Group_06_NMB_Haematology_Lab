@@ -14,12 +14,14 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 		public int TestRequestId { get; set; }
 		public string Reason { get; set; } = string.Empty;
 	}
-
 	[Authorize(Roles = "Doctor")]
 	[AutoValidateAntiforgeryToken]
 	[ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
 	public partial class DoctorController : Controller
 	{
+        [HttpGet]
+        public IActionResult Index() => RedirectToAction(nameof(Dashboard));
+
 
 		private readonly IDoctorRepository _doctorRepository;
         private readonly IDoctorWorkflowRepository _workflow;
@@ -47,12 +49,10 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 	DateTime? startDate,
 	DateTime? endDate)
 		{
-			var today = DateTime.Today;
+			var start = (startDate ?? new DateTime(1753, 1, 1)).Date;
+			var end = endDate?.Date;
 
-			var start = (startDate ?? today.AddDays(-4)).Date;
-			var end = (endDate ?? today).Date;
-
-			if (start > end || end == DateTime.MaxValue.Date)
+			if (!ModelState.IsValid || (end.HasValue && (start > end.Value || end.Value == DateTime.MaxValue.Date)))
 			{
 				return BadRequest(new
 				{
@@ -81,7 +81,7 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 				.Alerts(
 					doctorId.Value,
 					start,
-					end.AddDays(1)
+					end.HasValue ? end.Value.AddDays(1) : DateTime.MaxValue
 				);
 
 			return Json(alerts);
@@ -509,8 +509,9 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 
 		[HttpGet]
 		[Authorize(Roles = "Doctor")]
-		public IActionResult RequestDetails(string id)
+		public IActionResult RequestDetails(int id)
 		{
+            if (id <= 0) return BadRequest("A valid request ID is required.");
 			ViewData["RequestId"] = id;
 
 			return View();
@@ -1382,8 +1383,17 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 				});
 			}
             catch (ArgumentException ex) { return BadRequest(new { message = ex.Message }); }
-			catch (Exception)
+            catch (Microsoft.Data.SqlClient.SqlException ex) when (ex.Number == 208 && ex.Message.Contains("DoctorEmailQueue", StringComparison.OrdinalIgnoreCase))
+            {
+                HttpContext.RequestServices.GetRequiredService<ILogger<DoctorController>>()
+                    .LogError(ex, "Request submission requires the Doctor workflow database deployment.");
+                return StatusCode(503, new { success = false,
+                    message = "Request submission is temporarily unavailable because notification setup is incomplete. Contact the laboratory administrator. Your request was not saved." });
+            }
+			catch (Exception ex)
 			{
+                HttpContext.RequestServices.GetRequiredService<ILogger<DoctorController>>()
+                    .LogError(ex, "Failed to create a Doctor test request.");
 				return StatusCode(500, new
 				{
 					success = false,

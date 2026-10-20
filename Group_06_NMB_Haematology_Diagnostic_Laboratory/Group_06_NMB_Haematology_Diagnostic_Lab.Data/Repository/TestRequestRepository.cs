@@ -122,7 +122,8 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
 				return await _db
 					.GetData<TestRequest, dynamic>(
 						sql,
-						new { });
+						new { },
+						commandType: CommandType.Text);
 			}
 			catch
 			{
@@ -149,7 +150,8 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
 							{
 								TestRequestID =
 									testRequestId
-							});
+							},
+							commandType: CommandType.Text);
 
 				return result.FirstOrDefault();
 			}
@@ -175,7 +177,8 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
 					{
 						TestRequestID =
 							testRequestId
-					});
+					},
+					commandType: CommandType.Text);
 
 				return true;
 			}
@@ -211,7 +214,8 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
 							{
 								TestRequestID =
 									testRequestId
-							});
+							},
+							commandType: CommandType.Text);
 
 				return result.Any();
 			}

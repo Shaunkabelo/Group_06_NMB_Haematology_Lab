@@ -21,7 +21,7 @@
 */
 SET NOCOUNT ON;
 
-DECLARE @ExpectedDatabase SYSNAME = N'REPLACE_WITH_YOUR_DATABASE_NAME'; -- EDIT THIS LINE
+DECLARE @ExpectedDatabase SYSNAME = N'GRP-04-06'; -- Must match the selected application database.
 DECLARE @ValidateOnly BIT = 0; -- 0 = deploy, 1 = check only
 
 -- These checks are outside TRY/CATCH so another session transaction is never rolled back.

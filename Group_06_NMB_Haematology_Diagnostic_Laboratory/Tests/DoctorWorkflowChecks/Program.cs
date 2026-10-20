@@ -156,7 +156,7 @@ var doctors = Proxy<IDoctorRepository>.Create((name, a) => name switch
 {
     "GetDoctorIdByUserIdAsync" => Task.FromResult<int?>((int)a[0]! == 42 ? 3 : null),
     "GetPatientsAsync" => Task.FromResult<IEnumerable<Patient>>(Array.Empty<Patient>()),
-    "CancelTestRequestAsync" => Task.FromResult(1),
+    "CancelTestRequestAsync" => state.Cancel((int)a[0]!, (int)a[1]!, (string)a[2]!, (string)a[3]!),
     _ => throw new NotSupportedException(name)
 });
 var auth = Proxy<IAuthenticationRepository>.Create((name, a) => name switch
@@ -178,8 +178,9 @@ builder.Services.AddAuthentication("Test").AddScheme<AuthenticationSchemeOptions
 builder.Services.AddRateLimiter(options => options.AddPolicy("account", _ =>
     System.Threading.RateLimiting.RateLimitPartition.GetNoLimiter("tests")));
 await using var app = builder.Build();
+app.UsePathBase("/lab");
 app.UseRouting(); app.UseAuthentication(); app.UseAuthorization(); app.UseRateLimiter();
-app.MapControllerRoute("default", "{controller=Doctor}/{action=Dashboard}/{id?}");
+app.MapControllerRoute("default", "{controller=Home}/{action=Index}/{id?}");
 app.MapGet("/test-token", (HttpContext c, IAntiforgery antiforgery) => Results.Text(antiforgery.GetAndStoreTokens(c).RequestToken!));
 await app.StartAsync();
 var address = app.Services.GetRequiredService<IServer>().Features.Get<IServerAddressesFeature>()!.Addresses.Single();
@@ -194,6 +195,24 @@ Check((await client.PostAsJsonAsync("/Doctor/CreateTestRequest", new { patientId
     "Doctor POST without antiforgery token is rejected");
 var token = await client.GetStringAsync("/test-token");
 client.DefaultRequestHeaders.Add("RequestVerificationToken", token);
+
+foreach (var reason in new[] { "   ", new string('x', 501) })
+    Check((await client.PostAsJsonAsync("/Doctor/CancelTestRequest", new { testRequestId = 12, reason })).StatusCode == HttpStatusCode.BadRequest && state.Cancellations == 0,
+        "Invalid cancellation reason never reaches the repository");
+client.DefaultRequestHeaders.Remove("RequestVerificationToken");
+Check((await client.PostAsJsonAsync("/Doctor/CancelTestRequest", new { testRequestId = 12, reason = "Duplicate request" })).StatusCode == HttpStatusCode.BadRequest && state.Cancellations == 0,
+    "Cancellation requires an antiforgery token");
+client.DefaultRequestHeaders.Add("RequestVerificationToken", token);
+Check((await client.PostAsJsonAsync("/Doctor/CancelTestRequest", new { testRequestId = 12, reason = "  Duplicate request  " })).IsSuccessStatusCode &&
+    state.Cancellations == 1 && state.CancelRequestId == 12 && state.CancelDoctorId == 3 && state.CancelActor == "Doctor:42" && state.CancelReason == "Duplicate request",
+    "Cancellation passes the selected request, authenticated doctor and trimmed reason to the repository");
+state.CancelResult = 2;
+Check((await client.PostAsJsonAsync("/Doctor/CancelTestRequest", new { testRequestId = 12, reason = "Duplicate request" })).StatusCode == HttpStatusCode.Conflict,
+    "Requests no longer eligible for cancellation return conflict");
+state.CancelResult = 0;
+Check((await client.PostAsJsonAsync("/Doctor/CancelTestRequest", new { testRequestId = 99, reason = "Duplicate request" })).StatusCode == HttpStatusCode.NotFound,
+    "Missing requests or requests belonging to another doctor cannot be cancelled");
+state.CancelResult = 1;
 
 var valid = new CreateTestRequestModel { PatientId = 7, Urgency = "STAT", ClinicalNotes = "Check count",
     Tests = new() { new() { TestTypeId = 1, SampleTypeId = 2, BarcodeNumber = " A123 " } } };
@@ -255,7 +274,19 @@ Check((await client.PostAsJsonAsync("/Doctor/ChangeDoctorPassword", new ChangePa
     CurrentPassword = "SecurePass8!", NewPassword = "UpdatedPass9!", ConfirmPassword = "UpdatedPass9!" })).IsSuccessStatusCode &&
     PasswordHelper.VerifyPassword("UpdatedPass9!", state.Hash, state.Salt), "Doctor password changes use the shared authentication format");
 
-foreach (var page in new[] { "Requests", "RequestDetails?id=12", "Results", "Patients", "CreateRequest", "RegisterPatient", "Alerts", "Reports" })
+Check((await client.GetAsync("/Doctor")).Headers.Location?.OriginalString == "/Doctor/Dashboard",
+    "Doctor controller root redirects to its dashboard");
+Check((await client.GetAsync("/lab/Doctor")).Headers.Location?.OriginalString == "/lab/Doctor/Dashboard",
+    "Doctor landing redirect preserves the hosting subfolder");
+var pathDetails = await client.GetStringAsync("/lab/Doctor/RequestDetails/12");
+Check(pathDetails.Contains("const id = 12;") && pathDetails.Contains("/lab/Doctor/GetRequestData"),
+    "Request details use route IDs and preserve the hosting subfolder in API URLs");
+Check((await client.GetAsync("/Doctor/RequestDetails/invalid")).StatusCode == HttpStatusCode.BadRequest,
+    "Invalid request detail IDs are rejected");
+Check((await client.GetAsync("/Doctor/GetDoctorAlerts")).IsSuccessStatusCode &&
+    state.Start == new DateTime(1753, 1, 1) && state.End == DateTime.MaxValue,
+    "Alerts default to all result dates instead of only the last five days");
+foreach (var page in new[] { "Requests", "RequestDetails?id=12", "RequestDetails/12", "Results", "Patients", "CreateRequest", "RegisterPatient", "Alerts", "Reports" })
     Check((await client.GetAsync("/Doctor/" + page)).IsSuccessStatusCode, "Razor page renders: " + page);
 
 // Exercise the real queue worker with a fake transport: no SMTP connection is made.
@@ -302,6 +333,10 @@ public class Proxy<T> : DispatchProxy where T : class
 }
 sealed class Fixture
 {
+    public int Cancellations, CancelRequestId, CancelDoctorId, CancelResult = 1;
+    public string CancelActor = "", CancelReason = "";
+    public Task<int> Cancel(int requestId, int doctorId, string actor, string reason)
+    { Cancellations++; CancelRequestId = requestId; CancelDoctorId = doctorId; CancelActor = actor; CancelReason = reason; return Task.FromResult(CancelResult); }
     public int Creates, Releases, Registrations, ActorDoctorId;
     public bool Ready = true;
     public DateTime Start, End;

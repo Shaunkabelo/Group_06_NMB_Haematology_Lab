@@ -9,6 +9,7 @@
     <meta name="referrer" content="no-referrer" />
     <title>@ViewData["Title"] - NMB-HLabSys</title>
     <link rel="stylesheet" href="~/css/account.css" asp-append-version="true" />
+    @await RenderSectionAsync("Styles", required: false)
 </head>
 <body>
     <main class="account-shell">
