@@ -12,12 +12,8 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.DataAccess
 
     public interface ISqlDataAccess
     {
+        Task<IEnumerable<T>> GetData<T, P>(string spName, P parameters, string connectionId = "conn");
 
-        Task<IEnumerable<T>> GetData<T, P>(
-            string query,
-            P parameters,
-            string connectionId = "conn",
-            CommandType commandType = CommandType.StoredProcedure);
 
 
         // ===============================================================================
@@ -47,20 +43,22 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.DataAccess
         string splitOn = "Id",
         string connectionId = "conn");
 
-		//     ==============================================================================
-
-		Task<T> SaveDataAndReturnWithTable<T>(
-	string spName,
-	DynamicParameters parameters,
-	string connectionId = "conn");
+        //     ==============================================================================
 
 
 
-		Task SaveData<T>(
-            string query,
-            T parameters,
-            string connectionId = "conn",
-            CommandType commandType = CommandType.StoredProcedure);
+
+
+
+        Task SaveData<T>(string spName, T parameters, string connectionId = "conn");
+
+        // Supports stored procedures that receive a table-valued Dapper parameter
+        // and return the newly created record identifier.
+        Task<T> SaveDataAndReturnWithTable<T>(
+            string spName,
+            DynamicParameters parameters,
+            string connectionId = "conn");
+
         // ===============================================================================
         //  SAVE DATA OVERLOAD METHODS
         Task<T> SaveDataAndReturn<T, P>(string spName, P parameters, string connectionId = "conn");
@@ -74,10 +72,47 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.DataAccess
 
         // ======================== TRANSACTION METHOD ================================
         Task ExecuteInTransaction(Func<IDbConnection, IDbTransaction, Task> action);
-          //===========================================================================
+        //===========================================================================
 
 
 
+
+        // Patient subsystem - multiple result sets
+        Task<(
+            IEnumerable<TFirst> First,
+            IEnumerable<TSecond> Second,
+            IEnumerable<TThird> Third
+        )> GetMultipleData<TFirst, TSecond, TThird, P>(
+            string spName,
+            P parameters,
+            string connectionId = "conn");
+
+        // Patient subsystem - parameterized SQL queries
+        Task<IEnumerable<T>> LoadData<T, U>(
+            string sql,
+            U parameters,
+            string connectionId = "conn");
+
+        Task<int> Save<T>(
+            string sql,
+            T parameters,
+            string connectionId = "conn");
+
+        Task<T?> QueryFirstOrDefaultAsync<T>(
+            string query,
+            object? parameters = null,
+            string connectionId = "conn");
+
+        // Patient subsystem - stored procedure returning an ID
+        Task<T> SaveDataReturnId<T, U>(
+            string spName,
+            U parameters,
+            string connectionId = "conn");
+
+        Task<int> ExecuteScalarAsync<T>(
+            string sql,
+            T parameters,
+            string connectionId = "conn");
 
 
     }
