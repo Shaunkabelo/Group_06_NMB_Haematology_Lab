@@ -25,10 +25,14 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.DataAccess
             _config = config;
         }
 
-        public async Task<IEnumerable<T>> GetData<T, P>(string spName, P parameters, string connectionId = "conn")
+        public async Task<IEnumerable<T>> GetData<T, P>(
+            string query,
+            P parameters,
+            string connectionId = "conn",
+            CommandType commandType = CommandType.StoredProcedure)
         {
             using IDbConnection connection = new SqlConnection(_config.GetConnectionString(connectionId));
-            return await connection.QueryAsync<T>(spName, parameters, commandType: CommandType.StoredProcedure);
+            return await connection.QueryAsync<T>(query, parameters, commandType: commandType);
         }
 
 
@@ -110,10 +114,14 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.DataAccess
 				commandType: CommandType.StoredProcedure);
 		}
 
-		public async Task SaveData<T>(string spName, T parameters, string connectionId = "conn")
+		public async Task SaveData<T>(
+            string query,
+            T parameters,
+            string connectionId = "conn",
+            CommandType commandType = CommandType.StoredProcedure)
         {
             using IDbConnection connection = new SqlConnection(_config.GetConnectionString(connectionId));
-            await connection.ExecuteAsync(spName, parameters, commandType: CommandType.StoredProcedure);
+            await connection.ExecuteAsync(query, parameters, commandType: commandType);
         }
         // ===============================================================================
         // SAVE DATA OVERLOAD METHODS
