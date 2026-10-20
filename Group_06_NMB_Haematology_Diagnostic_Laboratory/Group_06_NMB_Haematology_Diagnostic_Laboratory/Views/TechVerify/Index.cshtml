@@ -209,20 +209,24 @@
 @section Scripts {
     <script>
         function switchTab(btn, panelId) {
-            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-            document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.tab-btn')
+                .forEach(b => b.classList.remove('active'));
+
+            document.querySelectorAll('.tab-panel')
+                .forEach(p => p.classList.remove('active'));
+
             btn.classList.add('active');
             document.getElementById(panelId).classList.add('active');
         }
 
-                function escapeHtml(value) {
+        function escapeHtml(value) {
             const element = document.createElement('span');
             element.textContent = value == null ? '' : String(value);
             return element.innerHTML;
         }
 
         function historyHtml(history) {
-            if (!history || !history.length) {
+            if (!Array.isArray(history) || history.length === 0) {
                 return '<p>No previous reviews or corrections.</p>';
             }
 
@@ -234,9 +238,9 @@
                     </div>
                     <div style="margin-top:4px">
                         <strong>Result:</strong>
-                        ${h.resultValue == null
-                            ? 'Not recorded in historical data'
-                            : escapeHtml(h.resultValue)}
+                        ${escapeHtml(
+                            h.resultValue ?? 'Not recorded in historical data'
+                        )}
                     </div>
                     <div style="margin-top:4px">
                         <strong>By:</strong> ${escapeHtml(h.byName)}
@@ -255,101 +259,258 @@
                 </div>
             `;
         }
-        }
 
         function medicalInfoHtml(d) {
+            function listText(items) {
+                return Array.isArray(items) && items.length
+                    ? escapeHtml(items.join(', '))
+                    : 'None recorded';
+            }
+
             return `
                 <div class="form-label">Patient Medical Info</div>
-                <div style="background:#F5F7FA;border-radius:8px;padding:10px;margin-bottom:14px;font-size:13px">
-                    <strong>Conditions:</strong> ${d.conditions.length ? d.conditions.join(', ') : 'None recorded'}<br/>
-                    <strong>Allergies:</strong> ${d.allergies.length ? d.allergies.join(', ') : 'None recorded'}<br/>
-                    <strong>Medication:</strong> ${d.medications.length ? d.medications.join(', ') : 'None recorded'}
+                <div style="background:#F5F7FA;border-radius:8px;
+                            padding:10px;margin-bottom:14px;font-size:13px">
+                    <strong>Conditions:</strong> ${listText(d.conditions)}<br>
+                    <strong>Allergies:</strong> ${listText(d.allergies)}<br>
+                    <strong>Medication:</strong> ${listText(d.medications)}
                 </div>
-                ${d.clinicalNotes ? `<div class="form-label">Doctor's Clinical Notes</div><div style="font-style:italic;font-size:13px;margin-bottom:14px">"${d.clinicalNotes}"</div>` : ''}
+                ${d.clinicalNotes ? `
+                    <div class="form-label">Doctor's Clinical Notes</div>
+                    <div style="font-size:13px;margin-bottom:14px;
+                                white-space:pre-wrap">${escapeHtml(d.clinicalNotes)}</div>
+                ` : ''}
             `;
         }
 
-                async function openVerifyModal(testResultId) {
-            document.getElementById('verify-modal-overlay').style.display = 'flex';
-            document.getElementById('verify-modal-body').innerHTML = 'Loading...';
-            document.getElementById('verify-test-result-id').value = testResultId;
+        async function loadModalData(url, testResultId) {
+            const res = await fetch(
+                url + '?testResultId=' + encodeURIComponent(testResultId),
+                { headers: { 'Accept': 'application/json' } }
+            );
 
-                    const res = await fetch(
-            '@Url.Action("GetVerifyModalData", "TechVerify")?testResultId=' +
-            encodeURIComponent(testResultId)
-        );
             if (!res.ok) {
-                document.getElementById('verify-modal-body').innerHTML = '<p style="color:#FF4757">Could not load details.</p>';
-                return;
+                throw new Error('Request failed (HTTP ' + res.status + ').');
             }
-            const d = await res.json();
 
-            document.getElementById('verify-modal-title').textContent = d.requestNumber + ' — ' + d.testName + (d.patientAge ? ' (' + d.patientName + ', ' + d.patientAge + ' yrs)' : '');
-            document.getElementById('verify-modal-body').innerHTML = `
-                <div style="background:#F5F7FA;border-radius:8px;padding:12px;margin-bottom:14px;display:flex;gap:24px;flex-wrap:wrap">
-                    <div><div class="form-label">Result</div><div style="font-weight:700">${d.resultDisplay} ${d.unitOfMeasurement ?? ''}</div></div>
-                    <div><div class="form-label">Normal Range</div><div style="font-weight:700">${d.normalRangeMin ?? '—'} – ${d.normalRangeMax ?? '—'}</div></div>
-                    <div><div class="form-label">Performed By</div><div style="font-weight:700">${d.performedByName}</div></div>
-                    <div><div class="form-label">Abnormal?</div><div style="font-weight:700;color:${d.isAbnormal ? '#FF4757' : '#1E9B54'}">${d.isAbnormal ? 'Yes ⚠️' : 'No'}</div></div>
-                </div>
+            const contentType = res.headers.get('content-type') || '';
 
-                ${d.labTechNote ? `<div class="form-label">Lab Technician's Note</div><div style="font-size:13px;margin-bottom:14px">${d.labTechNote}</div>` : ''}
+            if (!contentType.includes('application/json')) {
+                throw new Error(
+                    'The server did not return result data. Refresh and check that you are logged in.'
+                );
+            }
 
-                ${medicalInfoHtml(d)}
-                ${historyHtml(d.history)}
-            `;
+            return await res.json();
+        }
+
+        function updateReturnNoteRequirement(form) {
+            const isReturn =
+                form.querySelector('input[name="decision"]:checked')
+                    ?.value === 'Return';
+
+            const group = document.getElementById('return-note-group');
+            const notes = form.querySelector('[name="notes"]');
+
+            if (group) {
+                group.style.display = isReturn ? 'block' : 'none';
+            }
+
+            if (notes) {
+                notes.required = isReturn;
+            }
+        }
+
+        async function openVerifyModal(testResultId) {
+            const overlay = document.getElementById('verify-modal-overlay');
+            const body = document.getElementById('verify-modal-body');
+            const form = overlay.querySelector('form');
+            const submitButton =
+                form.querySelector('button[type="submit"]');
+
+            form.reset();
+            updateReturnNoteRequirement(form);
+
+            document.getElementById('verify-test-result-id').value =
+                testResultId;
+
+            document.getElementById('verify-modal-title').textContent =
+                'Review & Verify';
+
+            body.textContent = 'Loading...';
+            submitButton.disabled = true;
+            overlay.style.display = 'flex';
+
+            try {
+                const d = await loadModalData(
+                    '@Url.Action("GetVerifyModalData", "TechVerify")',
+                    testResultId
+                );
+
+                // Ignore a response if another result was opened meanwhile.
+                if (
+                    document.getElementById('verify-test-result-id').value
+                    !== String(testResultId)
+                ) {
+                    return;
+                }
+
+                const patient = d.patientName
+                    ? ' (' + d.patientName +
+                        (d.patientAge != null
+                            ? ', ' + d.patientAge + ' yrs'
+                            : '') + ')'
+                    : '';
+
+                document.getElementById('verify-modal-title').textContent =
+                    d.requestNumber + ' — ' + d.testName + patient;
+
+                body.innerHTML = `
+                    <div style="background:#F5F7FA;border-radius:8px;
+                                padding:12px;margin-bottom:14px;
+                                display:flex;gap:24px;flex-wrap:wrap">
+                        <div>
+                            <div class="form-label">Current Result</div>
+                            <div style="font-weight:700">
+                                ${escapeHtml(d.resultDisplay ?? d.resultValue ?? 'Not recorded')}
+                                ${escapeHtml(d.unitOfMeasurement ?? '')}
+                            </div>
+                        </div>
+                        <div>
+                            <div class="form-label">Normal Range</div>
+                            <div style="font-weight:700">
+                                ${escapeHtml(d.normalRangeMin ?? '—')}
+                                – ${escapeHtml(d.normalRangeMax ?? '—')}
+                            </div>
+                        </div>
+                        <div>
+                            <div class="form-label">Performed By</div>
+                            <div style="font-weight:700">
+                                ${escapeHtml(d.performedByName)}
+                            </div>
+                        </div>
+                        <div>
+                            <div class="form-label">Abnormal?</div>
+                            <div style="font-weight:700;
+                                        color:${d.isAbnormal ? '#FF4757' : '#1E9B54'}">
+                                ${d.isAbnormal ? 'Yes ⚠️' : 'No'}
+                            </div>
+                        </div>
+                    </div>
+
+                    ${d.labTechNote ? `
+                        <div class="form-label">Lab Technician's Note</div>
+                        <div style="font-size:13px;margin-bottom:14px;
+                                    white-space:pre-wrap">${escapeHtml(d.labTechNote)}</div>
+                    ` : ''}
+
+                    ${medicalInfoHtml(d)}
+                    ${historyHtml(d.history)}
+                `;
+
+                submitButton.disabled = false;
+            } catch (error) {
+                console.error('Unable to load verification details:', error);
+                body.textContent =
+                    'Could not load verification details. ' + error.message;
+            }
         }
 
         function closeVerifyModal() {
-            document.getElementById('verify-modal-overlay').style.display = 'none';
+            document.getElementById('verify-modal-overlay')
+                .style.display = 'none';
+
+            document.getElementById('verify-test-result-id').value = '';
         }
 
-                async function openResubmitModal(testResultId) {
-            document.getElementById('resubmit-modal-overlay').style.display = 'flex';
-                    document.getElementById('resubmit-modal-body').innerHTML = `
-            <div style="background:#F5F7FA;border-radius:8px;
-                        padding:12px;margin-bottom:14px">
-                <strong>Current Submitted Result:</strong>
-                ${escapeHtml(d.resultValue ?? 'Not recorded')}
-                ${escapeHtml(d.unitOfMeasurement ?? '')}
-            </div>
+        async function openResubmitModal(testResultId) {
+            const overlay = document.getElementById('resubmit-modal-overlay');
+            const body = document.getElementById('resubmit-modal-body');
+            const history = document.getElementById('resubmit-history');
+            const form = overlay.querySelector('form');
+            const submitButton =
+                form.querySelector('button[type="submit"]');
 
-            <div style="background:rgba(245,166,35,0.1);
-                        border:1px solid #F5A623;border-radius:8px;
-                        padding:12px;margin-bottom:14px">
-                <strong>${escapeHtml(d.returnedByName)}'s Note:</strong>
-                <div style="margin-top:4px;white-space:pre-wrap">${escapeHtml(d.reviewerNote)}</div>
-            </div>
-        `;
-            document.getElementById('resubmit-test-result-id').value = testResultId;
+            form.reset();
 
-                    const res = await fetch(
-            '@Url.Action("GetResubmitModalData", "TechVerify")?testResultId=' +
-            encodeURIComponent(testResultId)
-        );
-            if (!res.ok) {
-                document.getElementById('resubmit-modal-body').innerHTML = '<p style="color:#FF4757">Could not load details.</p>';
-                return;
+            document.getElementById('resubmit-test-result-id').value =
+                testResultId;
+
+            document.getElementById('resubmit-modal-title').textContent =
+                'Edit & Resubmit';
+
+            const resultInput =
+                document.getElementById('resubmit-result-value');
+
+            resultInput.required = true;
+            resultInput.step = 'any';
+
+            body.textContent = 'Loading...';
+            history.innerHTML = '';
+            submitButton.disabled = true;
+            overlay.style.display = 'flex';
+
+            try {
+                const d = await loadModalData(
+                    '@Url.Action("GetResubmitModalData", "TechVerify")',
+                    testResultId
+                );
+
+                if (
+                    document.getElementById('resubmit-test-result-id').value
+                    !== String(testResultId)
+                ) {
+                    return;
+                }
+
+                document.getElementById('resubmit-modal-title').textContent =
+                    d.requestNumber + ' — ' + d.testName;
+
+                document.getElementById('resubmit-value-label').textContent =
+                    'Corrected Value (' + (d.unitOfMeasurement ?? '') +
+                    ') — Normal range: ' + (d.normalRangeMin ?? '—') +
+                    '–' + (d.normalRangeMax ?? '—');
+
+                resultInput.value = d.resultValue ?? '';
+
+                body.innerHTML = `
+                    <div style="background:#F5F7FA;border-radius:8px;
+                                padding:12px;margin-bottom:14px">
+                        <strong>Current Submitted Result:</strong>
+                        ${escapeHtml(d.resultValue ?? 'Not recorded')}
+                        ${escapeHtml(d.unitOfMeasurement ?? '')}
+                    </div>
+
+                    <div style="background:rgba(245,166,35,0.1);
+                                border:1px solid #F5A623;border-radius:8px;
+                                padding:12px;margin-bottom:14px">
+                        <strong>${escapeHtml(d.returnedByName)}'s Note:</strong>
+                        <div style="margin-top:4px;white-space:pre-wrap">${escapeHtml(d.reviewerNote)}</div>
+                    </div>
+                `;
+
+                history.innerHTML = historyHtml(d.history);
+                submitButton.disabled = false;
+            } catch (error) {
+                console.error('Unable to load returned result:', error);
+                body.textContent =
+                    'Could not load returned result details. ' + error.message;
             }
-            const d = await res.json();
-
-            document.getElementById('resubmit-modal-title').textContent = d.requestNumber + ' — ' + d.testName;
-            document.getElementById('resubmit-value-label').textContent = 'Corrected Value (' + (d.unitOfMeasurement ?? '') + ') — Normal range: ' + (d.normalRangeMin ?? '—') + '–' + (d.normalRangeMax ?? '—');
-            document.getElementById('resubmit-result-value').value = d.resultValue ?? '';
-            
-
-            document.getElementById('resubmit-modal-body').innerHTML = `
-                <div style="background:rgba(245,166,35,0.1);border:1px solid #F5A623;border-radius:8px;padding:12px;margin-bottom:14px">
-                    <strong style="color:#B86F00">${d.returnedByName}'s Note:</strong>
-                    <div style="font-size:13px;margin-top:4px;color:#516174">"${d.reviewerNote}"</div>
-                </div>
-            `;
-
-            document.getElementById('resubmit-history').innerHTML = historyHtml(d.history);
         }
 
         function closeResubmitModal() {
-            document.getElementById('resubmit-modal-overlay').style.display = 'none';
+            document.getElementById('resubmit-modal-overlay')
+                .style.display = 'none';
+
+            document.getElementById('resubmit-test-result-id').value = '';
         }
+
+        document.querySelectorAll(
+            '#verify-modal-overlay input[name="decision"]'
+        ).forEach(input => {
+            input.addEventListener('change', function () {
+                updateReturnNoteRequirement(this.form);
+            });
+        });
     </script>
 }

@@ -4,6 +4,7 @@ using Group_06_NMB_Haematology_Diagnostic_Lab.Data.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
+using System.Globalization;
 
 namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 {
@@ -45,15 +46,39 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> CaptureResult(
-     int labTestId,
-     decimal? resultValue,
-     string? notes)
+                 int labTestId,
+                  string? resultValue,
+                    string? notes)
         {
             var labTechnicianId = await _currentTech.GetLabTechnicianIdAsync();
 
-            if (!ModelState.IsValid || !resultValue.HasValue)
+            var normalisedValue = resultValue?.Trim().Replace(',', '.');
+
+            const NumberStyles styles =
+                NumberStyles.AllowLeadingSign |
+                NumberStyles.AllowDecimalPoint;
+
+            if (!ModelState.IsValid ||
+                !decimal.TryParse(
+                    normalisedValue,
+                    styles,
+                    CultureInfo.InvariantCulture,
+                    out var numericResult))
             {
-                TempData["Error"] = "Enter a valid numeric result, for example 12 or 12.5.";
+                TempData["Error"] =
+                    "Enter a valid numeric result, for example 7.1 or 7,1.";
+
+                return RedirectToAction(nameof(Index), new { labTestId });
+            }
+
+            if (numericResult < -99999999.9999m ||
+                numericResult > 99999999.9999m ||
+                decimal.Round(numericResult, 4) != numericResult)
+            {
+                TempData["Error"] =
+                    "The result must have no more than eight whole-number digits " +
+                    "and four decimal places.";
+
                 return RedirectToAction(nameof(Index), new { labTestId });
             }
 
@@ -61,7 +86,7 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
             {
                 var isAbnormal = await _repo.CaptureResultAsync(
                     labTestId,
-                    resultValue,
+                    numericResult,
                     null,
                     notes?.Trim(),
                     labTechnicianId);
@@ -81,3 +106,4 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
         }
     }
 }
+    
