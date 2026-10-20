@@ -22,6 +22,35 @@ public partial class PatientController
 
     [Microsoft.AspNetCore.Mvc.HttpGet]
     [Microsoft.AspNetCore.Mvc.ResponseCache(NoStore = true, Location = Microsoft.AspNetCore.Mvc.ResponseCacheLocation.None)]
+    public async Task<Microsoft.AspNetCore.Mvc.IActionResult> DownloadTestResult(int testRequestId, int testRequestTestTypeId)
+    {
+        if (testRequestId <= 0 || testRequestTestTypeId <= 0) return BadRequest();
+        var request = (await _patientRepository.GetPatientRequests(CurrentPatientId))
+            .FirstOrDefault(item => item.TestRequestID == testRequestId);
+        if (request == null) return NotFound();
+        if (!request.IsReleased) return Forbid();
+        var result = (await _patientRepository.GetPatientRequestDetails(CurrentPatientId, testRequestId))
+            .FirstOrDefault(item => item.TestRequestTestTypeID == testRequestTestTypeId && item.TestResultID.HasValue);
+        if (result == null) return NotFound();
+
+        var date = result.CaptureDateTime ?? result.CompletionDateTime ?? result.RequestDate;
+        var row = new Services.PatientReportRow(
+            string.IsNullOrWhiteSpace(result.CategoryName) ? "Uncategorised" : result.CategoryName,
+            result.TestName, date, request.RequestNumber,
+            $"{result.ResultValue?.ToString(CultureInfo.InvariantCulture) ?? result.ResultText ?? "N/A"} {result.UnitOfMeasurement}".Trim(),
+            result.ReferenceRange,
+            result.IsAbnormal == true && result.ResultFlag == "Normal" ? "Abnormal" : result.ResultFlag,
+            result.IsAbnormal == true || result.ResultFlag is "High" or "Low", result.DoctorReleaseNote,
+            result.LabTechnicianName, result.ResultNotes, result.DoctorName);
+        var document = new Services.PatientReportDocument(
+            await _patientRepository.GetPatientDisplayName(CurrentPatientId) ?? "Patient",
+            date, date, DateTime.UtcNow, false, true, true, true, new[] { row });
+        return File(Services.PatientReportPdf.Create(document), "application/pdf",
+            $"Lab-Test-Result-{testRequestId}-{testRequestTestTypeId}.pdf");
+    }
+
+    [Microsoft.AspNetCore.Mvc.HttpGet]
+    [Microsoft.AspNetCore.Mvc.ResponseCache(NoStore = true, Location = Microsoft.AspNetCore.Mvc.ResponseCacheLocation.None)]
     public Microsoft.AspNetCore.Mvc.IActionResult RecentReports()
     {
         if (!Directory.Exists(ReportDirectory)) return Json(Array.Empty<GeneratedReport>());

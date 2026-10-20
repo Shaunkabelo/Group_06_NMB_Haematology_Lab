@@ -4,6 +4,7 @@ public class PatientTrendResult
 {
     public int TestTypeID { get; set; }
     public string TestName { get; set; } = string.Empty;
+    public string CategoryName { get; set; } = string.Empty;
     public string? UnitOfMeasurement { get; set; }
     public decimal? NormalRangeMin { get; set; }
     public decimal? NormalRangeMax { get; set; }

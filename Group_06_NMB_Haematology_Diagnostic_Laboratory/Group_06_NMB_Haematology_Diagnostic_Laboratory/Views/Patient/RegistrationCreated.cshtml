@@ -1,0 +1,22 @@
+@model string
+@{
+    ViewData["Title"] = "Account Created";
+}
+<link rel="stylesheet" href="~/css/patient-registration.css" asp-append-version="true" />
+<section class="patient-registration">
+    <div class="registration-body">
+        <div class="alert alert-success" role="status" aria-live="polite">
+            <h2>Your account was created successfully.</h2>
+            <p>@Model</p>
+            <p>Redirecting to the login page in 3 seconds…</p>
+        </div>
+        <a asp-controller="Account" asp-action="Login" target="_top" class="registration-cancel">Continue to Login</a>
+    </div>
+</section>
+@section Scripts {
+    <script>
+        window.setTimeout(function () {
+            window.top.location.href = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Url.Action("Login", "Account")));
+        }, 3000);
+    </script>
+}

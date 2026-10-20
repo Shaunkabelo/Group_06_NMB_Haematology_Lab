@@ -25,6 +25,14 @@
     <div class="card">
         <div class="card-header">
             <span class="card-title">Doctors with Access</span>
+            <div style="display:flex; align-items:center; gap:8px;">
+                <label for="consent-access-filter">Access</label>
+                <select id="consent-access-filter" class="form-control compact-select" onchange="filterSavedConsents()">
+                    <option value="all">All</option>
+                    <option value="active" selected>Active</option>
+                    <option value="inactive">Inactive</option>
+                </select>
+            </div>
             <span class="td-muted" id="consent-count">Loading...</span>
         </div>
         <table>
@@ -87,14 +95,10 @@
                 <div class="card">
                     <div class="card-header"><span class="card-title">Doctors</span></div>
                     <div class="card-body">
-                        <div class="form-group">
-                            <label class="form-label" for="grant-doctor-search">Search doctor</label>
-                            <input id="grant-doctor-search" type="search" class="form-control" placeholder="Name, email or HPCSA number" oninput="renderGrantDoctorResults()" disabled />
-                        </div>
                         <label class="form-label" for="grant-doctor-results">Select a doctor</label>
-                        <select id="grant-doctor-results" class="form-control" onchange="selectGrantDoctor(this.value === '' ? -1 : Number(this.value))" disabled>
-                            <option value="">Loading doctors...</option>
-                        </select>
+                        <input id="grant-doctor-results" type="text" class="form-control" list="grant-doctor-options"
+                               placeholder="Loading doctors..." autocomplete="off" oninput="selectGrantDoctor()" disabled />
+                        <datalist id="grant-doctor-options"></datalist>
                         <p id="grant-doctor-load-error" class="td-muted" role="status" aria-live="polite" hidden></p>
                         <button id="grant-doctor-retry" class="btn btn-secondary btn-sm" type="button" onclick="loadGrantDoctors()" hidden>Retry loading doctors</button>
                     </div>
@@ -288,6 +292,7 @@
         }
 
         let grantRequests = [];
+        let grantExistingConsents = [];
         const selectedConsentTests = new Map();
         let consentTestLoadVersion = 0;
 
@@ -300,14 +305,14 @@
             grantDoctors = [];
 
             const dropdown = document.getElementById('grant-doctor-results');
-            const search = document.getElementById('grant-doctor-search');
-            search.value = '';
-            search.disabled = true;
-            dropdown.replaceChildren(new Option('Loading doctors...', ''));
+            dropdown.value = '';
+            document.getElementById('grant-doctor-options').replaceChildren();
+            dropdown.placeholder = 'Loading doctors...';
             dropdown.disabled = true;
             document.getElementById('grant-access-error').style.display = 'none';
             renderSelectedGrantDoctor();
             grantRequests = [];
+            grantExistingConsents = [];
             selectedConsentTests.clear();
             ++consentTestLoadVersion;
             document.getElementById('grant-request-list').textContent = 'Loading released requests...';
@@ -318,11 +323,10 @@
 
         async function loadGrantDoctors(loadVersion = doctorLoadVersion) {
             const dropdown = document.getElementById('grant-doctor-results');
-            const search = document.getElementById('grant-doctor-search');
             const errorMessage = document.getElementById('grant-doctor-load-error');
             const retry = document.getElementById('grant-doctor-retry');
-            dropdown.replaceChildren(new Option('Loading doctors...', ''));
-            dropdown.disabled = search.disabled = true;
+            dropdown.placeholder = 'Loading doctors...';
+            dropdown.disabled = true;
             errorMessage.hidden = retry.hidden = true;
             try {
                 const response = await fetch('@Url.Action("ConsentDoctors", "Patient")', {
@@ -336,43 +340,48 @@
                 if (!Array.isArray(doctors)) throw new Error('Unable to read the doctor list. Please retry.');
                 if (loadVersion !== doctorLoadVersion) return;
                 grantDoctors = doctors;
-                search.disabled = false;
                 renderGrantDoctorResults();
             } catch (error) {
                 if (loadVersion !== doctorLoadVersion) return;
-                dropdown.replaceChildren(new Option('Unable to load doctors.', ''));
-                dropdown.disabled = search.disabled = true;
+                dropdown.placeholder = 'Unable to load doctors.';
+                dropdown.disabled = true;
                 errorMessage.textContent = error.message || 'Unable to load doctors. Please retry.';
                 errorMessage.hidden = retry.hidden = false;
             }
         }
+        function grantDoctorLabel(doctor) {
+            return doctor.name + ' - ' + doctor.email +
+                (doctor.hpcsaNumber ? ' - HPCSA: ' + doctor.hpcsaNumber : '');
+        }
+
         function renderGrantDoctorResults() {
             const dropdown = document.getElementById('grant-doctor-results');
-            const query = document.getElementById('grant-doctor-search').value.trim().toLowerCase();
-            const matches = grantDoctors.map((doctor, index) => ({ doctor, index }))
-                .filter(({ doctor }) => [doctor.name, doctor.email, doctor.hpcsaNumber]
-                    .some(value => String(value || '').toLowerCase().includes(query)));
-            if (!matches.some(item => item.index === selectedGrantDoctorIndex)) {
-                selectedGrantDoctorIndex = -1;
-                renderSelectedGrantDoctor();
-            }
-            dropdown.replaceChildren(new Option(matches.length ? 'Select a doctor' :
-                query ? 'No doctors match your search.' : 'No doctors available.', ''));
-            matches.forEach(({ doctor, index }) => {
-                const label = doctor.name + ' - ' + doctor.email +
-                    (doctor.hpcsaNumber ? ' - HPCSA: ' + doctor.hpcsaNumber : '');
-                dropdown.add(new Option(label, String(index)));
-            });
-            dropdown.disabled = matches.length === 0;
-            dropdown.value = selectedGrantDoctorIndex < 0 ? '' : String(selectedGrantDoctorIndex);
+            const options = document.getElementById('grant-doctor-options');
+            options.replaceChildren();
+            grantDoctors.forEach(doctor => options.append(new Option(grantDoctorLabel(doctor), grantDoctorLabel(doctor))));
+            dropdown.disabled = grantDoctors.length === 0;
+            dropdown.placeholder = grantDoctors.length ? 'Select or type to search for a doctor' : 'No doctors available.';
         }
 
-        function selectGrantDoctor(index) {
+        function selectGrantDoctor() {
+            const value = document.getElementById('grant-doctor-results').value;
+            const index = grantDoctors.findIndex(doctor => grantDoctorLabel(doctor) === value);
+            if (index === selectedGrantDoctorIndex) return;
             selectedGrantDoctorIndex = index;
-            renderGrantDoctorResults();
+            ++consentTestLoadVersion;
+            closeModal('modal-consent-tests');
+            applyExistingGrantSelections();
             renderSelectedGrantDoctor();
         }
-
+        function applyExistingGrantSelections() {
+            selectedConsentTests.clear();
+            const doctor = grantDoctors[selectedGrantDoctorIndex];
+            const consent = doctor && grantExistingConsents.find(item => item.id === doctor.id && item.isActive);
+            consent?.requests.forEach(request => {
+                selectedConsentTests.set(request.id, new Set(request.selectedTestIds));
+            });
+            renderGrantRequestList();
+        }
         function renderSelectedGrantDoctor() {
             const display = document.getElementById('grant-selected-doctor');
             if (!display) return;
@@ -390,13 +399,17 @@
         async function loadGrantRequests(version) {
             const container = document.getElementById('grant-request-list');
             try {
-                const response = await fetch('@Url.Action("ConsentRequests", "Patient")', { cache: 'no-store' });
-                if (!response.ok) throw new Error();
-                const requests = await response.json();
-                if (!Array.isArray(requests)) throw new Error();
+                const responses = await Promise.all([
+                    fetch('@Url.Action("ConsentRequests", "Patient")', { cache: 'no-store' }),
+                    fetch('@Url.Action("SavedConsents", "Patient")', { cache: 'no-store' })
+                ]);
+                if (responses.some(response => !response.ok || response.redirected)) throw new Error();
+                const [requests, consents] = await Promise.all(responses.map(response => response.json()));
+                if (!Array.isArray(requests) || !Array.isArray(consents)) throw new Error();
                 if (version !== doctorLoadVersion) return;
                 grantRequests = requests;
-                renderGrantRequestList();
+                grantExistingConsents = consents;
+                applyExistingGrantSelections();
             } catch {
                 if (version === doctorLoadVersion)
                     container.textContent = 'Unable to load released requests. Close this dialog and try again.';
@@ -433,7 +446,7 @@
                 const count = selectedConsentTests.get(request.id)?.size || 0;
                 const selection = document.createElement('div');
                 selection.className = 'td-muted';
-                selection.textContent = count + ' tests selected';
+                selection.textContent = count + (count === 1 ? ' test selected' : ' tests selected');
                 row.insertCell().append(link, selection);
                 row.insertCell().textContent = request.doctorName || 'Not recorded';
                 row.insertCell().textContent = request.requestDate || 'Not recorded';
@@ -555,6 +568,23 @@
         }
 
         let savedConsentLoadVersion = 0;
+        function filterSavedConsents() {
+            const filter = document.getElementById('consent-access-filter').value;
+            const body = document.getElementById('saved-consents-body');
+            body.querySelector('[data-filter-empty]')?.remove();
+            const rows = Array.from(body.querySelectorAll('tr[data-consent-active]'));
+            rows.forEach(row => {
+                row.hidden = filter !== 'all' && row.dataset.consentActive !== String(filter === 'active');
+            });
+            if (rows.length && rows.every(row => row.hidden)) {
+                const row = body.insertRow();
+                row.setAttribute('data-filter-empty', '');
+                const cell = row.insertCell();
+                cell.colSpan = 5;
+                cell.className = 'td-muted';
+                cell.textContent = filter === 'active' ? 'No doctors have active access.' : 'No inactive doctor consents found.';
+            }
+        }
         async function loadSavedConsents() {
             const version = ++savedConsentLoadVersion;
             const body = document.getElementById('saved-consents-body');
@@ -573,6 +603,7 @@
                 }
                 doctors.forEach(doctor => {
                     const row = document.createElement('tr');
+                    row.dataset.consentActive = String(doctor.isActive);
                     row.setAttribute('data-searchable', '');
                     const links = doctor.requests.map(request => `<a href="#" class="card-link" data-request-id="${Number(request.id)}" data-test-ids="${request.selectedTestIds.map(Number).join(',')}">${consentText(request.reference)}</a>`).join('<br />');
                     row.innerHTML = `
@@ -587,6 +618,7 @@
                     bindSharedResultLinks(row, doctor);
                     body.append(row);
                 });
+                filterSavedConsents();
             } catch {
                 if (version !== savedConsentLoadVersion) return;
                 count.textContent = 'Unavailable';

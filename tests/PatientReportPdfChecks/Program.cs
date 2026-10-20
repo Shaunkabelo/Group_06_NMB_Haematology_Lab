@@ -11,6 +11,15 @@ void Check(string name, PatientReportDocument model) {
     var bytes = PatientReportPdf.Create(model);
     File.WriteAllBytes(Path.Combine(AppContext.BaseDirectory, name + ".pdf"), bytes);
     var text = Encoding.Latin1.GetString(bytes);
+    if (!Regex.IsMatch(text, @"/F2 14 Tf[^\n]+\(Patient: Sample Patient\)"))
+        throw new Exception("Patient name must use prominent bold text");
+    foreach (var row in model.Rows)
+    {
+        if (!Regex.IsMatch(text, @"/F4 8\.5 Tf[^\n]+\(" + Regex.Escape(row.Test) + @"\)"))
+            throw new Exception("Test heading must be bold");
+        if (row.Flag == "High" && !Regex.IsMatch(text, @"0\.8 0 0 rg\nBT /F4 8\.5 Tf[^\n]+\(High\) Tj ET\n0 g"))
+            throw new Exception("High flag must be bold red with color reset");
+    }
     if (!text.StartsWith("%PDF-1.4") || !text.EndsWith("%%EOF\n")) throw new Exception("Invalid envelope");
     int pageCount = int.Parse(Regex.Match(text, @"/Type /Pages /Count (\d+)").Groups[1].Value);
     if (model.Rows.Count > 0 && pageCount < 3) throw new Exception("Pagination missing");
