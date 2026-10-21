@@ -5,6 +5,9 @@
     Layout = useManagerLayout
         ? "~/Views/Shared/_LabManager_Layout.cshtml"
         : "~/Views/Shared/_UserAccountLayout.cshtml";
+    var provinces = ViewBag.Provinces as IEnumerable<Group_06_NMB_Haematology_Diagnostic_Lab.Data.Models.Province>
+        ?? Enumerable.Empty<Group_06_NMB_Haematology_Diagnostic_Lab.Data.Models.Province>();
+    var address = ViewBag.StructuredAddress as Group_06_NMB_Haematology_Diagnostic_Lab.Data.Models.UserAddress;
 }
 <div class="shared-profile">
 <p class="subtitle">Manage your personal details, email address and password.</p>
@@ -24,8 +27,25 @@
                 <div><label for="cellphone">Cellphone</label><input id="cellphone" name="cellphone" value="@Model.Cellphone" type="tel" inputmode="numeric" pattern="[0-9]{10}" maxlength="10" autocomplete="tel" /></div>
                 <div><label for="dateOfBirth">Date of birth</label><input id="dateOfBirth" type="date" value="@Model.DateOfBirth?.ToString("yyyy-MM-dd")" readonly aria-readonly="true" /></div>
             </div>
-            <label for="homeAddress">Home address</label>
-            <input id="homeAddress" name="homeAddress" value="@Model.HomeAddress" maxlength="255" autocomplete="street-address" />
+            <div class="profile-address" data-structured-address data-address-prefix="profileAddress"
+                 data-towns-url="@Url.Action("AddressTownCities", "Account")"
+                 data-suburbs-url="@Url.Action("AddressSuburbs", "Account")">
+                <h3>Residential address</h3>
+                <label for="profileAddress-AddressLine1">Address line 1</label>
+                <input id="profileAddress-AddressLine1" name="addressLine1" value="@address?.AddressLine1" maxlength="150" autocomplete="address-line1" required />
+                <label for="profileAddress-AddressLine2">Address line 2 <span>(optional)</span></label>
+                <input id="profileAddress-AddressLine2" name="addressLine2" value="@address?.AddressLine2" maxlength="150" autocomplete="address-line2" />
+                <div class="field-row profile-address-location-row">
+                    <div><label for="profileAddress-Province">Province</label><select id="profileAddress-Province" required><option value="">Select a province</option>@foreach (var province in provinces) { <option value="@province.ProvinceId">@province.ProvinceName</option> }</select></div>
+                    <div><label for="profileAddress-TownCity">Town / city</label><select id="profileAddress-TownCity" required disabled><option value="">Select a province first</option></select></div>
+                </div>
+                <div class="field-row">
+                    <div><label for="profileAddress-Suburb">Suburb</label><select id="profileAddress-Suburb" name="suburbId" required disabled><option value="">Select a town / city first</option></select></div>
+                    <div><label for="profileAddress-AreaCode">Area code</label><input id="profileAddress-AreaCode" readonly aria-readonly="true" /></div>
+                </div>
+            </div>
+            <label for="emailPassword">Current password (only when changing email)</label>
+            <div class="password-field"><input id="emailPassword" name="currentPassword" type="password" maxlength="128" autocomplete="new-password" /><button type="button" data-password-toggle="emailPassword" aria-label="Show password" aria-pressed="false"></button></div>
             <p class="hint">After saving, sign in again so your account details are refreshed on all devices.</p>
             <button class="primary" type="submit">Save personal details</button>
         </form>
@@ -54,7 +74,15 @@ document.querySelectorAll('input[name="name"], input[name="surname"]').forEach(f
 document.getElementById("cellphone").addEventListener("input", event => {
     event.target.value = event.target.value.replace(/[^0-9]/g, "").slice(0,10);
 });
+document.getElementById("emailPassword").value = "";
 document.getElementById("currentPassword").value = "";
+</script>
+<script src="~/js/structured-address.js" asp-append-version="true"></script>
+<script>
+structuredAddress.set("profileAddress", @Html.Raw(System.Text.Json.JsonSerializer.Serialize(new {
+    line1 = address?.AddressLine1, line2 = address?.AddressLine2, provinceId = address?.ProvinceId,
+    townCityId = address?.TownCityId, suburbId = address?.SuburbId
+})));
 </script>
     @if (useManagerLayout)
     {

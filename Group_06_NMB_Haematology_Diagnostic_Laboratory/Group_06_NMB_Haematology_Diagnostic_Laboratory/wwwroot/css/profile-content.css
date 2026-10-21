@@ -11,7 +11,13 @@
 .shared-profile label {display:block;font-size:13px;font-weight:600;margin:16px 0 8px}
 .shared-profile .card-body>label:first-child, .shared-profile .field-row:first-of-type label {margin-top:0}
 .shared-profile input {font:inherit;font-size:14px;min-width:0;width:100%;border:1px solid #ccd7e2;border-radius:7px;padding:12px;color:#203449;background:#fff}
+.shared-profile select {font:inherit;font-size:14px;min-width:0;width:100%;border:1px solid #ccd7e2;border-radius:7px;padding:12px;color:#203449;background:#fff}
 .shared-profile input[readonly] {background:#f5f7fa;color:#61748a}
+.shared-profile .profile-address {border-top:1px solid #e1e7ee;margin-top:24px;padding-top:18px}
+.shared-profile .profile-address h3 {font-size:15px;margin:0 0 2px;color:#203449}
+.shared-profile .profile-address label {margin-top:14px}
+.shared-profile .profile-address-location-row {margin-top:14px}
+.shared-profile .profile-address label span {color:#63798c;font-weight:400}
 .shared-profile input:focus, .shared-profile button:focus-visible, .shared-profile a:focus-visible {outline:3px solid #9adbcf;outline-offset:2px}
 .shared-profile .password-field {display:flex;align-items:center;border:1px solid #ccd7e2;border-radius:7px;overflow:hidden}
 .shared-profile .password-field input {border:0}

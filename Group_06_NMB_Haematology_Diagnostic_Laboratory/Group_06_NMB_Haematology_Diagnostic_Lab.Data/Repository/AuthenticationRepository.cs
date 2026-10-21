@@ -15,6 +15,21 @@ public class AuthenticationRepository(ISqlDataAccess db) : IAuthenticationReposi
             UserID = userId, SecurityStamp = securityStamp, Name = name, Surname = surname,
             Email = email, Cellphone = cellphone, HomeAddress = homeAddress })).Single();
 
+    public async Task<bool> UpdateProfileWithAddress(int userId, Guid securityStamp, string name, string surname, string email,
+        string? cellphone, string addressLine1, string? addressLine2, int suburbId) =>
+        (await db.GetData<bool, object>("sp_Auth_UpdateProfileWithAddress", new {
+            UserID = userId, SecurityStamp = securityStamp, Name = name, Surname = surname, Email = email,
+            Cellphone = cellphone, AddressLine1 = addressLine1, AddressLine2 = addressLine2, SuburbID = suburbId })).Single();
+
+    public Task<IEnumerable<Province>> GetProvinces() => db.GetData<Province, object>("sp_Address_GetProvinces", new { });
+    public Task<IEnumerable<TownCity>> GetTownCities(int provinceId) =>
+        db.GetData<TownCity, object>("sp_Address_GetTownCitiesByProvince", new { ProvinceID = provinceId });
+    public Task<IEnumerable<Suburb>> GetSuburbs(int townCityId) =>
+        db.GetData<Suburb, object>("sp_Address_GetSuburbsByTownCity", new { TownCityID = townCityId });
+    public async Task<UserAddress?> GetUserAddress(int userId) =>
+        (await db.GetData<UserAddress, object>("sp_Address_GetAllUserAddresses", new { }))
+            .FirstOrDefault(address => address.UserId == userId);
+
     public Task RecordLogin(int userId) =>
         db.SaveData("sp_Auth_RecordLogin", new { UserID = userId });
 

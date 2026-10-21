@@ -212,12 +212,22 @@ public class AccountController(IAuthenticationRepository repository, PasswordRes
     {
         var user = await repository.GetActiveUserById(int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!));
         if (user == null) return Challenge();
+        ViewBag.Provinces = await repository.GetProvinces();
+        ViewBag.StructuredAddress = await repository.GetUserAddress(user.UserId);
         return View(user);
     }
 
+    [Authorize, HttpGet]
+    public async Task<IActionResult> AddressTownCities(int provinceId) =>
+        provinceId <= 0 ? Json(Array.Empty<object>()) : Json(await repository.GetTownCities(provinceId));
+
+    [Authorize, HttpGet]
+    public async Task<IActionResult> AddressSuburbs(int townCityId) =>
+        townCityId <= 0 ? Json(Array.Empty<object>()) : Json(await repository.GetSuburbs(townCityId));
+
     [Authorize, HttpPost, ValidateAntiForgeryToken, EnableRateLimiting("account")]
     public async Task<IActionResult> Profile(string? name, string? surname, string? email,
-        string? cellphone, string? homeAddress)
+        string? cellphone, string? addressLine1, string? addressLine2, int? suburbId, string? currentPassword)
     {
         var user = await repository.GetActiveUserById(int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!));
         if (user == null) return Challenge();
@@ -225,7 +235,8 @@ public class AccountController(IAuthenticationRepository repository, PasswordRes
         surname = surname?.Trim();
         email = email?.Trim();
         cellphone = cellphone?.Trim();
-        homeAddress = homeAddress?.Trim();
+        addressLine1 = addressLine1?.Trim();
+        addressLine2 = addressLine2?.Trim();
         if (string.IsNullOrWhiteSpace(name) || name.Length > 100)
             ModelState.AddModelError("", "Enter your first name (up to 100 characters).");
         if (string.IsNullOrWhiteSpace(surname) || surname.Length > 100)
@@ -236,12 +247,20 @@ public class AccountController(IAuthenticationRepository repository, PasswordRes
         if (!ValidEmail(email)) ModelState.AddModelError("", "Enter a valid email address.");
         if (!string.IsNullOrEmpty(cellphone) && !System.Text.RegularExpressions.Regex.IsMatch(cellphone, "^[0-9]{10}$"))
             ModelState.AddModelError("", "Cellphone number must contain exactly 10 digits.");
-        if (homeAddress?.Length > 255) ModelState.AddModelError("", "Home address must be 255 characters or fewer.");
+        if (string.IsNullOrWhiteSpace(addressLine1) || addressLine1.Length > 150)
+            ModelState.AddModelError("", "Enter address line 1 (up to 150 characters).");
+        if (addressLine2?.Length > 150) ModelState.AddModelError("", "Address line 2 must be 150 characters or fewer.");
+        if (!suburbId.HasValue || suburbId <= 0) ModelState.AddModelError("", "Select a suburb.");
+        var emailChanged = !string.Equals(user.Email, email, StringComparison.OrdinalIgnoreCase);
+        if (emailChanged && (string.IsNullOrEmpty(currentPassword) || currentPassword.Length > 128 ||
+            !PasswordHelper.VerifyPassword(currentPassword, user.PasswordHash, user.PasswordSalt)))
+            ModelState.AddModelError("", "Enter your current password to change your email address / username.");
         if (ModelState.IsValid)
         {
             try
             {
-                if (await repository.UpdateProfile(user.UserId, user.SecurityStamp, name!, surname!, email!, cellphone, homeAddress))
+                if (await repository.UpdateProfileWithAddress(user.UserId, user.SecurityStamp, name!, surname!, email!,
+                    cellphone, addressLine1!, addressLine2, suburbId!.Value))
                 {
                     await HttpContext.SignOutAsync();
                     TempData["AccountMessage"] = "Your profile was saved. Sign in again using " + email + ".";
@@ -258,7 +277,9 @@ public class AccountController(IAuthenticationRepository repository, PasswordRes
         user.Surname = surname ?? "";
         user.Email = email ?? "";
         user.Cellphone = cellphone ?? "";
-        user.HomeAddress = homeAddress ?? "";
+        user.HomeAddress = addressLine1 ?? "";
+        ViewBag.Provinces = await repository.GetProvinces();
+        ViewBag.StructuredAddress = await repository.GetUserAddress(user.UserId);
         return View(user);
     }
 
