@@ -34,7 +34,7 @@
             return;
         }
 
-        const reportUrl = new URL(button.dataset.reportUrl, window.location.origin);
+        const reportUrl = new URL(button.dataset.reportUrl, document.baseURI);
         reportUrl.searchParams.set("startDate", startDate);
         reportUrl.searchParams.set("endDate", endDate);
         reportUrl.searchParams.set("sortBy", sortInput.value);

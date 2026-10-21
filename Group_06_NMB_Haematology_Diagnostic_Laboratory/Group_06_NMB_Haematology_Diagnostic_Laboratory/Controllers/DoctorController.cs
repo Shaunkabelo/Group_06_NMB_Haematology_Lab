@@ -195,7 +195,7 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 			}
 		}
 		[Authorize(Roles = "Doctor")]
-		[HttpGet]
+		[HttpGet("Doctor/GetReportRequests", Name = "DoctorGetReportRequests")]
 		public async Task<IActionResult> GetReportRequests(
 			DateTime startDate,
 			DateTime endDate,
@@ -405,6 +405,7 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 		}
 
 		[Authorize(Roles = "Doctor")]
+		[HttpGet("Doctor/Reports", Name = "DoctorReports")]
 		public IActionResult Reports()
 		{
 			return View();
