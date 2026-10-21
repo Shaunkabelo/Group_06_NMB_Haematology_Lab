@@ -157,13 +157,13 @@
             const testName = (selected?.testName || '').trim().toLowerCase();
             const categoryName = (selected?.categoryName || '').trim().toLowerCase();
             const fixedTicks = testName.includes('prothrombin') ? [0, 0.5, 1, 1.5, 2, 2.5]
-                : /haemoglobin|hemoglobin|heamoglobin/.test(testName) ? [4, 8, 12, 16, 20]
-                : /platelet|placelet/.test(testName) ? [100, 200, 300, 400, 500]
-                : /\bwbc\b|white blood (cell|count)|white cell count/.test(testName) ? [3, 6, 9, 12, 15]
-                : [testName, categoryName].some(name => name.includes('differential count')) ? [20, 40, 60, 80, 100]
-                : [testName, categoryName].some(name => name.includes('full blood count')) ? [5, 10, 15, 20]
+                : /haemoglobin|hemoglobin|heamoglobin/.test(testName) ? [0, 4, 8, 12, 16, 20]
+                : /platelet|placelet/.test(testName) ? [0, 100, 200, 300, 400, 500]
+                : /\bwbc\b|white blood (cell|count)|white cell count/.test(testName) ? [0, 3, 6, 9, 12, 15]
+                : [testName, categoryName].some(name => name.includes('differential count')) ? [0, 20, 40, 60, 80, 100]
+                : [testName, categoryName].some(name => name.includes('full blood count')) ? [0, 5, 10, 15, 20]
                 : null;
-            const min = fixedTicks ? fixedTicks[0] : low - margin;
+            const min = 0;
             const max = fixedTicks ? fixedTicks[fixedTicks.length - 1] : high + margin;
             const width = 940, height = 410;
             const left = 95, right = 35, top = 40, bottom = 80;

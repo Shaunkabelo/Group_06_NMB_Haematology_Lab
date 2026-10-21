@@ -13,6 +13,7 @@ BEGIN
         tr.RequestDate,
         tr.Urgency,
         tr.Status,
+        tr.CancelReason,
         tr.ClinicalNotes,
         tr.DoctorReleaseNote,
         tr.ReleaseDate
@@ -23,7 +24,7 @@ BEGIN
     INNER JOIN dbo.TestRequestTestType trtt ON tr.TestRequestID = trtt.TestRequestID
     INNER JOIN dbo.TestType tt ON trtt.TestTypeID = tt.TestTypeID
     WHERE tr.PatientID = @PatientID
-    GROUP BY tr.TestRequestID, tr.RequestDate, tr.Urgency, tr.Status,
+    GROUP BY tr.TestRequestID, tr.RequestDate, tr.Urgency, tr.Status, tr.CancelReason,
         tr.ClinicalNotes, tr.DoctorReleaseNote, tr.ReleaseDate, u.Name, u.Surname
     ORDER BY tr.RequestDate DESC;
 END;

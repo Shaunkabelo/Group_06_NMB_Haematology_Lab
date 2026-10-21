@@ -12,12 +12,34 @@
             <tbody>
                 @foreach (var request in Model)
                 {
+                    var statusClass = request.Status?.Trim().ToLowerInvariant() switch
+                    {
+                        "submitted" => "badge-amber",
+                        "samples received" or "sample(s) received" or "in progress" => "badge-blue",
+                        "completed" or "released" or "released by doctor" or "released by the doctor" => "badge-green",
+                        "cancelled" => "badge-red",
+                        _ => "badge-gray"
+                    };
                     <tr data-searchable>
                         <td><strong>@request.RequestNumber</strong></td>
                         <td>@request.TestsRequested</td><td>@request.DoctorName</td>
                         <td>@request.RequestDate.ToString("dd MMM yyyy")</td>
-                        <td>@request.Urgency</td><td>@request.Status</td>
-                        <td><button type="button" class="btn btn-primary btn-sm" data-request-id="@request.TestRequestID" data-reference="@request.RequestNumber" data-released="@request.IsReleased.ToString().ToLowerInvariant()" onclick="openRequest(this)">@(request.IsReleased ? "View Results" : "View")</button></td>
+                        <td>@request.Urgency</td><td><span class="badge @statusClass">@request.Status</span></td>
+                        <td>
+                            @if (string.Equals(request.Status?.Trim(), "Cancelled", StringComparison.OrdinalIgnoreCase))
+                            {
+                                <button type="button" class="btn btn-primary btn-sm" onclick="document.getElementById('cancel-reason-@request.TestRequestID').showModal()">View reason</button>
+                                <dialog id="cancel-reason-@request.TestRequestID" aria-labelledby="cancel-title-@request.TestRequestID" style="max-width: min(560px, 90vw); border: 1px solid #ddd; border-radius: 12px; padding: 24px;">
+                                    <h3 id="cancel-title-@request.TestRequestID">Cancellation reason — @request.RequestNumber</h3>
+                                    <p style="white-space: pre-wrap; overflow-wrap: anywhere;">@(string.IsNullOrWhiteSpace(request.CancelReason) ? "No cancellation reason was recorded." : request.CancelReason)</p>
+                                    <form method="dialog"><button type="submit" class="btn btn-secondary btn-sm">Close</button></form>
+                                </dialog>
+                            }
+                            else
+                            {
+                                <button type="button" class="btn btn-primary btn-sm" data-request-id="@request.TestRequestID" data-reference="@request.RequestNumber" data-released="@request.IsReleased.ToString().ToLowerInvariant()" onclick="openRequest(this)">@(request.IsReleased ? "View Results" : "View")</button>
+                            }
+                        </td>
                     </tr>
                 }
                 @if (Model.Count == 0)
