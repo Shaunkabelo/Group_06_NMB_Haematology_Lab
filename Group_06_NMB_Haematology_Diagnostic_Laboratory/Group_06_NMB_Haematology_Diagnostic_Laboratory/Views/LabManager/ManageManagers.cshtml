@@ -16,10 +16,13 @@
 
         <div>
             <h2>Lab Managers</h2>
-            <small>Manage registered laboratory managers.</small>
+            
         </div>
        
         <div style="display:flex; gap:10px; align-items:center;">
+
+            <input type="search" class="form-control" style="width:220px;" data-staff-search="#managersTable"
+                   placeholder="Search lab managers" aria-label="Search lab managers" autocomplete="off" />
 
             <form asp-controller="LabManager"
                   asp-action="ManageManagers"
@@ -59,8 +62,6 @@
                 </select>
 
             </form>
-            <input type="search" class="form-control" style="width:220px;" data-staff-search="#managersTable"
-                   placeholder="Search lab managers" aria-label="Search lab managers" autocomplete="off" />
             <button class="btn btn-primary"
                     onclick="openCreateManager()"
                     data-bs-toggle="offcanvas"

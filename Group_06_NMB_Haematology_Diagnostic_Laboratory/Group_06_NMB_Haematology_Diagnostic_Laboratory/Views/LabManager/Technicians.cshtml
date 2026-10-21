@@ -28,10 +28,13 @@
 
         <div>
             <h2>Technicians</h2>
-            <small>Manage registered laboratory technicians.</small>
+            
         </div>
 
         <div style="display:flex; gap:10px; align-items:center;">
+
+            <input type="search" class="form-control" style="width:220px;" data-staff-search="#techniciansTable"
+                   placeholder="Search technicians" aria-label="Search technicians" autocomplete="off" />
 
             <!-- FILTER -->
             <form asp-controller="LabManager"
@@ -73,9 +76,6 @@
                 </select>
 
             </form>
-
-            <input type="search" class="form-control" style="width:220px;" data-staff-search="#techniciansTable"
-                   placeholder="Search technicians" aria-label="Search technicians" autocomplete="off" />
 
             <!-- ADD TECHNICIAN -->
             <button class="btn btn-primary"

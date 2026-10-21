@@ -5,6 +5,7 @@
     const sidebar = document.getElementById("shared-sidebar");
     if (!toggle || !sidebar) return;
     const root = document.documentElement;
+    const navigation = sidebar.querySelector(".nav-menu");
     const desktop = window.matchMedia("(min-width: 861px)");
     const storageKey = "nmb-shared-nav-collapsed";
     const tooltip = document.createElement("div");
@@ -59,6 +60,7 @@
     } catch (_) { /* Storage may be disabled; navigation still works. */ }
     toggle.hidden = false;
     syncToggle();
+
     toggle.addEventListener("click", () => {
         const collapsed = root.classList.toggle("shared-nav-collapsed");
         try { localStorage.setItem(storageKey, String(collapsed)); } catch (_) { }

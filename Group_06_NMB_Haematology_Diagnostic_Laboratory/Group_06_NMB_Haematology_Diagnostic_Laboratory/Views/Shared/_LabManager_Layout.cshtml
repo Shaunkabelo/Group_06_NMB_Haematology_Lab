@@ -224,6 +224,19 @@
         </div>
     </aside>
 
+    <script>
+        // Restore the scroll position of the active sidebar item before the
+        // main page content is parsed and painted, avoiding a visible jump.
+        (() => {
+            const navigation = document.querySelector("#shared-sidebar .nav-menu");
+            const activeItem = navigation?.querySelector("a.nav-item.active");
+            if (!navigation || !activeItem) return;
+
+            navigation.scrollTop = Math.max(0,
+                activeItem.offsetTop - ((navigation.clientHeight - activeItem.offsetHeight) / 2));
+        })();
+    </script>
+
 
     <!-- ========================================================= -->
     <!-- MAIN CONTENT -->
