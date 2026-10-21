@@ -80,7 +80,8 @@ public sealed class DoctorWorkflowRepository(IConfiguration configuration) : IDo
 
     private const string ResultSelect = """
         SELECT r.TestRequestID, r.RequestDate, r.Status AS RequestStatus, r.Urgency, r.ReleaseDate,
-            CONCAT(u.Name, ' ', u.Surname) AS PatientName, u.SA_ID_Number AS PatientSaId,
+            CONCAT(u.Name, ' ', u.Surname) AS PatientName, p.PatientID AS PatientId,
+            u.SA_ID_Number AS PatientSaId,
             tt.TestName, lt.LabTestID, res.TestResultID, res.ResultValue, res.ResultText, res.Notes,
             CAST(CASE WHEN res.IsAbnormal = 1 THEN 1 ELSE 0 END AS BIT) AS IsAbnormal,
             res.CaptureDateTime,

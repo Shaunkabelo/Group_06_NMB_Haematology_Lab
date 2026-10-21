@@ -309,7 +309,9 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 				var today = DateTime.Today;
                 var requests = (await _workflow.Requests(doctorId.Value)).Select(ToReport).ToList();
                 var results = (await _workflow.Results(doctorId.Value)).ToList();
-                var alerts = (await _workflow.Alerts(doctorId.Value, today.AddDays(-4), today.AddDays(1))).ToList();
+                var alerts = (await _workflow.Alerts(doctorId.Value, today.AddDays(-4), today.AddDays(1)))
+                    .Where(a => a.IsAbnormal)
+                    .ToList();
 
 				var submitted = requests.Where(r => string.Equals(r.Status, "Submitted", StringComparison.OrdinalIgnoreCase)).ToList();
 				var resultsRecorded = results

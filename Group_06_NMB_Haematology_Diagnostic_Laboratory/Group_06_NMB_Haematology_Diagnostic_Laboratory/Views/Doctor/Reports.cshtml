@@ -1,4 +1,4 @@
-﻿@{
+@{
     ViewData["Title"] = "Doctor Reports";
     Layout = "~/Views/Shared/_LayoutDoctor.cshtml";
 }
@@ -61,24 +61,10 @@
 
 </div>
 
-<style>
-    .report-actions {
-        margin-top: 20px;
-    }
+@section Scripts {
+    <script src="~/js/doctor-reports.js" asp-append-version="true"></script>
+}
 
-    .report-status {
-        margin-top: 15px;
-        font-size: 14px;
-        min-height: 20px;
-    }
-
-        .report-status.success {
-            color: green;
-        }
-
-        .report-status.error {
-            color: red;
-        }
-</style>
-
-<script src="~/js/doctor-reports.js"></script>
+@section Styles {
+    <link rel="stylesheet" href="~/css/DoctorReports.css" asp-append-version="true" />
+}
