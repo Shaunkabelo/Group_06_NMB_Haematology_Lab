@@ -1,4 +1,4 @@
-﻿@using Group_06_NMB_Haematology_Diagnostic_Lab.Data.Services
+@using Group_06_NMB_Haematology_Diagnostic_Lab.Data.Services
 @inject ICurrentTechnicianService CurrentTech
 <!DOCTYPE html>
 <html lang="en">
@@ -10,11 +10,12 @@
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     @await RenderSectionAsync("Styles", required: false)
+    <link rel="stylesheet" href="~/css/shared-navigation.css" asp-append-version="true" />
 </head>
 <body>
 
-    <aside class="sidebar">
-        <div class="sidebar-brand"><span class="brand-icon">🧬</span> NMB-HLabSys</div>
+    <aside class="sidebar" id="shared-sidebar">
+        <partial name="_SidebarBrand" />
         <nav class="nav-menu">
             <div class="sidebar-section">Main</div>
             <a asp-controller="TechDashboard" asp-action="Index" class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "TechDashboard" ? "active" : "")">
@@ -54,6 +55,7 @@
     </aside>
 
     <div class="main-content">
+
         @RenderBody()
     </div>
 
@@ -62,5 +64,6 @@
     <script src="~/js/site.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
 
+    <script src="~/js/shared-navigation.js" asp-append-version="true"></script>
 </body>
 </html>

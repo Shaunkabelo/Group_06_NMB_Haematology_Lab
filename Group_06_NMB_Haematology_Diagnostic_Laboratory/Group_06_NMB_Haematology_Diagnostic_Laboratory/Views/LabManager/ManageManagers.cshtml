@@ -59,6 +59,8 @@
                 </select>
 
             </form>
+            <input type="search" class="form-control" style="width:220px;" data-staff-search="#managersTable"
+                   placeholder="Search lab managers" aria-label="Search lab managers" autocomplete="off" />
             <button class="btn btn-primary"
                     onclick="openCreateManager()"
                     data-bs-toggle="offcanvas"
@@ -83,7 +85,7 @@
 
     <div class="table-wrap">
 
-        <table>
+        <table id="managersTable">
 
             <thead>
 
@@ -250,6 +252,7 @@
         </table>
 
     </div>
+    <p class="text-muted mt-3" data-staff-search-empty hidden>No lab managers match your search.</p>
     
 
 </div>
@@ -564,5 +567,6 @@
 </script>
 <script src="~/js/structured-address.js" asp-append-version="true"></script>
 <script src="~/js/staff-details.js" asp-append-version="true"></script>
+<script src="~/js/staff-search.js" asp-append-version="true"></script>
 
 

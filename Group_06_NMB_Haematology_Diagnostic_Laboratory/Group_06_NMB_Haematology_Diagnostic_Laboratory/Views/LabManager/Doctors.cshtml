@@ -63,6 +63,9 @@
 
             </form>
 
+            <input type="search" class="form-control" style="width:220px;" data-staff-search="#doctorsTable"
+                   placeholder="Search doctors" aria-label="Search doctors" autocomplete="off" />
+
 
             <!-- ADD DOCTOR -->
 
@@ -86,7 +89,7 @@
 
     <div class="table-wrap">
 
-        <table>
+        <table id="doctorsTable">
 
             <thead>
 
@@ -236,6 +239,7 @@
         </table>
 
     </div>
+    <p class="text-muted mt-3" data-staff-search-empty hidden>No doctors match your search.</p>
     
 
 </div>
@@ -502,5 +506,6 @@
 </script>
 <script src="~/js/structured-address.js" asp-append-version="true"></script>
 <script src="~/js/staff-details.js" asp-append-version="true"></script>
+<script src="~/js/staff-search.js" asp-append-version="true"></script>
 
 

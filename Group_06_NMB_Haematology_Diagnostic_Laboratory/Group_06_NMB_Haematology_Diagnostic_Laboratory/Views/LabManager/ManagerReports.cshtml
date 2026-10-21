@@ -1,11 +1,11 @@
 @{
-    ViewData["Title"] = "Management Reports";
+    
     Layout = "~/Views/Shared/_LabManager_Layout.cshtml";
     var startDate = (DateTime)ViewBag.ReportStart;
     var endDate = (DateTime)ViewBag.ReportEnd;
 }
 <div class="page-body report-page">
-    <div class="section-header"><div><h2>Management Reports</h2><small>Choose a report and its criteria, then download a print-ready PDF.</small></div></div>
+    <div class="section-header"><div><h2>Management Reports</h2><small>Choose a report and its criteria, preview the data, then download a print-ready PDF.</small></div></div>
     @if (TempData["ReportError"] != null) {
         <div class="alert alert-danger" role="alert">@TempData["ReportError"]</div>
     }
@@ -37,7 +37,10 @@
                 <label><input type="checkbox" name="lowStockOnly" value="true" checked="@(ViewBag.LowStockOnly == true)" /> Only consumables near or below reorder level (within 10%)</label>
             </div>
             <p id="reportDateError" class="text-danger" role="alert"></p>
-            <button class="btn btn-primary" type="submit">Download PDF</button>
+            <div class="d-flex gap-2 flex-wrap">
+                <button class="btn btn-secondary" type="submit" formaction="@Url.Action("PreviewReport", "LabManager")">Preview report</button>
+                <button class="btn btn-primary" type="submit">Download PDF</button>
+            </div>
         </form>
     </div></div>
 </div>

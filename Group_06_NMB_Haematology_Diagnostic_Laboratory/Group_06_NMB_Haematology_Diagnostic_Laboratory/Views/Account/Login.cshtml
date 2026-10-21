@@ -2,8 +2,8 @@
     ViewData["Title"] = "Sign in";
     Layout = "~/Views/Shared/_AccountLayout.cshtml";
 }
-<h2>Welcome back</h2>
-<p class="muted">Sign in with your laboratory email address.</p>
+<h2>Sign in</h2>
+<p class="muted">Use your registered email address and password to access the system.</p>
 @if (TempData["AccountMessage"] is string message) { <p class="notice" role="status">@message</p> }
 <form asp-action="Login" method="post">
     <input type="hidden" name="returnUrl" value="@ViewData["ReturnUrl"]" />
@@ -19,3 +19,4 @@
     <span>New patient?</span>
     <a asp-controller="Patient" asp-action="Register" class="register-button">Register</a>
 </div>
+<p class="login-support">Need help signing in? Email <a href="mailto:nmblabsystem@gmail.com">nmblabsystem@gmail.com</a>.</p>

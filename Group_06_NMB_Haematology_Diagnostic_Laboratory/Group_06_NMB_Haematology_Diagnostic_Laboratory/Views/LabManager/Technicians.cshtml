@@ -74,6 +74,9 @@
 
             </form>
 
+            <input type="search" class="form-control" style="width:220px;" data-staff-search="#techniciansTable"
+                   placeholder="Search technicians" aria-label="Search technicians" autocomplete="off" />
+
             <!-- ADD TECHNICIAN -->
             <button class="btn btn-primary"
                     onclick="openCreateTechnician()"
@@ -95,7 +98,7 @@
 
     <div class="table-wrap">
 
-        <table>
+        <table id="techniciansTable">
 
             <thead>
 
@@ -310,6 +313,7 @@
         </table>
 
     </div>
+    <p class="text-muted mt-3" data-staff-search-empty hidden>No technicians match your search.</p>
 
 
 </div>
@@ -722,6 +726,7 @@
 </script>
 <script src="~/js/structured-address.js" asp-append-version="true"></script>
 <script src="~/js/staff-details.js" asp-append-version="true"></script>
+<script src="~/js/staff-search.js" asp-append-version="true"></script>
 
 
 

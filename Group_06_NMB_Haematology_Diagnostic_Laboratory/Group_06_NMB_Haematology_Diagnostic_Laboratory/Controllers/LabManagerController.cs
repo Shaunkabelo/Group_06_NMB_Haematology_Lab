@@ -1264,6 +1264,98 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
         }
 
         [HttpGet]
+        public async Task<IActionResult> PreviewReport(string reportType, DateTime? startDate, DateTime? endDate,
+            string orderStatus = "All", bool lowStockOnly = false)
+        {
+            var statuses = new[] { "All", "Ordered", "Partially Received", "Received", "Cancelled" };
+            var dated = reportType is "tests" or "orders";
+            if (!ModelState.IsValid || reportType is not ("tests" or "orders" or "stock") ||
+                (reportType == "orders" && !statuses.Contains(orderStatus)) ||
+                (dated && (!startDate.HasValue || !endDate.HasValue || startDate.Value == default ||
+                    startDate.Value.Date > endDate.Value.Date || endDate.Value.Date == DateTime.MaxValue.Date)))
+            {
+                TempData["ReportError"] = "Choose a valid report and date range. The end date must be on or after the start date.";
+                return RedirectToAction(nameof(ManagerReports), new { reportType, startDate, endDate, orderStatus, lowStockOnly });
+            }
+
+            var culture = System.Globalization.CultureInfo.GetCultureInfo("en-ZA");
+            string Date(DateTime? value) => value?.ToString("dd MMM yyyy", culture) ?? "Not applicable";
+            var generatedAt = DateTimeOffset.UtcNow.ToOffset(TimeSpan.FromHours(2));
+            List<string[]> rows;
+            string[] headings;
+            string title;
+            string criteria;
+            string summary;
+
+            if (reportType == "tests")
+            {
+                var categories = (await _repository.GetTestsPerformedByCategory(
+                        startDate!.Value.Date, endDate!.Value.Date.AddDays(1)))
+                    .OrderByDescending(row => row.TotalTests).ThenBy(row => row.CategoryName).ToList();
+                var total = categories.Sum(row => row.TotalTests);
+                title = "Tests Performed by Category";
+                criteria = $"Completion dates: {Date(startDate)} - {Date(endDate)} (inclusive).";
+                summary = total == 0 ? "No completed tests were found for the selected date range."
+                    : $"Completed tests: {total:N0}. Categories: {categories.Count:N0}.";
+                headings = new[] { "Test category", "Completed tests", "Share of total" };
+                rows = categories.Select(row => new[]
+                {
+                    row.CategoryName,
+                    row.TotalTests.ToString("N0", culture),
+                    total == 0 ? "0%" : $"{row.TotalTests * 100m / total:0.0}%"
+                }).ToList();
+            }
+            else if (reportType == "orders")
+            {
+                var orders = (await _repository.GetStockOrders("All", ""))
+                    .Where(order => order.OrderDate.HasValue && order.OrderDate.Value >= startDate!.Value.Date
+                        && order.OrderDate.Value < endDate!.Value.Date.AddDays(1))
+                    .Where(order => orderStatus == "All" || OrderStatusLabels.Display(order.Status) == orderStatus)
+                    .OrderBy(order => order.OrderDate).ThenBy(order => order.OrderNumber, StringComparer.OrdinalIgnoreCase).ToList();
+                title = "Stock Orders Report";
+                criteria = $"Order dates: {Date(startDate)} - {Date(endDate)} (inclusive). Status: {orderStatus}.";
+                summary = orders.Count == 0 ? "No stock orders were found for the selected criteria."
+                    : $"Orders: {orders.Count:N0}. Ordered: {orders.Count(order => OrderStatusLabels.Display(order.Status) == "Ordered"):N0}. Partially received: {orders.Count(order => OrderStatusLabels.Display(order.Status) == "Partially Received"):N0}. Received: {orders.Count(order => OrderStatusLabels.Display(order.Status) == "Received"):N0}. Cancelled: {orders.Count(order => OrderStatusLabels.Display(order.Status) == "Cancelled"):N0}.";
+                headings = new[] { "Order number", "Supplier", "Ordered on", "Item lines", "Status", "Received on" };
+                rows = orders.Select(order => new[]
+                {
+                    order.OrderNumber, order.Supplier?.SupplierName ?? "Unknown", Date(order.OrderDate),
+                    order.StockOrderItem.Count.ToString("N0", culture), OrderStatusLabels.Display(order.Status), Date(order.CompletionDate)
+                }).ToList();
+            }
+            else
+            {
+                var stock = (await _repository.GetConsumables("Active"))
+                    .Where(consumable => !lowStockOnly || consumable.QuantityOnHand <= consumable.ReorderLevel * 1.1m)
+                    .OrderBy(consumable => consumable.Supplier?.SupplierName, StringComparer.OrdinalIgnoreCase)
+                    .ThenBy(consumable => consumable.Name, StringComparer.OrdinalIgnoreCase).ToList();
+                title = "Current Consumable Stock";
+                criteria = $"Current stock snapshot. Selection: {(lowStockOnly ? "near or below reorder level (within 10%)" : "all active consumables")}.";
+                summary = stock.Count == 0 ? "No consumable stock records were found for the selected criteria."
+                    : $"Stock items: {stock.Count:N0}. Near or below reorder level: {stock.Count(consumable => consumable.QuantityOnHand <= consumable.ReorderLevel * 1.1m):N0}.";
+                headings = new[] { "Consumable", "Supplier", "Quantity on hand", "Reorder level", "Stock status" };
+                rows = stock.Select(consumable => new[]
+                {
+                    consumable.Name, consumable.Supplier?.SupplierName ?? "Unknown",
+                    consumable.QuantityOnHand.ToString("N0", culture), consumable.ReorderLevel.ToString("N0", culture),
+                    consumable.QuantityOnHand <= consumable.ReorderLevel ? "At/below reorder" : consumable.QuantityOnHand <= consumable.ReorderLevel * 1.1m ? "Near reorder" : "Available"
+                }).ToList();
+            }
+
+            ViewBag.ReportTitle = title;
+            ViewBag.Criteria = criteria;
+            ViewBag.Summary = summary;
+            ViewBag.Headings = headings;
+            ViewBag.GeneratedAt = generatedAt;
+            ViewBag.ReportType = reportType;
+            ViewBag.StartDate = startDate;
+            ViewBag.EndDate = endDate;
+            ViewBag.OrderStatus = orderStatus;
+            ViewBag.LowStockOnly = lowStockOnly;
+            return View("ReportPreview", rows);
+        }
+
+        [HttpGet]
         public async Task<IActionResult> TestsPerformedReport(DateTime startDate, DateTime endDate)
         {
             if (!ModelState.IsValid || startDate == default || endDate == default || startDate.Date > endDate.Date || endDate.Date == DateTime.MaxValue.Date)

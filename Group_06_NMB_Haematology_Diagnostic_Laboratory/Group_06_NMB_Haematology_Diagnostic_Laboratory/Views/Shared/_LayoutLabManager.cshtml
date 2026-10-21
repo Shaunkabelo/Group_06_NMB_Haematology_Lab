@@ -9,10 +9,11 @@
     <title>@title - NMB-HLabSys</title>
     <base href="@Url.Content("~/")" />
     <link rel="stylesheet" href="~/css/DoctorStyle.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/shared-navigation.css" asp-append-version="true" />
 </head>
 <body>
-    <aside class="sidebar">
-        <div class="sidebar-brand"><span class="brand-icon">🧬</span> NMB-HLabSys</div>
+    <aside class="sidebar" id="shared-sidebar">
+        <partial name="_SidebarBrand" />
         <nav class="nav-menu">
             <div class="sidebar-section">Laboratory</div>
             <a asp-controller="LabManager" asp-action="Dashboard" class="nav-item active">
@@ -23,6 +24,7 @@
     </aside>
     <main class="main-content">
         <header class="topbar">
+
             <h1 class="page-title">@title</h1>
             <div class="topbar-actions">
                 <form asp-controller="Account" asp-action="Logout" method="post" class="logout-form">
@@ -33,5 +35,6 @@
         </header>
         @RenderBody()
     </main>
+    <script src="~/js/shared-navigation.js" asp-append-version="true"></script>
 </body>
 </html>

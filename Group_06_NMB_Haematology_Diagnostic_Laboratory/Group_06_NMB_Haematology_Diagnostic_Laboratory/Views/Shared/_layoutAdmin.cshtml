@@ -12,14 +12,11 @@
     <base href="@Url.Content("~/")" />
     <link rel="stylesheet" href="~/css/style.css" asp-append-version="true" />
     <script src="~/js/AdminJavaScript.js"></script>
+    <link rel="stylesheet" href="~/css/shared-navigation.css" asp-append-version="true" />
 </head>
 <body>
-    <nav class="sidebar">
-        <div class="sidebar-brand">
-            <div class="brand-badge">
-                <div class="brand-text">🧬 NMB-HLabSys</div>
-            </div>
-        </div>
+    <nav class="sidebar" id="shared-sidebar">
+        <partial name="_SidebarBrand" />
         <div class="sidebar-section">Overview</div>
         <a class="nav-item@(IsActive("Dashboard"))" asp-controller="Admin" asp-action="Dashboard"><span class="nav-icon">&#9700;</span> Dashboard</a>
         <div class="sidebar-section">Reference Data</div>
@@ -41,6 +38,7 @@
 
     <main class="main-content">
         <header class="topbar">
+
             <h1 class="page-title">@title</h1>
             <div class="topbar-actions">
                 <input type="search" id="admin-page-search" class="form-control search-control" placeholder="Search this page..." aria-label="Search this page" aria-describedby="admin-search-status">
@@ -60,5 +58,6 @@
     <script src="~/js/script.js" asp-append-version="true"></script>
     <script src="~/js/admin-page-search.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
+    <script src="~/js/shared-navigation.js" asp-append-version="true"></script>
 </body>
 </html>

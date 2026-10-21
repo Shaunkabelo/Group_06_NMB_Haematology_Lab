@@ -195,6 +195,31 @@ body.public-page {
     .landing-visual { width: min(82vw, 350px); }
 }
 
+/* Public pages: compact touch-friendly layouts. */
+@media (max-width: 760px) {
+    .landing-shell {
+        min-height: 100svh;
+        padding: 20px 20px 18px;
+    }
+
+    .landing-nav { gap: 12px; }
+    .landing-brand { font-size: 16px; }
+    .landing-login { min-height: 44px; padding: 11px 13px; display: inline-flex; align-items: center; }
+    .landing-content { padding: 52px 0; gap: 42px; }
+    .landing-copy h1 { font-size: clamp(36px, 11vw, 48px); line-height: 1.05; }
+    .landing-lede { margin-bottom: 26px; font-size: 16px; }
+    .landing-cta { min-height: 48px; justify-content: center; }
+    .landing-footer { gap: 16px; padding-top: 16px; font-size: 10px; letter-spacing: .45px; }
+}
+
+@media (max-width: 430px) {
+    .landing-nav { align-items: flex-start; }
+    .landing-brand { max-width: 185px; }
+    .landing-content { padding: 42px 0; }
+    .landing-visual { width: min(88vw, 330px); }
+    .landing-cta { width: 100%; }
+}
+
 /* ── SIDEBAR ── */
 .sidebar {
     width: 240px;

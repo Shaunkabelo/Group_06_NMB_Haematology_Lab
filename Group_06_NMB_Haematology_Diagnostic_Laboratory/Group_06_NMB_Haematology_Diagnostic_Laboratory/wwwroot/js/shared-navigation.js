@@ -13,6 +13,14 @@
     tooltip.hidden = true;
     document.body.appendChild(tooltip);
     const hideTooltip = () => { tooltip.hidden = true; };
+    const brand = sidebar.querySelector('.sidebar-brand');
+    if (brand) Array.from(brand.childNodes).filter(node =>
+        node.nodeType === Node.TEXT_NODE && node.textContent.trim()).forEach(node => {
+        const label = document.createElement('span');
+        label.className = 'nav-brand-label';
+        node.replaceWith(label);
+        label.appendChild(node);
+    });
     sidebar.querySelectorAll("a.nav-item").forEach(link => {
         const textNodes = Array.from(link.childNodes).filter(node => node.nodeType === Node.TEXT_NODE);
         const existingLabel = link.querySelector(".nav-label");
