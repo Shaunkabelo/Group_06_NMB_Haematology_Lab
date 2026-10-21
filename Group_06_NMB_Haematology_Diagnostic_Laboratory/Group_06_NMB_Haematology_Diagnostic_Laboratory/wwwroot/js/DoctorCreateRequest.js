@@ -2160,11 +2160,17 @@ const assetScript = document.currentScript;
 
             }
 
-            alert(
-                result.message
-                ||
-                "Test request created successfully."
-            );
+            const patientName = [
+                selectedPatient.name ?? selectedPatient.Name,
+                selectedPatient.surname ?? selectedPatient.Surname
+            ]
+                .filter(Boolean)
+                .join(" ") || "Selected patient";
+            const requestedTests = selectedTests.map(test => test.testName).join(", ");
+            await window.showDoctorMessage({
+                heading: 'Test request submitted',
+                text: `Request #${result.testRequestId} for ${patientName}. Tests: ${requestedTests}. Urgency: ${urgency}.`
+            });
 
 
             window.location.href =

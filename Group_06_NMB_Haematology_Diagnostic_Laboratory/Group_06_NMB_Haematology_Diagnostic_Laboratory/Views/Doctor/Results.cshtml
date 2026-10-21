@@ -30,12 +30,7 @@
         <h2 id="result-delivery-title">Release results</h2>
         <label for="result-note">Note to patient</label>
         <textarea id="result-note" class="form-control" maxlength="2000" required rows="5"></textarea>
-        <label for="result-delivery">Patient notification</label>
-        <select id="result-delivery" class="form-control">
-            <option value="Results">Email results PDF with this note</option>
-            <option value="Appointment">Email appointment invitation without attachment</option>
-        </select>
-        <p>Release makes the verified results available to the patient. Only release after reviewing every result.</p>
+        <p id="result-delivery-description">Release makes the verified results available to the patient. Only release after reviewing every result.</p>
         <button type="button" class="btn btn-secondary" onclick="document.getElementById('result-delivery-dialog').close()">Cancel</button>
         <button id="result-send" type="submit" class="btn btn-primary">Confirm</button>
     </form>

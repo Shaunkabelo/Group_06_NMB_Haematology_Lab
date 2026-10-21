@@ -253,7 +253,10 @@ async function viewPatientFromTable(button) {
 
     function toast(message) {
 
-        alert(message);
+        window.showDoctorMessage({
+            heading: 'Patient record update',
+            text: message
+        });
 
     }
 
@@ -670,6 +673,42 @@ async function viewPatientFromTable(button) {
 
     }
 
+    const pendingClinicalEntries = new Set();
+
+    function normalizeClinicalEntry(value) {
+        return String(value ?? '').trim().replace(/\s+/g, ' ').toLocaleLowerCase();
+    }
+
+    function reserveClinicalEntry(type, value, summaryId, pillsId) {
+        const normalizedValue = normalizeClinicalEntry(value);
+        const pendingKey = `${selectedPatient.patientId}:${type}:${normalizedValue}`;
+        const summary = document.getElementById(summaryId).textContent.trim();
+        const alreadyRecorded = summary !== 'None recorded' && summary
+            .split(',')
+            .some(item => normalizeClinicalEntry(item) === normalizedValue);
+        const alreadyPilled = Array.from(document.getElementById(pillsId).children)
+            .some(pill => normalizeClinicalEntry(pill.dataset.value) === normalizedValue);
+
+        if (alreadyRecorded || alreadyPilled || pendingClinicalEntries.has(pendingKey)) {
+            return null;
+        }
+
+        pendingClinicalEntries.add(pendingKey);
+        return pendingKey;
+    }
+
+    function releaseClinicalEntry(key) {
+        if (key) pendingClinicalEntries.delete(key);
+    }
+
+    function removePatientHistoryEntry(elementId, value) {
+        const element = document.getElementById(elementId);
+        const remaining = element.textContent.trim()
+            .split(',')
+            .filter(item => normalizeClinicalEntry(item) !== normalizeClinicalEntry(value));
+        element.textContent = remaining.length ? remaining.join(', ') : 'None recorded';
+    }
+
 
     function renderPatientHistory(patient) {
         return window.loadDoctorPatientHistory(patient, 'selected-patient-');
@@ -980,6 +1019,12 @@ async function viewPatientFromTable(button) {
 
         }
 
+        const pendingKey = reserveClinicalEntry(
+            'condition', conditionName, 'selected-patient-conditions', 'condition-pills');
+        if (!pendingKey) {
+            toast('This medical condition is already recorded for the selected patient.');
+            return;
+        }
 
         try {
 
@@ -1040,10 +1085,7 @@ async function viewPatientFromTable(button) {
             );
 
 
-            toast(
-                result.message ||
-                'Medical condition added successfully.'
-            );
+            toast(`Medical condition added: ${conditionName}.`);
 
         }
         catch (error) {
@@ -1055,6 +1097,9 @@ async function viewPatientFromTable(button) {
                 'Unable to add medical condition.'
             );
 
+        }
+        finally {
+            releaseClinicalEntry(pendingKey);
         }
 
     }
@@ -1119,6 +1164,7 @@ async function viewPatientFromTable(button) {
 
 
             pill.remove();
+            removePatientHistoryEntry('selected-patient-conditions', pill.dataset.value);
 
 
             toast(
@@ -1357,6 +1403,12 @@ async function viewPatientFromTable(button) {
 
         }
 
+        const pendingKey = reserveClinicalEntry(
+            'allergy', allergyName, 'selected-patient-allergies', 'allergies-pills');
+        if (!pendingKey) {
+            toast('This allergy is already recorded for the selected patient.');
+            return;
+        }
 
         try {
 
@@ -1417,10 +1469,7 @@ async function viewPatientFromTable(button) {
             );
 
 
-            toast(
-                result.message ||
-                'Allergy added successfully.'
-            );
+            toast(`Allergy added: ${allergyName}.`);
 
         }
         catch (error) {
@@ -1432,6 +1481,9 @@ async function viewPatientFromTable(button) {
                 'Unable to add allergy.'
             );
 
+        }
+        finally {
+            releaseClinicalEntry(pendingKey);
         }
 
     }
@@ -1496,6 +1548,7 @@ async function viewPatientFromTable(button) {
 
 
             pill.remove();
+            removePatientHistoryEntry('selected-patient-allergies', pill.dataset.value);
 
 
             toast(
@@ -1734,6 +1787,12 @@ async function viewPatientFromTable(button) {
 
         }
 
+        const pendingKey = reserveClinicalEntry(
+            'medication', medicationName, 'selected-patient-medication', 'medication-pills');
+        if (!pendingKey) {
+            toast('This medication is already recorded for the selected patient.');
+            return;
+        }
 
         try {
 
@@ -1794,10 +1853,7 @@ async function viewPatientFromTable(button) {
             );
 
 
-            toast(
-                result.message ||
-                'Medication added successfully.'
-            );
+            toast(`Medication added: ${medicationName}.`);
 
         }
         catch (error) {
@@ -1809,6 +1865,9 @@ async function viewPatientFromTable(button) {
                 'Unable to add medication.'
             );
 
+        }
+        finally {
+            releaseClinicalEntry(pendingKey);
         }
 
     }
@@ -1873,6 +1932,7 @@ async function viewPatientFromTable(button) {
 
 
             pill.remove();
+            removePatientHistoryEntry('selected-patient-medication', pill.dataset.value);
 
 
             toast(

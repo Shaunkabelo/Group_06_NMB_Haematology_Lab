@@ -12,7 +12,7 @@ public static partial class DoctorRequestsPdfReport
     private const float Left = 38;
     private const float Right = 804;
 
-    public static byte[] Build(IReadOnlyList<DoctorReportDto> requests, DateTime startDate, DateTime endDate, DateTime generatedAt)
+    public static byte[] Build(IReadOnlyList<DoctorReportDto> requests, DateTime startDate, DateTime endDate, DateTime generatedAt, string doctorName = "Not recorded")
     {
         var pages = new List<string>();
         var current = new StringBuilder();
@@ -29,6 +29,8 @@ public static partial class DoctorRequestsPdfReport
                 y -= 19;
                 Text(current, Left, y, 21, "Doctor Test Request Report", true);
                 y -= 25;
+                Text(current, Left, y, 10, $"Doctor: {doctorName}");
+                y -= 14;
                 Text(current, Left, y, 10, $"Request period: {startDate:dd MMM yyyy} to {endDate:dd MMM yyyy}");
                 Text(current, 570, y, 10, $"Generated: {generatedAt:dd MMM yyyy HH:mm}");
                 y -= 23;
@@ -72,7 +74,7 @@ public static partial class DoctorRequestsPdfReport
         }
         else
         {
-            foreach (var request in requests.OrderByDescending(r => r.RequestDate).ThenBy(r => r.TestRequestId))
+            foreach (var request in requests)
             {
                 var cells = new[]
                 {
@@ -171,7 +173,7 @@ public static partial class DoctorRequestsPdfReport
 
     private static string Num(float value) => value.ToString("0.##", CultureInfo.InvariantCulture);
 
-    private static byte[] WritePdf(IReadOnlyList<string> pages)
+    private static byte[] WritePdf(IReadOnlyList<string> pages, float pageWidth = PageWidth, float pageHeight = PageHeight)
     {
         var objects = new List<byte[]>();
         void Add(string body) => objects.Add(Encoding.ASCII.GetBytes(body));
@@ -182,7 +184,7 @@ public static partial class DoctorRequestsPdfReport
         foreach (var page in pages)
         {
             var stream = Encoding.ASCII.GetBytes(page);
-            var pageObject = $"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 {Num(PageWidth)} {Num(PageHeight)}] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents {objects.Count + 2} 0 R >>";
+            var pageObject = $"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 {Num(pageWidth)} {Num(pageHeight)}] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents {objects.Count + 2} 0 R >>";
             Add(pageObject);
             objects.Add(Encoding.ASCII.GetBytes($"<< /Length {stream.Length} >>\nstream\n{page}endstream"));
         }

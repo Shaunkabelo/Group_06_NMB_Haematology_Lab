@@ -17,6 +17,10 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Models
 
 		public string RequestStatus { get; set; } = "";
 
+		public bool AppointmentRequested { get; set; }
+
+		public bool ResultsEmailed { get; set; }
+
 		public string Urgency { get; set; } = "";
 
 		public DateTime? ReleaseDate { get; set; }

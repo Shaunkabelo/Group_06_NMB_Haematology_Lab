@@ -198,7 +198,8 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 		[HttpGet]
 		public async Task<IActionResult> GetReportRequests(
 			DateTime startDate,
-			DateTime endDate)
+			DateTime endDate,
+			string sortBy = "date")
 		{
 			try
 			{
@@ -224,16 +225,28 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 				if (!doctorId.HasValue)
 					return Forbid();
 
-                var requests = (await _workflow.Requests(doctorId.Value))
+				var requests = (await _workflow.Requests(doctorId.Value))
                     .Where(r => r.CreatedAt.Date >= startDate.Date && r.CreatedAt.Date <= endDate.Date)
-                    .Select(ToReport);
+                    .Select(ToReport)
+                    .ToList();
 
-				var requestList = requests.ToList();
+				var sortedRequests = string.Equals(sortBy, "name", StringComparison.OrdinalIgnoreCase)
+					? requests.OrderBy(r => r.PatientName, StringComparer.CurrentCultureIgnoreCase)
+						.ThenByDescending(r => r.RequestDate).ToList()
+					: requests.OrderByDescending(r => r.RequestDate)
+						.ThenBy(r => r.PatientName, StringComparer.CurrentCultureIgnoreCase).ToList();
+
+				var requestList = sortedRequests;
+				var doctor = await _doctorRepository.GetDoctorAccountAsync(GetLoggedInUserId());
+				var doctorName = doctor == null
+					? "Not recorded"
+					: $"{doctor.Name} {doctor.Surname}".Trim();
 				var pdf = DoctorRequestsPdfReport.Build(
 					requestList,
 					startDate.Date,
 					endDate.Date,
-					DateTime.Now);
+					DateTime.Now,
+					doctorName);
 				return File(pdf, "application/pdf", $"doctor-test-requests-{startDate:yyyyMMdd}-to-{endDate:yyyyMMdd}.pdf");
 			}
 			catch (Exception)
@@ -422,6 +435,11 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
             ModelState.Remove(nameof(model.ConfirmPassword));
             model.Password = PasswordHelper.GenerateTemporaryPassword();
             model.ConfirmPassword = model.Password;
+			var address = model.HomeAddress?.Trim() ?? "";
+			if (address.Length > 250)
+			{
+				ModelState.AddModelError(nameof(model.HomeAddress), "The address must be 250 characters or fewer.");
+			}
 
 			var saIdNumber = model.SaIdNumber ?? string.Empty;
 			if (model.DateOfBirth == default ||
@@ -451,6 +469,7 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 								.ToArray())
 				});
 			}
+			model.HomeAddress = address;
 
 			var salt = PasswordHelper.GenerateSalt();
 			var passwordHash = PasswordHelper.HashPassword(model.Password, salt);

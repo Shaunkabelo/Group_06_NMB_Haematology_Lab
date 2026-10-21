@@ -7,6 +7,7 @@ const assetScript = document.currentScript;
     const emailResultsUrl = assetScript.dataset.emailresultsUrl;
     let selectedDeliveryRequest = null;
     let selectedDeliveryIsRelease = true;
+    let selectedDelivery = 'Results';
     const expandedResultCards = new Set();
     let resultRequests = [];
 
@@ -25,7 +26,8 @@ const assetScript = document.currentScript;
         return Number.isNaN(date.getTime()) ? 'Not available' : date.toLocaleString();
     }
 
-    function normalizeStatus(status) {
+    function normalizeStatus(status, appointmentRequested = false) {
+        if (appointmentRequested) return 'Appointment';
         const value = String(status || '').toLowerCase();
         if (value === 'released') return 'Released by doctor';
         return status || 'Unknown';
@@ -43,6 +45,8 @@ const assetScript = document.currentScript;
                     patientSaId: row.patientSaId,
                     createdAt: row.requestDate,
                     status: row.requestStatus,
+                    appointmentRequested: row.appointmentRequested === true,
+                    resultsEmailed: row.resultsEmailed === true,
                     urgency: row.urgency,
                     tests: []
                 });
@@ -116,13 +120,13 @@ const assetScript = document.currentScript;
                         <div class="result-item-detail"><strong>Review</strong>${escapeHtml(test.reviewStatus)}</div>
                         <div class="result-item-detail"><strong>Captured</strong>${escapeHtml(formatDate(test.captureDateTime))}</div>
                     </div>
-                    <div class="result-note">${escapeHtml(test.notes || 'No notes recorded')}</div>
+                    <div class="result-note"><strong>Lab Technician Notes:</strong> ${escapeHtml(test.notes || 'No notes recorded')}</div>
                     ${test.reviewNotes ? `<div class="result-note"><strong>Review notes:</strong> ${escapeHtml(test.reviewNotes)}</div>` : ''}
                 </div>
             `).join('');
             const hasAbnormal = item.tests.some(t => t.abnormal);
             const expanded = expandedResultCards.has(item.id);
-            const released = normalizeStatus(item.status).toLowerCase() === 'released by doctor';
+            const released = String(item.status || '').toLowerCase() === 'released by doctor';
             return `
                 <div class="result-card ${expanded ? 'expanded' : ''}">
                     <div class="result-card-header">
@@ -131,7 +135,7 @@ const assetScript = document.currentScript;
                             <div class="result-meta">${escapeHtml(formatDate(item.createdAt))} · ${item.tests.length} test(s)</div>
                         </div>
                         <div class="result-status">
-                            <span class="badge ${released ? 'green' : hasAbnormal ? 'amber' : 'blue'}">${escapeHtml(normalizeStatus(item.status))}</span>
+                            <span class="badge ${item.appointmentRequested ? 'amber' : released ? 'green' : hasAbnormal ? 'amber' : 'blue'}">${escapeHtml(normalizeStatus(item.status, item.appointmentRequested))}</span>
                             <button class="btn btn-secondary result-toggle" type="button" aria-expanded="${expanded}" onclick="toggleResultCard(${item.id})">${expanded ? 'Minimize' : 'Expand'}</button>
                         </div>
                     </div>
@@ -139,7 +143,10 @@ const assetScript = document.currentScript;
                     <div class="result-card-body">${testsHtml}</div>
                     <div class="result-actions">
                         <a class="btn btn-secondary" href="${resultPdfUrl}?id=${item.id}">Download results PDF</a>
-                        <button class="btn btn-primary" type="button" onclick="openResultDelivery(${item.id}, ${!released})">${released ? 'Email patient' : 'Release Results'}</button>
+                        ${released
+                            ? `<button class="btn btn-primary" type="button" onclick="openResultDelivery(${item.id}, false, 'Results')">Email results</button>
+                               <button class="btn btn-secondary" type="button" ${item.resultsEmailed ? 'disabled title="Results have already been emailed"' : ''} onclick="openResultDelivery(${item.id}, false, 'Appointment')">Request appointment</button>`
+                            : `<button class="btn btn-primary" type="button" onclick="openResultDelivery(${item.id}, true, 'Results')">Release Results</button>`}
                     </div>
                 </div>
             `;
@@ -152,10 +159,16 @@ const assetScript = document.currentScript;
         renderResultCards();
     }
 
-    function openResultDelivery(id, release) {
+    function openResultDelivery(id, release, delivery = 'Results') {
         selectedDeliveryRequest = id;
         selectedDeliveryIsRelease = release;
-        document.getElementById('result-delivery-title').textContent = `${release ? 'Release results' : 'Email patient'} ? #${id}`;
+        selectedDelivery = delivery;
+        document.getElementById('result-delivery-title').textContent = `${delivery === 'Appointment' ? 'Request appointment' : release ? 'Release results' : 'Email results'} · #${id}`;
+        document.getElementById('result-delivery-description').textContent = delivery === 'Appointment'
+            ? 'Send the patient an invitation to contact you and arrange an appointment.'
+            : release
+                ? 'Release makes the verified results available to the patient. Only release after reviewing every result.'
+                : 'Email the released results PDF to the patient.';
         document.getElementById('result-note').value = '';
         document.getElementById('result-delivery-dialog').showModal();
     }
@@ -170,7 +183,7 @@ const assetScript = document.currentScript;
                 method: 'POST', headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ testRequestId: selectedDeliveryRequest,
                     note: document.getElementById('result-note').value,
-                    delivery: document.getElementById('result-delivery').value })
+                    delivery: selectedDelivery })
             });
             const data = await response.json();
             if (!response.ok) throw new Error(data.message || 'Unable to send results.');

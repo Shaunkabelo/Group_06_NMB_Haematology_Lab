@@ -72,6 +72,23 @@ const assetScript = document.currentScript;
                    status === "samples received";
         }
 
+        function statusBadgeClass(status) {
+            switch (String(status ?? "").trim().toLowerCase()) {
+                case "submitted":
+                case "in progress":
+                    return "blue";
+                case "samples received":
+                    return "amber";
+                case "completed":
+                case "released by doctor":
+                    return "green";
+                case "cancelled":
+                    return "red";
+                default:
+                    return "gray";
+            }
+        }
+
         function formatDate(value) {
             if (!value) return "—";
 
@@ -146,7 +163,7 @@ const assetScript = document.currentScript;
                         <td>${escapeHtml(request.patientName || "—")}</td>
                         <td>${escapeHtml(formatDate(request.requestDate ?? request.createdAt))}</td>
                         <td>${escapeHtml(request.urgency || "—")}</td>
-                        <td>${escapeHtml(request.status || "—")}</td>
+                        <td><span class="badge ${statusBadgeClass(request.status)}">${escapeHtml(request.status || "—")}</span></td>
                         <td>${escapeHtml(tests)}</td>
                         <td>
                             <a class="btn btn-primary"

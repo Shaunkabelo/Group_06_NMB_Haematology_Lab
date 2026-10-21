@@ -31,6 +31,7 @@ public sealed class DoctorWorkflowRepository(IConfiguration configuration) : IDo
     private const string RequestSelect = """
         SELECT r.TestRequestID AS Id, r.PatientID, r.DoctorID,
             CONCAT(u.Name, ' ', u.Surname) AS PatientName, u.SA_ID_Number AS SaIdNumber, u.Email,
+            COALESCE(NULLIF(LTRIM(RTRIM(CONCAT(du.Name, ' ', du.Surname))), ''), 'Not recorded') AS DoctorName,
             r.RequestDate AS CreatedAt, r.Status, r.Urgency,
             CASE WHEN r.DoctorID = @DoctorID THEN r.ClinicalNotes ELSE NULL END AS ClinicalNotes,
             r.CancelReason AS CancellationReason, r.CancelledBy, r.CancelledDate,
@@ -48,6 +49,8 @@ public sealed class DoctorWorkflowRepository(IConfiguration configuration) : IDo
                 ) AS TestNames
         FROM dbo.TestRequest r INNER JOIN dbo.Patient p ON p.PatientID = r.PatientID
         INNER JOIN dbo.[User] u ON u.UserID = p.UserID
+        LEFT JOIN dbo.Doctor d ON d.DoctorID = r.DoctorID
+        LEFT JOIN dbo.[User] du ON du.UserID = d.UserID
         """;
 
     public async Task<IEnumerable<DoctorRequestRecord>> Requests(int doctorId, int? patientId = null)
@@ -80,6 +83,10 @@ public sealed class DoctorWorkflowRepository(IConfiguration configuration) : IDo
 
     private const string ResultSelect = """
         SELECT r.TestRequestID, r.RequestDate, r.Status AS RequestStatus, r.Urgency, r.ReleaseDate,
+            CAST(CASE WHEN EXISTS (SELECT 1 FROM dbo.DoctorEmailQueue aq
+                WHERE aq.TestRequestID = r.TestRequestID AND aq.Kind = 'AppointmentEmail') THEN 1 ELSE 0 END AS BIT) AS AppointmentRequested,
+            CAST(CASE WHEN EXISTS (SELECT 1 FROM dbo.DoctorEmailQueue rq
+                WHERE rq.TestRequestID = r.TestRequestID AND rq.Kind = 'ResultEmail' AND rq.SentAt IS NOT NULL) THEN 1 ELSE 0 END AS BIT) AS ResultsEmailed,
             CONCAT(u.Name, ' ', u.Surname) AS PatientName, p.PatientID AS PatientId,
             u.SA_ID_Number AS PatientSaId,
             tt.TestName, lt.LabTestID, res.TestResultID, res.ResultValue, res.ResultText, res.Notes,
@@ -229,15 +236,16 @@ public sealed class DoctorWorkflowRepository(IConfiguration configuration) : IDo
         return true;
     }
 
-    public async Task<bool> EmailResults(int doctorId, int requestId, string notification)
+    public async Task<bool> EmailResults(int doctorId, int requestId, string notification, bool appointmentRequest)
     {
         using var db = Connection();
         await db.OpenAsync();
         using var tx = db.BeginTransaction(IsolationLevel.Serializable);
         if (await db.ExecuteScalarAsync<int>(Ready + " AND r.Status = 'Released by doctor'", new { doctorId, requestId }, tx) != 1) return false;
         // Avoid duplicate clicks queuing the same request repeatedly while delivery is pending.
-        if (await db.ExecuteScalarAsync<int>("SELECT COUNT(*) FROM dbo.DoctorEmailQueue WHERE TestRequestID = @requestId AND Kind = 'ResultEmail' AND SentAt IS NULL", new { requestId }, tx) == 0)
-            await Queue(db, tx, notification, "ResultEmail", requestId);
+        var kind = appointmentRequest ? "AppointmentEmail" : "ResultEmail";
+        if (await db.ExecuteScalarAsync<int>("SELECT COUNT(*) FROM dbo.DoctorEmailQueue WHERE TestRequestID = @requestId AND Kind = @kind AND SentAt IS NULL", new { requestId, kind }, tx) == 0)
+            await Queue(db, tx, notification, kind, requestId);
         tx.Commit();
         return true;
     }

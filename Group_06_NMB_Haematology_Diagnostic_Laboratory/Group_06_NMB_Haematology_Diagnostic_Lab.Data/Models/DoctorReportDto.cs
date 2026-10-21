@@ -12,6 +12,8 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Models
 
 		public string PatientName { get; set; } = string.Empty;
 
+		public string DoctorName { get; set; } = string.Empty;
+
 		public string PatientSaIdNumber { get; set; } = string.Empty;
 
 		public DateTime RequestDate { get; set; }

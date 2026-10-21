@@ -13,7 +13,7 @@ public interface IDoctorWorkflowRepository
     Task<int> Create(int doctorId, CreateTestRequestModel model, string notification);
     Task<string> Register(PatientRegistrationViewModel model, string hash, string salt, string notification);
     Task<bool> Release(int doctorId, int requestId, string note, string notification);
-    Task<bool> EmailResults(int doctorId, int requestId, string notification);
+    Task<bool> EmailResults(int doctorId, int requestId, string notification, bool appointmentRequest);
     Task<DoctorEmailJob?> ClaimEmail();
     Task CompleteEmail(DoctorEmailJob job, bool delivered);
     Task<(string Email, string Name, string Reason)?> CancellationRecipient(int requestId);

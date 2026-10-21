@@ -8,6 +8,7 @@ public sealed class DoctorRequestRecord
     public int PatientId { get; set; }
     public int DoctorId { get; set; }
     public string PatientName { get; set; } = "";
+    public string DoctorName { get; set; } = "";
     public string SaIdNumber { get; set; } = "";
     public string Email { get; set; } = "";
     public DateTime CreatedAt { get; set; }
