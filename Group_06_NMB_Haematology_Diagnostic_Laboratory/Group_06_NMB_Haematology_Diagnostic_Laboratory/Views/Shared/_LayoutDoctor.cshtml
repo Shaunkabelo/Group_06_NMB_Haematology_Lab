@@ -15,6 +15,7 @@
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/DoctorStyle.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/DoctorMessages.css" asp-append-version="true" />
     <script src="~/js/doctor-history.js" asp-append-version="true"
         data-history-url="@Url.Action("GetPatientHistory", "Doctor")"
         data-details-url="@Url.Action("RequestDetails", "Doctor")"
@@ -78,7 +79,17 @@
         </header>
         @RenderBody()
     </main>
+    <div id="doctor-message-overlay" class="doctor-message-overlay" hidden>
+        <section class="doctor-message-dialog" role="alertdialog" aria-modal="true" aria-labelledby="doctor-message-title" aria-describedby="doctor-message-text" tabindex="-1">
+            <div class="doctor-message-icon" aria-hidden="true">✓</div>
+            <h2 id="doctor-message-title">Notification</h2>
+            <p id="doctor-message-text"></p>
+            <p id="doctor-message-signature" class="doctor-message-signature"></p>
+            <button id="doctor-message-close" class="btn btn-primary" type="button">Continue</button>
+        </section>
+    </div>
     <script src="~/js/site.js" asp-append-version="true"></script>
+    <script src="~/js/DoctorMessages.js" asp-append-version="true" data-doctor-account-url="@Url.Action("GetDoctorAccount", "Doctor")"></script>
     @await RenderSectionAsync("Scripts", required: false)
     <script src="~/js/shared-navigation.js" asp-append-version="true"></script>
 </body>

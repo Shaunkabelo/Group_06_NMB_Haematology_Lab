@@ -1,0 +1,41 @@
+.form-row > .form-group:only-child {
+    grid-column: 1 / -1;
+}
+
+.address-suggestions[hidden] {
+    display: none !important;
+}
+
+.address-suggestions {
+    position: relative;
+    z-index: 20;
+    max-height: 16rem;
+    overflow-y: auto;
+    margin-top: .25rem;
+    border: 1px solid #cbd5e1;
+    border-radius: .5rem;
+    background: #fff;
+    box-shadow: 0 .5rem 1rem rgb(15 23 42 / 12%);
+}
+
+.address-suggestion {
+    display: block;
+    width: 100%;
+    padding: .7rem .85rem;
+    border: 0;
+    border-bottom: 1px solid #e2e8f0;
+    background: #fff;
+    color: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+.address-suggestion:last-child {
+    border-bottom: 0;
+}
+
+.address-suggestion:hover,
+.address-suggestion:focus-visible {
+    background: #f1f5f9;
+    outline: none;
+}

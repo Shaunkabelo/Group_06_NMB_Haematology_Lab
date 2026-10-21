@@ -2,9 +2,10 @@
     const button = document.getElementById("generate-report-btn");
     const startInput = document.getElementById("report-start-date");
     const endInput = document.getElementById("report-end-date");
+    const sortInput = document.getElementById("report-sort-order");
     const status = document.getElementById("report-status");
 
-    if (!button || !startInput || !endInput || !status) return;
+    if (!button || !startInput || !endInput || !sortInput || !status) return;
 
     const toLocalDate = date => {
         const local = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
@@ -33,9 +34,10 @@
             return;
         }
 
-        const reportUrl = new URL(button.dataset.reportUrl, window.location.origin);
+        const reportUrl = new URL(button.dataset.reportUrl, document.baseURI);
         reportUrl.searchParams.set("startDate", startDate);
         reportUrl.searchParams.set("endDate", endDate);
+        reportUrl.searchParams.set("sortBy", sortInput.value);
         button.disabled = true;
         showStatus("Generating your report…");
 

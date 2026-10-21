@@ -1,0 +1,67 @@
+@{
+    Layout = null;
+    ViewData["Title"] = "Patient Registration";
+}
+
+<div id="register-panel" class="registration-panel">
+    <div class="section-sub">Capture personal details and create login credentials using email as username.</div>
+
+    <div class="form-row">
+        <div class="form-group">
+            <label class="form-label" for="reg-fname">Name <span class="required">*</span></label>
+            <input id="reg-fname" class="form-control" placeholder="e.g. Name" maxlength="40" autocomplete="given-name" required>
+        </div>
+        <div class="form-group">
+            <label class="form-label" for="reg-lname">Surname <span class="required">*</span></label>
+            <input id="reg-lname" class="form-control" placeholder="e.g. Surname" maxlength="40" autocomplete="family-name" required>
+        </div>
+    </div>
+
+    <div class="form-row">
+        <div class="form-group">
+            <label class="form-label" for="reg-id">South African ID Number <span class="required">*</span></label>
+            <input id="reg-id" class="form-control" placeholder="13-digit SA ID" inputmode="numeric" maxlength="13" required>
+            <div class="form-hint">Date of birth must match the first 6 digits.</div>
+        </div>
+        <div class="form-group">
+            <label class="form-label" for="reg-dob">Date of Birth <span class="required">*</span></label>
+            <input id="reg-dob" type="date" class="form-control" required>
+        </div>
+    </div>
+
+    <div class="form-row">
+        <div class="form-group">
+            <label class="form-label" for="reg-phone">Cellphone Number <span class="required">*</span></label>
+            <input id="reg-phone" class="form-control" placeholder="e.g. 0677419669" inputmode="tel" maxlength="12" autocomplete="tel" required>
+        </div>
+        <div class="form-group">
+            <label class="form-label" for="reg-email">Email Address / Username <span class="required">*</span></label>
+            <input id="reg-email" type="email" class="form-control" placeholder="patient@example.com" maxlength="120" autocomplete="email" required>
+        </div>
+    </div>
+
+    <div class="form-group">
+        <label class="form-label" for="reg-addr">Home Address <span class="required">*</span></label>
+        <input id="reg-addr" class="form-control" placeholder="Street address, suburb, city" maxlength="160" autocomplete="street-address" required>
+    </div>
+
+    <div class="form-row">
+        <div class="form-group">
+            <label class="form-label" for="reg-password">Password <span class="required">*</span></label>
+            <div class="password-field">
+                <input id="reg-password" type="password" class="form-control" placeholder="Create password" autocomplete="new-password" oninput="updateRegistrationPasswordHint()" required>
+                <button class="btn btn-secondary btn-icon" type="button" onclick="togglePassword('reg-password', this)" aria-label="Toggle password visibility">👁</button>
+            </div>
+            <div id="reg-password-hint" class="form-hint">Use 8+ characters, uppercase, lowercase, number and special character.</div>
+        </div>
+        <div class="form-group">
+            <label class="form-label" for="reg-confirm-password">Confirm Password <span class="required">*</span></label>
+            <div class="password-field">
+                <input id="reg-confirm-password" type="password" class="form-control" placeholder="Confirm password" autocomplete="new-password" required>
+                <button class="btn btn-secondary btn-icon" type="button" onclick="togglePassword('reg-confirm-password', this)" aria-label="Toggle confirm password visibility">👁</button>
+            </div>
+        </div>
+    </div>
+
+    <button id="register-btn" class="btn btn-primary btn-full" type="button" onclick="savePatientAccount()">Create Patient Account</button>
+</div>

@@ -9,7 +9,7 @@ public partial class DoctorController
 {
     private static DoctorReportDto ToReport(DoctorRequestRecord r) => new()
     {
-        TestRequestId = r.Id, PatientName = r.PatientName, PatientSaIdNumber = r.SaIdNumber,
+        TestRequestId = r.Id, PatientName = r.PatientName, DoctorName = r.DoctorName, PatientSaIdNumber = r.SaIdNumber,
         RequestDate = r.CreatedAt, Status = r.Status, Urgency = r.Urgency, Tests = r.TestNames
     };
 
@@ -87,12 +87,14 @@ public partial class DoctorController
             doctorId.Value, AttachResults: input.Delivery == "Results"));
         var saved = release
             ? await _workflow.Release(doctorId.Value, request.Id, input.Note.Trim(), notification)
-            : await _workflow.EmailResults(doctorId.Value, request.Id, notification);
+            : await _workflow.EmailResults(doctorId.Value, request.Id, notification, input.Delivery == "Appointment");
         if (!saved) return Conflict(new { message = release
             ? "Release requires a completed request with every test independently verified. It may already be released."
             : "Email requires a released request with verified results." });
         return Ok(new { success = true, message = release
             ? "Results released. Patient email queued for delivery."
-            : "Patient email queued for delivery." });
+            : input.Delivery == "Appointment"
+                ? "Appointment invitation queued for delivery."
+                : "Patient email queued for delivery." });
     }
 }

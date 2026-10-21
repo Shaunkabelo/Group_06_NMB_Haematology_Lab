@@ -12,7 +12,7 @@ public static partial class DoctorRequestsPdfReport
     private const float Left = 38;
     private const float Right = 804;
 
-    public static byte[] Build(IReadOnlyList<DoctorReportDto> requests, DateTime startDate, DateTime endDate, DateTime generatedAt)
+    public static byte[] Build(IReadOnlyList<DoctorReportDto> requests, DateTime startDate, DateTime endDate, DateTime generatedAt, string doctorName = "Not recorded")
     {
         var pages = new List<string>();
         var current = new StringBuilder();
@@ -25,42 +25,44 @@ public static partial class DoctorRequestsPdfReport
             y = PageHeight - 42;
             if (first)
             {
-                Text(current, Left, y, 10, "NMB Haematology Diagnostic Laboratory", true);
+                Text(current, Left, y, 11, "NMB Haematology Diagnostic Laboratory", true);
                 y -= 19;
-                Text(current, Left, y, 19, "Doctor Test Request Report", true);
+                Text(current, Left, y, 21, "Doctor Test Request Report", true);
                 y -= 25;
-                Text(current, Left, y, 9, $"Request period: {startDate:dd MMM yyyy} to {endDate:dd MMM yyyy}");
-                Text(current, 570, y, 9, $"Generated: {generatedAt:dd MMM yyyy HH:mm}");
+                Text(current, Left, y, 10, $"Doctor: {doctorName}");
+                y -= 14;
+                Text(current, Left, y, 10, $"Request period: {startDate:dd MMM yyyy} to {endDate:dd MMM yyyy}");
+                Text(current, 570, y, 10, $"Generated: {generatedAt:dd MMM yyyy HH:mm}");
                 y -= 23;
                 Rule(current, Left, Right, y, 0.8f);
                 y -= 19;
-                Text(current, Left, y, 11, "Report summary", true);
+                Text(current, Left, y, 12, "Report summary", true);
                 y -= 17;
                 var urgent = requests.Count(r => IsUrgent(r.Urgency));
                 var pending = requests.Count(r => IsPending(r.Status));
-                Text(current, Left, y, 9, $"Total requests: {requests.Count}");
-                Text(current, 220, y, 9, $"Urgent requests: {urgent}");
-                Text(current, 410, y, 9, $"Pending requests: {pending}");
-                Text(current, 610, y, 9, $"Non-urgent requests: {requests.Count - urgent}");
+                Text(current, Left, y, 10, $"Total requests: {requests.Count}");
+                Text(current, 220, y, 10, $"Urgent requests: {urgent}");
+                Text(current, 410, y, 10, $"Pending requests: {pending}");
+                Text(current, 610, y, 10, $"Non-urgent requests: {requests.Count - urgent}");
                 y -= 22;
-                Text(current, Left, y, 11, "Test requests", true);
+                Text(current, Left, y, 12, "Test requests", true);
                 y -= 17;
             }
             else
             {
-                Text(current, Left, y, 11, "Doctor Test Request Report (continued)", true);
+                Text(current, Left, y, 12, "Doctor Test Request Report (continued)", true);
                 y -= 21;
             }
 
             DrawTableHeader(current, y);
-            y -= 19;
+            y -= 27;
         }
 
         void FinishPage()
         {
             Rule(current, Left, Right, 31, 0.5f);
-            Text(current, Left, 19, 8, "Confidential clinical information - for authorised care team use.");
-            Text(current, 748, 19, 8, $"Page {pageNumber}");
+            Text(current, Left, 19, 9, "Confidential clinical information - for authorised care team use.");
+            Text(current, 744, 19, 9, $"Page {pageNumber}");
             pages.Add(current.ToString());
             pageNumber++;
         }
@@ -68,11 +70,11 @@ public static partial class DoctorRequestsPdfReport
         StartPage(first: true);
         if (requests.Count == 0)
         {
-            Text(current, Left, y - 4, 9, "No test requests were found for the selected date range.");
+            Text(current, Left, y - 4, 11, "No test requests were found for the selected date range.");
         }
         else
         {
-            foreach (var request in requests.OrderByDescending(r => r.RequestDate).ThenBy(r => r.TestRequestId))
+            foreach (var request in requests)
             {
                 var cells = new[]
                 {
@@ -85,9 +87,9 @@ public static partial class DoctorRequestsPdfReport
                     request.Status
                 };
                 var widths = new[] { 42, 77, 119, 107, 229, 74, 118 };
-                var wrapped = cells.Select((cell, i) => Wrap(cell, Math.Max(8, (int)(widths[i] / 4.2f)))).ToArray();
+                var wrapped = cells.Select((cell, i) => Wrap(cell, Math.Max(8, (int)(widths[i] / 5f)))).ToArray();
                 var lines = wrapped.Max(cell => cell.Count);
-                var rowHeight = Math.Max(21, lines * 10 + 8);
+                var rowHeight = Math.Max(27, lines * 12 + 10);
                 if (y - rowHeight < 42)
                 {
                     FinishPage();
@@ -100,7 +102,7 @@ public static partial class DoctorRequestsPdfReport
                 var x = new[] { 42f, 84f, 161f, 280f, 387f, 616f, 690f };
                 for (var col = 0; col < wrapped.Length; col++)
                     for (var line = 0; line < wrapped[col].Count; line++)
-                        Text(current, x[col], y - 8 - (line * 10), 8, wrapped[col][line]);
+                        Text(current, x[col], y - 10 - (line * 12), 10, wrapped[col][line]);
                 y -= rowHeight;
                 Rule(current, Left, Right, y, 0.25f);
                 y -= 2;
@@ -113,10 +115,10 @@ public static partial class DoctorRequestsPdfReport
 
     private static void DrawTableHeader(StringBuilder content, float y)
     {
-        content.Append("0.91 0.94 0.97 rg\n").Append(Num(Left)).Append(' ').Append(Num(y - 14)).Append(" 766 19 re f\n");
+        content.Append("0.84 0.89 0.94 rg\n").Append(Num(Left)).Append(' ').Append(Num(y - 17)).Append(" 766 23 re f\n");
         var x = new[] { 42f, 84f, 161f, 280f, 387f, 616f, 690f };
         var headings = new[] { "Request", "Request date", "Patient", "SA ID number", "Requested tests", "Urgency", "Status" };
-        for (var i = 0; i < headings.Length; i++) Text(content, x[i], y - 8, 8, headings[i], true);
+        for (var i = 0; i < headings.Length; i++) Text(content, x[i], y - 11, 10, headings[i], true);
     }
 
     private static List<string> Wrap(string? value, int maxChars)
@@ -154,7 +156,7 @@ public static partial class DoctorRequestsPdfReport
 
     private static void Text(StringBuilder content, float x, float y, int size, string value, bool bold = false)
     {
-        content.Append("BT /").Append(bold ? "F2" : "F1").Append(' ').Append(size).Append(" Tf ")
+        content.Append("BT /").Append(bold ? "F2" : "F1").Append(' ').Append(size).Append(" Tf 0 g ")
             .Append(Num(x)).Append(' ').Append(Num(y)).Append(" Td (").Append(Escape(value)).Append(") Tj ET\n");
     }
 
@@ -171,7 +173,7 @@ public static partial class DoctorRequestsPdfReport
 
     private static string Num(float value) => value.ToString("0.##", CultureInfo.InvariantCulture);
 
-    private static byte[] WritePdf(IReadOnlyList<string> pages)
+    private static byte[] WritePdf(IReadOnlyList<string> pages, float pageWidth = PageWidth, float pageHeight = PageHeight)
     {
         var objects = new List<byte[]>();
         void Add(string body) => objects.Add(Encoding.ASCII.GetBytes(body));
@@ -182,7 +184,7 @@ public static partial class DoctorRequestsPdfReport
         foreach (var page in pages)
         {
             var stream = Encoding.ASCII.GetBytes(page);
-            var pageObject = $"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 {Num(PageWidth)} {Num(PageHeight)}] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents {objects.Count + 2} 0 R >>";
+            var pageObject = $"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 {Num(pageWidth)} {Num(pageHeight)}] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents {objects.Count + 2} 0 R >>";
             Add(pageObject);
             objects.Add(Encoding.ASCII.GetBytes($"<< /Length {stream.Length} >>\nstream\n{page}endstream"));
         }

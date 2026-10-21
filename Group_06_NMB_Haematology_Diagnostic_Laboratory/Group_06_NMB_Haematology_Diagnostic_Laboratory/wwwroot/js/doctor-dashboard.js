@@ -75,7 +75,8 @@
 
     async function loadDashboard() {
         try {
-            const response = await fetch(dashboard.dataset.dashboardUrl, {
+            const dashboardUrl = new URL(dashboard.dataset.dashboardUrl, document.baseURI);
+            const response = await fetch(dashboardUrl, {
                 credentials: "same-origin",
                 headers: { Accept: "application/json" }
             });

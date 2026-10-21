@@ -1,0 +1,97 @@
+.modal-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 1000;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        background: rgba(11, 25, 41, 0.58);
+        overflow-y: auto;
+    }
+
+        .modal-overlay.is-open {
+            display: flex;
+        }
+
+        .modal-overlay .modal {
+            width: 100%;
+            max-width: 560px;
+            max-height: calc(100vh - 40px);
+            overflow-y: auto;
+            background: #fff;
+            border-radius: 12px;
+        }
+
+    .status-guide {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(220px, 1fr));
+        gap: 12px 18px;
+    }
+
+        .status-guide > div {
+            display: grid;
+            grid-template-columns: minmax(140px, auto) 1fr;
+            gap: 10px;
+            align-items: start;
+            color: #4A5563;
+            font-size: 13px;
+        }
+
+    .technician-cancel-alert {
+        border: 1px solid rgba(32, 92, 54, 0.2);
+        border-radius: 10px;
+        margin-bottom: 16px;
+        padding: 14px 16px;
+        font-size: 14px;
+    }
+
+    .cancel-reason-note {
+        display: block;
+        color: #7A8CA0;
+        font-size: 12px;
+        margin-top: 4px;
+    }
+
+    .cancel-modal-error {
+        margin-top: 12px;
+        padding: 10px 12px;
+        border-radius: 8px;
+        background: #FFF2F3;
+        color: #7A1E28;
+        font-size: 13px;
+    }
+
+    #requests-tbody .btn {
+        margin: 2px;
+        white-space: nowrap;
+    }
+
+    #confirm-cancel-button:disabled {
+        opacity: 0.65;
+        cursor: not-allowed;
+    }
+
+    @media (max-width: 900px) {
+        .card-body {
+            overflow-x: auto;
+        }
+
+        .status-guide {
+            grid-template-columns: 1fr;
+        }
+
+            .status-guide > div {
+                grid-template-columns: 1fr;
+            }
+    }
+
+    @media (max-width: 720px) {
+        .modal-overlay {
+            padding: 10px;
+        }
+
+            .modal-overlay .modal {
+                max-height: calc(100vh - 20px);
+            }
+    }

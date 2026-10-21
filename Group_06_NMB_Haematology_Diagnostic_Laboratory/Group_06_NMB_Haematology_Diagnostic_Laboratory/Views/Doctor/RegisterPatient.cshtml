@@ -57,10 +57,17 @@
                     </div>
                 </div>
 
-                <div class="form-group">
-                    <label asp-for="HomeAddress" class="form-label">Home Address <span class="required">*</span></label>
-                    <input asp-for="HomeAddress" type="text" class="form-control" placeholder="Street address, suburb, city" autocomplete="street-address" required>
-                    <span asp-validation-for="HomeAddress" class="form-hint"></span>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="patient-address-search" class="form-label">Home Address <span class="required">*</span></label>
+                        <input id="patient-address-search" class="form-control" type="text" maxlength="250" placeholder="Start typing a street, suburb or city" autocomplete="off" aria-autocomplete="list" aria-controls="address-suggestions" aria-expanded="false" required>
+                        <div id="address-suggestions" class="address-suggestions" role="listbox" hidden></div>
+                        <input asp-for="HomeAddress" type="hidden">
+                        <div id="address-autocomplete-status" class="form-hint" aria-live="polite">
+                            Start typing to search South African addresses, then choose a suggestion.
+                        </div>
+                        <span asp-validation-for="HomeAddress" class="form-hint"></span>
+                    </div>
                 </div>
 
                 <p>A temporary password will be generated and emailed to the patient. They must change it at first login. After registration, open Patients to capture conditions, allergies and medication.</p>
@@ -74,69 +81,12 @@
     </section>
 </div>
 
+
+
 @section Scripts {
-    <script>
-        const registrationForm = document.getElementById('patientRegistrationForm');
-        const registrationMessage = document.getElementById('registration-message');
-        const createPatientButton = document.getElementById('createPatientButton');
+    <script src="~/js/DoctorRegisterPatient.js" asp-append-version="true"></script>
+}
 
-        registrationForm.addEventListener('submit', async function (event) {
-            event.preventDefault();
-            registrationMessage.hidden = true;
-
-            createPatientButton.disabled = true;
-            createPatientButton.textContent = 'Creating account...';
-
-            try {
-                const response = await fetch(registrationForm.action, {
-                    method: 'POST',
-                    body: new FormData(registrationForm),
-                    credentials: 'same-origin',
-                    headers: { 'Accept': 'application/json' }
-                });
-
-
-
-                let data;
-                try {
-                    data = await response.json();
-                } catch {
-                    throw new Error('The server returned an unexpected response. Please try again.');
-                }
-
-                const validationMessages = data.errors
-                    ? Object.values(data.errors).flat().join(' ')
-                    : '';
-                const message = validationMessages || data.message ||
-                    'Registration could not be completed.';
-                const success = response.ok && data.success === true;
-
-
-                if (success) registrationForm.reset();
-                showRegistrationMessage(message, success);
-            } catch (error) {
-                console.error('Patient registration error:', error);
-                showRegistrationMessage(
-                    error.message || 'Unable to contact the server. Please try again.',
-                    false);
-            } finally {
-                createPatientButton.disabled = false;
-                createPatientButton.textContent = 'Create Account';
-            }
-        });
-
-        document.querySelectorAll('[data-digits]').forEach(input => {
-            input.addEventListener('input', function () {
-                this.value = this.value.replace(/\D/g, '')
-                    .slice(0, Number(this.dataset.digits));
-            });
-        });
-
-        function showRegistrationMessage(message, success) {
-            registrationMessage.textContent = message;
-            registrationMessage.hidden = false;
-            registrationMessage.classList.remove('success', 'error', 'info');
-            registrationMessage.classList.add(success ? 'success' : 'error');
-        }
-    </script>
+@section Styles {
+    <link rel="stylesheet" href="~/css/DoctorRegisterPatient.css" asp-append-version="true" />
 }

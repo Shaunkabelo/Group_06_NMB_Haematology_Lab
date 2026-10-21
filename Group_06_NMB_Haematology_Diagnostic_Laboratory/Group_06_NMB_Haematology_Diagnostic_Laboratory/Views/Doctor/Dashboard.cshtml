@@ -3,7 +3,7 @@
     Layout = "~/Views/Shared/_LayoutDoctor.cshtml";
 }
 
-<div class="page-body" id="doctor-dashboard" data-dashboard-url="@Url.Action("GetDoctorDashboard", "Doctor")">
+<div class="page-body doctor-dashboard-page" id="doctor-dashboard" data-dashboard-url="@Url.Action("GetDoctorDashboard", "Doctor")">
     <div class="section-header">
         <div class="section-title">Dashboard overview</div>
         <div class="section-sub">A live summary of your requests, results, patients and abnormal alerts.</div>
@@ -13,21 +13,25 @@
 
     <section class="stats-grid" aria-label="Dashboard summary">
         <a asp-controller="Doctor" asp-action="Requests" class="stat-card teal clickable">
+            <span class="stat-icon" aria-hidden="true"><svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" focusable="false"><path d="M7 2h10a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2Zm2 4v2h6V6H9Zm0 5v2h6v-2H9Zm0 5v2h4v-2H9Z" /></svg></span>
             <div class="stat-label">Submitted Requests</div>
             <div class="stat-value" id="dashboard-submitted-count" aria-live="polite">—</div>
             <div class="stat-sub" id="dashboard-submitted-detail">Loading request totals…</div>
         </a>
         <a asp-controller="Doctor" asp-action="Results" class="stat-card blue clickable">
+            <span class="stat-icon" aria-hidden="true"><svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" focusable="false"><path d="M8 2h8a2 2 0 0 1 2 2v1h2v17H4V5h2V4a2 2 0 0 1 2-2Zm0 3h8V4H8v1Zm1 5-1.4 1.4L11 14.8l5.4-5.4L15 8l-4 4-2-2Z" /></svg></span>
             <div class="stat-label">Results Recorded</div>
             <div class="stat-value" id="dashboard-results-count" aria-live="polite">—</div>
             <div class="stat-sub">Requests with captured lab results</div>
         </a>
         <a asp-controller="Doctor" asp-action="Alerts" class="stat-card red clickable">
+            <span class="stat-icon" aria-hidden="true"><svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" focusable="false"><path d="M12 2 1 21h22L12 2Zm-1 7h2v6h-2V9Zm0 8h2v2h-2v-2Z" /></svg></span>
             <div class="stat-label">Abnormal Alerts</div>
             <div class="stat-value" id="dashboard-alerts-count" aria-live="polite">—</div>
             <div class="stat-sub">Last 5 days</div>
         </a>
         <a asp-controller="Doctor" asp-action="Patients" class="stat-card amber clickable">
+            <span class="stat-icon" aria-hidden="true"><svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" focusable="false"><path d="M9 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm0 2c-4 0-7 2-7 5v2h14v-2c0-3-3-5-7-5Zm9-2a3 3 0 1 0-2.7-4.3 6 6 0 0 1 0 6.6c.8.5 1.7.7 2.7.7Zm0 2c-.5 0-1 0-1.5.2 1.6 1.2 2.5 2.8 2.5 4.8v1h3v-2c0-2.4-1.6-4-4-4Z" /></svg></span>
             <div class="stat-label">Patients</div>
             <div class="stat-value" id="dashboard-patients-count" aria-live="polite">—</div>
             <div class="stat-sub">With requests submitted by you</div>
@@ -58,4 +62,8 @@
 
 @section Scripts {
     <script src="~/js/doctor-dashboard.js" asp-append-version="true"></script>
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/DoctorDashboard.css" asp-append-version="true" />
 }

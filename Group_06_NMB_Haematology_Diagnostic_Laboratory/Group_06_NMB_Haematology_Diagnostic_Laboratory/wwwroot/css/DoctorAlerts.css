@@ -1,0 +1,69 @@
+.doctor-alerts-page .alerts-table {
+        width: 100%;
+    }
+
+    .doctor-alerts-page .priority-tile {
+        width: 100%;
+        color: inherit;
+        font: inherit;
+        text-align: left;
+        cursor: pointer;
+        transition: box-shadow 120ms ease, transform 120ms ease;
+    }
+
+    .doctor-alerts-page .priority-tile:hover,
+    .doctor-alerts-page .priority-tile.is-selected {
+        box-shadow: 0 0 0 2px #245b8f;
+    }
+
+    .doctor-alerts-page .priority-tile:focus-visible {
+        outline: 3px solid #245b8f;
+        outline-offset: 3px;
+    }
+
+    .doctor-alerts-page .alert-row {
+        cursor: pointer;
+    }
+
+        .doctor-alerts-page .alert-row:hover {
+            background: #f2f7fb;
+        }
+
+        .doctor-alerts-page .alert-row:focus-visible {
+            outline: 2px solid #2563eb;
+            outline-offset: -2px;
+        }
+
+    .doctor-alerts-page .alerts-filter-controls {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        align-items: end;
+    }
+
+    .doctor-alerts-page .alerts-date-field {
+        min-width: 0;
+    }
+
+    @media (max-width: 640px) {
+        .doctor-alerts-page .alerts-filter-controls {
+            align-items: stretch;
+        }
+
+        .doctor-alerts-page .alerts-date-field {
+            flex: 1 1 130px;
+        }
+
+        .doctor-alerts-page .alerts-date-input {
+            max-width: 100%;
+            width: 100%;
+        }
+
+        .doctor-alerts-page .alerts-filter-controls .btn {
+            flex: 1 1 100%;
+        }
+
+        .doctor-alerts-page .alerts-table {
+            min-width: 520px;
+        }
+    }
