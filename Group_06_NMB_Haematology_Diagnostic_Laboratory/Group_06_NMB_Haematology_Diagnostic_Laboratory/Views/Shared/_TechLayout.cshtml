@@ -9,6 +9,28 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <script>
+        function filterUrgency(select, tableId) {
+            const selected = select.value;
+            const rows = document.querySelectorAll(
+                '#' + tableId + ' > tbody > tr[data-urgency]'
+            );
+
+            rows.forEach(row => {
+                const show = !selected ||
+                    row.dataset.urgency === selected;
+
+                row.style.display = show ? '' : 'none';
+
+                const subrow = row.nextElementSibling;
+
+                if (subrow &&
+                    subrow.classList.contains('tests-subrow')) {
+                    subrow.style.display = show ? '' : 'none';
+                }
+            });
+        }
+    </script>
     @await RenderSectionAsync("Styles", required: false)
 </head>
 <body>

@@ -31,8 +31,19 @@
             <p style="font-size:12px;color:#7A8CA0;padding:8px 16px 0;margin:0">
                 ▶ Click a request row to expand and receive its samples.
             </p>
+            <div style="padding:10px 16px">
+                <select class="form-control"
+                        style="width:200px"
+                        aria-label="Filter pending requests by urgency"
+                        onchange="filterUrgency(this,'receive-pending-table')">
+                    <option value="">All Requests</option>
+                    <option value="STAT">STAT only</option>
+                    <option value="Urgent">Urgent only</option>
+                    <option value="Routine">Routine only</option>
+                </select>
+            </div>
             <div class="table-wrap">
-                <table>
+                <table id="receive-pending-table">
                     <thead>
                         <tr>
                             <th style="width:170px">Request No.</th>
@@ -50,7 +61,9 @@
                             var urgencyBadge = req.Urgency switch { "STAT" => "red", "Urgent" => "amber", _ => "gray" };
                             var statusBadge = req.Status == "Partial Receipt" ? "amber" : "blue";
 
-                            <tr class="req-row" onclick="toggleReqRow('@subId',this)">
+                            <tr class="req-row"
+                                data-urgency="@req.Urgency"
+                                onclick="toggleReqRow('@subId',this)">
                                 <td class="td-bold"><span class="expand-icon">▶</span>@req.RequestNumber</td>
                                 <td>@req.PatientName</td>
                                 <td>@req.DoctorName</td>
@@ -162,6 +175,42 @@
 
 @section Scripts {
     <script>
+            function filterUrgency(select, tableId) {
+            const table = document.getElementById(tableId);
+            if (!table) return;
+
+            const selected = select.value.trim().toLowerCase();
+
+            Array.from(table.tBodies).forEach(tbody => {
+                Array.from(tbody.rows).forEach(row => {
+                    if (!row.hasAttribute('data-urgency')) return;
+
+                    const urgency =
+                        (row.dataset.urgency || '').trim().toLowerCase();
+
+                    const show = selected === '' || urgency === selected;
+
+                    if (show) {
+                        row.style.removeProperty('display');
+                    } else {
+                        row.style.setProperty('display', 'none', 'important');
+                    }
+
+                    const details = row.nextElementSibling;
+
+                    if (details &&
+                        details.classList.contains('tests-subrow')) {
+                        if (show) {
+                            details.style.removeProperty('display');
+                        } else {
+                            details.style.setProperty(
+                                'display', 'none', 'important'
+                            );
+                        }
+                    }
+                });
+            });
+        }
         function toggleReqRow(subId, rowEl) {
             const sub = document.getElementById(subId);
             if (!sub) return;
@@ -170,4 +219,5 @@
             rowEl.classList.toggle('expanded', !isOpen);
         }
     </script>
+        
 }

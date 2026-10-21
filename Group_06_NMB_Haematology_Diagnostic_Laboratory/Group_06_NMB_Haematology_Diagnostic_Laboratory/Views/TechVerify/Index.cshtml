@@ -210,6 +210,42 @@
 
 @section Scripts {
     <script>
+            function filterUrgency(select, tableId) {
+            const table = document.getElementById(tableId);
+            if (!table) return;
+
+            const selected = select.value.trim().toLowerCase();
+
+            Array.from(table.tBodies).forEach(tbody => {
+                Array.from(tbody.rows).forEach(row => {
+                    if (!row.hasAttribute('data-urgency')) return;
+
+                    const urgency =
+                        (row.dataset.urgency || '').trim().toLowerCase();
+
+                    const show = selected === '' || urgency === selected;
+
+                    if (show) {
+                        row.style.removeProperty('display');
+                    } else {
+                        row.style.setProperty('display', 'none', 'important');
+                    }
+
+                    const details = row.nextElementSibling;
+
+                    if (details &&
+                        details.classList.contains('tests-subrow')) {
+                        if (show) {
+                            details.style.removeProperty('display');
+                        } else {
+                            details.style.setProperty(
+                                'display', 'none', 'important'
+                            );
+                        }
+                    }
+                });
+            });
+        }
         function switchTab(btn, panelId) {
             document.querySelectorAll('.tab-btn')
                 .forEach(b => b.classList.remove('active'));
@@ -515,4 +551,5 @@
             });
         });
     </script>
+        
 }
