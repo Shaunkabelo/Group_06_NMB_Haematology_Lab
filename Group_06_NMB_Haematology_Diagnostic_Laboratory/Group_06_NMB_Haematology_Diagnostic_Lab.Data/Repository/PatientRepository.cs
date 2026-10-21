@@ -193,6 +193,7 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
                 SELECT
                     tt.TestTypeID,
                     tt.TestName,
+                    (SELECT tc.CategoryName FROM dbo.TestCategory tc WHERE tc.TestCategoryID = tt.TestCategoryID) AS CategoryName,
                     tt.UnitOfMeasurement,
                     tt.NormalRangeMin,
                     tt.NormalRangeMax,

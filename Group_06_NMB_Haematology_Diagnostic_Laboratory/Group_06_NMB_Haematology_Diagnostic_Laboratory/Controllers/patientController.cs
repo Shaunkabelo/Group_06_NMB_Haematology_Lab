@@ -313,6 +313,8 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
             [HttpGet]
             public IActionResult Register()
             {
+                if (TempData.Peek("RegistrationSuccess") is string message)
+                    return View("RegistrationCreated", message);
                 return View();
             }
 
@@ -437,7 +439,7 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
                         "Your account was created successfully, but the confirmation email could not be sent. You can still sign in.";
                 }
 
-                return RedirectToAction("Login", "Account");
+                return RedirectToAction(nameof(Register));
             }
             catch (Exception ex)
             {

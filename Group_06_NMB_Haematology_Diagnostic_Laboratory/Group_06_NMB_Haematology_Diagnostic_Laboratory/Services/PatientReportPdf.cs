@@ -81,7 +81,13 @@ internal static class PatientReportPdf
             TableHeader();
         }
         NewPage();
-        Paragraph("Patient: " + report.Patient, true);
+        foreach (var line in Wrap("Patient: " + report.Patient, 64))
+        {
+            if (y < 90) NewPage();
+            Text(line, 45, y, 14, "F2");
+            y -= 19;
+        }
+        y -= 4;
         Paragraph("Generated: " + generated);
         Paragraph($"Result period: {Date(report.From)} to {Date(report.To)} (inclusive)");
         y -= 10;
@@ -115,13 +121,23 @@ internal static class PatientReportPdf
                     NewPage(); CategoryHeader(group.Key, group.Count(), true);
                 }
                 var xs = new[] { 50, 230, 340, 460 };
+                var high = string.Equals(row.Flag, "High", StringComparison.OrdinalIgnoreCase);
+                var testHeadingLines = Wrap(row.Test, 32).Count;
                 for (var line = 0; line < count; line++)
                 {
                     if (y < 78) { NewPage(); CategoryHeader(group.Key, group.Count(), true); }
+                    if (high)
+                        page.Append(FormattableString.Invariant($"1 0.94 0.94 rg 45 {y - 3} 505 12 re f 0 g\n"));
                     for (var col = 0; col < cells.Length; col++)
                         if (line < cells[col].Count)
+                        {
+                            var red = high && (col == 1 || col == 3);
+                            if (red) page.Append("0.8 0 0 rg\n");
                             Text(cells[col][line], xs[col], y, 8.5,
-                                report.HighlightFlags && row.Abnormal && (col == 1 || col == 3) ? "F4" : "F3");
+                                (col == 0 && line < testHeadingLines) || red ||
+                                (report.HighlightFlags && row.Abnormal && (col == 1 || col == 3)) ? "F4" : "F3");
+                            if (red) page.Append("0 g\n");
+                        }
                     y -= 12;
                 }
                 foreach (var detail in details)
