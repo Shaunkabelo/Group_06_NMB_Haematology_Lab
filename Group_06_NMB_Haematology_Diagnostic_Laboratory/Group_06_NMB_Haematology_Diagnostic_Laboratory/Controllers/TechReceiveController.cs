@@ -35,11 +35,18 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> ReceiveSample(int testRequestId, int sampleTypeId, string barcodeNumber)
+        public async Task<IActionResult> ReceiveSample(
+    int sampleId,
+    int testRequestId,
+    int sampleTypeId,
+    string barcodeNumber)
         {
             var labTechnicianId = await _currentTech.GetLabTechnicianIdAsync();
 
-            if (string.IsNullOrWhiteSpace(barcodeNumber))
+            if (!ModelState.IsValid ||
+    sampleId <= 0 ||
+    string.IsNullOrWhiteSpace(barcodeNumber) ||
+    barcodeNumber.Length > 50)
             {
                 TempData["Error"] = "Enter a barcode before receiving.";
                 return RedirectToAction(nameof(Index));
@@ -47,14 +54,62 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 
             try
             {
-                await _repo.ReceiveSampleAsync(testRequestId, sampleTypeId, barcodeNumber.Trim(), labTechnicianId, null);
-                TempData["Success"] = "Sample received.";
+                await _repo.ReceiveSampleAsync(
+      testRequestId,
+      sampleTypeId,
+      barcodeNumber.Trim(),
+      labTechnicianId,
+      null,
+      sampleId);
             }
             catch (SqlException ex)
             {
                 TempData["Error"] = ex.Message.Contains("Barcode already in use")
                     ? "That barcode has already been used. Please check and try again."
                     : "An error occurred while receiving the sample.";
+            }
+
+            return RedirectToAction(nameof(Index));
+        }
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> RejectSample(
+    int sampleId,
+    string? reason)
+        {
+            reason = reason?.Trim();
+
+            if (!ModelState.IsValid ||
+                sampleId <= 0 ||
+                string.IsNullOrWhiteSpace(reason) ||
+                reason.Length > 1000)
+            {
+                TempData["Error"] =
+                    "Enter a rejection reason of up to 1000 characters.";
+
+                return RedirectToAction(nameof(Index));
+            }
+
+            try
+            {
+                var technicianId =
+                    await _currentTech.GetLabTechnicianIdAsync();
+
+                await _repo.RejectSampleAsync(
+                    sampleId,
+                    technicianId,
+                    reason);
+
+                TempData["Success"] = "Sample rejected.";
+            }
+            catch (SqlException ex)
+            {
+                TempData["Error"] = ex.Number switch
+                {
+                    50112 => "This request is no longer available for rejection.",
+                    50114 => "This sample is already received, rejected, or unavailable.",
+                    _ => "An error occurred while rejecting the sample."
+                };
             }
 
             return RedirectToAction(nameof(Index));

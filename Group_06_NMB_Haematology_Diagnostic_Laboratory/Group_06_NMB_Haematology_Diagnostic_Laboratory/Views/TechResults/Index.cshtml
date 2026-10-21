@@ -28,8 +28,19 @@
                 <span class="card-title">🧪 Tests Awaiting Results</span>
                 <span class="badge amber">@Model.TestsAwaitingResults.Count pending</span>
             </div>
+            <div style="padding:10px 16px">
+                <select class="form-control"
+                        style="width:200px"
+                        aria-label="Filter results awaiting capture by urgency"
+                        onchange="filterUrgency(this,'capture-results-table')">
+                    <option value="">All Tests</option>
+                    <option value="STAT">STAT only</option>
+                    <option value="Urgent">Urgent only</option>
+                    <option value="Routine">Routine only</option>
+                </select>
+            </div>
             <div class="table-wrap">
-                <table>
+                <table id="capture-results-table">
                     <thead>
                         <tr>
                             <th style="width:170px">Request No.</th>
@@ -47,7 +58,7 @@
                             var isSelected = Model.SelectedTest?.LabTestId == t.LabTestId;
                             var rowStyle = isSelected ? "background:rgba(0,201,167,0.06)" : "";
 
-                            <tr style="@rowStyle">
+                            <tr style="@rowStyle" data-urgency="@t.Urgency">
                                 <td class="td-bold">@t.RequestNumber</td>
                                 <td>@t.PatientName</td>
                                 <td>@t.TestName</td>
@@ -132,7 +143,6 @@
                                                        type="text"
                                                        inputmode="decimal"
                                                        name="resultValue"
-                                                       placeholder="e.g. 7.1 or 7,1"
                                                        pattern="-?[0-9]+([.,][0-9]{1,4})?"
                                                        required />
                                             </td>
@@ -157,7 +167,7 @@
                             <div class="card-header"><span class="card-title">📝 Notes</span></div>
                             <div class="card-body">
                                 <textarea class="form-control" name="notes" rows="3"
-                                      placeholder="Optional: equipment notes, observations, remarks..."></textarea>
+                                      ></textarea>
                             </div>
                         </div>
 
@@ -238,3 +248,33 @@
     }
 
 </div>
+@section Scripts {
+    <script>
+        function filterUrgency(select, tableId) {
+            const table = document.getElementById(tableId);
+            if (!table) return;
+
+            const selected = select.value.trim().toLowerCase();
+
+            Array.from(table.tBodies).forEach(tbody => {
+                Array.from(tbody.rows).forEach(row => {
+                    if (!row.hasAttribute('data-urgency')) return;
+
+                    const urgency =
+                        (row.dataset.urgency || '').trim().toLowerCase();
+
+                    const show =
+                        selected === '' || urgency === selected;
+
+                    if (show) {
+                        row.style.removeProperty('display');
+                    } else {
+                        row.style.setProperty(
+                            'display', 'none', 'important'
+                        );
+                    }
+                });
+            });
+        }
+    </script>
+}

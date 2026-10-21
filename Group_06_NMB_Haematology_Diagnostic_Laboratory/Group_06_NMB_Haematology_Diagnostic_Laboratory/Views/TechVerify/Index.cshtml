@@ -34,7 +34,7 @@
         <div class="card">
             <div class="card-header">
                 <span class="card-title">Tests Awaiting Your Verification</span>
-                <span style="font-size:12px;color:#7A8CA0">You cannot verify tests you performed</span>
+                <span style="font-size:12px;color:#7A8CA0"></span>
             </div>
             <div class="table-wrap">
                 <table>
@@ -157,7 +157,7 @@
                 </div>
                 <div class="form-group" id="return-note-group" style="display:none">
                     <label class="form-label">Note for Technician *</label>
-                    <textarea class="form-control" name="notes" rows="3" placeholder="Explain what needs to be corrected..."></textarea>
+                    <textarea class="form-control" name="notes" rows="3" ></textarea>
                 </div>
                 <div style="display:flex;justify-content:flex-end;gap:10px">
                     <button type="button" class="btn btn-secondary" onclick="closeVerifyModal()">Cancel</button>
@@ -185,16 +185,18 @@
                 <div class="form-group">
                     <label class="form-label" id="resubmit-value-label">Corrected Value</label>
                     <input class="form-control"
-                           type="number"
-                           step="any"
+                           type="text"
+                           inputmode="decimal"
                            name="resultValue"
                            id="resubmit-result-value"
+                           placeholder="e.g. 7.1 or 7,1"
+                           pattern="-?[0-9]+([.,][0-9]{1,4})?"
                            required />
                 </div>
                 
                 <div class="form-group">
                     <label class="form-label">Your Response Note *</label>
-                    <textarea class="form-control" name="responseNote" rows="3" placeholder="Explain the correction made..." required></textarea>
+                    <textarea class="form-control" name="responseNote" rows="3" required></textarea>
                 </div>
                 <div id="resubmit-history"></div>
                 <div style="display:flex;justify-content:flex-end;gap:10px">
@@ -208,6 +210,42 @@
 
 @section Scripts {
     <script>
+            function filterUrgency(select, tableId) {
+            const table = document.getElementById(tableId);
+            if (!table) return;
+
+            const selected = select.value.trim().toLowerCase();
+
+            Array.from(table.tBodies).forEach(tbody => {
+                Array.from(tbody.rows).forEach(row => {
+                    if (!row.hasAttribute('data-urgency')) return;
+
+                    const urgency =
+                        (row.dataset.urgency || '').trim().toLowerCase();
+
+                    const show = selected === '' || urgency === selected;
+
+                    if (show) {
+                        row.style.removeProperty('display');
+                    } else {
+                        row.style.setProperty('display', 'none', 'important');
+                    }
+
+                    const details = row.nextElementSibling;
+
+                    if (details &&
+                        details.classList.contains('tests-subrow')) {
+                        if (show) {
+                            details.style.removeProperty('display');
+                        } else {
+                            details.style.setProperty(
+                                'display', 'none', 'important'
+                            );
+                        }
+                    }
+                });
+            });
+        }
         function switchTab(btn, panelId) {
             document.querySelectorAll('.tab-btn')
                 .forEach(b => b.classList.remove('active'));
@@ -443,7 +481,7 @@
                 document.getElementById('resubmit-result-value');
 
             resultInput.required = true;
-            resultInput.step = 'any';
+            
 
             body.textContent = 'Loading...';
             history.innerHTML = '';
@@ -513,4 +551,5 @@
             });
         });
     </script>
+        
 }

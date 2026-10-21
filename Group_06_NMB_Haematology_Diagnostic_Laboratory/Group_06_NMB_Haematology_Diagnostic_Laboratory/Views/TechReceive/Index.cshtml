@@ -8,10 +8,6 @@
 
 <div class="topbar">
     <h1 class="page-title">Receive Samples</h1>
-    <div class="topbar-actions">
-        <input type="search" class="form-control search-control" placeholder="Search requests..." />
-        
-    </div>
 </div>
 
 <div class="page-body">
@@ -35,8 +31,19 @@
             <p style="font-size:12px;color:#7A8CA0;padding:8px 16px 0;margin:0">
                 ▶ Click a request row to expand and receive its samples.
             </p>
+            <div style="padding:10px 16px">
+                <select class="form-control"
+                        style="width:200px"
+                        aria-label="Filter pending requests by urgency"
+                        onchange="filterUrgency(this,'receive-pending-table')">
+                    <option value="">All Requests</option>
+                    <option value="STAT">STAT only</option>
+                    <option value="Urgent">Urgent only</option>
+                    <option value="Routine">Routine only</option>
+                </select>
+            </div>
             <div class="table-wrap">
-                <table>
+                <table id="receive-pending-table">
                     <thead>
                         <tr>
                             <th style="width:170px">Request No.</th>
@@ -54,7 +61,9 @@
                             var urgencyBadge = req.Urgency switch { "STAT" => "red", "Urgent" => "amber", _ => "gray" };
                             var statusBadge = req.Status == "Partial Receipt" ? "amber" : "blue";
 
-                            <tr class="req-row" onclick="toggleReqRow('@subId',this)">
+                            <tr class="req-row"
+                                data-urgency="@req.Urgency"
+                                onclick="toggleReqRow('@subId',this)">
                                 <td class="td-bold"><span class="expand-icon">▶</span>@req.RequestNumber</td>
                                 <td>@req.PatientName</td>
                                 <td>@req.DoctorName</td>
@@ -74,13 +83,13 @@
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            @foreach (var s in req.DistinctSamples)
+                                            @foreach (var s in req.Samples)
                                             {
-                                                var testsForThisSample = req.Tests.Where(t => t.SampleTypeId == s.SampleTypeId).Select(t => t.TestName);
-
                                                 <tr>
-                                                    <td style="padding-left:36px" class="td-bold">@s.SampleTypeName</td>
-                                                    <td>@string.Join(", ", testsForThisSample)</td>
+                                                    <td class="td-bold">@s.SampleTypeName</td>
+
+                                                    <td>@s.TestsRequiringSample</td>
+
                                                     <td>
                                                         @if (s.SampleReceived)
                                                         {
@@ -91,26 +100,58 @@
                                                             <span class="badge amber">Pending</span>
                                                         }
                                                     </td>
+
                                                     <td>
                                                         @if (!s.SampleReceived)
                                                         {
-                                                            <form asp-controller="TechReceive" asp-action="ReceiveSample" method="post"
-                                                                  style="display:flex;gap:8px;align-items:center" onclick="event.stopPropagation()">
-                                                                <input type="hidden" name="testRequestId" value="@req.TestRequestId" />
-                                                                <input type="hidden" name="sampleTypeId" value="@s.SampleTypeId" />
-                                                                <input type="text"
-                                                                       name="barcodeNumber"
-                                                                       class="form-control form-control-sm barcode-input"
-                                                                       value="@s.BarcodeNumber"
-                                                                       required
-                                                                       maxlength="50"
-                                                                       style="max-width:180px" />
-                                                                <button type="submit" class="btn btn-sm btn-success">✔ Receive</button>
-                                                            </form>
+                                                            <div style="display:flex;gap:8px;flex-wrap:wrap"
+                                                                 onclick="event.stopPropagation()">
+
+                                                                <form asp-controller="TechReceive"
+                                                                      asp-action="ReceiveSample"
+                                                                      method="post"
+                                                                      style="display:flex;gap:8px;align-items:center">
+
+                                                                    <input type="hidden"
+                                                                           name="sampleId"
+                                                                           value="@s.SampleId" />
+
+                                                                    <input type="hidden"
+                                                                           name="testRequestId"
+                                                                           value="@req.TestRequestId" />
+
+                                                                    <input type="hidden"
+                                                                           name="sampleTypeId"
+                                                                           value="@s.SampleTypeId" />
+
+                                                                    <input type="text"
+                                                                           name="barcodeNumber"
+                                                                           class="form-control form-control-sm"
+                                                                           value="@s.BarcodeNumber"
+                                                                           required
+                                                                           maxlength="50"
+                                                                           aria-label="Barcode"
+                                                                           style="max-width:180px" />
+
+                                                                    <button type="submit"
+                                                                            class="btn btn-sm btn-success">
+                                                                        Receive
+                                                                    </button>
+                                                                </form>
+
+                                                                <button type="button"
+                                                                        class="btn btn-sm"
+                                                                        style="background-color:#dc3545;color:#fff;border:1px solid #dc3545"
+                                                                        data-sample-id="@s.SampleId"
+                                                                        data-barcode="@s.BarcodeNumber"
+                                                                        onclick="openRejectModal(this)">
+                                                                    Reject Sample
+                                                                </button>
+                                                            </div>
                                                         }
                                                         else
                                                         {
-                                                            <span style="font-size:12px;color:#7A8CA0">Already received</span>
+                                                            <span>@s.BarcodeNumber</span>
                                                         }
                                                     </td>
                                                 </tr>
@@ -163,9 +204,133 @@
     </section>
 
 </div>
+<div id="reject-modal-overlay"
+     style="display:none;position:fixed;inset:0;
+            background:rgba(11,25,41,0.5);z-index:1000;
+            align-items:center;justify-content:center">
 
+    <div style="background:#fff;border-radius:12px;
+                width:92%;max-width:520px;
+                max-height:85vh;overflow-y:auto">
+
+        <div style="padding:16px 20px;border-bottom:1px solid #EAEEF2;
+                    display:flex;justify-content:space-between;
+                    align-items:center">
+            <strong>Reject Sample</strong>
+
+            <button type="button"
+                    onclick="closeRejectModal()"
+                    aria-label="Close rejection dialog"
+                    style="background:none;border:none;
+                           font-size:22px;cursor:pointer">
+                ×
+            </button>
+        </div>
+
+        <form id="reject-sample-form"
+              asp-controller="TechReceive"
+              asp-action="RejectSample"
+              method="post">
+
+            <input type="hidden"
+                   name="sampleId"
+                   id="reject-sample-id" />
+
+            <div style="padding:20px">
+                <div style="margin-bottom:14px">
+                    <strong>Barcode:</strong>
+                    <span id="reject-sample-barcode"></span>
+                </div>
+
+                <label class="form-label"
+                       for="reject-reason">
+                    Rejection Reason *
+                </label>
+
+                <textarea id="reject-reason"
+                          name="reason"
+                          class="form-control"
+                          rows="4"
+                          required
+                          maxlength="1000"></textarea>
+            </div>
+
+            <div style="padding:16px 20px;border-top:1px solid #EAEEF2;
+                        display:flex;justify-content:flex-end;gap:10px">
+
+                <button type="button"
+                        class="btn btn-secondary"
+                        onclick="closeRejectModal()">
+                    Cancel
+                </button>
+
+                <button type="submit"
+                        class="btn btn-primary">
+                    Confirm Rejection
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
 @section Scripts {
     <script>
+                function openRejectModal(button) {
+            const form = document.getElementById('reject-sample-form');
+
+            form.reset();
+
+            document.getElementById('reject-sample-id').value =
+                button.dataset.sampleId;
+
+            document.getElementById('reject-sample-barcode').textContent =
+                button.dataset.barcode;
+
+            document.getElementById('reject-modal-overlay').style.display =
+                'flex';
+
+            document.getElementById('reject-reason').focus();
+        }
+
+        function closeRejectModal() {
+            document.getElementById('reject-modal-overlay').style.display =
+                'none';
+        }
+            function filterUrgency(select, tableId) {
+            const table = document.getElementById(tableId);
+            if (!table) return;
+
+            const selected = select.value.trim().toLowerCase();
+
+            Array.from(table.tBodies).forEach(tbody => {
+                Array.from(tbody.rows).forEach(row => {
+                    if (!row.hasAttribute('data-urgency')) return;
+
+                    const urgency =
+                        (row.dataset.urgency || '').trim().toLowerCase();
+
+                    const show = selected === '' || urgency === selected;
+
+                    if (show) {
+                        row.style.removeProperty('display');
+                    } else {
+                        row.style.setProperty('display', 'none', 'important');
+                    }
+
+                    const details = row.nextElementSibling;
+
+                    if (details &&
+                        details.classList.contains('tests-subrow')) {
+                        if (show) {
+                            details.style.removeProperty('display');
+                        } else {
+                            details.style.setProperty(
+                                'display', 'none', 'important'
+                            );
+                        }
+                    }
+                });
+            });
+        }
         function toggleReqRow(subId, rowEl) {
             const sub = document.getElementById(subId);
             if (!sub) return;
@@ -174,4 +339,5 @@
             rowEl.classList.toggle('expanded', !isOpen);
         }
     </script>
+        
 }

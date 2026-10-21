@@ -41,6 +41,11 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
         {
             var rows = await _db.GetData<PendingRequestTestRow, object>(
                 "usp_TechReceive_GetPendingRequestsWithTests", new { });
+            var samples = (
+    await _db.GetData<PendingSampleModel, object>(
+        "usp_TechReceive_GetPendingSamples",
+        new { })
+).ToList();
 
             return rows
                 .GroupBy(r => r.TestRequestId)
@@ -56,6 +61,11 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
                         RequestDate = first.RequestDate,
                         PatientName = first.PatientName,
                         DoctorName = first.DoctorName,
+                        Samples = samples
+    .Where(s =>
+        s.TestRequestId == g.Key &&
+        g.Any(t => t.SampleTypeId == s.SampleTypeId))
+    .ToList(),
                         Tests = g.Select(x => new PendingTestModel
                         {
                             TestRequestTestTypeId = x.TestRequestTestTypeId,
@@ -93,7 +103,12 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
         }
 
         public async Task<ReceiveSampleResultModel?> ReceiveSampleAsync(
-            int testRequestId, int sampleTypeId, string barcodeNumber, int labTechnicianId, DateTime? dateTimeReceived)
+    int testRequestId,
+    int sampleTypeId,
+    string barcodeNumber,
+    int labTechnicianId,
+    DateTime? dateTimeReceived,
+    int? sampleId = null)
         {
             var result = await _db.GetData<ReceiveSampleResultModel, object>(
                 "usp_TechReceive_ReceiveSample",
@@ -103,10 +118,25 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
                     SampleTypeID = sampleTypeId,
                     BarcodeNumber = barcodeNumber,
                     LabTechnicianID = labTechnicianId,
-                    DateTimeReceived = dateTimeReceived
+                    DateTimeReceived = dateTimeReceived,
+                    SampleID = sampleId
                 });
 
             return result.FirstOrDefault();
+        }
+        public Task RejectSampleAsync(
+    int sampleId,
+    int labTechnicianId,
+    string reason)
+        {
+            return _db.SaveData(
+                "usp_TechReceive_RejectSample",
+                new
+                {
+                    SampleID = sampleId,
+                    LabTechnicianID = labTechnicianId,
+                    Reason = reason
+                });
         }
     }
 }
