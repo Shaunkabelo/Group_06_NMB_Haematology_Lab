@@ -9,6 +9,7 @@ public class PatientRequest
     public DateTime RequestDate { get; set; }
     public string Urgency { get; set; } = string.Empty;
     public string Status { get; set; } = string.Empty;
+    public string? CancelReason { get; set; }
     public bool IsReleased => Status?.Trim().ToLowerInvariant() is
         "released by doctor" or "released by the doctor";
     public string? ClinicalNotes { get; set; }
