@@ -1289,20 +1289,22 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 
             if (reportType == "tests")
             {
-                var categories = (await _repository.GetTestsPerformedByCategory(
+                var tests = (await _repository.GetTestsPerformedDetails(
                         startDate!.Value.Date, endDate!.Value.Date.AddDays(1)))
-                    .OrderByDescending(row => row.TotalTests).ThenBy(row => row.CategoryName).ToList();
-                var total = categories.Sum(row => row.TotalTests);
+                    .OrderBy(row => row.CategoryName, StringComparer.OrdinalIgnoreCase)
+                    .ThenBy(row => row.TestName, StringComparer.OrdinalIgnoreCase)
+                    .ThenBy(row => row.CompletionDateTime)
+                    .ToList();
                 title = "Tests Performed by Category";
                 criteria = $"Completion dates: {Date(startDate)} - {Date(endDate)} (inclusive).";
-                summary = total == 0 ? "No completed tests were found for the selected date range."
-                    : $"Completed tests: {total:N0}. Categories: {categories.Count:N0}.";
-                headings = new[] { "Test category", "Completed tests", "Share of total" };
-                rows = categories.Select(row => new[]
+                summary = tests.Count == 0 ? "No completed tests were found for the selected date range."
+                    : $"Completed tests: {tests.Count:N0}. Categories: {tests.Select(test => test.CategoryName).Distinct(StringComparer.OrdinalIgnoreCase).Count():N0}.";
+                headings = new[] { "Test category", "Test type", "Completed on" };
+                rows = tests.Select(test => new[]
                 {
-                    row.CategoryName,
-                    row.TotalTests.ToString("N0", culture),
-                    total == 0 ? "0%" : $"{row.TotalTests * 100m / total:0.0}%"
+                    test.CategoryName,
+                    test.TestName,
+                    Date(test.CompletionDateTime)
                 }).ToList();
             }
             else if (reportType == "orders")

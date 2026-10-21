@@ -26,8 +26,6 @@
             </div>
             <label for="homeAddress">Home address</label>
             <input id="homeAddress" name="homeAddress" value="@Model.HomeAddress" maxlength="255" autocomplete="street-address" />
-            <label for="emailPassword">Current password (only when changing email)</label>
-            <div class="password-field"><input id="emailPassword" name="currentPassword" type="password" maxlength="128" autocomplete="off" value="" /><button type="button" data-password-toggle="emailPassword" aria-label="Show password" aria-pressed="false"></button></div>
             <p class="hint">After saving, sign in again so your account details are refreshed on all devices.</p>
             <button class="primary" type="submit">Save personal details</button>
         </form>
@@ -56,7 +54,6 @@ document.querySelectorAll('input[name="name"], input[name="surname"]').forEach(f
 document.getElementById("cellphone").addEventListener("input", event => {
     event.target.value = event.target.value.replace(/[^0-9]/g, "").slice(0,10);
 });
-document.getElementById("emailPassword").value = "";
 document.getElementById("currentPassword").value = "";
 </script>
     @if (useManagerLayout)

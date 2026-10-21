@@ -217,7 +217,7 @@ public class AccountController(IAuthenticationRepository repository, PasswordRes
 
     [Authorize, HttpPost, ValidateAntiForgeryToken, EnableRateLimiting("account")]
     public async Task<IActionResult> Profile(string? name, string? surname, string? email,
-        string? cellphone, string? homeAddress, string? currentPassword)
+        string? cellphone, string? homeAddress)
     {
         var user = await repository.GetActiveUserById(int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!));
         if (user == null) return Challenge();
@@ -237,10 +237,6 @@ public class AccountController(IAuthenticationRepository repository, PasswordRes
         if (!string.IsNullOrEmpty(cellphone) && !System.Text.RegularExpressions.Regex.IsMatch(cellphone, "^[0-9]{10}$"))
             ModelState.AddModelError("", "Cellphone number must contain exactly 10 digits.");
         if (homeAddress?.Length > 255) ModelState.AddModelError("", "Home address must be 255 characters or fewer.");
-        var emailChanged = !string.Equals(user.Email, email, StringComparison.OrdinalIgnoreCase);
-        if (emailChanged && (string.IsNullOrEmpty(currentPassword) || currentPassword.Length > 128 ||
-            !PasswordHelper.VerifyPassword(currentPassword, user.PasswordHash, user.PasswordSalt)))
-            ModelState.AddModelError("", "Enter your current password to change your email address / username.");
         if (ModelState.IsValid)
         {
             try

@@ -18,7 +18,7 @@
             <a asp-action="ManagerReports" asp-route-reportType="@ViewBag.ReportType" asp-route-startDate="@startDate?.ToString("yyyy-MM-dd")"
                asp-route-endDate="@endDate?.ToString("yyyy-MM-dd")" asp-route-orderStatus="@ViewBag.OrderStatus"
                asp-route-lowStockOnly="@ViewBag.LowStockOnly" class="btn btn-secondary">Change criteria</a>
-            <form asp-action="DownloadReport" method="get">
+            <form asp-action="DownloadReport" method="get" target="_blank">
                 <input type="hidden" name="reportType" value="@ViewBag.ReportType" />
                 @if (startDate.HasValue)
                 {
@@ -27,7 +27,7 @@
                 }
                 <input type="hidden" name="orderStatus" value="@ViewBag.OrderStatus" />
                 <input type="hidden" name="lowStockOnly" value="@ViewBag.LowStockOnly" />
-                <button class="btn btn-primary" type="submit">Download PDF</button>
+                <button class="btn btn-primary" type="submit">Open PDF</button>
             </form>
         </div>
     </div>

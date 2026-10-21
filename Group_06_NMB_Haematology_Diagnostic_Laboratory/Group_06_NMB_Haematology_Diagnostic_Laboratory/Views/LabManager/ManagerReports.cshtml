@@ -37,14 +37,10 @@
                 <label><input type="checkbox" name="lowStockOnly" value="true" checked="@(ViewBag.LowStockOnly == true)" /> Only consumables near or below reorder level (within 10%)</label>
             </div>
             <p id="reportDateError" class="text-danger" role="alert"></p>
-<<<<<<< Updated upstream
             <div class="d-flex gap-2 flex-wrap">
                 <button class="btn btn-secondary" type="submit" formaction="@Url.Action("PreviewReport", "LabManager")">Preview report</button>
-                <button class="btn btn-primary" type="submit">Download PDF</button>
+                <button class="btn btn-primary" type="submit">Open PDF</button>
             </div>
-=======
-            <button class="btn btn-primary" type="submit">Preview / Print PDF</button>
->>>>>>> Stashed changes
         </form>
     </div></div>
 </div>
