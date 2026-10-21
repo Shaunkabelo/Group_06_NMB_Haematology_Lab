@@ -16,6 +16,15 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
     public class LabManagerController : Controller
     {
+        private string CurrentReportGenerator()
+        {
+            var name = User.Identity?.Name ?? "Lab Manager";
+            var role = User.IsInRole("LabManager") ? "Lab Manager"
+                : User.IsInRole("Admin") ? "Administrator"
+                : "Lab Manager";
+            return $"{name} ({role})";
+        }
+
         private async Task SendWelcomeEmail(User user, string temporaryPassword)
         {
             try
@@ -1267,6 +1276,8 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
         public async Task<IActionResult> PreviewReport(string reportType, DateTime? startDate, DateTime? endDate,
             string orderStatus = "All", bool lowStockOnly = false)
         {
+            var isEmbeddedPreview = string.Equals(Request.Headers["X-Requested-With"], "XMLHttpRequest",
+                StringComparison.OrdinalIgnoreCase);
             var statuses = new[] { "All", "Ordered", "Partially Received", "Received", "Cancelled" };
             var dated = reportType is "tests" or "orders";
             if (!ModelState.IsValid || reportType is not ("tests" or "orders" or "stock") ||
@@ -1274,6 +1285,8 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
                 (dated && (!startDate.HasValue || !endDate.HasValue || startDate.Value == default ||
                     startDate.Value.Date > endDate.Value.Date || endDate.Value.Date == DateTime.MaxValue.Date)))
             {
+                if (isEmbeddedPreview)
+                    return BadRequest("Choose a valid report and date range. The end date must be on or after the start date.");
                 TempData["ReportError"] = "Choose a valid report and date range. The end date must be on or after the start date.";
                 return RedirectToAction(nameof(ManagerReports), new { reportType, startDate, endDate, orderStatus, lowStockOnly });
             }
@@ -1289,8 +1302,21 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 
             if (reportType == "tests")
             {
-                var tests = (await _repository.GetTestsPerformedDetails(
-                        startDate!.Value.Date, endDate!.Value.Date.AddDays(1)))
+                IEnumerable<TestsPerformedDetail> details;
+                try
+                {
+                    details = await _repository.GetTestsPerformedDetails(
+                        startDate!.Value.Date, endDate!.Value.Date.AddDays(1));
+                }
+                catch (Microsoft.Data.SqlClient.SqlException exception) when (exception.Number == 2812)
+                {
+                    if (isEmbeddedPreview)
+                        return StatusCode(StatusCodes.Status500InternalServerError,
+                            "The detailed test report is not installed yet. Run Database/ManagerReport_Details.sql on the application database.");
+                    TempData["ReportError"] = "The detailed test report is not installed yet. Run Database/ManagerReport_Details.sql on the application database.";
+                    return RedirectToAction(nameof(ManagerReports), new { reportType, startDate, endDate, orderStatus, lowStockOnly });
+                }
+                var tests = details
                     .OrderBy(row => row.CategoryName, StringComparer.OrdinalIgnoreCase)
                     .ThenBy(row => row.TestName, StringComparer.OrdinalIgnoreCase)
                     .ThenBy(row => row.CompletionDateTime)
@@ -1349,6 +1375,7 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
             ViewBag.Summary = summary;
             ViewBag.Headings = headings;
             ViewBag.GeneratedAt = generatedAt;
+            ViewBag.GeneratedBy = CurrentReportGenerator();
             ViewBag.ReportType = reportType;
             ViewBag.StartDate = startDate;
             ViewBag.EndDate = endDate;
@@ -1366,12 +1393,21 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
                 return RedirectToAction(nameof(ManagerReports), new { startDate = startDate.ToString("yyyy-MM-dd"), endDate = endDate.ToString("yyyy-MM-dd") });
             }
 
-            var tests = (await _repository.GetTestsPerformedDetails(
-                startDate.Date,
-                endDate.Date.AddDays(1)))
-                .ToList();
+            List<TestsPerformedDetail> tests;
+            try
+            {
+                tests = (await _repository.GetTestsPerformedDetails(
+                    startDate.Date,
+                    endDate.Date.AddDays(1))).ToList();
+            }
+            catch (Microsoft.Data.SqlClient.SqlException exception) when (exception.Number == 2812)
+            {
+                TempData["ReportError"] = "The detailed test report is not installed yet. Run Database/ManagerReport_Details.sql on the application database.";
+                return RedirectToAction(nameof(ManagerReports), new { startDate = startDate.ToString("yyyy-MM-dd"), endDate = endDate.ToString("yyyy-MM-dd") });
+            }
 
-            var pdf = TestsPerformedPdf.Generate(tests, startDate.Date, endDate.Date, DateTimeOffset.UtcNow);
+            var pdf = TestsPerformedPdf.Generate(tests, startDate.Date, endDate.Date, DateTimeOffset.UtcNow,
+                CurrentReportGenerator());
             return File(pdf, "application/pdf");
         }
 
@@ -1394,6 +1430,7 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 
             var culture = System.Globalization.CultureInfo.GetCultureInfo("en-ZA");
             var now = DateTimeOffset.UtcNow;
+            var generatedBy = CurrentReportGenerator();
             byte[] pdf;
             if (reportType == "orders")
             {
@@ -1408,7 +1445,7 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
                     $"Orders: {orders.Count:N0} • Ordered: {orders.Count(x => OrderStatusLabels.Display(x.Status) == "Ordered"):N0} • Partially received: {orders.Count(x => OrderStatusLabels.Display(x.Status) == "Partially Received"):N0} • Received: {orders.Count(x => OrderStatusLabels.Display(x.Status) == "Received"):N0} • Cancelled: {orders.Count(x => OrderStatusLabels.Display(x.Status) == "Cancelled"):N0}",
                     new[] { "Order number", "Supplier", "Ordered on", "Item lines", "Status", "Received on" },
                     orders.Select(x => new[] { x.OrderNumber, x.Supplier?.SupplierName ?? "Unknown", Date(x.OrderDate),
-                        x.StockOrderItem.Count.ToString("N0", culture), OrderStatusLabels.Display(x.Status), Date(x.CompletionDate) }), now);
+                        x.StockOrderItem.Count.ToString("N0", culture), OrderStatusLabels.Display(x.Status), Date(x.CompletionDate) }), now, generatedBy);
             }
             else
             {
@@ -1422,7 +1459,7 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
                     new[] { "Consumable", "Supplier", "Quantity on hand", "Reorder level", "Stock status" },
                     stock.Select(x => new[] { x.Name, x.Supplier?.SupplierName ?? "Unknown",
                         x.QuantityOnHand.ToString("N0", culture), x.ReorderLevel.ToString("N0", culture),
-                        x.QuantityOnHand <= x.ReorderLevel ? "At/below reorder" : x.QuantityOnHand <= x.ReorderLevel * 1.1m ? "Near reorder" : "Available" }), now);
+                        x.QuantityOnHand <= x.ReorderLevel ? "At/below reorder" : x.QuantityOnHand <= x.ReorderLevel * 1.1m ? "Near reorder" : "Available" }), now, generatedBy);
             }
             return File(pdf, "application/pdf");
         }

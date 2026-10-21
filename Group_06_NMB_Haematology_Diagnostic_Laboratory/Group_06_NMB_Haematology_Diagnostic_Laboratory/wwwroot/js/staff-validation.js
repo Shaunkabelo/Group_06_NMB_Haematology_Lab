@@ -19,8 +19,15 @@ document.addEventListener("DOMContentLoaded", () => {
         Object.entries(limits).forEach(([name,max]) => { const field = form.elements.namedItem(name); if(field) field.maxLength = max; });
         const fields = [...form.querySelectorAll('input:not([type=hidden]):not([type=checkbox]), textarea, select')];
         const summary = document.createElement("div");
-        summary.className = "alert alert-danger"; summary.hidden = true; summary.setAttribute("role", "alert");
+        summary.className = "alert alert-danger"; summary.hidden = true; summary.setAttribute("role", "alert"); summary.tabIndex = -1;
         form.prepend(summary);
+        function showSummary(messages) {
+            summary.textContent = [...new Set(messages.filter(Boolean))].join(" ");
+            summary.hidden = false;
+            const body = form.closest(".offcanvas")?.querySelector(".offcanvas-body");
+            if (body) body.scrollTo({ top: 0, behavior: "smooth" });
+            summary.focus({ preventScroll: true });
+        }
         const labels = {
             "User.Name": "First name", "User.Surname": "Surname", "User.Email": "Email address",
             "User.Cellphone": "Cellphone number", "User.SaIdNumber": "SA ID number",
@@ -126,7 +133,12 @@ document.addEventListener("DOMContentLoaded", () => {
             event.preventDefault();
             let valid = true; fields.forEach(field => { if (!field.disabled && !validate(field)) valid = false; });
             if (!form.reportValidity()) valid = false;
-            if (!valid) { form.querySelector(".is-invalid")?.focus(); return; }
+            if (!valid) {
+                const messages = [...form.querySelectorAll(".is-invalid")]
+                    .map(field => document.getElementById(field.dataset.errorId)?.textContent);
+                showSummary(messages.length ? messages : ["Correct the highlighted fields and try again."]);
+                return;
+            }
             summary.hidden = true;
             const button = form.querySelector('[type="submit"]'); button.disabled = true;
             try {
@@ -139,20 +151,19 @@ document.addEventListener("DOMContentLoaded", () => {
                 // deployment or proxy does not preserve the StaffForm request header.
                 if (response.ok && response.redirected) { window.location.assign(response.url); return; }
                 if (data?.errors) {
-                    summary.textContent = "";
-                    Object.entries(data.errors).forEach(([key, messages]) => {
-                        const field = fields.find(f => f.name.toLowerCase() === key.toLowerCase());
-                        if (field) message(field, messages.join(" "));
-                        else { summary.hidden = false; summary.textContent += messages.join(" ") + " "; }
+                    const messages = [];
+                    Object.entries(data.errors).forEach(([key, serverMessages]) => {
+                        const text = serverMessages.join(" ");
+                        const field = key && fields.find(f => f.name && f.name.toLowerCase() === key.toLowerCase());
+                        if (field) message(field, text);
+                        messages.push(text);
                     });
-                    if (!summary.hidden) summary.scrollIntoView({ behavior: "smooth", block: "nearest" });
-                    form.querySelector(".is-invalid")?.focus();
+                    showSummary(messages);
                 } else {
-                    summary.hidden = false;
-                    summary.textContent = "Could not confirm the save. Check the list before trying again.";
+                    showSummary(["Could not confirm the save. Check the list before trying again."]);
                 }
             } catch {
-                summary.hidden = false; summary.textContent = "Connection interrupted. Check the list before trying again.";
+                showSummary(["Connection interrupted. Check the list before trying again."]);
             } finally { button.disabled = false; }
         });
     });

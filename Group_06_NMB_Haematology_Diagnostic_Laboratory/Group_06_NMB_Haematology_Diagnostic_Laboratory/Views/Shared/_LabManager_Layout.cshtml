@@ -5,10 +5,9 @@
     var title = ViewData["Title"]?.ToString() ?? "NMB-HLabSys";
 
     string IsActive(string action) =>
-        string.Equals(
-            currentAction,
-            action,
-            StringComparison.OrdinalIgnoreCase)
+        (string.Equals(currentAction, action, StringComparison.OrdinalIgnoreCase)
+            || (string.Equals(action, "ManagerReports", StringComparison.OrdinalIgnoreCase)
+                && string.Equals(currentAction, "PreviewReport", StringComparison.OrdinalIgnoreCase)))
             ? " active"
             : "";
 }

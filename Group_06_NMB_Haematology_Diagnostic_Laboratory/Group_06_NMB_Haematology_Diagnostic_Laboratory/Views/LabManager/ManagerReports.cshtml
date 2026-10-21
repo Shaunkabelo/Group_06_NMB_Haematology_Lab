@@ -38,7 +38,8 @@
             </div>
             <p id="reportDateError" class="text-danger" role="alert"></p>
             <div class="d-flex gap-2 flex-wrap">
-                <button class="btn btn-secondary" type="submit" formaction="@Url.Action("PreviewReport", "LabManager")">Preview report</button>
+                <button class="btn btn-secondary" type="submit" formmethod="get"
+                        formaction="@Url.Action("PreviewReport", "LabManager")" formtarget="_self">Preview report</button>
                 <button class="btn btn-primary" type="submit">Open PDF</button>
             </div>
         </form>
@@ -67,6 +68,7 @@ document.addEventListener("DOMContentLoaded", () => {
     check();
  }
  type.addEventListener("change", update); start.addEventListener("change", check); end.addEventListener("change", check); update();
+
 });
 </script>
 }

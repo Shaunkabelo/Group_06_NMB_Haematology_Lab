@@ -11,10 +11,24 @@ public class StaffValidationFilter(IUrlHelperFactory urlHelpers, Group_06_NMB_Ha
     private static readonly HashSet<string> Actions = new() {
         "CreateSupplier", "EditSupplier", "CreateConsumable", "EditConsumable", "CreateSampleType", "EditSampleType", "CreateTestCategory", "EditTestCategory", "CreateTestType", "EditTestType", "CreateDoctor", "EditDoctor", "CreateTechnician", "EditTechnician", "CreateManager", "EditManager"
     };
+
+    private static string DuplicateMessage(string action) => action switch
+    {
+        "CreateDoctor" or "EditDoctor" => "A doctor with this email address, SA ID number or HPCSA number already exists.",
+        "CreateTechnician" or "EditTechnician" => "A technician with this email address, SA ID number or employee number already exists.",
+        "CreateManager" or "EditManager" => "A lab manager with this email address or SA ID number already exists.",
+        "CreateSupplier" or "EditSupplier" => "A supplier with this name or email address already exists.",
+        "CreateConsumable" or "EditConsumable" => "A consumable with this name already exists for the selected supplier.",
+        "CreateSampleType" or "EditSampleType" => "A sample type with this name already exists.",
+        "CreateTestCategory" or "EditTestCategory" => "A test category with this name already exists.",
+        "CreateTestType" or "EditTestType" => "A test type with this name already exists.",
+        _ => "An item with these details already exists. Use different details and try again."
+    };
+
     public async Task OnActionExecutionAsync(ActionExecutingContext context, ActionExecutionDelegate next)
     {
-        if (!HttpMethods.IsPost(context.HttpContext.Request.Method) ||
-            !Actions.Contains(context.RouteData.Values["action"]?.ToString() ?? ""))
+        var action = context.RouteData.Values["action"]?.ToString() ?? "";
+        if (!HttpMethods.IsPost(context.HttpContext.Request.Method) || !Actions.Contains(action))
         { await next(); return; }
         var rangeErrors = new Dictionary<string, string[]>();
         var test = context.ActionArguments.Values.OfType<TestType>().FirstOrDefault();
@@ -61,7 +75,7 @@ public class StaffValidationFilter(IUrlHelperFactory urlHelpers, Group_06_NMB_Ha
             executed.ExceptionHandled = true;
             executed.Result = new UnprocessableEntityObjectResult(new {
                 errors = new Dictionary<string, string[]> { [""] = new[] {
-                    "These details already exist. Check the name, email address, SA ID or registration/employee number and use a unique value."
+                    DuplicateMessage(action)
                 }}
             });
         }
