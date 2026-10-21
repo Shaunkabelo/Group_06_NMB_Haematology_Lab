@@ -1,38 +1,266 @@
-/* Account form styles stay inside the profile; the user's subsystem owns navigation. */
-.main-content > .shared-profile { padding: 30px 34px; max-width: 1450px; }
-.shared-profile h2 { font-size: 17px; margin: 0; }
-.shared-profile .subtitle {font-size:14px;color:#67798c;line-height:1.7;margin-top:0;margin-bottom:26px}
-.shared-profile .profile-grid {display:grid;grid-template-columns:1.2fr 1fr;gap:24px;align-items:start}
-.shared-profile .profile-card {background:white;border:1px solid #e1e7ee;border-radius:14px;box-shadow:0 4px 16px #20344904;overflow:hidden}
-.shared-profile .profile-card header {padding:20px 24px;border-bottom:1px solid #e7ecf1;display:flex;justify-content:space-between;align-items:center;gap:12px}
-.shared-profile .badge {background:#def5ee;color:#007662;padding:6px 10px;border-radius:20px;font-size:11px;font-weight:650}
-.shared-profile .card-body {padding:24px}
-.shared-profile .field-row {display:grid;grid-template-columns:1fr 1fr;gap:16px}
-.shared-profile label {display:block;font-size:13px;font-weight:600;margin:16px 0 8px}
-.shared-profile .card-body>label:first-child, .shared-profile .field-row:first-of-type label {margin-top:0}
-.shared-profile input {font:inherit;font-size:14px;min-width:0;width:100%;border:1px solid #ccd7e2;border-radius:7px;padding:12px;color:#203449;background:#fff}
-.shared-profile input[readonly] {background:#f5f7fa;color:#61748a}
-.shared-profile input:focus, .shared-profile button:focus-visible, .shared-profile a:focus-visible {outline:3px solid #9adbcf;outline-offset:2px}
-.shared-profile .password-field {display:flex;align-items:center;border:1px solid #ccd7e2;border-radius:7px;overflow:hidden}
-.shared-profile .password-field input {border:0}
-.shared-profile .password-field button {border:0;background:white;width:44px;flex-shrink:0;cursor:pointer;color:#526b80}
-.shared-profile .password-field svg {width:21px;height:21px}
-.shared-profile .password-field input:focus {outline-offset:-3px}
-.shared-profile .hint {font-size:12px;color:#63798c;line-height:1.6;margin:8px 0 16px}
-.shared-profile .primary, .shared-profile .secondary {border:0;border-radius:7px;font:inherit;font-size:13px;font-weight:650;padding:12px 18px;cursor:pointer}
-.shared-profile .primary {background:#008878;color:white;margin-top:20px}
-.shared-profile .primary:hover {background:#006e62}
-.shared-profile .secondary {background:#eef3f7;color:#354d63}
-.shared-profile .error {color:#a52438;font-size:14px}
-.shared-profile .error ul {padding-left:20px}
-.shared-profile .validation-summary-valid {display:none}
-.shared-profile .link-button {display:inline-block;text-decoration:none}
-.shared-profile .welcome-account {max-width:800px}
+.shared-profile {
+    width: 100%;
+    max-width: 1380px;
+    margin: 0 auto;
+    color: #203449;
+}
 
-@media (max-width:1050px) { .shared-profile .profile-grid { grid-template-columns: 1fr; } }
-@media (max-width:700px) {
-    .main-content > .shared-profile { padding: 20px 16px; }
-    .shared-profile .card-body { padding: 20px; }
-    .shared-profile .profile-card header { padding: 18px 20px; }
-    .shared-profile .field-row { grid-template-columns: 1fr; gap: 0; }
+.profile-body > .shared-profile {
+    padding: 2px 0 24px;
+}
+
+.main-content > .shared-profile {
+    padding: 24px;
+}
+
+.shared-profile .subtitle {
+    max-width: 65ch;
+    margin: 0 0 24px;
+    color: #64748b;
+    font-size: 14px;
+    line-height: 1.65;
+}
+
+.shared-profile .profile-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.15fr) minmax(300px, .85fr);
+    align-items: start;
+    gap: 22px;
+}
+
+.shared-profile .profile-card {
+    min-width: 0;
+    overflow: hidden;
+    border: 1px solid #e1e7ee;
+    border-radius: 14px;
+    background: #fff;
+    box-shadow: 0 6px 20px rgb(32 52 73 / 6%);
+}
+
+.shared-profile .profile-card > header {
+    display: flex;
+    min-height: 62px;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 17px 22px;
+    border-bottom: 1px solid #e7ecf1;
+    background: #fbfdff;
+}
+
+.shared-profile h2 {
+    margin: 0;
+    color: #203449;
+    font-size: 17px;
+    font-weight: 700;
+}
+
+.shared-profile .badge {
+    flex: 0 0 auto;
+    padding: 6px 10px;
+    border-radius: 999px;
+    background: #def5ee;
+    color: #007662;
+    font-size: 11px;
+    font-weight: 650;
+}
+
+.shared-profile .card-body {
+    display: grid;
+    gap: 0;
+    padding: 22px;
+}
+
+.shared-profile .field-row {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+}
+
+.shared-profile label {
+    display: block;
+    margin: 15px 0 7px;
+    color: #344b61;
+    font-size: 13px;
+    font-weight: 650;
+}
+
+.shared-profile .field-row:first-of-type label {
+    margin-top: 0;
+}
+
+.shared-profile input {
+    width: 100%;
+    min-width: 0;
+    min-height: 44px;
+    padding: 10px 12px;
+    border: 1px solid #ccd7e2;
+    border-radius: 8px;
+    background: #fff;
+    color: #203449;
+    font: inherit;
+    font-size: 14px;
+    transition: border-color .15s ease, box-shadow .15s ease;
+}
+
+.shared-profile input[readonly] {
+    background: #f5f7fa;
+    color: #61748a;
+    cursor: not-allowed;
+}
+
+.shared-profile input:focus,
+.shared-profile button:focus-visible,
+.shared-profile a:focus-visible {
+    border-color: #008878;
+    outline: 3px solid rgb(0 136 120 / 18%);
+    outline-offset: 1px;
+}
+
+.shared-profile .password-field {
+    display: flex;
+    min-width: 0;
+    align-items: stretch;
+    overflow: hidden;
+    border: 1px solid #ccd7e2;
+    border-radius: 8px;
+    background: #fff;
+}
+
+.shared-profile .password-field input {
+    border: 0;
+    border-radius: 0;
+}
+
+.shared-profile .password-field input:focus {
+    outline-offset: -3px;
+}
+
+.shared-profile .password-field button {
+    display: grid;
+    width: 48px;
+    flex: 0 0 48px;
+    place-items: center;
+    border: 0;
+    background: #fff;
+    color: #526b80;
+    cursor: pointer;
+}
+
+.shared-profile .password-field button:hover {
+    background: #f1f7f6;
+}
+
+.shared-profile .password-field svg {
+    width: 21px;
+    height: 21px;
+}
+
+.shared-profile .hint {
+    margin: 8px 0 12px;
+    color: #63798c;
+    font-size: 12px;
+    line-height: 1.6;
+}
+
+.shared-profile .primary,
+.shared-profile .secondary {
+    min-height: 42px;
+    padding: 10px 16px;
+    border: 0;
+    border-radius: 8px;
+    font: inherit;
+    font-size: 13px;
+    font-weight: 650;
+    cursor: pointer;
+    transition: background .15s ease, transform .15s ease, box-shadow .15s ease;
+}
+
+.shared-profile .primary {
+    margin-top: 10px;
+    background: #008878;
+    color: #fff;
+}
+
+.shared-profile .primary:hover {
+    background: #006e62;
+    box-shadow: 0 5px 14px rgb(0 110 98 / 18%);
+    transform: translateY(-1px);
+}
+
+.shared-profile .secondary {
+    background: #eef3f7;
+    color: #354d63;
+}
+
+.shared-profile .secondary:hover {
+    background: #e1eaf0;
+}
+
+.shared-profile .error {
+    margin-bottom: 12px;
+    color: #a52438;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.shared-profile .error ul {
+    margin: 6px 0 0;
+    padding-left: 20px;
+}
+
+.shared-profile .validation-summary-valid {
+    display: none;
+}
+
+.shared-profile .link-button {
+    display: inline-block;
+    text-decoration: none;
+}
+
+.shared-profile .welcome-account {
+    max-width: 800px;
+}
+
+@media (max-width: 1050px) {
+    .shared-profile .profile-grid {
+        grid-template-columns: minmax(0, 1fr);
+        max-width: 780px;
+    }
+}
+
+@media (max-width: 700px) {
+    .profile-body > .shared-profile,
+    .main-content > .shared-profile {
+        padding: 16px 0 20px;
+    }
+
+    .shared-profile .profile-grid {
+        gap: 16px;
+    }
+
+    .shared-profile .profile-card > header {
+        padding: 16px 18px;
+    }
+
+    .shared-profile .card-body {
+        padding: 18px;
+    }
+
+    .shared-profile .field-row {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 0;
+    }
+}
+
+@media (max-width: 420px) {
+    .shared-profile .profile-card > header {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .shared-profile .primary,
+    .shared-profile .secondary {
+        width: 100%;
+    }
 }

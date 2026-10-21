@@ -4,7 +4,7 @@
 }
 
 
-<div class="page-body">
+<div class="page-body doctor-account-page">
     <div class="section-header">
         <div class="section-title">Doctor Profile</div>
         <div class="section-sub">Manage your profile, security settings, and notification preferences.</div>
@@ -147,4 +147,8 @@
 
 @section Scripts {
     <script src="~/js/DoctorAccounts.js" asp-append-version="true" data-getdoctoraccount-url="@Url.Action("GetDoctorAccount", "Doctor")" data-updatedoctoraccount-url="@Url.Action("UpdateDoctorAccount", "Doctor")" data-changedoctorpassword-url="@Url.Action("ChangeDoctorPassword", "Doctor")"></script>
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/DoctorAccounts.css" asp-append-version="true" />
 }
