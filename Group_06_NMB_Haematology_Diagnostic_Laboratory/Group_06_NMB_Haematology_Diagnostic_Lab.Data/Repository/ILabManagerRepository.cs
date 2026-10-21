@@ -173,5 +173,8 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
         Task<IEnumerable<TestsPerformedByCategory>> GetTestsPerformedByCategory(
             DateTime startDate,
             DateTime endDateExclusive);
+        Task<IEnumerable<TestsPerformedDetail>> GetTestsPerformedDetails(
+            DateTime startDate,
+            DateTime endDateExclusive);
     }
 }

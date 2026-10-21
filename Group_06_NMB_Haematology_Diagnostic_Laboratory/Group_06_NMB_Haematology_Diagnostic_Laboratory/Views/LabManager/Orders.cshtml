@@ -934,8 +934,8 @@ var consumables =
             </div>
 
 
-            <form asp-action="ReceiveOrder" method="post" id="receiveWholeOrderForm" class="mt-3"
-                  onsubmit="return confirm('Receive all outstanding items in full and increase stock?');" hidden>
+            <form asp-action="ReceiveOrder" method="post" id="receiveWholeOrderForm" class="mt-3" hidden>
+                @Html.AntiForgeryToken()
                 <input type="hidden" name="stockOrderId" id="receiveWholeOrderId" />
                 <button type="submit" class="btn btn-success w-100" id="receiveWholeOrderButton">Receive Whole Order</button>
                 <p class="small text-muted mt-2">Previously received or cancelled items are skipped.</p>
@@ -1551,6 +1551,29 @@ var consumables =
             if (form) form.action = '@Url.Action("CancelOrder", "LabManager")';
             bootstrap.Modal.getOrCreateInstance(document.getElementById("cancelReasonModal")).show();
         }
+
+        // Keep the order details open after a receipt or cancellation so the
+        // manager can immediately process another outstanding line.
+        document.addEventListener("submit", async event => {
+            const form = event.target;
+            if (!(form.matches("#receiveWholeOrderForm, #orderItemsBody form, #cancelReasonForm"))) return;
+            event.preventDefault();
+            if (form.id === "receiveWholeOrderForm" && !confirm("Receive all outstanding items in full and increase stock?")) return;
+            const submit = form.querySelector('[type="submit"]');
+            if (submit) submit.disabled = true;
+            try {
+                const response = await fetch(form.action, { method: "POST", body: new FormData(form), credentials: "same-origin" });
+                if (!response.ok) throw new Error("The order could not be updated.");
+                const cancelModal = document.getElementById("cancelReasonModal");
+                bootstrap.Modal.getInstance(cancelModal)?.hide();
+                const orderId = document.getElementById("detailsOrderNumber").dataset.orderId;
+                if (orderId) await viewOrder(orderId);
+            } catch (error) {
+                alert(error.message || "The order could not be updated. Refresh and try again.");
+            } finally {
+                if (submit) submit.disabled = false;
+            }
+        });
     </script>
 
 }

@@ -158,8 +158,6 @@
                     <th>Unit</th>
                     <th>Normal Range</th>
                     <th>Turnaround</th>
-                    <th>Consumable(s)</th>
-                    <th>Qty / Test</th>
                     <th>Technicians</th>
                     <th>Status</th>
                     <th>Actions</th>
@@ -206,41 +204,13 @@
                         </td>
 
                         <td>
-                            @testType.NormalRangeMin
+                            @testType.NormalRangeMin?.ToString("0.0")
                             -
-                            @testType.NormalRangeMax
+                            @testType.NormalRangeMax?.ToString("0.0")
                         </td>
 
                         <td>
                             @testType.TurnaroundTimeMinutes min
-                        </td>
-
-                        <td>
-                            @if (testType.TestTypeConsumable.Any())
-                            {
-                                foreach (var requirement in testType.TestTypeConsumable)
-                                {
-                                    <div>@(requirement.Consumable?.Name ?? "Unknown")</div>
-                                }
-                            }
-                            else
-                            {
-                                <span class="text-muted">None</span>
-                            }
-                        </td>
-
-                        <td>
-                            @if (testType.TestTypeConsumable.Any())
-                            {
-                                foreach (var requirement in testType.TestTypeConsumable)
-                                {
-                                    <div>@requirement.QuantityRequired</div>
-                                }
-                            }
-                            else
-                            {
-                                <span class="text-muted">-</span>
-                            }
                         </td>
 
                         <td>
@@ -362,8 +332,21 @@
 
                     </tr>
                     <tr id="test-type-details-@testType.TestTypeId" class="staff-detail-row" hidden>
-                        <td colspan="11" class="staff-detail-cell">
+                        <td colspan="9" class="staff-detail-cell">
                             <div class="staff-detail-content">
+                                <section>
+                                    <h6>Consumable requirements</h6>
+                                    @if (testType.TestTypeConsumable.Any())
+                                    {
+                                        <ul class="staff-detail-list">
+                                        @foreach (var requirement in testType.TestTypeConsumable.OrderBy(requirement => requirement.Consumable?.Name))
+                                        {
+                                            <li>@(requirement.Consumable?.Name ?? "Unknown"): @requirement.QuantityRequired per test</li>
+                                        }
+                                        </ul>
+                                    }
+                                    else { <p class="text-muted mb-0">No consumable requirements captured.</p> }
+                                </section>
                                 @if (additionalAssignedTechnicians.Any())
                                 {
                                     <section>
@@ -934,7 +917,7 @@
         .page-body:has(#testTypesTable) .section-header { flex-wrap:wrap; gap:16px; }
         .page-body:has(#testTypesTable) .section-header > div:last-child { flex-wrap:wrap; }
         .page-body:has(#testTypesTable) .table-wrap { width:100%; overflow-x:auto; }
-        #testTypesTable { width:100%; min-width:1250px; table-layout:auto; }
+        #testTypesTable { width:100%; min-width:1050px; table-layout:auto; }
         #testTypesTable th, #testTypesTable td { padding:12px 14px; vertical-align:middle; }
         #testTypesTable .td-actions { display:table-cell; min-width:285px; width:285px; white-space:normal; }
         #testTypesTable .td-actions .btn { display:inline-flex; align-items:center; white-space:nowrap; margin:3px 2px; }

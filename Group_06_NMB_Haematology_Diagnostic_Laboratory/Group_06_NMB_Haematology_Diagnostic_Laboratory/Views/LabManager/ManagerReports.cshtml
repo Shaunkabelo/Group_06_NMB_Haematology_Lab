@@ -11,7 +11,7 @@
     }
     <div class="report-card"><div class="report-card-content">
         <p class="panel-kicker">PDF reports</p>
-        <form asp-action="DownloadReport" method="get" id="reportForm">
+        <form asp-action="DownloadReport" method="get" id="reportForm" target="_blank">
             <div class="mb-3">
                 <label for="reportType" class="form-label">Report</label>
                 <select id="reportType" name="reportType" class="form-select" required>
@@ -37,10 +37,14 @@
                 <label><input type="checkbox" name="lowStockOnly" value="true" checked="@(ViewBag.LowStockOnly == true)" /> Only consumables near or below reorder level (within 10%)</label>
             </div>
             <p id="reportDateError" class="text-danger" role="alert"></p>
+<<<<<<< Updated upstream
             <div class="d-flex gap-2 flex-wrap">
                 <button class="btn btn-secondary" type="submit" formaction="@Url.Action("PreviewReport", "LabManager")">Preview report</button>
                 <button class="btn btn-primary" type="submit">Download PDF</button>
             </div>
+=======
+            <button class="btn btn-primary" type="submit">Preview / Print PDF</button>
+>>>>>>> Stashed changes
         </form>
     </div></div>
 </div>
@@ -60,7 +64,7 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("stockFilters").hidden = !stock;
     document.querySelector('[name="lowStockOnly"]').disabled = !stock;
     document.getElementById("reportDescription").textContent = {
-      tests: "Completed tests by category, total counts and percentage shares. Uses completion dates; both selected dates are included.",
+      tests: "Each completed test is listed under its category. Uses completion dates; both selected dates are included.",
       orders: "Orders placed in the selected period, grouped into a chronological list with supplier and current receipt status.",
       stock: "Current quantities and reorder levels by supplier. This is a snapshot of stock now; date ranges do not apply."
     }[type.value];

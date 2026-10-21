@@ -1250,5 +1250,12 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
                     StartDate = startDate,
                     EndDateExclusive = endDateExclusive
                 });
+
+        public Task<IEnumerable<TestsPerformedDetail>> GetTestsPerformedDetails(
+            DateTime startDate,
+            DateTime endDateExclusive) =>
+            _db.GetData<TestsPerformedDetail, object>(
+                "sp_ManagerReport_TestsPerformedDetail",
+                new { StartDate = startDate, EndDateExclusive = endDateExclusive });
 }
 }

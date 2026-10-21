@@ -1364,16 +1364,13 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
                 return RedirectToAction(nameof(ManagerReports), new { startDate = startDate.ToString("yyyy-MM-dd"), endDate = endDate.ToString("yyyy-MM-dd") });
             }
 
-            var categories = (await _repository.GetTestsPerformedByCategory(
+            var tests = (await _repository.GetTestsPerformedDetails(
                 startDate.Date,
                 endDate.Date.AddDays(1)))
-                .OrderByDescending(row => row.TotalTests)
-                .ThenBy(row => row.CategoryName)
                 .ToList();
 
-            var pdf = TestsPerformedPdf.Generate(categories, startDate.Date, endDate.Date, DateTimeOffset.UtcNow);
-            return File(pdf, "application/pdf",
-                $"tests-performed-{startDate:yyyyMMdd}-{endDate:yyyyMMdd}.pdf");
+            var pdf = TestsPerformedPdf.Generate(tests, startDate.Date, endDate.Date, DateTimeOffset.UtcNow);
+            return File(pdf, "application/pdf");
         }
 
         [HttpGet]
@@ -1425,7 +1422,7 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
                         x.QuantityOnHand.ToString("N0", culture), x.ReorderLevel.ToString("N0", culture),
                         x.QuantityOnHand <= x.ReorderLevel ? "At/below reorder" : x.QuantityOnHand <= x.ReorderLevel * 1.1m ? "Near reorder" : "Available" }), now);
             }
-            return File(pdf, "application/pdf", $"{reportType}-report-{now:yyyyMMdd-HHmm}.pdf");
+            return File(pdf, "application/pdf");
         }
         public IActionResult Profile() => RedirectToAction("Profile", "Account");
 

@@ -9,12 +9,13 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Services;
 public static class TestsPerformedPdf
 {
     private static readonly CultureInfo Culture = CultureInfo.GetCultureInfo("en-ZA");
-    public static byte[] Generate(IEnumerable<TestsPerformedByCategory> source, DateTime start,
+    public static byte[] Generate(IEnumerable<TestsPerformedDetail> source, DateTime start,
         DateTime end, DateTimeOffset generatedAt)
     {
-        var rows = source.OrderByDescending(x => x.TotalTests)
-            .ThenBy(x => x.CategoryName, StringComparer.OrdinalIgnoreCase).ToList();
-        var total = rows.Sum(x => (long)x.TotalTests);
+        var rows = source.OrderBy(x => x.CategoryName, StringComparer.OrdinalIgnoreCase)
+            .ThenBy(x => x.TestName, StringComparer.OrdinalIgnoreCase)
+            .ThenBy(x => x.CompletionDateTime).ToList();
+        var total = rows.Count;
         string Number(long value) => value.ToString("N0", Culture);
         var timestamp = generatedAt.ToOffset(TimeSpan.FromHours(2)).ToString("dd MMM yyyy, HH:mm", Culture) + " SAST";
         return Document.Create(document => document.Page(page =>
@@ -37,13 +38,13 @@ public static class TestsPerformedPdf
                 {
                     summary.Item().Text("Summary").FontSize(12).Bold();
                     summary.Item().Text($"Total tests performed: {Number(total)}");
-                    summary.Item().Text($"Categories with completed tests: {Number(rows.Count(x => x.TotalTests > 0))}");
+                    summary.Item().Text($"Categories with completed tests: {Number(rows.Select(x => x.CategoryName).Distinct(StringComparer.OrdinalIgnoreCase).Count())}");
                 });
                 content.Item().ShowEntire().Column(criteria =>
                 {
                     criteria.Item().Text("Scope and criteria").Bold();
-                    criteria.Item().Text("Counts completed laboratory tests using the recorded completion date. All categories are included; historical tests remain included when a category is inactive. Each completed test record is counted once.");
-                    criteria.Item().PaddingTop(4).Text("Order: highest test count first, then category name. Percentages show each category's share of the total.").FontSize(9);
+                    criteria.Item().Text("Lists every completed laboratory test using its recorded completion date. Historical tests remain included when a category is inactive.");
+                    criteria.Item().PaddingTop(4).Text("Rows are grouped by category, then ordered by test name and completion date.").FontSize(9);
                 });
                 if (rows.Count == 0)
                 {
@@ -54,26 +55,21 @@ public static class TestsPerformedPdf
                 {
                     content.Item().Table(table =>
                     {
-                        table.ColumnsDefinition(columns => {
-                            columns.RelativeColumn(4); columns.RelativeColumn(1.3f); columns.RelativeColumn(1.3f);
-                        });
+                        table.ColumnsDefinition(columns => { columns.RelativeColumn(2); columns.RelativeColumn(3); columns.RelativeColumn(2); });
                         table.Header(header =>
                         {
-                            header.Cell().ColumnSpan(3).PaddingBottom(7).Text("Category breakdown").FontSize(12).Bold();
                             header.Cell().Element(Heading).Text("Test category");
-                            header.Cell().Element(Heading).AlignRight().Text("Tests performed");
-                            header.Cell().Element(Heading).AlignRight().Text("Share of total");
+                            header.Cell().Element(Heading).Text("Test type");
+                            header.Cell().Element(Heading).Text("Completed on");
                         });
                         foreach (var row in rows)
                         {
                             table.Cell().Element(Cell).Text(row.CategoryName);
-                            table.Cell().Element(Cell).AlignRight().Text(Number(row.TotalTests));
-                            table.Cell().Element(Cell).AlignRight().Text(
-                                (total == 0 ? 0m : (decimal)row.TotalTests / total).ToString("P1", Culture));
+                            table.Cell().Element(Cell).Text(row.TestName);
+                            table.Cell().Element(Cell).Text(row.CompletionDateTime?.ToString("dd MMM yyyy", Culture) ?? "Not recorded");
                         }
                     });
                     content.Item().ShowEntire().AlignRight().Text($"Grand total: {Number(total)} tests").Bold();
-                    content.Item().Text("Percentages are rounded and may not add up to exactly 100%.").FontSize(8);
                 }
             });
             page.Footer().PaddingTop(12).BorderTop(1).BorderColor(Colors.Grey.Lighten2).PaddingTop(6).Row(footer =>

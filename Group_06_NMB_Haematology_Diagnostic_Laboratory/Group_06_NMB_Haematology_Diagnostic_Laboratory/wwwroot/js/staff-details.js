@@ -1,6 +1,14 @@
 (() => {
     const interactiveSelector = "button, a, input, select, textarea, label, form";
 
+    document.querySelectorAll("table").forEach(table => {
+        if (!table.querySelector(".staff-summary-row") || table.previousElementSibling?.classList.contains("expand-row-note")) return;
+        const note = document.createElement("p");
+        note.className = "expand-row-note";
+        note.textContent = "Click a row to view more details.";
+        table.before(note);
+    });
+
     const toggle = row => {
         const details = document.getElementById(row.dataset.detailsTarget);
         if (!details) return;
