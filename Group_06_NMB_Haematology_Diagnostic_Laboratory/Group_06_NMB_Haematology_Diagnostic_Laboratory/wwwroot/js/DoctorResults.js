@@ -1,10 +1,10 @@
-const assetScript = document.currentScript;
+const assetScript = document.currentScript || document.querySelector('script[src*="DoctorResults.js"]');
 // Loads real laboratory results from the DoctorController endpoint.
 
-    const resultsUrl = assetScript.dataset.getdoctorresultsUrl;
-    const resultPdfUrl = assetScript.dataset.downloadresultpdfUrl;
-    const releaseResultsUrl = assetScript.dataset.releaseresultsUrl;
-    const emailResultsUrl = assetScript.dataset.emailresultsUrl;
+    const resultsUrl = assetScript?.dataset.getdoctorresultsUrl;
+    const resultPdfUrl = assetScript?.dataset.downloadresultpdfUrl;
+    const releaseResultsUrl = assetScript?.dataset.releaseresultsUrl;
+    const emailResultsUrl = assetScript?.dataset.emailresultsUrl;
     let selectedDeliveryRequest = null;
     let selectedDeliveryIsRelease = true;
     let selectedDelivery = 'Results';
@@ -45,8 +45,8 @@ const assetScript = document.currentScript;
                     patientSaId: row.patientSaId,
                     createdAt: row.requestDate,
                     status: row.requestStatus,
-                    appointmentRequested: row.appointmentRequested === true,
-                    resultsEmailed: row.resultsEmailed === true,
+                    appointmentRequested: row.appointmentRequested === true || row.appointmentRequested === 'true',
+                    resultsEmailed: row.resultsEmailed === true || row.resultsEmailed === 'true',
                     urgency: row.urgency,
                     tests: []
                 });
@@ -69,9 +69,10 @@ const assetScript = document.currentScript;
 
     async function loadDoctorResults() {
         const list = document.getElementById('results-list');
+        if (!list || !resultsUrl) return;
         list.innerHTML = '<div class="card"><div class="card-body">Loading results...</div></div>';
         try {
-            const response = await fetch(resultsUrl, {
+            const response = await fetch(new URL(resultsUrl, document.baseURI), {
                 credentials: 'same-origin',
                 headers: { Accept: 'application/json' }
             });
@@ -125,7 +126,23 @@ const assetScript = document.currentScript;
             `).join('');
             const hasAbnormal = item.tests.some(t => t.abnormal);
             const expanded = expandedResultCards.has(item.id);
-            const released = String(item.status || '').toLowerCase() === 'released by doctor';
+            const requestStatus = String(item.status || '').trim().toLowerCase();
+            const released = requestStatus === 'released by doctor' || requestStatus === 'released';
+            const completed = requestStatus === 'completed';
+            const verified = item.tests.length > 0 && item.tests.every(test =>
+                String(test.verificationStatus || '').trim().toLowerCase() === 'verified');
+            const appointmentDisabled = released || !completed || !verified || item.appointmentRequested;
+            const appointmentTitle = released
+                ? 'Appointment requests are unavailable after results are released'
+                : item.appointmentRequested
+                    ? 'An appointment invitation has already been sent'
+                    : !completed
+                        ? 'Appointment requests are available for completed results'
+                        : !verified
+                            ? 'Appointment requests require every result to be verified'
+                            : '';
+            const pdfUrl = new URL(resultPdfUrl, document.baseURI);
+            pdfUrl.searchParams.set('id', String(item.id));
             return `
                 <div class="result-card ${expanded ? 'expanded' : ''}">
                     <div class="result-card-header">
@@ -141,11 +158,11 @@ const assetScript = document.currentScript;
                     ${hasAbnormal ? '<div class="result-warning">Contains abnormal results</div>' : ''}
                     <div class="result-card-body">${testsHtml}</div>
                     <div class="result-actions">
-                        <a class="btn btn-secondary" href="${resultPdfUrl}?id=${item.id}">Download results PDF</a>
+                        <a class="btn btn-download-results" href="${escapeHtml(pdfUrl.toString())}">Download results PDF</a>
                         ${released
-                            ? `<button class="btn btn-primary" type="button" onclick="openResultDelivery(${item.id}, false, 'Results')">Email results</button>
-                               <button class="btn btn-secondary" type="button" ${item.resultsEmailed ? 'disabled title="Results have already been emailed"' : ''} onclick="openResultDelivery(${item.id}, false, 'Appointment')">Request appointment</button>`
+                            ? `<button class="btn btn-primary" type="button" onclick="openResultDelivery(${item.id}, false, 'Results')">Email results</button>`
                             : `<button class="btn btn-primary" type="button" onclick="openResultDelivery(${item.id}, true, 'Results')">Release Results</button>`}
+                        <button class="btn btn-appointment" type="button" ${appointmentDisabled ? `disabled title="${appointmentTitle}"` : ''} onclick="openResultDelivery(${item.id}, false, 'Appointment')">Request appointment</button>
                     </div>
                 </div>
             `;
@@ -204,4 +221,8 @@ const assetScript = document.currentScript;
             message.textContent = error.message;
         } finally { button.disabled = false; }
     });
-    document.addEventListener('DOMContentLoaded', loadDoctorResults);
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', loadDoctorResults, { once: true });
+    } else {
+        loadDoctorResults();
+    }

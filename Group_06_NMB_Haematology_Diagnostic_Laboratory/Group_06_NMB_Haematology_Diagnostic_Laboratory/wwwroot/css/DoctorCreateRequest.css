@@ -162,6 +162,108 @@
     box-shadow: 0 20px 60px rgba(11, 25, 41, 0.24);
 }
 
+/* Keep the selected test card usable in production and narrow layouts. */
+.create-request-page .grid-2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+}
+
+.create-request-page .card {
+    min-width: 0;
+}
+
+.create-request-page .sample-summary-card {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.create-request-page .selected-tests-list {
+    display: grid;
+    min-width: 0;
+    gap: 12px;
+}
+
+.create-request-page .sample-summary-row {
+    display: grid;
+    min-width: 0;
+    gap: 12px;
+    padding: 14px;
+    border: 1px solid #E3E8F0;
+    border-radius: 10px;
+    background: #FFFFFF;
+}
+
+.create-request-page .sample-summary-meta {
+    display: flex;
+    min-width: 0;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.create-request-page .sample-summary-label {
+    overflow-wrap: anywhere;
+    color: #1A2A3A;
+    font-weight: 700;
+}
+
+.create-request-page .vial-chip {
+    display: inline-flex;
+    max-width: 100%;
+    align-items: center;
+    justify-content: center;
+    padding: 4px 10px;
+    border-radius: 999px;
+    color: #FFFFFF;
+    font-size: 12px;
+    font-weight: 700;
+    overflow-wrap: anywhere;
+}
+
+.create-request-page .sample-summary-barcode {
+    display: grid;
+    min-width: 0;
+    gap: 6px;
+}
+
+.create-request-page .sample-summary-barcode input {
+    width: 100%;
+    min-width: 0;
+}
+
+.create-request-page .summary-empty {
+    padding: 18px 12px;
+    border: 1px dashed #E3E8F0;
+    border-radius: 10px;
+    background: #FCFCFD;
+    color: #7A8CA0;
+    font-size: 14px;
+}
+
+.create-request-page .selected-tests-actions {
+    display: flex;
+    justify-content: flex-end;
+}
+
+@media (max-width: 860px) {
+    .create-request-page .grid-2 {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+@media (max-width: 480px) {
+    .create-request-page .sample-summary-meta {
+        flex-direction: column;
+    }
+
+    .create-request-page .selected-tests-actions,
+    .create-request-page .selected-tests-actions .btn {
+        width: 100%;
+    }
+}
+
 @media (max-width: 900px) {
     #patient-info-panel .info-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));

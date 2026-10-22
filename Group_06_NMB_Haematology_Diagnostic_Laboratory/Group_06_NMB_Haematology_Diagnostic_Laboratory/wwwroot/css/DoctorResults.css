@@ -210,6 +210,7 @@
     .result-actions {
         display: flex;
         flex-wrap: wrap;
+        justify-content: flex-end;
         gap: 10px;
         margin: 14px 24px 20px;
     }
@@ -225,6 +226,37 @@
         .result-actions .btn-secondary {
             border-color: #E3E8F0;
             color: #516174;
+        }
+
+        .result-actions .btn-appointment {
+            border: 1px solid #6638a5;
+            background: #6638a5;
+            color: #FFFFFF;
+        }
+
+        .result-actions .btn-appointment:hover:not(:disabled) {
+            border-color: #512b83;
+            background: #512b83;
+            color: #FFFFFF;
+        }
+
+        .result-actions .btn-appointment:disabled {
+            border-color: #9a78c7;
+            background: #9a78c7;
+            color: #FFFFFF;
+            opacity: 0.75;
+        }
+
+        .result-actions .btn-download-results {
+            border: 1px solid #9bd8bd;
+            background: #dff4e8;
+            color: #205c36;
+        }
+
+        .result-actions .btn-download-results:hover {
+            border-color: #73c49c;
+            background: #c9ecd8;
+            color: #174a2b;
         }
 
     .result-card-details[hidden] {
