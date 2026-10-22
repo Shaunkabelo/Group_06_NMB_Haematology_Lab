@@ -1,7 +1,7 @@
 .modal-overlay {
         position: fixed;
         inset: 0;
-        z-index: 1000;
+        z-index: 1200;
         display: none;
         align-items: center;
         justify-content: center;
@@ -11,16 +11,24 @@
     }
 
         .modal-overlay.is-open {
-            display: flex;
+            display: flex !important;
+            visibility: visible;
+            opacity: 1;
         }
 
-        .modal-overlay .modal {
+        #modal-cancel-request > .modal {
+            display: block !important;
+            position: relative;
+            z-index: 1;
             width: 100%;
             max-width: 560px;
             max-height: calc(100vh - 40px);
             overflow-y: auto;
             background: #fff;
+            color: #172B4D;
             border-radius: 12px;
+            opacity: 1;
+            visibility: visible;
         }
 
     .status-guide {
@@ -119,7 +127,7 @@
             padding: 10px;
         }
 
-            .modal-overlay .modal {
+            #modal-cancel-request > .modal {
                 max-height: calc(100vh - 20px);
             }
     }

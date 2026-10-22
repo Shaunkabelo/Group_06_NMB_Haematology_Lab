@@ -165,7 +165,8 @@ const assetScript = document.currentScript ||
                 const cancelButton = canCancel(request)
                     ? `<button type="button"
                                class="btn btn-danger"
-                               data-cancel-request="${id}">
+                               data-cancel-request="${id}"
+                               onclick="openCancelRequestModal(this.dataset.cancelRequest)">
                            Cancel
                        </button>`
                     : "";
@@ -241,7 +242,9 @@ const assetScript = document.currentScript ||
         }
 
         // Open the popup after checking the selected request.
-        function openCancelRequestModal(requestId) {
+        // Exposed for the dynamically rendered Cancel buttons. Calling this
+        // directly avoids relying on a bubbled table-click event.
+        window.openCancelRequestModal = function (requestId) {
             const request = requests.find(
                 item => Number(item.id) === Number(requestId)
             );
@@ -274,11 +277,14 @@ const assetScript = document.currentScript ||
             cancelledDateInput.value = new Date().toLocaleString();
 
             modal.classList.add("is-open");
+            // Keep the action visible even when a shared stylesheet contains
+            // another .modal-overlay display rule.
+            modal.style.display = "flex";
             modal.setAttribute("aria-hidden", "false");
             document.body.style.overflow = "hidden";
 
             reasonInput.focus();
-        }
+        };
 
         // Close the popup without changing the database.
         window.closeCancelRequestModal = function () {
@@ -287,6 +293,7 @@ const assetScript = document.currentScript ||
             }
 
             modal.classList.remove("is-open");
+            modal.style.display = "";
             modal.setAttribute("aria-hidden", "true");
             document.body.style.overflow = "";
 
@@ -367,6 +374,7 @@ const assetScript = document.currentScript ||
 
                 // Close the popup only after the server confirms success.
                 modal.classList.remove("is-open");
+                modal.style.display = "";
                 modal.setAttribute("aria-hidden", "true");
                 document.body.style.overflow = "";
 
@@ -394,14 +402,19 @@ const assetScript = document.currentScript ||
             }
         };
 
-        // Handle Cancel buttons added dynamically to the table.
-        tbody.addEventListener("click", event => {
+        // The rows are rendered after page load. Capture clicks at document
+        // level as a fallback if another table script intercepts bubbling.
+        document.addEventListener("click", event => {
             const button = event.target.closest("[data-cancel-request]");
 
-            if (button) {
-                openCancelRequestModal(button.dataset.cancelRequest);
+            if (!button) {
+                return;
             }
-        });
+
+            event.preventDefault();
+            event.stopPropagation();
+            window.openCancelRequestModal(button.dataset.cancelRequest);
+        }, true);
 
         // Search and filters update the displayed rows.
         searchInput.addEventListener("input", renderRequests);

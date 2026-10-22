@@ -1273,6 +1273,18 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 					message = "Request not found for this doctor."
 				});
 			}
+			catch (Microsoft.Data.SqlClient.SqlException ex) when (ex.Number is 207 or 208)
+			{
+				HttpContext.RequestServices
+					.GetRequiredService<ILogger<DoctorController>>()
+					.LogError(ex, "Doctor cancellation schema is incomplete for request {TestRequestId}.", input.TestRequestId);
+
+				return StatusCode(StatusCodes.Status503ServiceUnavailable, new
+				{
+					success = false,
+					message = "Cancellation is temporarily unavailable because the hosted database setup is incomplete. Contact the system administrator."
+				});
+			}
 			catch (Exception ex)
 			{
 				HttpContext.RequestServices

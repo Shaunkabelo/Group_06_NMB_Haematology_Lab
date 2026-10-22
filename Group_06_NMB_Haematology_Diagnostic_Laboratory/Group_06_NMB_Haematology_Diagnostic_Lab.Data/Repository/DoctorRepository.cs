@@ -301,21 +301,56 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
 			);
 		}
 
-		public Task<int> CancelTestRequestAsync(
+		public async Task<int> CancelTestRequestAsync(
 			int testRequestId,
 			int doctorId,
 			string cancelledBy,
 			string reason)
 		{
-			return _db.SaveDataAndReturn<int, object>(
-				"dbo.spTestRequest_CancelByDoctor",
-				new
+			try
+			{
+				return await _db.SaveDataAndReturn<int, object>(
+					"dbo.spTestRequest_CancelByDoctor",
+					new
+					{
+						TestRequestID = testRequestId,
+						DoctorID = doctorId,
+						CancelledBy = cancelledBy,
+						CancelReason = reason
+					});
+			}
+			catch (Microsoft.Data.SqlClient.SqlException ex) when (ex.Number == 2812)
+			{
+				// Some hosted environments have the schema but have not yet received
+				// the optional Doctor cancellation procedure. Keep the UI functional
+				// using the same parameterised ownership and state rules. Any existing
+				// cancellation trigger still runs because this is an UPDATE on TestRequest.
+				var affected = await _db.Save("""
+					UPDATE dbo.TestRequest
+					SET Status = N'Cancelled',
+					    CancelledBy = @CancelledBy,
+					    CancelledDate = SYSUTCDATETIME(),
+					    CancelReason = @CancelReason
+					WHERE TestRequestID = @TestRequestID
+					  AND DoctorID = @DoctorID
+					  AND Status IN (N'Submitted', N'Samples Received', N'Sample(s) received');
+					""", new
 				{
 					TestRequestID = testRequestId,
 					DoctorID = doctorId,
 					CancelledBy = cancelledBy,
 					CancelReason = reason
 				});
+				if (affected == 1)
+					return 1;
+
+				return await _db.ExecuteScalarAsync("""
+					SELECT CASE WHEN EXISTS (
+					    SELECT 1 FROM dbo.TestRequest
+					    WHERE TestRequestID = @TestRequestID AND DoctorID = @DoctorID
+					) THEN 2 ELSE 0 END;
+					""", new { TestRequestID = testRequestId, DoctorID = doctorId });
+			}
 		}
 
 		// ============================================================
