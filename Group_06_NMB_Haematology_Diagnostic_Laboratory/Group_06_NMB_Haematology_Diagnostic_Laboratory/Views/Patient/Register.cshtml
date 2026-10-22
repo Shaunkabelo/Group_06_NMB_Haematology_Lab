@@ -2,6 +2,8 @@
 @model PatientRegistrationViewModel
 @{
     ViewData["Title"] = "Patient Registration";
+    // Registration is public. The patient navigation is only for signed-in users.
+    Layout = "~/Views/Shared/_Layout.cshtml";
 }
 <link rel="stylesheet" href="~/css/patient-registration.css" asp-append-version="true" />
 <section class="patient-registration">

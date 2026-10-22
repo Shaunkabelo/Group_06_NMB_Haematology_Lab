@@ -1,6 +1,8 @@
 @model string
 @{
     ViewData["Title"] = "Account Created";
+    // Keep the post-registration confirmation public until the patient signs in.
+    Layout = "~/Views/Shared/_Layout.cshtml";
 }
 <link rel="stylesheet" href="~/css/patient-registration.css" asp-append-version="true" />
 <section class="patient-registration">

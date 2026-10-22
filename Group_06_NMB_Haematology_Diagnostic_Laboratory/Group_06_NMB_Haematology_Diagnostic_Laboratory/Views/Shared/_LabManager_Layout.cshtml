@@ -109,6 +109,16 @@
 
 
             <a asp-controller="LabManager"
+               asp-action="SampleTypes"
+               class="nav-item@(IsActive("SampleTypes"))">
+
+                <span>🧫</span>
+                Sample Types
+
+            </a>
+
+
+            <a asp-controller="LabManager"
                asp-action="TestTypes"
                class="nav-item@(IsActive("TestTypes"))">
 
@@ -118,14 +128,7 @@
             </a>
 
 
-            <a asp-controller="LabManager"
-               asp-action="SampleTypes"
-               class="nav-item@(IsActive("SampleTypes"))">
-
-                <span>🧫</span>
-                Sample Types
-
-            </a>
+           
 
 
             <!-- ================================================= -->
