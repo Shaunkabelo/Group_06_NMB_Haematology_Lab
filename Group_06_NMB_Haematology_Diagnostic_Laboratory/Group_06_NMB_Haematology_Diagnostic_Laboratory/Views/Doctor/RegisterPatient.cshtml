@@ -13,9 +13,9 @@
 
     <section class="card">
         <div class="card-body">
-            <div id="registration-message" class="auth-message registration-result" role="status" aria-live="polite" hidden></div>
+            <div id="registration-message" class="auth-message registration-result" role="alert" aria-live="assertive" data-administrator-contact-url="@Url.Action("GetAdministratorContact", "Doctor")" data-doctor-account="@(User.Identity?.Name ?? "Doctor")" hidden></div>
 
-            <form asp-controller="Doctor" asp-action="RegisterPatient" method="post" id="patientRegistrationForm">
+            <form asp-controller="Doctor" asp-action="RegisterPatient" method="post" id="patientRegistrationForm" novalidate>
                 @Html.AntiForgeryToken()
                 <div class="form-row">
                     <div class="form-group">

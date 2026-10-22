@@ -1,4 +1,5 @@
-const assetScript = document.currentScript;
+const assetScript = document.currentScript ||
+    document.querySelector('script[src*="DoctorCreateRequest.js"]');
 // =============================================================
     // BACKEND ROUTES
     // =============================================================
@@ -6,23 +7,34 @@ const assetScript = document.currentScript;
     const routes = {
 
         getPatients:
-            assetScript.dataset.getpatientsUrl,
+            assetScript?.dataset.getpatientsUrl,
 
         getPatient:
-            assetScript.dataset.getpatientUrl,
+            assetScript?.dataset.getpatientUrl,
 
         getTestCategories:
-            assetScript.dataset.gettestcategoriesUrl,
+            assetScript?.dataset.gettestcategoriesUrl,
 
         getTestsByCategory:
-            assetScript.dataset.gettestsbycategoryUrl,
+            assetScript?.dataset.gettestsbycategoryUrl,
 
         createTestRequest:
-            assetScript.dataset.createtestrequestUrl,
+            assetScript?.dataset.createtestrequestUrl,
 
         requests:
-            assetScript.dataset.requestsUrl
+            assetScript?.dataset.requestsUrl
     };
+
+    function routeUrl(route, query = {}) {
+        if (!route) {
+            throw new Error("A page endpoint is missing. Refresh the page and try again.");
+        }
+        const url = new URL(route, document.baseURI);
+        Object.entries(query).forEach(([key, value]) => {
+            if (value !== undefined && value !== null) url.searchParams.set(key, String(value));
+        });
+        return url.toString();
+    }
 
 
     // =============================================================
@@ -174,8 +186,7 @@ const assetScript = document.currentScript;
                     "click",
                     function () {
 
-                        window.location.href =
-                            routes.requests;
+                        window.location.assign(routeUrl(routes.requests));
 
                     }
                 );
@@ -205,9 +216,7 @@ const assetScript = document.currentScript;
         try {
 
             const response =
-                await fetch(
-                    routes.getPatients
-                );
+                await fetch(routeUrl(routes.getPatients), { credentials: "same-origin" });
 
 
             console.log(
@@ -349,10 +358,7 @@ const assetScript = document.currentScript;
 
         try {
 
-            const url =
-                `${routes.getPatient}` +
-                `?saIdNumber=` +
-                `${encodeURIComponent(saIdNumber)}`;
+            const url = routeUrl(routes.getPatient, { saIdNumber });
 
 
             console.log(
@@ -362,7 +368,7 @@ const assetScript = document.currentScript;
 
 
             const response =
-                await fetch(url);
+                await fetch(url, { credentials: "same-origin" });
             if (lookupVersion !== patientLookupVersion) return;
 
 
@@ -748,7 +754,14 @@ const assetScript = document.currentScript;
 
 
     function renderPatientHistory(patient) {
-        return window.loadDoctorPatientHistory(patient, 'patient-');
+        if (typeof window.loadDoctorPatientHistory === "function") {
+            return window.loadDoctorPatientHistory(patient, "patient-");
+        }
+
+        const history = document.getElementById("patient-request-history");
+        const results = document.getElementById("patient-consent-results");
+        if (history) history.textContent = "Patient history is temporarily unavailable.";
+        if (results) results.textContent = "Previous results are temporarily unavailable.";
     }
 
     function escapeHtml(value) {
@@ -1037,9 +1050,7 @@ const assetScript = document.currentScript;
         try {
 
             const response =
-                await fetch(
-                    routes.getTestCategories
-                );
+                await fetch(routeUrl(routes.getTestCategories), { credentials: "same-origin" });
 
 
             console.log(
@@ -1209,10 +1220,7 @@ const assetScript = document.currentScript;
 
         try {
 
-            const url =
-                `${routes.getTestsByCategory}` +
-                `?testCategoryId=` +
-                `${encodeURIComponent(categoryId)}`;
+            const url = routeUrl(routes.getTestsByCategory, { testCategoryId: categoryId });
 
 
             console.log(
@@ -1222,7 +1230,7 @@ const assetScript = document.currentScript;
 
 
             const response =
-                await fetch(url);
+                await fetch(url, { credentials: "same-origin" });
 
 
             console.log(
@@ -2090,7 +2098,7 @@ const assetScript = document.currentScript;
 
             const response =
                 await fetch(
-                    routes.createTestRequest,
+                    routeUrl(routes.createTestRequest),
                     {
 
                         method:
@@ -2105,6 +2113,7 @@ const assetScript = document.currentScript;
 
                         },
 
+                        credentials: "same-origin",
                         body:
                             JSON.stringify(
                                 requestData
@@ -2167,14 +2176,17 @@ const assetScript = document.currentScript;
                 .filter(Boolean)
                 .join(" ") || "Selected patient";
             const requestedTests = selectedTests.map(test => test.testName).join(", ");
-            await window.showDoctorMessage({
-                heading: 'Test request submitted',
-                text: `Request #${result.testRequestId} for ${patientName}. Tests: ${requestedTests}. Urgency: ${urgency}.`
-            });
+            const successMessage = `Request #${result.testRequestId} for ${patientName}. Tests: ${requestedTests}. Urgency: ${urgency}.`;
+            if (typeof window.showDoctorMessage === "function") {
+                await window.showDoctorMessage({
+                    heading: "Test request submitted",
+                    text: successMessage
+                });
+            } else {
+                alert(`Test request submitted. ${successMessage}`);
+            }
 
-
-            window.location.href =
-                routes.requests;
+            window.location.assign(routeUrl(routes.requests));
 
         }
         catch (error) {

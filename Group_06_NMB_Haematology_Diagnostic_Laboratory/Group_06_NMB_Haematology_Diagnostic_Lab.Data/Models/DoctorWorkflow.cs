@@ -13,6 +13,7 @@ public sealed class DoctorRequestRecord
     public string Email { get; set; } = "";
     public DateTime CreatedAt { get; set; }
     public string Status { get; set; } = "";
+    public bool AppointmentRequested { get; set; }
     public string Urgency { get; set; } = "";
     public string ClinicalNotes { get; set; } = "";
     public string TestNames { get; set; } = "";

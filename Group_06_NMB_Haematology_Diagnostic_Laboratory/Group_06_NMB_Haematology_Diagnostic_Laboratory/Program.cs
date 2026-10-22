@@ -17,6 +17,13 @@ if (string.IsNullOrWhiteSpace(sqlConnectionString))
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
+// DoctorRequests.js posts JSON and sends the form token in this header.
+// Registering the header name lets ValidateAntiForgeryToken validate that
+// request consistently in development and after deployment.
+builder.Services.AddAntiforgery(options =>
+{
+    options.HeaderName = "RequestVerificationToken";
+});
 builder.Services.AddScoped<AccountNavigation>();
 builder.Services.AddScoped<IAccountEmailSender, SmtpAccountEmailSender>();
 builder.Services.AddScoped<AccountCookieEvents>();

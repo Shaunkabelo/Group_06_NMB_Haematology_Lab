@@ -1,10 +1,14 @@
-const assetScript = document.currentScript;
-const detailUrl = assetScript.dataset.getrequestdataUrl;
+const assetScript = document.currentScript ||
+    document.querySelector('script[src*="DoctorRequestDetails.js"]');
+const detailUrl = assetScript?.dataset.getrequestdataUrl;
     async function loadDetails() {
-        const id = assetScript.dataset.requestId;
+        const id = assetScript?.dataset.requestId;
         const meta = document.getElementById('request-meta');
         try {
-            const response = await fetch(`${detailUrl}?id=${encodeURIComponent(id)}`, { cache: 'no-store' });
+            if (!detailUrl || !id) throw new Error('This request link is incomplete. Return to Test Requests and open it again.');
+            const url = new URL(detailUrl, document.baseURI);
+            url.searchParams.set('id', id);
+            const response = await fetch(url, { cache: 'no-store', credentials: 'same-origin', headers: { Accept: 'application/json' } });
             if (!response.ok || response.redirected) throw new Error('Request not found or access is no longer available.');
             const data = await response.json(), request = data.request;
             meta.textContent = `#${request.id} ? ${request.patientName} ? ${request.status}`;

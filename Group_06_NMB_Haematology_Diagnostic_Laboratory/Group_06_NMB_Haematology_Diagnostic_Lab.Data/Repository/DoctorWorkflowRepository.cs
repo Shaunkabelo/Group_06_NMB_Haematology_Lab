@@ -32,7 +32,10 @@ public sealed class DoctorWorkflowRepository(IConfiguration configuration) : IDo
         SELECT r.TestRequestID AS Id, r.PatientID, r.DoctorID,
             CONCAT(u.Name, ' ', u.Surname) AS PatientName, u.SA_ID_Number AS SaIdNumber, u.Email,
             COALESCE(NULLIF(LTRIM(RTRIM(CONCAT(du.Name, ' ', du.Surname))), ''), 'Not recorded') AS DoctorName,
-            r.RequestDate AS CreatedAt, r.Status, r.Urgency,
+            r.RequestDate AS CreatedAt, r.Status,
+            CAST(CASE WHEN EXISTS (SELECT 1 FROM dbo.DoctorEmailQueue aq
+                WHERE aq.TestRequestID = r.TestRequestID AND aq.Kind = 'AppointmentEmail') THEN 1 ELSE 0 END AS BIT) AS AppointmentRequested,
+            r.Urgency,
             CASE WHEN r.DoctorID = @DoctorID THEN r.ClinicalNotes ELSE NULL END AS ClinicalNotes,
             r.CancelReason AS CancellationReason, r.CancelledBy, r.CancelledDate,
             r.ReleaseDate, CASE WHEN r.DoctorID = @DoctorID THEN r.DoctorReleaseNote ELSE NULL END AS DoctorReleaseNote,

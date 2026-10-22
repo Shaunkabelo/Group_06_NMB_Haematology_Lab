@@ -28,6 +28,7 @@
                     <option value="In progress">In progress</option>
                     <option value="Completed">Completed</option>
                     <option value="Released by doctor">Released by doctor</option>
+                    <option value="Appointment">Appointment</option>
                     <option value="Cancelled">Cancelled</option>
                 </select>
 
@@ -81,6 +82,11 @@
                 <div>
                     <span class="badge green">Released by doctor</span>
                     <span>Doctor has made the results available to the patient.</span>
+                </div>
+
+                <div>
+                    <span class="badge appointment">Appointment</span>
+                    <span>Doctor has emailed the patient to arrange an appointment.</span>
                 </div>
 
                 <div>
@@ -214,6 +220,9 @@
     </div>
 </div>
 
+<form id="requests-antiforgery-form" hidden>
+    @Html.AntiForgeryToken()
+</form>
 
 
 @section Styles {
