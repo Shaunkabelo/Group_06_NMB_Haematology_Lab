@@ -54,7 +54,7 @@ const assetScript = document.currentScript;
             requests.get(id).tests.push({
                 testName: row.testName,
                 result: row.resultValue != null
-                    ? String(row.resultValue)
+                    ? `${Number(row.resultValue).toFixed(4)}${row.unitOfMeasurement ? ` ${row.unitOfMeasurement}` : ''}`
                     : (row.resultText || 'Not recorded'),
                 notes: row.notes || '',
                 abnormal: row.isAbnormal === true,
@@ -116,7 +116,6 @@ const assetScript = document.currentScript;
                     </div>
                     <div class="result-item-details">
                         <div class="result-item-detail"><strong>Result</strong>${escapeHtml(test.result)}</div>
-                        <div class="result-item-detail"><strong>Verification</strong>${escapeHtml(test.verificationStatus)}</div>
                         <div class="result-item-detail"><strong>Review</strong>${escapeHtml(test.reviewStatus)}</div>
                         <div class="result-item-detail"><strong>Captured</strong>${escapeHtml(formatDate(test.captureDateTime))}</div>
                     </div>
@@ -163,14 +162,24 @@ const assetScript = document.currentScript;
         selectedDeliveryRequest = id;
         selectedDeliveryIsRelease = release;
         selectedDelivery = delivery;
+        const request = resultRequests.find(item => item.id === id);
         document.getElementById('result-delivery-title').textContent = `${delivery === 'Appointment' ? 'Request appointment' : release ? 'Release results' : 'Email results'} · #${id}`;
         document.getElementById('result-delivery-description').textContent = delivery === 'Appointment'
             ? 'Send the patient an invitation to contact you and arrange an appointment.'
             : release
-                ? 'Release makes the verified results available to the patient. Only release after reviewing every result.'
-                : 'Email the released results PDF to the patient.';
-        document.getElementById('result-note').value = '';
+                ? 'Review and edit the patient email. The verified results PDF will be attached when you release them.'
+                : 'Review and edit the email before sending. The verified results PDF will be attached.';
+        const note = document.getElementById('result-note');
+        if (delivery === 'Results') {
+            const patientName = String(request?.patientName || 'Patient').trim();
+            note.value = `Dear ${patientName},\n\nPlease find attached the verified laboratory results for your test request #${id}.\n\nIf you have questions about the report or would like to discuss your results, please contact me to arrange an appointment.\n\nKind regards,\nYour doctor`;
+        } else {
+            const patientName = String(request?.patientName || 'Patient').trim();
+            note.value = `Dear ${patientName},\n\nI would like to arrange an appointment with you to discuss the results of your laboratory tests (request #${id}).\n\nPlease reply to this email or contact the laboratory to arrange a suitable date and time. If you have already made arrangements, you may disregard this message.\n\nKind regards,\nYour doctor`;
+        }
         document.getElementById('result-delivery-dialog').showModal();
+        note.focus();
+        note.setSelectionRange(note.value.length, note.value.length);
     }
     document.getElementById('result-delivery-form').addEventListener('submit', async event => {
         event.preventDefault();

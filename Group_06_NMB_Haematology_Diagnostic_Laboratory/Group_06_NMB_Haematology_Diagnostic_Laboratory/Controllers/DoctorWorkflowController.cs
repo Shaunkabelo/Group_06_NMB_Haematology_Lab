@@ -16,7 +16,9 @@ public partial class DoctorController
     private static object RequestView(DoctorRequestRecord r) => new
     {
         r.Id, r.PatientId, r.PatientName, r.SaIdNumber, r.CreatedAt,
-        status = r.Status.Equals("Sample(s) received", StringComparison.OrdinalIgnoreCase) ? "Samples Received" : r.Status,
+        status = r.Status.Equals("Released by doctor", StringComparison.OrdinalIgnoreCase) && r.AppointmentRequested
+            ? "Appointment"
+            : r.Status.Equals("Sample(s) received", StringComparison.OrdinalIgnoreCase) ? "Samples Received" : r.Status,
         r.Urgency,
         r.ClinicalNotes, r.CancellationReason, r.CancelledBy, r.CancelledDate,
         r.ReleaseDate, r.DoctorReleaseNote, r.ConsentGranted,
@@ -81,8 +83,9 @@ public partial class DoctorController
         var request = await _workflow.Request(doctorId.Value, input.TestRequestId);
         if (request == null || request.DoctorId != doctorId.Value) return NotFound();
         var subject = input.Delivery == "Results" ? "Your laboratory results" : "Please arrange an appointment";
-        var body = $"Laboratory request #{request.Id}\n\n{input.Note.Trim()}\n\n" +
-            (input.Delivery == "Results" ? "Your verified results are attached." : "Please contact your doctor to arrange a discussion of your results.");
+        var body = input.Delivery == "Results"
+            ? input.Note.Trim()
+            : $"Laboratory request #{request.Id}\n\n{input.Note.Trim()}\n\nPlease contact your doctor to arrange a discussion of your results.";
         var notification = _emailProtector.Protect(new DoctorEmail(request.Email, subject, body,
             doctorId.Value, AttachResults: input.Delivery == "Results"));
         var saved = release

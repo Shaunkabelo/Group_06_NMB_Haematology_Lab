@@ -28,8 +28,8 @@
 <dialog id="result-delivery-dialog">
     <form id="result-delivery-form">
         <h2 id="result-delivery-title">Release results</h2>
-        <label for="result-note">Note to patient</label>
-        <textarea id="result-note" class="form-control" maxlength="2000" required rows="5"></textarea>
+        <label for="result-note">Email message (editable)</label>
+        <textarea id="result-note" class="form-control" maxlength="2000" required rows="9" spellcheck="true"></textarea>
         <p id="result-delivery-description">Release makes the verified results available to the patient. Only release after reviewing every result.</p>
         <button type="button" class="btn btn-secondary" onclick="document.getElementById('result-delivery-dialog').close()">Cancel</button>
         <button id="result-send" type="submit" class="btn btn-primary">Confirm</button>

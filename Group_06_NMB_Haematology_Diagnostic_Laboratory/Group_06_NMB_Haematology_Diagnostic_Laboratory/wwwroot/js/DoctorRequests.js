@@ -1,12 +1,13 @@
-const assetScript = document.currentScript;
+const assetScript = document.currentScript ||
+    document.querySelector('script[src*="DoctorRequests.js"]');
 (() => {
         "use strict";
 
         // Generate URLs through ASP.NET routing so the application
         // continues working when deployed under a virtual directory.
-        const listUrl = assetScript.dataset.getrequestsUrl;
-        const detailsUrl = assetScript.dataset.requestdetailsUrl;
-        const cancelUrl = assetScript.dataset.canceltestrequestUrl;
+        const listUrl = assetScript?.dataset.getrequestsUrl;
+        const detailsUrl = assetScript?.dataset.requestdetailsUrl;
+        const cancelUrl = assetScript?.dataset.canceltestrequestUrl;
 
         const tbody = document.getElementById("requests-tbody");
         const modal = document.getElementById("modal-cancel-request");
@@ -34,6 +35,15 @@ const assetScript = document.currentScript;
                 '"': "&quot;",
                 "'": "&#39;"
             })[character]);
+        }
+
+        function getRequestDetailsUrl(requestId) {
+            if (!detailsUrl) {
+                throw new Error("The request details page is not configured.");
+            }
+            const url = new URL(detailsUrl, document.baseURI);
+            url.searchParams.set("id", String(requestId));
+            return url.toString();
         }
 
         function showMessage(message, isError = false) {
@@ -66,7 +76,10 @@ const assetScript = document.currentScript;
 
         // Must match the statuses accepted by the server-side procedure.
         function canCancel(request) {
-            const status = String(request.status ?? "").trim().toLowerCase();
+            const status = String(request.status ?? "")
+                .trim()
+                .toLowerCase()
+                .replace("sample(s) received", "samples received");
 
             return status === "submitted" ||
                    status === "samples received";
@@ -82,6 +95,8 @@ const assetScript = document.currentScript;
                 case "completed":
                 case "released by doctor":
                     return "green";
+                case "appointment":
+                    return "appointment";
                 case "cancelled":
                     return "red";
                 default:
@@ -112,6 +127,7 @@ const assetScript = document.currentScript;
                     request.id,
                     request.patientName,
                     request.status,
+                    request.cancellationReason,
                     request.urgency,
                     request.tests
                 ].join(" ").toLowerCase();
@@ -154,8 +170,11 @@ const assetScript = document.currentScript;
                        </button>`
                     : "";
 
-                const viewUrl =
-                    `${detailsUrl}?id=${encodeURIComponent(id)}`;
+                const viewUrl = getRequestDetailsUrl(id);
+                const status = String(request.status ?? "").trim();
+                const cancellationReason = status.toLowerCase() === "cancelled" && request.cancellationReason
+                    ? `<div class="request-cancellation-reason"><strong>Reason:</strong> ${escapeHtml(request.cancellationReason)}</div>`
+                    : "";
 
                 return `
                     <tr>
@@ -163,7 +182,7 @@ const assetScript = document.currentScript;
                         <td>${escapeHtml(request.patientName || "—")}</td>
                         <td>${escapeHtml(formatDate(request.requestDate ?? request.createdAt))}</td>
                         <td>${escapeHtml(request.urgency || "—")}</td>
-                        <td><span class="badge ${statusBadgeClass(request.status)}">${escapeHtml(request.status || "—")}</span></td>
+                        <td class="request-status-cell"><span class="badge ${statusBadgeClass(request.status)}">${escapeHtml(request.status || "—")}</span>${cancellationReason}</td>
                         <td>${escapeHtml(tests)}</td>
                         <td>
                             <a class="btn btn-primary"
@@ -312,7 +331,13 @@ const assetScript = document.currentScript;
             clearModalError();
 
             try {
-                const response = await fetch(cancelUrl, {
+                if (!cancelUrl) {
+                    throw new Error("The cancellation endpoint is not configured. Refresh the page and try again.");
+                }
+
+                // Resolve Razor-generated paths against the current app URL so
+                // deployments hosted beneath a virtual directory keep working.
+                const response = await fetch(new URL(cancelUrl, document.baseURI), {
                     method: "POST",
                     credentials: "same-origin",
                     headers: {
@@ -326,12 +351,17 @@ const assetScript = document.currentScript;
                     })
                 });
 
-                const result = await response.json().catch(() => ({}));
+                const contentType = response.headers.get("content-type") || "";
+                const result = contentType.includes("application/json")
+                    ? await response.json().catch(() => ({}))
+                    : {};
 
                 if (!response.ok || result.success !== true) {
                     throw new Error(
                         result.message ||
-                        `Cancellation failed (HTTP ${response.status}).`
+                        (response.redirected
+                            ? "Your session may have expired. Sign in again and retry."
+                            : `Cancellation failed (HTTP ${response.status}).`)
                     );
                 }
 

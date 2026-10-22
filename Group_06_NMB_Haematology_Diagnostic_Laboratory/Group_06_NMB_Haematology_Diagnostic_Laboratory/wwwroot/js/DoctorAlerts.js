@@ -130,7 +130,7 @@ const assetScript = document.currentScript;
         tbody.innerHTML = '<tr><td colspan="4">Loading results...</td></tr>';
 
         try {
-            const url = new URL(alertsUrl, window.location.origin);
+            const url = new URL(alertsUrl, document.baseURI);
             if (start) url.searchParams.set('startDate', start);
             if (end) url.searchParams.set('endDate', end);
             const response = await fetch(url, {
@@ -160,7 +160,7 @@ const assetScript = document.currentScript;
     function openAlertRequest(row) {
         const requestId = Number(row.dataset.requestId);
         if (!Number.isSafeInteger(requestId) || requestId <= 0) return;
-        const url = new URL(requestDetailsUrl, window.location.origin);
+        const url = new URL(requestDetailsUrl, document.baseURI);
         url.searchParams.set('id', String(requestId));
         window.location.assign(url.toString());
     }

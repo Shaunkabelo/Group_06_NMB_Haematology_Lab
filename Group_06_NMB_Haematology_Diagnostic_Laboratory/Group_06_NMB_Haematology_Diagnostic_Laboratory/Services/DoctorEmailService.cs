@@ -26,6 +26,9 @@ public sealed class DoctorEmailSender(IConfiguration configuration) : IDoctorEma
 {
     public async Task Send(DoctorEmail email, byte[]? pdf = null, CancellationToken cancellationToken = default)
     {
+        if (email.AttachResults && (pdf is null || pdf.Length == 0))
+            throw new InvalidOperationException("A results PDF is required for this patient email.");
+
         var settings = configuration.GetSection("Email");
         var host = settings["Host"];
         var from = settings["From"];
@@ -37,7 +40,8 @@ public sealed class DoctorEmailSender(IConfiguration configuration) : IDoctorEma
             client.Credentials = new NetworkCredential(settings["Username"], settings["Password"]);
         using var message = new MailMessage(from, email.Recipient)
         { Subject = email.Subject, Body = email.Body, IsBodyHtml = false };
-        if (pdf != null) message.Attachments.Add(new Attachment(new MemoryStream(pdf), "test-results.pdf", "application/pdf"));
+        if (email.AttachResults)
+            message.Attachments.Add(new Attachment(new MemoryStream(pdf!), "laboratory-results.pdf", "application/pdf"));
         using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         timeout.CancelAfter(TimeSpan.FromSeconds(20));
         await client.SendMailAsync(message, timeout.Token);

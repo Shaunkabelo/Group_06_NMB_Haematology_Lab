@@ -424,6 +424,19 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 			return View();
 		}
 
+		[HttpGet]
+		public async Task<IActionResult> GetAdministratorContact()
+		{
+			var email = await _authentication.GetActiveAdministratorEmail();
+			if (string.IsNullOrWhiteSpace(email))
+				return NotFound(new { message = "No active administrator email is configured." });
+
+			var doctor = await _doctorRepository.GetDoctorAccountAsync(GetLoggedInUserId());
+			var doctorName = string.Join(" ", new[] { doctor?.Name, doctor?.Surname }
+				.Where(name => !string.IsNullOrWhiteSpace(name)));
+			return Json(new { email, doctorName, doctorEmail = doctor?.Email });
+		}
+
 		[Authorize(Roles = "Doctor")]
 		[HttpPost]
 		[ValidateAntiForgeryToken]

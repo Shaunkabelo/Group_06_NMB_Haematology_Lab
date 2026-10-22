@@ -8,6 +8,97 @@ const registrationForm = document.getElementById('patientRegistrationForm');
         let addressSearchTimer = null;
         let addressSearchController = null;
         let lastAddressSearchAt = 0;
+        let registrationMessageVersion = 0;
+
+        const registrationFields = ['Name', 'Surname', 'SaIdNumber', 'DateOfBirth', 'Cellphone', 'Email', 'HomeAddress'];
+
+        function clearFieldErrors() {
+            registrationFields.forEach(name => {
+                const input = document.getElementById(name);
+                const message = registrationForm.querySelector(`[data-valmsg-for="${name}"]`);
+                input?.removeAttribute('aria-invalid');
+                if (message) {
+                    message.textContent = '';
+                    message.classList.remove('field-validation-error');
+                }
+            });
+        }
+
+        function setFieldErrors(errors = {}) {
+            clearFieldErrors();
+            Object.entries(errors).forEach(([key, values]) => {
+                const name = registrationFields.find(field => field.toLowerCase() === key.toLowerCase());
+                if (!name) return;
+                const input = document.getElementById(name);
+                const message = registrationForm.querySelector(`[data-valmsg-for="${name}"]`);
+                const text = Array.isArray(values) ? values.filter(Boolean).join(' ') : String(values || '');
+                if (input) input.setAttribute('aria-invalid', 'true');
+                if (message) {
+                    message.textContent = text;
+                    message.classList.add('field-validation-error');
+                }
+            });
+        }
+
+        function getClientValidationErrors() {
+            const errors = [];
+            registrationForm.querySelectorAll('input:not([type="hidden"]), select, textarea').forEach(input => {
+                if (input.disabled || input.checkValidity()) return;
+                const label = registrationForm.querySelector(`label[for="${input.id}"]`);
+                let message = 'Check this field and try again.';
+                if (input.validity.valueMissing) message = `${label?.textContent.replace('*', '').trim() || 'This field'} is required.`;
+                else if (input.id === 'SaIdNumber') message = 'Enter a valid 13-digit South African ID number.';
+                else if (input.id === 'Cellphone') message = 'Enter a valid 10-digit cellphone number.';
+                else if (input.type === 'email') message = 'Enter a valid email address.';
+                else if (input.type === 'date') message = 'Enter a valid date of birth.';
+                errors.push({ input, message });
+            });
+            return errors;
+        }
+
+        function buildAdministratorEmailLink(email, doctorName, doctorEmail) {
+            const fields = [
+                ['Name', 'Name'],
+                ['Surname', 'Surname'],
+                ['SaIdNumber', 'South African ID number'],
+                ['DateOfBirth', 'Date of birth'],
+                ['Cellphone', 'Cellphone number'],
+                ['Email', 'Email address'],
+                ['HomeAddress', 'Home address']
+            ];
+            const patientDetails = fields
+                .map(([id, label]) => [label, document.getElementById(id)?.value?.trim()])
+                .filter(([, value]) => value)
+                .map(([label, value]) => `${label}: ${value}`);
+            const doctorAccount = doctorName || registrationMessage.dataset.doctorAccount || 'Doctor';
+            const doctorSignature = doctorEmail ? `${doctorAccount} (${doctorEmail})` : doctorAccount;
+            const body = [
+                'Hello Administrator,',
+                '',
+                'Patient information entered:',
+                ...(patientDetails.length ? patientDetails : ['No patient details were entered.']),
+                '',
+                `Doctor: ${doctorSignature}`,
+                '',
+                'Assist in registering this patient.'
+            ].join('\n');
+
+            return `mailto:${email}?subject=${encodeURIComponent('Help with patient registration')}&body=${encodeURIComponent(body)}`;
+        }
+
+        async function getAdministratorContact() {
+            const endpoint = registrationMessage.dataset.administratorContactUrl;
+            if (!endpoint) return null;
+            const response = await fetch(new URL(endpoint, document.baseURI), {
+                credentials: 'same-origin',
+                headers: { Accept: 'application/json' }
+            });
+            if (!response.ok || response.redirected) return null;
+            const data = await response.json();
+            return typeof data.email === 'string' && data.email.trim()
+                ? { email: data.email.trim(), doctorName: data.doctorName, doctorEmail: data.doctorEmail }
+                : null;
+        }
 
         function formatAddress(properties) {
             return [
@@ -69,10 +160,19 @@ const registrationForm = document.getElementById('patientRegistrationForm');
 
         registrationForm.addEventListener('reset', function () {
             window.setTimeout(() => {
+                clearFieldErrors();
                 addressValueInput.value = '';
                 addressSearchInput.value = '';
                 closeAddressSuggestions();
                 addressStatus.textContent = 'Start typing to search South African addresses, then choose a suggestion.';
+            });
+        });
+
+        registrationForm.querySelector('button[type="reset"]')?.addEventListener('click', () => {
+            window.setTimeout(() => {
+                registrationMessageVersion++;
+                registrationMessage.hidden = true;
+                registrationMessage.replaceChildren();
             });
         });
 
@@ -118,14 +218,33 @@ const registrationForm = document.getElementById('patientRegistrationForm');
         });
 
         registrationForm.addEventListener('submit', async function (event) {
-            if (!addressValueInput.value.trim()) {
-                event.preventDefault();
-                addressStatus.textContent = 'Select a search result or enter the address manually.';
-                addressSearchInput.focus();
+            event.preventDefault();
+            clearFieldErrors();
+            registrationMessage.hidden = true;
+            registrationMessage.replaceChildren();
+
+            const clientErrors = getClientValidationErrors();
+            if (clientErrors.length) {
+                clientErrors.forEach(({ input, message }) => {
+                    const validationMessage = registrationForm.querySelector(`[data-valmsg-for="${input.id}"]`);
+                    input.setAttribute('aria-invalid', 'true');
+                    if (validationMessage) {
+                        validationMessage.textContent = message;
+                        validationMessage.classList.add('field-validation-error');
+                    }
+                });
+                await showRegistrationMessage('Please correct the highlighted fields.', false,
+                    clientErrors.map(error => error.message));
+                clientErrors[0].input.focus();
                 return;
             }
-            event.preventDefault();
-            registrationMessage.hidden = true;
+
+            if (!addressValueInput.value.trim()) {
+                addressStatus.textContent = 'Select a search result or enter the address manually.';
+                addressSearchInput.focus();
+                await showRegistrationMessage('Enter a home address before creating the account.', false);
+                return;
+            }
 
             createPatientButton.disabled = true;
             createPatientButton.textContent = 'Creating account...';
@@ -138,28 +257,32 @@ const registrationForm = document.getElementById('patientRegistrationForm');
                     headers: { 'Accept': 'application/json' }
                 });
 
-
+                if (response.redirected || response.status === 401 || response.status === 403) {
+                    throw new Error('Your session may have expired. Sign in again and retry the registration.');
+                }
 
                 let data;
                 try {
+                    if (!(response.headers.get('content-type') || '').includes('application/json')) {
+                        throw new Error('The server did not return a validation response. Refresh the page and try again.');
+                    }
                     data = await response.json();
-                } catch {
-                    throw new Error('The server returned an unexpected response. Please try again.');
+                } catch (error) {
+                    throw new Error(error.message || 'The server returned an unexpected response. Please try again.');
                 }
 
-                const validationMessages = data.errors
-                    ? Object.values(data.errors).flat().join(' ')
-                    : '';
-                const message = validationMessages || data.message ||
-                    'Registration could not be completed.';
+                const serverErrors = data.errors || {};
+                setFieldErrors(serverErrors);
+                const validationMessages = Object.values(serverErrors).flat().filter(Boolean);
+                const message = data.message || 'Registration could not be completed.';
                 const success = response.ok && data.success === true;
 
 
                 if (success) registrationForm.reset();
-                showRegistrationMessage(message, success);
+                await showRegistrationMessage(message, success, success ? [] : validationMessages);
             } catch (error) {
                 console.error('Patient registration error:', error);
-                showRegistrationMessage(
+                await showRegistrationMessage(
                     error.message || 'Unable to contact the server. Please try again.',
                     false);
             } finally {
@@ -172,6 +295,20 @@ const registrationForm = document.getElementById('patientRegistrationForm');
             input.addEventListener('input', function () {
                 this.value = this.value.replace(/\D/g, '')
                     .slice(0, Number(this.dataset.digits));
+                const message = registrationForm.querySelector(`[data-valmsg-for="${this.id}"]`);
+                if (message) message.textContent = '';
+                this.removeAttribute('aria-invalid');
+            });
+        });
+
+        registrationFields.forEach(name => {
+            document.getElementById(name)?.addEventListener('input', function () {
+                const message = registrationForm.querySelector(`[data-valmsg-for="${name}"]`);
+                if (message) {
+                    message.textContent = '';
+                    message.classList.remove('field-validation-error');
+                }
+                this.removeAttribute('aria-invalid');
             });
         });
 
@@ -215,9 +352,42 @@ const registrationForm = document.getElementById('patientRegistrationForm');
             dateOfBirthWasAutoFilled = true;
         });
 
-        function showRegistrationMessage(message, success) {
-            registrationMessage.textContent = message;
+        async function showRegistrationMessage(message, success, details = []) {
+            const messageVersion = ++registrationMessageVersion;
+            registrationMessage.replaceChildren();
+            const heading = document.createElement('p');
+            heading.className = 'registration-result-heading';
+            heading.textContent = message;
+            registrationMessage.appendChild(heading);
+            if (details.length) {
+                const list = document.createElement('ul');
+                details.forEach(detail => {
+                    const item = document.createElement('li');
+                    item.textContent = detail;
+                    list.appendChild(item);
+                });
+                registrationMessage.appendChild(list);
+            }
             registrationMessage.hidden = false;
             registrationMessage.classList.remove('success', 'error', 'info');
             registrationMessage.classList.add(success ? 'success' : 'error');
+
+            if (!success) {
+                try {
+                    const administratorContact = await getAdministratorContact();
+                    if (messageVersion !== registrationMessageVersion || registrationMessage.hidden) return;
+                    if (administratorContact) {
+                        const contact = document.createElement('a');
+                        contact.className = 'registration-admin-link';
+                        contact.textContent = 'Email the Administrator';
+                        contact.href = buildAdministratorEmailLink(
+                            administratorContact.email,
+                            administratorContact.doctorName,
+                            administratorContact.doctorEmail);
+                        registrationMessage.appendChild(contact);
+                    }
+                } catch (error) {
+                    console.error('Could not load administrator contact:', error);
+                }
+            }
         }

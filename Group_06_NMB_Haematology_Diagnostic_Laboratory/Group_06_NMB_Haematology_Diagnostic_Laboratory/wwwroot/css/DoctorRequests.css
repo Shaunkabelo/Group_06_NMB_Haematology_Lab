@@ -46,6 +46,34 @@
         font-size: 14px;
     }
 
+    #requests-tbody .request-status-cell {
+        min-width: 150px;
+        vertical-align: top;
+    }
+
+    .badge.appointment {
+        background: #efe7fb;
+        color: #6638a5;
+    }
+
+    .request-cancellation-reason {
+        max-width: 280px;
+        margin-top: 6px;
+        padding: 6px 8px;
+        border: 1px solid rgba(180, 35, 50, 0.18);
+        border-radius: 6px;
+        background: #fff0f1;
+        color: #8f2431;
+        font-size: 12px;
+        line-height: 1.45;
+        overflow-wrap: anywhere;
+        white-space: normal;
+    }
+
+    .request-cancellation-reason strong {
+        color: #7a1e28;
+    }
+
     .cancel-reason-note {
         display: block;
         color: #7A8CA0;
