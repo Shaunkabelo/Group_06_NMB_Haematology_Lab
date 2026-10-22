@@ -11,10 +11,9 @@ public class AuthenticationRepository(ISqlDataAccess db) : IAuthenticationReposi
         (await db.GetData<User, object>("sp_Auth_GetUserById", new { UserID = userId })).FirstOrDefault();
 
     public async Task<string?> GetActiveAdministratorEmail() =>
-        (await db.GetData<string, object>(
+        (await db.LoadData<string, object>(
             "SELECT TOP (1) Email FROM dbo.[User] WHERE Role = @Role AND IsActive = 1 ORDER BY UserID",
-            new { Role = "Admin" },
-            commandType: System.Data.CommandType.Text)).FirstOrDefault();
+            new { Role = "Admin" })).FirstOrDefault();
 
     public async Task<bool> UpdateProfile(int userId, Guid securityStamp, string name, string surname, string email, string? cellphone, string? homeAddress) =>
         (await db.GetData<bool, object>("sp_Auth_UpdateProfile", new {
