@@ -39,6 +39,8 @@ builder.Services.AddRateLimiter(options =>
 builder.Services.AddScoped<ISqlDataAccess, SqlDataAccess>();
 builder.Services.AddScoped<IDoctorRepository, DoctorRepository>();
 builder.Services.AddScoped<IDoctorWorkflowRepository, DoctorWorkflowRepository>();
+builder.Services.AddScoped<ILabManagerRepository, LabManagerRepository>();
+builder.Services.AddScoped<Group_06_NMB_Haematology_Diagnostic_Laboratory.Validation.StaffValidationFilter>();
 builder.Services.AddDataProtection();
 builder.Services.AddSingleton<DoctorEmailProtector>();
 builder.Services.AddScoped<IDoctorEmailSender, DoctorEmailSender>();
