@@ -93,7 +93,9 @@ public partial class DoctorController
             : await _workflow.EmailResults(doctorId.Value, request.Id, notification, input.Delivery == "Appointment");
         if (!saved) return Conflict(new { message = release
             ? "Release requires a completed request with every test independently verified. It may already be released."
-            : "Email requires a released request with verified results." });
+            : input.Delivery == "Appointment"
+                ? "An appointment invitation requires a completed request with every test independently verified."
+                : "Email requires a released request with verified results." });
         return Ok(new { success = true, message = release
             ? "Results released. Patient email queued for delivery."
             : input.Delivery == "Appointment"

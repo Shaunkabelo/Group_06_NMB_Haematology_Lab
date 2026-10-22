@@ -103,9 +103,9 @@ const assetScript = document.currentScript ||
     // PAGE LOAD
     // =============================================================
 
-    document.addEventListener(
-        "DOMContentLoaded",
-        async function () {
+    async function initializeCreateRequestPage() {
+            const selectedTestsList = document.getElementById("selected-tests-list");
+            if (!selectedTestsList) return;
 
             document.getElementById("patient-select").addEventListener("input", () => {
                 patientLookupVersion++;
@@ -191,8 +191,15 @@ const assetScript = document.currentScript ||
                     }
                 );
 
-        }
-    );
+    }
+
+    // The script normally loads at the end of the page. Checking readyState
+    // also covers published layouts or optimizers that load it after DOMContentLoaded.
+    if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", initializeCreateRequestPage, { once: true });
+    } else {
+        initializeCreateRequestPage();
+    }
 
 
     // =============================================================
@@ -1632,6 +1639,8 @@ const assetScript = document.currentScript ||
             document.getElementById(
                 "selected-tests-list"
             );
+
+        if (!list) return;
 
 
         list.innerHTML =

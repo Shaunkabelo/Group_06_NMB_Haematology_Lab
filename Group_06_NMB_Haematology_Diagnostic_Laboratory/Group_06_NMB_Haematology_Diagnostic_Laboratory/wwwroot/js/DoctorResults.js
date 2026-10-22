@@ -1,10 +1,10 @@
-const assetScript = document.currentScript;
+const assetScript = document.currentScript || document.querySelector('script[src*="DoctorResults.js"]');
 // Loads real laboratory results from the DoctorController endpoint.
 
-    const resultsUrl = assetScript.dataset.getdoctorresultsUrl;
-    const resultPdfUrl = assetScript.dataset.downloadresultpdfUrl;
-    const releaseResultsUrl = assetScript.dataset.releaseresultsUrl;
-    const emailResultsUrl = assetScript.dataset.emailresultsUrl;
+    const resultsUrl = assetScript?.dataset.getdoctorresultsUrl;
+    const resultPdfUrl = assetScript?.dataset.downloadresultpdfUrl;
+    const releaseResultsUrl = assetScript?.dataset.releaseresultsUrl;
+    const emailResultsUrl = assetScript?.dataset.emailresultsUrl;
     let selectedDeliveryRequest = null;
     let selectedDeliveryIsRelease = true;
     let selectedDelivery = 'Results';
@@ -27,10 +27,30 @@ const assetScript = document.currentScript;
     }
 
     function normalizeStatus(status, appointmentRequested = false) {
+        const value = String(status || '').trim().toLowerCase();
+        if (value === 'released' || value === 'released by doctor') return 'Released by doctor';
         if (appointmentRequested) return 'Appointment';
-        const value = String(status || '').toLowerCase();
-        if (value === 'released') return 'Released by doctor';
         return status || 'Unknown';
+    }
+
+    function statusBadgeClass(status, appointmentRequested = false) {
+        const value = String(status || '').trim().toLowerCase();
+        if (value === 'released' || value === 'released by doctor') return 'green';
+        if (appointmentRequested || value === 'appointment') return 'appointment';
+        switch (value) {
+            case 'submitted':
+            case 'in progress':
+                return 'blue';
+            case 'samples received':
+            case 'sample(s) received':
+                return 'amber';
+            case 'completed':
+                return 'green';
+            case 'cancelled':
+                return 'red';
+            default:
+                return 'gray';
+        }
     }
 
     function groupResults(rows) {
@@ -45,8 +65,8 @@ const assetScript = document.currentScript;
                     patientSaId: row.patientSaId,
                     createdAt: row.requestDate,
                     status: row.requestStatus,
-                    appointmentRequested: row.appointmentRequested === true,
-                    resultsEmailed: row.resultsEmailed === true,
+                    appointmentRequested: row.appointmentRequested === true || row.appointmentRequested === 'true',
+                    resultsEmailed: row.resultsEmailed === true || row.resultsEmailed === 'true',
                     urgency: row.urgency,
                     tests: []
                 });
@@ -69,9 +89,10 @@ const assetScript = document.currentScript;
 
     async function loadDoctorResults() {
         const list = document.getElementById('results-list');
+        if (!list || !resultsUrl) return;
         list.innerHTML = '<div class="card"><div class="card-body">Loading results...</div></div>';
         try {
-            const response = await fetch(resultsUrl, {
+            const response = await fetch(new URL(resultsUrl, document.baseURI), {
                 credentials: 'same-origin',
                 headers: { Accept: 'application/json' }
             });
@@ -125,7 +146,23 @@ const assetScript = document.currentScript;
             `).join('');
             const hasAbnormal = item.tests.some(t => t.abnormal);
             const expanded = expandedResultCards.has(item.id);
-            const released = String(item.status || '').toLowerCase() === 'released by doctor';
+            const requestStatus = String(item.status || '').trim().toLowerCase();
+            const released = requestStatus === 'released by doctor' || requestStatus === 'released';
+            const completed = requestStatus === 'completed';
+            const verified = item.tests.length > 0 && item.tests.every(test =>
+                String(test.verificationStatus || '').trim().toLowerCase() === 'verified');
+            const appointmentDisabled = released || !completed || !verified || item.appointmentRequested;
+            const appointmentTitle = released
+                ? 'Appointment requests are unavailable after results are released'
+                : item.appointmentRequested
+                    ? 'An appointment invitation has already been sent'
+                    : !completed
+                        ? 'Appointment requests are available for completed results'
+                        : !verified
+                            ? 'Appointment requests require every result to be verified'
+                            : '';
+            const pdfUrl = new URL(resultPdfUrl, document.baseURI);
+            pdfUrl.searchParams.set('id', String(item.id));
             return `
                 <div class="result-card ${expanded ? 'expanded' : ''}">
                     <div class="result-card-header">
@@ -134,18 +171,18 @@ const assetScript = document.currentScript;
                             <div class="result-meta">${escapeHtml(formatDate(item.createdAt))} · ${item.tests.length} test(s)</div>
                         </div>
                         <div class="result-status">
-                            <span class="badge ${item.appointmentRequested ? 'amber' : released ? 'green' : hasAbnormal ? 'amber' : 'blue'}">${escapeHtml(normalizeStatus(item.status, item.appointmentRequested))}</span>
+                            <span class="badge ${statusBadgeClass(item.status, item.appointmentRequested)}">${escapeHtml(normalizeStatus(item.status, item.appointmentRequested))}</span>
                             <button class="btn btn-secondary result-toggle" type="button" aria-expanded="${expanded}" onclick="toggleResultCard(${item.id})">${expanded ? 'Minimize' : 'Expand'}</button>
                         </div>
                     </div>
                     ${hasAbnormal ? '<div class="result-warning">Contains abnormal results</div>' : ''}
                     <div class="result-card-body">${testsHtml}</div>
                     <div class="result-actions">
-                        <a class="btn btn-secondary" href="${resultPdfUrl}?id=${item.id}">Download results PDF</a>
+                        <a class="btn btn-download-results" href="${escapeHtml(pdfUrl.toString())}">Download results PDF</a>
                         ${released
-                            ? `<button class="btn btn-primary" type="button" onclick="openResultDelivery(${item.id}, false, 'Results')">Email results</button>
-                               <button class="btn btn-secondary" type="button" ${item.resultsEmailed ? 'disabled title="Results have already been emailed"' : ''} onclick="openResultDelivery(${item.id}, false, 'Appointment')">Request appointment</button>`
+                            ? `<button class="btn btn-primary" type="button" onclick="openResultDelivery(${item.id}, false, 'Results')">Email results</button>`
                             : `<button class="btn btn-primary" type="button" onclick="openResultDelivery(${item.id}, true, 'Results')">Release Results</button>`}
+                        <button class="btn btn-appointment" type="button" ${appointmentDisabled ? `disabled title="${appointmentTitle}"` : ''} onclick="openResultDelivery(${item.id}, false, 'Appointment')">Request appointment</button>
                     </div>
                 </div>
             `;
@@ -204,4 +241,8 @@ const assetScript = document.currentScript;
             message.textContent = error.message;
         } finally { button.disabled = false; }
     });
-    document.addEventListener('DOMContentLoaded', loadDoctorResults);
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', loadDoctorResults, { once: true });
+    } else {
+        loadDoctorResults();
+    }

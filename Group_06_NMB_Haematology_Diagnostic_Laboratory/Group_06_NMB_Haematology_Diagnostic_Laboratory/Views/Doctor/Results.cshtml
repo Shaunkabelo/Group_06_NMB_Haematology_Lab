@@ -9,14 +9,14 @@
         <div class="section-sub">Manage result cards, request patient appointments, and release completed reports.</div>
     </div>
 
-    <div class="card" style="margin-bottom: 18px;">
-        <div class="card-body" style="padding: 16px 24px; display: flex; flex-wrap: wrap; gap: 16px; align-items: center;">
-            <div style="flex: 1 1 260px; min-width: 0;">
+    <div class="card results-toolbar">
+        <div class="card-body results-toolbar-body">
+            <div class="results-search-field">
                 <div class="form-label">Search</div>
                 <input id="results-search" class="form-control" type="search" placeholder="Search by patient name, patient ID, test type, or request ID..." oninput="renderResultCards()" />
             </div>
-            <div class="btn-row" style="justify-self: end; gap: 10px;">
-                <button class="btn btn-secondary" type="button" onclick="renderResultCards(true)">Refresh</button>
+            <div class="results-refresh-actions">
+                <button class="btn btn-primary" type="button" onclick="renderResultCards(true)">Refresh</button>
             </div>
         </div>
     </div>

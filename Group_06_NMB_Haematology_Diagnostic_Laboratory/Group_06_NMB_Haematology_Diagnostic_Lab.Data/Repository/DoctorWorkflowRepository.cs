@@ -244,7 +244,10 @@ public sealed class DoctorWorkflowRepository(IConfiguration configuration) : IDo
         using var db = Connection();
         await db.OpenAsync();
         using var tx = db.BeginTransaction(IsolationLevel.Serializable);
-        if (await db.ExecuteScalarAsync<int>(Ready + " AND r.Status = 'Released by doctor'", new { doctorId, requestId }, tx) != 1) return false;
+        var eligibleRequest = appointmentRequest
+            ? Ready
+            : Ready + " AND r.Status = 'Released by doctor'";
+        if (await db.ExecuteScalarAsync<int>(eligibleRequest, new { doctorId, requestId }, tx) != 1) return false;
         // Avoid duplicate clicks queuing the same request repeatedly while delivery is pending.
         var kind = appointmentRequest ? "AppointmentEmail" : "ResultEmail";
         if (await db.ExecuteScalarAsync<int>("SELECT COUNT(*) FROM dbo.DoctorEmailQueue WHERE TestRequestID = @requestId AND Kind = @kind AND SentAt IS NULL", new { requestId, kind }, tx) == 0)

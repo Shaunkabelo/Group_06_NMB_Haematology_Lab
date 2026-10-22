@@ -9,6 +9,37 @@
         background: rgba(11, 25, 41, 0.58);
     }
 
+.results-toolbar {
+    margin-bottom: 18px;
+}
+
+.results-toolbar-body {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 16px;
+    padding: 16px 24px;
+}
+
+.results-search-field {
+    flex: 1 1 260px;
+    min-width: 0;
+}
+
+.results-search-field .form-label {
+    margin-bottom: 6px;
+}
+
+.results-refresh-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-left: auto;
+}
+
+.results-refresh-actions .btn-primary {
+    background: #00C9A7;
+}
+
         .modal-overlay.is-open {
             display: flex;
         }
@@ -145,6 +176,11 @@
             padding: 6px 10px;
         }
 
+        .result-status .badge.appointment {
+            background: #efe7fb;
+            color: #6638a5;
+        }
+
     .result-warning {
         margin: 0 24px 18px;
         padding: 14px 18px;
@@ -210,6 +246,7 @@
     .result-actions {
         display: flex;
         flex-wrap: wrap;
+        justify-content: flex-end;
         gap: 10px;
         margin: 14px 24px 20px;
     }
@@ -225,6 +262,37 @@
         .result-actions .btn-secondary {
             border-color: #E3E8F0;
             color: #516174;
+        }
+
+        .result-actions .btn-appointment {
+            border: 1px solid #6638a5;
+            background: #6638a5;
+            color: #FFFFFF;
+        }
+
+        .result-actions .btn-appointment:hover:not(:disabled) {
+            border-color: #512b83;
+            background: #512b83;
+            color: #FFFFFF;
+        }
+
+        .result-actions .btn-appointment:disabled {
+            border-color: #9a78c7;
+            background: #9a78c7;
+            color: #FFFFFF;
+            opacity: 0.75;
+        }
+
+        .result-actions .btn-download-results {
+            border: 1px solid #9bd8bd;
+            background: #dff4e8;
+            color: #205c36;
+        }
+
+        .result-actions .btn-download-results:hover {
+            border-color: #73c49c;
+            background: #c9ecd8;
+            color: #174a2b;
         }
 
     .result-card-details[hidden] {
