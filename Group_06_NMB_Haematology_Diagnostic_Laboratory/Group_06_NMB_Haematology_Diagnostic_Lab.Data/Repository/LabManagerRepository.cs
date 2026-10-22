@@ -708,9 +708,11 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
                 }
             }
 
+            // The order screen is operational rather than alphabetical: a manager
+            // needs the most recently placed orders at the top of the table.
             return orders
-                .OrderBy(order => order.Supplier?.SupplierName ?? string.Empty, StringComparer.OrdinalIgnoreCase)
-                .ThenBy(order => order.OrderNumber ?? string.Empty, StringComparer.OrdinalIgnoreCase);
+                .OrderByDescending(order => order.OrderDate ?? DateTime.MinValue)
+                .ThenByDescending(order => order.StockOrderId);
         }
 
         public async Task<StockOrder?> GetStockOrderById(int stockOrderId)

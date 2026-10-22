@@ -118,7 +118,7 @@ var consumables =
                     <div class="d-flex justify-content-between">
                         <div>
                             <p class="text-muted mb-1">Total Orders</p>
-                            <h3 class="fw-bold mb-0">@totalOrders</h3>
+                            <h3 class="fw-bold mb-0" id="totalOrdersCount">@totalOrders</h3>
                         </div>
 
                         <div class="text-primary fs-3">
@@ -136,7 +136,7 @@ var consumables =
                     <div class="d-flex justify-content-between">
                         <div>
                             <p class="text-muted mb-1">Ordered</p>
-                            <h3 class="fw-bold mb-0">@orderedOrders</h3>
+                            <h3 class="fw-bold mb-0" id="orderedOrdersCount">@orderedOrders</h3>
                         </div>
 
                         <div class="text-warning fs-3">
@@ -154,7 +154,7 @@ var consumables =
                     <div class="d-flex justify-content-between">
                         <div>
                             <p class="text-muted mb-1">Partially Received</p>
-                            <h3 class="fw-bold mb-0">@partialOrders</h3>
+                            <h3 class="fw-bold mb-0" id="partialOrdersCount">@partialOrders</h3>
                         </div>
 
                         <div class="text-info fs-3">
@@ -313,7 +313,9 @@ var consumables =
                                     _ => "bg-secondary"
                                 };
 
-                                <tr class="stock-order-row">
+                                <tr class="stock-order-row"
+                                    data-order-id="@order.StockOrderId"
+                                    data-order-status="@(order.Status ?? string.Empty)">
 
                                     <td>
                                         <strong>
@@ -334,7 +336,7 @@ var consumables =
                                     </td>
 
                                     <td>
-                                        <span class="badge @statusClass">
+                                        <span class="badge @statusClass order-status-badge">
                                             @OrderStatusLabels.Display(order.Status)
                                         </span>
                                     </td>
@@ -1365,6 +1367,42 @@ var consumables =
             const labels = { "complete": "Received", "partially complete": "Partially Received", "received": "Received", "partially received": "Partially Received", "ordered": "Ordered", "cancelled": "Cancelled" };
             return labels[String(status).toLowerCase()] || "Unknown";
         }
+
+        function statusBadgeClass(status) {
+            return {
+                "ordered": "bg-warning text-dark",
+                "partially complete": "bg-info text-dark",
+                "complete": "bg-success",
+                "cancelled": "bg-danger"
+            }[String(status).toLowerCase()] || "bg-secondary";
+        }
+
+        function refreshOrderSummaryCards() {
+            const rows = Array.from(document.querySelectorAll("#ordersTable .stock-order-row"));
+            document.getElementById("totalOrdersCount").textContent = rows.length;
+            document.getElementById("orderedOrdersCount").textContent = rows.filter(row => row.dataset.orderStatus.toLowerCase() === "ordered").length;
+            document.getElementById("partialOrdersCount").textContent = rows.filter(row => row.dataset.orderStatus.toLowerCase() === "partially complete").length;
+        }
+
+        function refreshOrderListRow(order) {
+            const orderId = order.stockOrderId ?? order.stockOrderID;
+            const row = document.querySelector(`#ordersTable .stock-order-row[data-order-id="${orderId}"]`);
+            if (!row) return;
+
+            const status = String(order.status ?? "");
+            row.dataset.orderStatus = status;
+            const badge = row.querySelector(".order-status-badge");
+            if (badge) {
+                badge.className = `badge ${statusBadgeClass(status)} order-status-badge`;
+                badge.textContent = displayOrderStatus(status);
+            }
+
+            const items = order.stockOrderItem ?? order.stockOrderItems ?? [];
+            const itemCountCell = row.cells[3];
+            if (itemCountCell) itemCountCell.textContent = items.length;
+            refreshOrderSummaryCards();
+        }
+
         async function viewOrder(orderId) {
 
             const canvasElement =
@@ -1411,6 +1449,7 @@ var consumables =
                 }
 
                 const order = await response.json();
+                refreshOrderListRow(order);
 
                 // Populate basic fields
                 const detailsOrderNumber = document.getElementById("detailsOrderNumber");
@@ -1432,13 +1471,7 @@ var consumables =
                 // Status badge
                 const statusEl = document.getElementById("detailsStatus");
                 const status = (order.status ?? "").toString();
-                const statusClasses = {
-                    "ordered": "bg-warning text-dark",
-                    "partially complete": "bg-info text-dark",
-                    "complete": "bg-success",
-                    "cancelled": "bg-danger"
-                };
-                const statusClass = statusClasses[status.toLowerCase()] ?? "bg-secondary";
+                const statusClass = statusBadgeClass(status);
                 statusEl.innerHTML = `<span class="badge ${statusClass}">${displayOrderStatus(status)}</span>`;
 
                 // Items table

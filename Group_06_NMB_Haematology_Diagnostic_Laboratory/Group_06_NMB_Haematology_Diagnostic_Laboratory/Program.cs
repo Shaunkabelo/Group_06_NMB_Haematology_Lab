@@ -5,7 +5,11 @@ using Group_06_NMB_Haematology_Diagnostic_Lab.Data.DataAccess;
 using Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository;
 using Group_06_NMB_Haematology_Diagnostic_Lab.Data.Services;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using QuestPDF.Infrastructure;
 Dapper.DefaultTypeMap.MatchNamesWithUnderscores = true;
+// This academic project qualifies for QuestPDF's Community licence. The setting
+// must be made before any report is generated.
+QuestPDF.Settings.License = LicenseType.Community;
 
 var builder = WebApplication.CreateBuilder(args);
 
