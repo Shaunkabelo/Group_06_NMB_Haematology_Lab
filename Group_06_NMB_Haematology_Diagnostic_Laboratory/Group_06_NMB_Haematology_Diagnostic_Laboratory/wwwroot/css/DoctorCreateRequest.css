@@ -222,6 +222,13 @@
     overflow-wrap: anywhere;
 }
 
+.create-request-page .vial-chip.sample-color-lavender { background-color: #8e6bbf; }
+.create-request-page .vial-chip.sample-color-blue { background-color: #2878c8; }
+.create-request-page .vial-chip.sample-color-red { background-color: #d9485f; }
+.create-request-page .vial-chip.sample-color-green { background-color: #258f6b; }
+.create-request-page .vial-chip.sample-color-gray { background-color: #68727d; }
+.create-request-page .vial-chip.sample-color-gold { background-color: #b8860b; }
+
 .create-request-page .sample-summary-barcode {
     display: grid;
     min-width: 0;
