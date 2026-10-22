@@ -27,10 +27,30 @@ const assetScript = document.currentScript || document.querySelector('script[src
     }
 
     function normalizeStatus(status, appointmentRequested = false) {
+        const value = String(status || '').trim().toLowerCase();
+        if (value === 'released' || value === 'released by doctor') return 'Released by doctor';
         if (appointmentRequested) return 'Appointment';
-        const value = String(status || '').toLowerCase();
-        if (value === 'released') return 'Released by doctor';
         return status || 'Unknown';
+    }
+
+    function statusBadgeClass(status, appointmentRequested = false) {
+        const value = String(status || '').trim().toLowerCase();
+        if (value === 'released' || value === 'released by doctor') return 'green';
+        if (appointmentRequested || value === 'appointment') return 'appointment';
+        switch (value) {
+            case 'submitted':
+            case 'in progress':
+                return 'blue';
+            case 'samples received':
+            case 'sample(s) received':
+                return 'amber';
+            case 'completed':
+                return 'green';
+            case 'cancelled':
+                return 'red';
+            default:
+                return 'gray';
+        }
     }
 
     function groupResults(rows) {
@@ -151,7 +171,7 @@ const assetScript = document.currentScript || document.querySelector('script[src
                             <div class="result-meta">${escapeHtml(formatDate(item.createdAt))} · ${item.tests.length} test(s)</div>
                         </div>
                         <div class="result-status">
-                            <span class="badge ${item.appointmentRequested ? 'amber' : released ? 'green' : hasAbnormal ? 'amber' : 'blue'}">${escapeHtml(normalizeStatus(item.status, item.appointmentRequested))}</span>
+                            <span class="badge ${statusBadgeClass(item.status, item.appointmentRequested)}">${escapeHtml(normalizeStatus(item.status, item.appointmentRequested))}</span>
                             <button class="btn btn-secondary result-toggle" type="button" aria-expanded="${expanded}" onclick="toggleResultCard(${item.id})">${expanded ? 'Minimize' : 'Expand'}</button>
                         </div>
                     </div>

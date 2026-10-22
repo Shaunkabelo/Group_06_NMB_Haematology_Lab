@@ -145,6 +145,11 @@
             padding: 6px 10px;
         }
 
+        .result-status .badge.appointment {
+            background: #efe7fb;
+            color: #6638a5;
+        }
+
     .result-warning {
         margin: 0 24px 18px;
         padding: 14px 18px;
