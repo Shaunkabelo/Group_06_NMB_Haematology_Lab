@@ -11,7 +11,7 @@
 <div class="profile-grid">
     <section class="profile-card">
         <header><h2>Personal details</h2><span class="badge">Active @Model.Role</span></header>
-        <form asp-controller="Account" asp-action="Profile" method="post" class="card-body">
+        <form asp-controller="Account" asp-action="Profile" method="post" class="card-body" autocomplete="off">
             <div asp-validation-summary="All" class="error" role="alert"></div>
             <div class="field-row">
                 <div><label for="name">First name</label><input id="name" name="name" value="@Model.Name" maxlength="100" autocomplete="given-name" required /></div>
@@ -27,16 +27,16 @@
             <label for="homeAddress">Home address</label>
             <input id="homeAddress" name="homeAddress" value="@Model.HomeAddress" maxlength="255" autocomplete="street-address" />
             <label for="emailPassword">Current password (only when changing email)</label>
-            <div class="password-field"><input id="emailPassword" name="currentPassword" type="password" maxlength="128" autocomplete="current-password" /><button type="button" data-password-toggle="emailPassword" aria-label="Show password" aria-pressed="false"></button></div>
+            <div class="password-field"><input id="emailPassword" name="currentPassword" type="password" maxlength="128" autocomplete="off" readonly data-manual-password-entry /><button type="button" data-password-toggle="emailPassword" aria-label="Show password" aria-pressed="false"></button></div>
             <p class="hint">After saving, sign in again so your account details are refreshed on all devices.</p>
             <button class="primary" type="submit">Save personal details</button>
         </form>
     </section>
     <section class="profile-card">
         <header><h2>Security</h2></header>
-        <form asp-controller="Account" asp-action="ChangePassword" method="post" class="card-body">
+        <form asp-controller="Account" asp-action="ChangePassword" method="post" class="card-body" autocomplete="off">
             <label for="currentPassword">Current password</label>
-            <div class="password-field"><input id="currentPassword" name="currentPassword" type="password" maxlength="128" autocomplete="current-password" required /><button type="button" data-password-toggle="currentPassword" aria-label="Show password" aria-pressed="false"></button></div>
+            <div class="password-field"><input id="currentPassword" name="currentPassword" type="password" maxlength="128" autocomplete="off" readonly data-manual-password-entry required /><button type="button" data-password-toggle="currentPassword" aria-label="Show password" aria-pressed="false"></button></div>
             <partial name="_NewPasswordFields" />
             <button class="primary" type="submit">Change password</button>
             <p class="hint">Changing your password signs you out on all devices.</p>
