@@ -9,6 +9,37 @@
         background: rgba(11, 25, 41, 0.58);
     }
 
+.results-toolbar {
+    margin-bottom: 18px;
+}
+
+.results-toolbar-body {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 16px;
+    padding: 16px 24px;
+}
+
+.results-search-field {
+    flex: 1 1 260px;
+    min-width: 0;
+}
+
+.results-search-field .form-label {
+    margin-bottom: 6px;
+}
+
+.results-refresh-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-left: auto;
+}
+
+.results-refresh-actions .btn-primary {
+    background: #00C9A7;
+}
+
         .modal-overlay.is-open {
             display: flex;
         }
