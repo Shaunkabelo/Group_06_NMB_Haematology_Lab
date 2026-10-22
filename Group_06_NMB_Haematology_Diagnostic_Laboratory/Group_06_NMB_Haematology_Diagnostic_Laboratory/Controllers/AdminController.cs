@@ -41,10 +41,15 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
 
         private async Task LoadNavigationCounts()
         {
-            ViewBag.MedicalConditionCount = await _patientRepository.GetMedicalConditionCount();
-            ViewBag.AllergyCount = await _patientRepository.GetAllergyCount();
-            ViewBag.MedicationCount = await _patientRepository.GetMedicationCount();
-            ViewBag.UserCount = await _patientRepository.GetUserCount();
+            var conditionCount = _patientRepository.GetMedicalConditionCount();
+            var allergyCount = _patientRepository.GetAllergyCount();
+            var medicationCount = _patientRepository.GetMedicationCount();
+            var userCount = _patientRepository.GetUserCount();
+            await Task.WhenAll(conditionCount, allergyCount, medicationCount, userCount);
+            ViewBag.MedicalConditionCount = await conditionCount;
+            ViewBag.AllergyCount = await allergyCount;
+            ViewBag.MedicationCount = await medicationCount;
+            ViewBag.UserCount = await userCount;
         }
 
         public async Task<IActionResult> Dashboard()
@@ -137,6 +142,59 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
             await LoadNavigationCounts();
             var users = await _patientRepository.GetAllUsers();
             return View(users);
+        }
+
+        public async Task<IActionResult> AddressLookups()
+        {
+            await LoadNavigationCounts();
+            return View(await _patientRepository.GetAddressLookups());
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SaveAddressLookup([FromForm] AddressLookupSave model)
+        {
+            var type = model.LookupType?.Trim().ToLowerInvariant();
+            var name = model.Name?.Trim();
+            if (type is not ("province" or "towncity" or "suburb") || string.IsNullOrWhiteSpace(name) || name.Length > 100)
+                return BadRequest(new { message = "Enter a valid address name of up to 100 characters." });
+            if (type == "towncity" && (!model.ProvinceId.HasValue || model.ProvinceId <= 0))
+                return BadRequest(new { message = "Select a province for the town or city." });
+            if (type == "suburb")
+            {
+                if (!model.TownCityId.HasValue || model.TownCityId <= 0)
+                    return BadRequest(new { message = "Select a town or city for the suburb." });
+                if (string.IsNullOrWhiteSpace(model.AreaCode) || model.AreaCode.Trim().Length > 10 || !System.Text.RegularExpressions.Regex.IsMatch(model.AreaCode.Trim(), @"^[A-Za-z0-9 -]+$"))
+                    return BadRequest(new { message = "Enter a valid area code of up to 10 letters, numbers, spaces, or hyphens." });
+            }
+
+            try
+            {
+                await _patientRepository.SaveAddressLookup(model);
+                return Ok(new { message = model.Id.HasValue ? "Address lookup updated." : "Address lookup added." });
+            }
+            catch (Exception)
+            {
+                return BadRequest(new { message = "This address entry already exists or could not be saved. Review the details and try again." });
+            }
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SetAddressLookupStatus([FromForm] string lookupType, [FromForm] int id, [FromForm] bool isActive)
+        {
+            if (id <= 0 || lookupType?.Trim().ToLowerInvariant() is not ("province" or "towncity" or "suburb"))
+                return BadRequest(new { message = "Select a valid address entry." });
+
+            try
+            {
+                await _patientRepository.SetAddressLookupStatus(lookupType, id, isActive);
+                return Ok(new { message = isActive ? "Address entry activated." : "Address entry deactivated. Existing user addresses are preserved." });
+            }
+            catch (Exception)
+            {
+                return BadRequest(new { message = "The address entry status could not be updated. Please try again." });
+            }
         }
 
         public async Task<IActionResult> Profile()

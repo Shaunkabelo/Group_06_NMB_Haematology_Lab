@@ -20,6 +20,22 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
             _db = db;
         }
 
+        public async Task<LabManagerDashboardCounts> GetDashboardCounts()
+        {
+            const string sql = """
+                SELECT
+                    (SELECT COUNT(*) FROM dbo.TestType WHERE IsActive = 1) AS TestTypeCount,
+                    (SELECT COUNT(*) FROM dbo.TestCategory WHERE IsActive = 1) AS CategoryCount,
+                    (SELECT COUNT(*) FROM dbo.Doctor d INNER JOIN dbo.[User] u ON u.UserID = d.UserID WHERE u.IsActive = 1) AS DoctorCount,
+                    (SELECT COUNT(*) FROM dbo.LabTechnician lt INNER JOIN dbo.[User] u ON u.UserID = lt.UserID WHERE u.IsActive = 1) AS TechnicianCount,
+                    (SELECT COUNT(*) FROM dbo.LabManager lm INNER JOIN dbo.[User] u ON u.UserID = lm.UserID WHERE u.IsActive = 1) AS ManagerCount,
+                    (SELECT COUNT(*) FROM dbo.Consumable WHERE IsActive = 1) AS ConsumableCount;
+                """;
+
+            return await _db.QueryFirstOrDefaultAsync<LabManagerDashboardCounts>(sql)
+                ?? new LabManagerDashboardCounts();
+        }
+
         // The generated staff procedures return the legacy User columns.  Addresses
         // live in UserAddress, so attach them consistently after each staff lookup.
         private async Task PopulateStructuredAddresses(IEnumerable<User?> users)

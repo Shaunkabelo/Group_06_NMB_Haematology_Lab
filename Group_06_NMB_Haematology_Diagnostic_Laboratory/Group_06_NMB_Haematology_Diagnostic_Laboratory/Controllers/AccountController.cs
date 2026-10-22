@@ -158,31 +158,43 @@ public class AccountController(IAuthenticationRepository repository, PasswordRes
     public IActionResult ChangePassword() => View();
 
     [Authorize, HttpPost, ValidateAntiForgeryToken, EnableRateLimiting("account")]
-    public async Task<IActionResult> ChangePassword(string? currentPassword, string? password, string? confirmPassword)
+    public async Task<IActionResult> ChangePassword(string? currentPassword, string? password, string? confirmPassword,
+        bool returnToProfile = false, bool profilePasswordRequest = false)
     {
+        bool isProfileAjaxRequest = profilePasswordRequest &&
+            string.Equals(Request.Headers["X-Requested-With"], "XMLHttpRequest", StringComparison.OrdinalIgnoreCase);
+        IActionResult ProfilePasswordError()
+        {
+            var message = ModelState.Values.SelectMany(value => value.Errors)
+                .Select(error => error.ErrorMessage).FirstOrDefault() ?? "Your password could not be changed.";
+            return isProfileAjaxRequest ? BadRequest(new { message }) : View();
+        }
+
         ValidateNewPassword(password, confirmPassword);
         if (string.IsNullOrEmpty(currentPassword) || currentPassword.Length > 128)
             ModelState.AddModelError("", "Enter your current password.");
-        if (!ModelState.IsValid) return View();
+        if (!ModelState.IsValid) return isProfileAjaxRequest ? ProfilePasswordError() : returnToProfile ? await Profile() : View();
         var user = await repository.GetActiveUserById(int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!));
         if (user == null || !PasswordHelper.VerifyPassword(currentPassword!, user.PasswordHash, user.PasswordSalt))
         {
             ModelState.AddModelError("", "Your current password is incorrect.");
-            return View();
+            return isProfileAjaxRequest ? ProfilePasswordError() : returnToProfile ? await Profile() : View();
         }
         if (PasswordHelper.VerifyPassword(password!, user.PasswordHash, user.PasswordSalt))
         {
             ModelState.AddModelError("", "Choose a password different from your current password.");
-            return View();
+            return isProfileAjaxRequest ? ProfilePasswordError() : returnToProfile ? await Profile() : View();
         }
         var salt = PasswordHelper.GenerateSalt();
         if (!await repository.ChangePassword(user.UserId, user.PasswordHash, PasswordHelper.HashPassword(password!, salt), salt))
         {
             ModelState.AddModelError("", "Your account changed. Sign in again and retry.");
-            return View();
+            return isProfileAjaxRequest ? ProfilePasswordError() : returnToProfile ? await Profile() : View();
         }
         await HttpContext.SignOutAsync();
         TempData["AccountMessage"] = "Your password has been changed. Sign in again.";
+        if (isProfileAjaxRequest)
+            return Ok(new { redirectUrl = Url.Action(nameof(Login), "Account") });
         return RedirectToAction(nameof(Login));
     }
 

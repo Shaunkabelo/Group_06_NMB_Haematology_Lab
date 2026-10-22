@@ -101,5 +101,9 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
 
         Task ChangeAdminPassword(int adminId, AdminPasswordChange model);
 
+        Task<AddressLookupManagementViewModel> GetAddressLookups();
+        Task SaveAddressLookup(AddressLookupSave model);
+        Task SetAddressLookupStatus(string lookupType, int id, bool isActive);
+
     }
 }

@@ -65,16 +65,21 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
         [HttpGet]
         public async Task<IActionResult> Dashboard()
         {
+            var countsTask = _repository.GetDashboardCounts();
+            var lowStockTask = _repository.GetLowStockConsumables();
+            var ordersTask = _repository.GetStockOrders("All");
+            await Task.WhenAll(countsTask, lowStockTask, ordersTask);
+            var counts = await countsTask;
             var model = new DashboardViewModel
             {
-                TestTypeCount = (await _repository.GetTestTypes("Active")).Count(),
-                CategoryCount = (await _repository.GetTestCategories("Active")).Count(),
-                DoctorCount = (await _repository.GetDoctors("Active")).Count(),
-                TechnicianCount = (await _repository.GetTechnicians("Active")).Count(),
-                ManagerCount = (await _repository.GetManagers("Active")).Count(),
-                ConsumableCount = (await _repository.GetConsumables("Active")).Count(),
-                LowStockConsumables = (await _repository.GetLowStockConsumables()).ToList(),
-                RecentOrders = (await _repository.GetStockOrders("All"))
+                TestTypeCount = counts.TestTypeCount,
+                CategoryCount = counts.CategoryCount,
+                DoctorCount = counts.DoctorCount,
+                TechnicianCount = counts.TechnicianCount,
+                ManagerCount = counts.ManagerCount,
+                ConsumableCount = counts.ConsumableCount,
+                LowStockConsumables = (await lowStockTask).ToList(),
+                RecentOrders = (await ordersTask)
                     .OrderByDescending(order => order.OrderDate)
                     .Take(5)
                     .ToList()

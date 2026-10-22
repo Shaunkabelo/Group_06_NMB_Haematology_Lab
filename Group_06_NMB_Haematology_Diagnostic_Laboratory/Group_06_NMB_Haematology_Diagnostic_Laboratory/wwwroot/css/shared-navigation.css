@@ -81,3 +81,67 @@
     #shared-sidebar #shared-nav-toggle { display: none; }
     .shared-nav-tooltip { display: none; }
 }
+
+/* Phone layout: keep navigation compact, preserve comfortable touch targets,
+   and let dense data tables scroll inside their own container. */
+@media (max-width: 600px) {
+    html { -webkit-text-size-adjust: 100%; }
+    body { min-width: 0; overflow-x: hidden; }
+    .sidebar,
+    #shared-sidebar {
+        position: sticky !important;
+        top: 0;
+        z-index: 1040;
+        width: 100% !important;
+        min-height: 0 !important;
+        max-height: none !important;
+    }
+    .sidebar .sidebar-brand,
+    #shared-sidebar .sidebar-brand,
+    #shared-sidebar .shared-sidebar-brand { display: none; }
+    .sidebar .nav-menu,
+    #shared-sidebar .nav-menu {
+        display: flex;
+        gap: 4px;
+        overflow-x: auto;
+        overscroll-behavior-x: contain;
+        padding: 8px 10px;
+        scrollbar-width: thin;
+        -webkit-overflow-scrolling: touch;
+    }
+    .sidebar .sidebar-section,
+    #shared-sidebar .sidebar-section,
+    .sidebar .nav-badge,
+    #shared-sidebar .nav-badge { display: none !important; }
+    .sidebar .nav-item,
+    #shared-sidebar .nav-item {
+        flex: 0 0 auto;
+        min-height: 44px;
+        padding: 11px 12px;
+        border-radius: 8px;
+        white-space: nowrap;
+    }
+    .sidebar .sidebar-footer,
+    #shared-sidebar .sidebar-footer,
+    .account-sidebar-footer { display: none !important; }
+    .main-content { width: 100% !important; margin-left: 0 !important; min-width: 0; }
+    .topbar { min-height: auto; padding: 12px 14px; gap: 10px; }
+    .topbar .page-title { font-size: clamp(1.2rem, 6vw, 1.6rem); }
+    .topbar-actions { width: 100%; gap: 8px; }
+    .topbar-actions input,
+    .topbar-actions .search-control { flex: 1 1 160px; min-width: 0; }
+    .page-body,
+    .content-wrapper,
+    .container { min-width: 0; }
+    .form-row,
+    .grid-2,
+    .grid-3,
+    .stats-grid { grid-template-columns: minmax(0, 1fr) !important; }
+    input:not([type="checkbox"]):not([type="radio"]), select, textarea { font-size: 16px; }
+    .btn, button, .modal-close { min-height: 44px; }
+    table { display: block; width: 100%; max-width: 100%; overflow-x: auto; white-space: nowrap; -webkit-overflow-scrolling: touch; }
+    .modal-overlay { padding: 12px; align-items: flex-end; }
+    .modal { width: 100% !important; max-width: none !important; max-height: calc(100dvh - 24px); border-radius: 16px 16px 10px 10px; }
+    .modal-body { max-height: calc(100dvh - 180px); overflow-y: auto; }
+    .modal-footer { position: sticky; bottom: 0; background: inherit; }
+}

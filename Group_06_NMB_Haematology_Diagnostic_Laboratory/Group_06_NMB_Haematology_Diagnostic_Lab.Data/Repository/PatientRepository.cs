@@ -340,11 +340,7 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
 
         public async Task<int> GetAllergyCount()
         {
-            var allergies = await _db.GetData<AllergyOption, object>(
-                "dbo.sp_GetAllAllergiesByCategory",
-                new { });
-
-            return allergies.Count();
+            return await _db.ExecuteScalarAsync("SELECT COUNT(*) FROM dbo.Allergy;", new { });
         }
 
         public async Task<IEnumerable<AllergyOption>> GetAllAllergiesByCategory()
@@ -446,11 +442,7 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
 
         public async Task<int> GetMedicalConditionCount()
         {
-            var conditions = await _db.GetData<MedicalConditionWithPatientCount, object>(
-                "dbo.sp_GetMedicalConditionsWithPatientCount",
-                new { });
-
-            return conditions.Count();
+            return await _db.ExecuteScalarAsync("SELECT COUNT(*) FROM dbo.MedicalCondition;", new { });
         }
 
         public Task UpdateMedicalCondition(MedicalConditionUpdate model)
@@ -524,8 +516,7 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
 
         public async Task<int> GetMedicationCount()
         {
-            var medications = await GetMedicationsWithPatientCount();
-            return medications.Count();
+            return await _db.ExecuteScalarAsync("SELECT COUNT(*) FROM dbo.Medication;", new { });
         }
 
         public Task UpdateMedication(MedicationUpdate model)
@@ -815,8 +806,7 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
 
         public async Task<int> GetUserCount()
         {
-            var users = await GetAllUsers();
-            return users.Count();
+            return await _db.ExecuteScalarAsync("SELECT COUNT(*) FROM dbo.[User];", new { });
         }
 
         public Task<IEnumerable<ConsentDoctorOption>> GetActiveConsentDoctors() =>
@@ -918,6 +908,70 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
                 });
             if (result == null || result.Success != 1)
                 throw new InvalidOperationException("The password could not be updated. Please try again.");
+        }
+
+        // Address lookup administration deliberately uses parameterised direct SQL.
+        // These lookup tables do not have admin stored procedures and are shared by every user form.
+        public async Task<AddressLookupManagementViewModel> GetAddressLookups()
+        {
+            var provinces = await _db.LoadData<AddressLookupProvince, object>(
+                "SELECT ProvinceID, ProvinceName, IsActive FROM dbo.Province ORDER BY ProvinceName;", new { });
+            var towns = await _db.LoadData<AddressLookupTownCity, object>(
+                "SELECT t.TownCityID, t.ProvinceID, p.ProvinceName, t.TownCityName, t.IsActive FROM dbo.TownCity t INNER JOIN dbo.Province p ON p.ProvinceID = t.ProvinceID ORDER BY p.ProvinceName, t.TownCityName;", new { });
+            var suburbs = await _db.LoadData<AddressLookupSuburb, object>(
+                "SELECT s.SuburbID, s.TownCityID, p.ProvinceName, t.TownCityName, s.SuburbName, s.AreaCode, s.IsActive FROM dbo.Suburb s INNER JOIN dbo.TownCity t ON t.TownCityID = s.TownCityID INNER JOIN dbo.Province p ON p.ProvinceID = t.ProvinceID ORDER BY p.ProvinceName, t.TownCityName, s.SuburbName;", new { });
+
+            return new AddressLookupManagementViewModel
+            {
+                Provinces = provinces.ToList(),
+                TownCities = towns.ToList(),
+                Suburbs = suburbs.ToList()
+            };
+        }
+
+        public async Task SaveAddressLookup(AddressLookupSave model)
+        {
+            var type = model.LookupType.Trim().ToLowerInvariant();
+            var name = model.Name.Trim();
+            int affected;
+
+            switch (type)
+            {
+                case "province":
+                    affected = model.Id.HasValue
+                        ? await _db.Save("UPDATE dbo.Province SET ProvinceName = @Name WHERE ProvinceID = @Id;", new { model.Id, Name = name })
+                        : await _db.Save("INSERT dbo.Province (ProvinceName, IsActive) VALUES (@Name, 1);", new { Name = name });
+                    break;
+                case "towncity":
+                    affected = model.Id.HasValue
+                        ? await _db.Save("UPDATE dbo.TownCity SET ProvinceID = @ProvinceId, TownCityName = @Name WHERE TownCityID = @Id;", new { model.Id, model.ProvinceId, Name = name })
+                        : await _db.Save("INSERT dbo.TownCity (ProvinceID, TownCityName, IsActive) VALUES (@ProvinceId, @Name, 1);", new { model.ProvinceId, Name = name });
+                    break;
+                case "suburb":
+                    affected = model.Id.HasValue
+                        ? await _db.Save("UPDATE dbo.Suburb SET TownCityID = @TownCityId, SuburbName = @Name, AreaCode = @AreaCode WHERE SuburbID = @Id;", new { model.Id, model.TownCityId, Name = name, AreaCode = model.AreaCode!.Trim() })
+                        : await _db.Save("INSERT dbo.Suburb (TownCityID, SuburbName, AreaCode, IsActive) VALUES (@TownCityId, @Name, @AreaCode, 1);", new { model.TownCityId, Name = name, AreaCode = model.AreaCode!.Trim() });
+                    break;
+                default:
+                    throw new ArgumentException("Invalid address lookup type.", nameof(model));
+            }
+
+            if (affected != 1)
+                throw new InvalidOperationException("The selected address entry could not be found.");
+        }
+
+        public async Task SetAddressLookupStatus(string lookupType, int id, bool isActive)
+        {
+            var sql = lookupType.Trim().ToLowerInvariant() switch
+            {
+                "province" => "UPDATE dbo.Province SET IsActive = @IsActive WHERE ProvinceID = @Id;",
+                "towncity" => "UPDATE dbo.TownCity SET IsActive = @IsActive WHERE TownCityID = @Id;",
+                "suburb" => "UPDATE dbo.Suburb SET IsActive = @IsActive WHERE SuburbID = @Id;",
+                _ => throw new ArgumentException("Invalid address lookup type.", nameof(lookupType))
+            };
+
+            if (await _db.Save(sql, new { Id = id, IsActive = isActive }) != 1)
+                throw new InvalidOperationException("The selected address entry could not be found.");
         }
     }
     }

@@ -1,10 +1,22 @@
 @model Group_06_NMB_Haematology_Diagnostic_Lab.Data.Models.User
+@using System.Text.Json
+@using Group_06_NMB_Haematology_Diagnostic_Lab.Data.Models
 @{
     ViewData["Title"] = "My profile";
     var useManagerLayout = User.IsInRole("LabManager");
     Layout = useManagerLayout
         ? "~/Views/Shared/_LabManager_Layout.cshtml"
         : "~/Views/Shared/_UserAccountLayout.cshtml";
+    var provinces = (IEnumerable<Province>?)ViewBag.Provinces ?? Enumerable.Empty<Province>();
+    var structuredAddress = ViewBag.StructuredAddress as UserAddress;
+    var addressJson = JsonSerializer.Serialize(structuredAddress is null ? null : new
+    {
+        line1 = structuredAddress.AddressLine1,
+        line2 = structuredAddress.AddressLine2,
+        provinceId = structuredAddress.ProvinceId,
+        townCityId = structuredAddress.TownCityId,
+        suburbId = structuredAddress.SuburbId
+    });
 }
 <div class="shared-profile">
 <p class="subtitle">Manage your personal details, email address and password.</p>
@@ -24,8 +36,45 @@
                 <div><label for="cellphone">Cellphone</label><input id="cellphone" name="cellphone" value="@Model.Cellphone" type="tel" inputmode="numeric" pattern="[0-9]{10}" maxlength="10" autocomplete="tel" /></div>
                 <div><label for="dateOfBirth">Date of birth</label><input id="dateOfBirth" type="date" value="@Model.DateOfBirth?.ToString("yyyy-MM-dd")" readonly aria-readonly="true" /></div>
             </div>
-            <label for="homeAddress">Home address</label>
-            <input id="homeAddress" name="homeAddress" value="@Model.HomeAddress" maxlength="255" autocomplete="street-address" />
+            <div class="profile-address" data-structured-address data-address-prefix="profileAddress"
+                 data-towns-url="@Url.Action("AddressTownCities", "Account")"
+                 data-suburbs-url="@Url.Action("AddressSuburbs", "Account")">
+                <h3>Residential Address</h3>
+                <label for="profileAddress-AddressLine1">Address line 1</label>
+                <input id="profileAddress-AddressLine1" name="addressLine1" maxlength="150" required autocomplete="address-line1" />
+                <label for="profileAddress-AddressLine2">Address line 2 <span>(optional)</span></label>
+                <input id="profileAddress-AddressLine2" name="addressLine2" maxlength="150" autocomplete="address-line2" />
+                <div class="profile-address-location-row">
+                    <div>
+                        <label for="profileAddress-Province">Province</label>
+                        <select id="profileAddress-Province" required>
+                            <option value="">Select a province</option>
+                            @foreach (var province in provinces)
+                            {
+                                <option value="@province.ProvinceId">@province.ProvinceName</option>
+                            }
+                        </select>
+                    </div>
+                    <div>
+                        <label for="profileAddress-TownCity">Town / city</label>
+                        <select id="profileAddress-TownCity" required disabled>
+                            <option value="">Select a province first</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="profile-address-location-row">
+                    <div>
+                        <label for="profileAddress-Suburb">Suburb</label>
+                        <select id="profileAddress-Suburb" name="suburbId" required disabled>
+                            <option value="">Select a town / city first</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="profileAddress-AreaCode">Area code</label>
+                        <input id="profileAddress-AreaCode" readonly aria-readonly="true" />
+                    </div>
+                </div>
+            </div>
             <label for="emailPassword">Current password (only when changing email)</label>
             <div class="password-field"><input id="emailPassword" name="currentPassword" type="password" maxlength="128" autocomplete="off" readonly data-manual-password-entry /><button type="button" data-password-toggle="emailPassword" aria-label="Show password" aria-pressed="false"></button></div>
             <p class="hint">After saving, sign in again so your account details are refreshed on all devices.</p>
@@ -34,7 +83,10 @@
     </section>
     <section class="profile-card">
         <header><h2>Security</h2></header>
-        <form asp-controller="Account" asp-action="ChangePassword" method="post" class="card-body" autocomplete="off">
+        <form asp-controller="Account" asp-action="ChangePassword" method="post" class="card-body" autocomplete="off" id="profile-password-form">
+            <input type="hidden" name="returnToProfile" value="true" />
+            <input type="hidden" name="profilePasswordRequest" value="true" />
+            <div asp-validation-summary="All" class="error" role="alert" id="profile-password-error"></div>
             <label for="currentPassword">Current password</label>
             <div class="password-field"><input id="currentPassword" name="currentPassword" type="password" maxlength="128" autocomplete="off" readonly data-manual-password-entry required /><button type="button" data-password-toggle="currentPassword" aria-label="Show password" aria-pressed="false"></button></div>
             <partial name="_NewPasswordFields" />
@@ -54,4 +106,9 @@
         <script src="~/js/account.js" asp-append-version="true"></script>
     }
     <script src="~/js/DoctorProfile.js" asp-append-version="true" ></script>
+    <script src="~/js/structured-address.js" asp-append-version="true"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", () =>
+            window.structuredAddress.set("profileAddress", @Html.Raw(addressJson)));
+    </script>
 }

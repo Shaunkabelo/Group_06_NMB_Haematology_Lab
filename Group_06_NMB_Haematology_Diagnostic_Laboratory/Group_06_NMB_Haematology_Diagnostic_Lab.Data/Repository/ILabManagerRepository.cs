@@ -48,6 +48,7 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
         Task<IEnumerable<Province>> GetProvinces();
         Task<IEnumerable<TownCity>> GetTownCities(int provinceId);
         Task<IEnumerable<Suburb>> GetSuburbs(int townCityId);
+        Task<LabManagerDashboardCounts> GetDashboardCounts();
 
         // ============================ SUPPLIER ============================
 

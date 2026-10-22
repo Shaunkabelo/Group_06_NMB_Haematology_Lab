@@ -1,0 +1,157 @@
+@model Group_06_NMB_Haematology_Diagnostic_Lab.Data.Models.AddressLookupManagementViewModel
+@{
+    ViewData["Title"] = "Address Lookups";
+}
+
+<style>
+    .lookup-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:18px; align-items:start; }
+    .lookup-list { list-style:none; padding:0; margin:0; max-height:520px; overflow:auto; }
+    .lookup-row { display:flex; gap:10px; align-items:center; padding:11px 0; border-bottom:1px solid var(--border); }
+    .lookup-row:last-child { border-bottom:0; }
+    .lookup-info { flex:1; min-width:0; }
+    .lookup-name { font-weight:600; overflow-wrap:anywhere; }
+    .lookup-detail { display:block; font-size:.84rem; color:var(--muted); margin-top:3px; }
+    .lookup-actions { display:flex; flex-wrap:wrap; gap:6px; justify-content:flex-end; }
+    .lookup-empty { color:var(--muted); padding:8px 0; }
+    .lookup-modal .form-group { margin-bottom:15px; }
+    .lookup-modal select { width:100%; }
+    @@media (max-width:1120px) { .lookup-grid { grid-template-columns:1fr; } .lookup-list { max-height:none; } }
+    @@media (max-width:520px) { .lookup-row { align-items:flex-start; flex-direction:column; } .lookup-actions { justify-content:flex-start; } }
+</style>
+
+<div class="page-body">
+    <div class="section-header">
+        <div>
+            <div class="section-title">Address Lookup Management</div>
+            <div class="section-sub">Maintain the provinces, towns/cities, suburbs, and area codes available when users are added or updated.</div>
+        </div>
+    </div>
+
+    <div class="lookup-grid">
+        <section class="card">
+            <div class="card-header"><span class="card-title">Provinces</span><button class="btn btn-amber btn-sm" type="button" onclick="openLookupModal('province')">+ Add</button></div>
+            <div class="card-body"><ul class="lookup-list">
+                @if (!Model.Provinces.Any()) { <li class="lookup-empty">No provinces have been added.</li> }
+                @foreach (var item in Model.Provinces)
+                {
+                    <li class="lookup-row">
+                        <div class="lookup-info"><span class="lookup-name">@item.ProvinceName</span> @if (!item.IsActive) { <span class="badge badge-gray">Inactive</span> }</div>
+                        <div class="lookup-actions">
+                            <button class="btn btn-secondary btn-sm" type="button" data-id="@item.ProvinceId" data-name="@item.ProvinceName" onclick="editProvince(this)">Edit</button>
+                            <button class="btn btn-secondary btn-sm" type="button" data-id="@item.ProvinceId" data-active="@item.IsActive.ToString().ToLowerInvariant()" onclick="changeStatus('province', this)">@(item.IsActive ? "Disable" : "Enable")</button>
+                        </div>
+                    </li>
+                }
+            </ul></div>
+        </section>
+
+        <section class="card">
+            <div class="card-header"><span class="card-title">Towns / Cities</span><button class="btn btn-amber btn-sm" type="button" onclick="openLookupModal('towncity')">+ Add</button></div>
+            <div class="card-body"><ul class="lookup-list">
+                @if (!Model.TownCities.Any()) { <li class="lookup-empty">No towns or cities have been added.</li> }
+                @foreach (var item in Model.TownCities)
+                {
+                    <li class="lookup-row">
+                        <div class="lookup-info"><span class="lookup-name">@item.TownCityName</span> @if (!item.IsActive) { <span class="badge badge-gray">Inactive</span> }<span class="lookup-detail">@item.ProvinceName</span></div>
+                        <div class="lookup-actions">
+                            <button class="btn btn-secondary btn-sm" type="button" data-id="@item.TownCityId" data-name="@item.TownCityName" data-province-id="@item.ProvinceId" onclick="editTownCity(this)">Edit</button>
+                            <button class="btn btn-secondary btn-sm" type="button" data-id="@item.TownCityId" data-active="@item.IsActive.ToString().ToLowerInvariant()" onclick="changeStatus('towncity', this)">@(item.IsActive ? "Disable" : "Enable")</button>
+                        </div>
+                    </li>
+                }
+            </ul></div>
+        </section>
+
+        <section class="card">
+            <div class="card-header"><span class="card-title">Suburbs</span><button class="btn btn-amber btn-sm" type="button" onclick="openLookupModal('suburb')">+ Add</button></div>
+            <div class="card-body"><ul class="lookup-list">
+                @if (!Model.Suburbs.Any()) { <li class="lookup-empty">No suburbs have been added.</li> }
+                @foreach (var item in Model.Suburbs)
+                {
+                    <li class="lookup-row">
+                        <div class="lookup-info"><span class="lookup-name">@item.SuburbName</span> @if (!item.IsActive) { <span class="badge badge-gray">Inactive</span> }<span class="lookup-detail">@item.TownCityName, @item.ProvinceName · @item.AreaCode</span></div>
+                        <div class="lookup-actions">
+                            <button class="btn btn-secondary btn-sm" type="button" data-id="@item.SuburbId" data-name="@item.SuburbName" data-town-city-id="@item.TownCityId" data-area-code="@item.AreaCode" onclick="editSuburb(this)">Edit</button>
+                            <button class="btn btn-secondary btn-sm" type="button" data-id="@item.SuburbId" data-active="@item.IsActive.ToString().ToLowerInvariant()" onclick="changeStatus('suburb', this)">@(item.IsActive ? "Disable" : "Enable")</button>
+                        </div>
+                    </li>
+                }
+            </ul></div>
+        </section>
+    </div>
+</div>
+
+<div id="lookup-modal" class="modal-overlay lookup-modal" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="lookup-modal-title">
+        <div class="modal-header"><span class="modal-title" id="lookup-modal-title">Add Address Entry</span><button class="modal-close" type="button" onclick="closeLookupModal()" aria-label="Close">&#x2715;</button></div>
+        <div class="modal-body">
+            <div id="lookup-error" class="form-error" role="alert" hidden></div>
+            <div class="form-group"><label class="form-label" id="lookup-name-label" for="lookup-name">Name *</label><input id="lookup-name" class="form-control" maxlength="100" /></div>
+            <div class="form-group" id="province-group"><label class="form-label" for="lookup-province">Province *</label><select id="lookup-province" class="form-control"><option value="">Select a province</option>@foreach (var item in Model.Provinces) { <option value="@item.ProvinceId">@item.ProvinceName@(item.IsActive ? "" : " (inactive)")</option> }</select></div>
+            <div class="form-group" id="town-city-group"><label class="form-label" for="lookup-town-city">Town / city *</label><select id="lookup-town-city" class="form-control"><option value="">Select a town or city</option>@foreach (var item in Model.TownCities) { <option value="@item.TownCityId">@item.TownCityName — @item.ProvinceName@(item.IsActive ? "" : " (inactive)")</option> }</select></div>
+            <div class="form-group" id="area-code-group"><label class="form-label" for="lookup-area-code">Area code *</label><input id="lookup-area-code" class="form-control" maxlength="10" /></div>
+        </div>
+        <div class="modal-footer"><button class="btn btn-secondary" type="button" onclick="closeLookupModal()">Cancel</button><button class="btn btn-amber" type="button" onclick="saveLookup()">Save</button></div>
+    </div>
+</div>
+
+@Html.AntiForgeryToken()
+<div id="toast"></div>
+
+@section Scripts {
+<script>
+    let lookupType = '', lookupId = '';
+    const token = () => document.querySelector('input[name="__RequestVerificationToken"]').value;
+    const errorBox = () => document.getElementById('lookup-error');
+    function showError(message) { const box = errorBox(); box.textContent = message; box.hidden = false; }
+    function clearError() { const box = errorBox(); box.textContent = ''; box.hidden = true; }
+    function openLookupModal(type, values = {}) {
+        lookupType = type; lookupId = values.id || ''; clearError();
+        document.getElementById('lookup-name').value = values.name || '';
+        document.getElementById('lookup-province').value = values.provinceId || '';
+        document.getElementById('lookup-town-city').value = values.townCityId || '';
+        document.getElementById('lookup-area-code').value = values.areaCode || '';
+        document.getElementById('province-group').hidden = type !== 'towncity';
+        document.getElementById('town-city-group').hidden = type !== 'suburb';
+        document.getElementById('area-code-group').hidden = type !== 'suburb';
+        const labels = { province:'Province', towncity:'Town / city', suburb:'Suburb' };
+        document.getElementById('lookup-name-label').textContent = `${labels[type]} name *`;
+        document.getElementById('lookup-modal-title').textContent = lookupId ? `Edit ${labels[type]}` : `Add ${labels[type]}`;
+        const modal = document.getElementById('lookup-modal'); modal.classList.add('open'); modal.setAttribute('aria-hidden', 'false');
+        setTimeout(() => document.getElementById('lookup-name').focus(), 0);
+    }
+    function closeLookupModal() { const modal = document.getElementById('lookup-modal'); modal.classList.remove('open'); modal.setAttribute('aria-hidden', 'true'); }
+    function editProvince(button) { openLookupModal('province', { id:button.dataset.id, name:button.dataset.name }); }
+    function editTownCity(button) { openLookupModal('towncity', { id:button.dataset.id, name:button.dataset.name, provinceId:button.dataset.provinceId }); }
+    function editSuburb(button) { openLookupModal('suburb', { id:button.dataset.id, name:button.dataset.name, townCityId:button.dataset.townCityId, areaCode:button.dataset.areaCode }); }
+    async function saveLookup() {
+        const name = document.getElementById('lookup-name').value.trim();
+        const provinceId = document.getElementById('lookup-province').value;
+        const townCityId = document.getElementById('lookup-town-city').value;
+        const areaCode = document.getElementById('lookup-area-code').value.trim();
+        if (!name) { showError('Enter a name.'); return; }
+        if (lookupType === 'towncity' && !provinceId) { showError('Select a province.'); return; }
+        if (lookupType === 'suburb' && (!townCityId || !areaCode)) { showError('Select a town or city and enter an area code.'); return; }
+        const data = new URLSearchParams({ lookupType, id:lookupId, name, provinceId, townCityId, areaCode, __RequestVerificationToken:token() });
+        try {
+            const response = await fetch('@Url.Action("SaveAddressLookup", "Admin")', { method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded; charset=UTF-8'}, body:data });
+            const result = await response.json().catch(() => ({}));
+            if (!response.ok) { showError(result.message || 'The address entry could not be saved.'); return; }
+            toast(result.message); window.location.reload();
+        } catch { showError('Unable to reach the server to save the address entry.'); }
+    }
+    async function changeStatus(type, button) {
+        const isActive = button.dataset.active !== 'true';
+        const action = isActive ? 'enable' : 'disable';
+        if (!confirm(`Do you want to ${action} this address entry? Existing user addresses will be retained.`)) return;
+        button.disabled = true;
+        try {
+            const data = new URLSearchParams({ lookupType:type, id:button.dataset.id, isActive, __RequestVerificationToken:token() });
+            const response = await fetch('@Url.Action("SetAddressLookupStatus", "Admin")', { method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded; charset=UTF-8'}, body:data });
+            const result = await response.json().catch(() => ({}));
+            if (!response.ok) throw new Error(result.message || 'The address entry status could not be updated.');
+            toast(result.message); window.location.reload();
+        } catch (error) { toast(error.message || 'Unable to update the address entry.'); button.disabled = false; }
+    }
+</script>
+}

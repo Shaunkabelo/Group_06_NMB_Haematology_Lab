@@ -3,6 +3,7 @@ using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.RateLimiting;
 using Group_06_NMB_Haematology_Diagnostic_Lab.Data.DataAccess;
 using Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository;
+using Group_06_NMB_Haematology_Diagnostic_Lab.Data.Services;
 using Microsoft.AspNetCore.Authentication.Cookies;
 Dapper.DefaultTypeMap.MatchNamesWithUnderscores = true;
 
@@ -17,6 +18,7 @@ if (string.IsNullOrWhiteSpace(sqlConnectionString))
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
+builder.Services.AddHttpContextAccessor();
 // DoctorRequests.js posts JSON and sends the form token in this header.
 // Registering the header name lets ValidateAntiForgeryToken validate that
 // request consistently in development and after deployment.
@@ -26,6 +28,8 @@ builder.Services.AddAntiforgery(options =>
 });
 builder.Services.AddScoped<AccountNavigation>();
 builder.Services.AddScoped<IAccountEmailSender, SmtpAccountEmailSender>();
+builder.Services.AddScoped<IConsentEmailService, ConsentEmailService>();
+builder.Services.AddScoped<IRegistrationEmailService, RegistrationEmailService>();
 builder.Services.AddScoped<AccountCookieEvents>();
 builder.Services.AddSingleton<PasswordResetQueue>();
 builder.Services.AddHostedService<PasswordResetWorker>();
@@ -47,7 +51,18 @@ builder.Services.AddScoped<IDoctorEmailSender, DoctorEmailSender>();
 builder.Services.AddHostedService<DoctorEmailWorker>();
 builder.Services.AddScoped<IDoctorResultsRepository, DoctorResultsRepository>();
 builder.Services.AddScoped<IPatientRegistrationRepository, PatientRegistrationRepository>();
+builder.Services.AddScoped<IPatientRepository, PatientRepository>();
 builder.Services.AddScoped<IAuthenticationRepository, AuthenticationRepository>();
+builder.Services.AddScoped<IPasswordService, PasswordService>();
+builder.Services.AddScoped<ICurrentTechnicianService, CurrentTechnicianService>();
+builder.Services.AddScoped<ITechDashboardRepository, TechDashboardRepository>();
+builder.Services.AddScoped<ITechProcessRepository, TechProcessRepository>();
+builder.Services.AddScoped<ITechProfileRepository, TechProfileRepository>();
+builder.Services.AddScoped<ITechReceiveRepository, TechReceiveRepository>();
+builder.Services.AddScoped<ITechReportsRepository, TechReportsRepository>();
+builder.Services.AddScoped<ITechResultsRepository, TechResultsRepository>();
+builder.Services.AddScoped<ITechVerifyRepository, TechVerifyRepository>();
+builder.Services.AddScoped<ITestRequestRepository, TestRequestRepository>();
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
     {
