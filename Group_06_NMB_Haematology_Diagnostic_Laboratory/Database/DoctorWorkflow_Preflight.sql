@@ -13,6 +13,8 @@ SELECT ObjectName, ColumnName AS MissingColumn FROM @Required
 WHERE COL_LENGTH(N'dbo.' + QUOTENAME(ObjectName), ColumnName) IS NULL;
 IF EXISTS (SELECT 1 FROM @Required WHERE COL_LENGTH(N'dbo.' + QUOTENAME(ObjectName), ColumnName) IS NULL)
     THROW 51000, 'Doctor workflow schema is incomplete. Review the listed columns and deployment instructions.', 1;
+IF OBJECT_ID(N'dbo.DoctorEmailDelivery', N'U') IS NULL
+    THROW 51001, 'dbo.DoctorEmailDelivery is missing. Run DoctorWorkflow_Deploy.sql before publishing.', 1;
 
 SELECT p.name AS MissingAuthenticationProcedure FROM (VALUES
     ('sp_Auth_GetActiveUserByEmail'), ('sp_Auth_GetUserById'), ('sp_Auth_UpdateProfile'),

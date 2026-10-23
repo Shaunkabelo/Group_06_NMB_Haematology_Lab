@@ -34,7 +34,7 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
 	GetDoctorReportAsync(int doctorId,DateTime startDate,DateTime endDate);
 		Task<int> CancelTestRequestAsync(int testRequestId, int doctorId, string cancelledBy, string reason);
 	   //Task<bool> CancelRequestAsync(int testRequestId,int doctorId,string reason);
-		Task<IEnumerable<Patient>> GetPatientsAsync();
+		Task<IEnumerable<DoctorPatientListDto>> GetPatientsAsync();
 
 		Task<Patient?> GetPatientByIdAsync(int patientId);
 		Task<PatientDetailsDto?> GetPatientBySaIdAsync(string saIdNumber);

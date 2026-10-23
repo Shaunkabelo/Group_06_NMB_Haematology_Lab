@@ -1,5 +1,6 @@
 using System.Net;
 using System.Net.Mail;
+using System.Diagnostics;
 using System.Text.Json;
 using Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository;
 using Microsoft.AspNetCore.DataProtection;
@@ -22,7 +23,7 @@ public interface IDoctorEmailSender
     Task Send(DoctorEmail email, byte[]? pdf = null, CancellationToken cancellationToken = default);
 }
 
-public sealed class DoctorEmailSender(IConfiguration configuration) : IDoctorEmailSender
+public sealed class DoctorEmailSender(IConfiguration configuration, ILogger<DoctorEmailSender> logger) : IDoctorEmailSender
 {
     public async Task Send(DoctorEmail email, byte[]? pdf = null, CancellationToken cancellationToken = default)
     {
@@ -44,7 +45,18 @@ public sealed class DoctorEmailSender(IConfiguration configuration) : IDoctorEma
             message.Attachments.Add(new Attachment(new MemoryStream(pdf!), "laboratory-results.pdf", "application/pdf"));
         using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         timeout.CancelAfter(TimeSpan.FromSeconds(20));
-        await client.SendMailAsync(message, timeout.Token);
+        var stopwatch = Stopwatch.StartNew();
+        try
+        {
+            await client.SendMailAsync(message, timeout.Token);
+            logger.LogInformation("SMTP accepted doctor email in {ElapsedMilliseconds} ms.", stopwatch.ElapsedMilliseconds);
+        }
+        catch (Exception exception)
+        {
+            logger.LogWarning("SMTP send failed after {ElapsedMilliseconds} ms ({FailureType}).",
+                stopwatch.ElapsedMilliseconds, exception.GetType().Name);
+            throw;
+        }
     }
 }
 
@@ -92,10 +104,11 @@ public sealed class DoctorEmailWorker(IServiceScopeFactory scopes, ILogger<Docto
                         await scope.ServiceProvider.GetRequiredService<IDoctorEmailSender>().Send(email, attachment, stoppingToken);
                         await repository.CompleteEmail(job, true);
                     }
-                    catch (Exception) when (!stoppingToken.IsCancellationRequested)
+                    catch (Exception exception) when (!stoppingToken.IsCancellationRequested)
                     {
                         // Do not log addresses, medical details, or decrypted temporary passwords.
-                        logger.LogWarning("Doctor email job {JobId} failed on attempt {Attempt}; retrying in five minutes.", job.Id, job.Attempts);
+                        logger.LogWarning("Doctor email job {JobId} failed on attempt {Attempt} ({FailureType}); it will be retried with backoff.",
+                            job.Id, job.Attempts, exception.GetType().Name);
                         await repository.CompleteEmail(job, false);
                     }
                 }
@@ -104,7 +117,8 @@ public sealed class DoctorEmailWorker(IServiceScopeFactory scopes, ILogger<Docto
             {
                 logger.LogWarning("Doctor email queue is unavailable. Check database deployment and connectivity.");
             }
-            if (!processed) await Task.Delay(TimeSpan.FromSeconds(30), stoppingToken);
+            // Keep queue pickup responsive without continuously querying SQL Server.
+            if (!processed) await Task.Delay(TimeSpan.FromSeconds(2), stoppingToken);
         }
     }
 }

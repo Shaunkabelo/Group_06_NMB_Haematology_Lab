@@ -9,8 +9,9 @@
   No USE statement, GO separators, SQLCMD mode, external files or credentials required.
   Run in a fresh query window with no existing transaction, using a deployment account.
 
-  Combines DoctorWorkflow_EmailQueue.sql, spTestRequest_CancelByDoctor.sql and preflight.
-  Changes only the email queue/indexes/FK and the two named Doctor modules below.
+  Combines DoctorWorkflow_EmailQueue.sql, direct-email delivery tracking,
+  spTestRequest_CancelByDoctor.sql and preflight.
+  Changes the email queue/indexes/FK, direct-email delivery log and the two named Doctor modules below.
   Does not alter patient records, passwords, results, existing authentication modules,
   database permissions, or send emails. Existing queue rows are retained.
   Existing incompatible objects cause an error; they are never dropped/recreated.
@@ -217,6 +218,27 @@ BEGIN TRY
         EXEC sys.sp_executesql N'CREATE UNIQUE INDEX UX_DoctorEmailQueue_Cancellation
             ON dbo.DoctorEmailQueue(TestRequestID) WHERE Kind = N''Cancellation'';';
 
+    IF OBJECT_ID(N'dbo.DoctorEmailDelivery') IS NOT NULL
+       AND OBJECT_ID(N'dbo.DoctorEmailDelivery', N'U') IS NULL
+        THROW 51021, 'dbo.DoctorEmailDelivery exists but is not a user table. Review it manually.', 1;
+    IF OBJECT_ID(N'dbo.DoctorEmailDelivery', N'U') IS NULL
+        EXEC sys.sp_executesql N'
+            CREATE TABLE dbo.DoctorEmailDelivery
+            (
+                Id BIGINT IDENTITY(1,1) NOT NULL CONSTRAINT PK_DoctorEmailDelivery PRIMARY KEY,
+                TestRequestID INT NOT NULL,
+                DoctorID INT NOT NULL,
+                Kind NVARCHAR(30) NOT NULL,
+                SentAt DATETIME2 NOT NULL CONSTRAINT DF_DoctorEmailDelivery_SentAt DEFAULT SYSUTCDATETIME(),
+                CONSTRAINT CK_DoctorEmailDelivery_Kind CHECK (Kind IN (N''AppointmentEmail'', N''ResultEmail'')),
+                CONSTRAINT FK_DoctorEmailDelivery_TestRequest FOREIGN KEY(TestRequestID) REFERENCES dbo.TestRequest(TestRequestID),
+                CONSTRAINT FK_DoctorEmailDelivery_Doctor FOREIGN KEY(DoctorID) REFERENCES dbo.Doctor(DoctorID)
+            );';
+    DECLARE @DeliveryId INT = OBJECT_ID(N'dbo.DoctorEmailDelivery', N'U');
+    IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE object_id = @DeliveryId AND name = N'IX_DoctorEmailDelivery_RequestKind')
+        EXEC sys.sp_executesql N'CREATE INDEX IX_DoctorEmailDelivery_RequestKind
+            ON dbo.DoctorEmailDelivery(TestRequestID, Kind, SentAt);';
+
     EXEC sys.sp_executesql N'
 CREATE OR ALTER TRIGGER dbo.tr_DoctorNotifyCancellation ON dbo.TestRequest
 AFTER UPDATE AS
@@ -266,6 +288,7 @@ END;';
     IF OBJECT_ID(N'dbo.spTestRequest_CancelByDoctor', N'P') IS NULL
         OR NOT EXISTS (SELECT 1 FROM sys.triggers WHERE object_id = OBJECT_ID(N'dbo.tr_DoctorNotifyCancellation')
             AND parent_id = OBJECT_ID(N'dbo.TestRequest') AND is_disabled = 0)
+        OR OBJECT_ID(N'dbo.DoctorEmailDelivery', N'U') IS NULL
         THROW 51019, 'Final procedure/trigger verification failed. Deployment will be rolled back.', 1;
 
     COMMIT TRANSACTION;

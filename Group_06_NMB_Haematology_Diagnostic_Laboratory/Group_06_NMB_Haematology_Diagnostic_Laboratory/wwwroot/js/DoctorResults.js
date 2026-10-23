@@ -152,6 +152,12 @@ const assetScript = document.currentScript || document.querySelector('script[src
             const verified = item.tests.length > 0 && item.tests.every(test =>
                 String(test.verificationStatus || '').trim().toLowerCase() === 'verified');
             const appointmentDisabled = released || !completed || !verified || item.appointmentRequested;
+            const releaseDisabled = !completed || !verified;
+            const releaseTitle = !completed
+                ? 'Results can be released when the request is completed'
+                : !verified
+                    ? 'Every result must be reviewed and independently verified before release'
+                    : '';
             const appointmentTitle = released
                 ? 'Appointment requests are unavailable after results are released'
                 : item.appointmentRequested
@@ -181,7 +187,7 @@ const assetScript = document.currentScript || document.querySelector('script[src
                         <a class="btn btn-download-results" href="${escapeHtml(pdfUrl.toString())}">Download results PDF</a>
                         ${released
                             ? `<button class="btn btn-primary" type="button" onclick="openResultDelivery(${item.id}, false, 'Results')">Email results</button>`
-                            : `<button class="btn btn-primary" type="button" onclick="openResultDelivery(${item.id}, true, 'Results')">Release Results</button>`}
+                            : `<button class="btn btn-primary" type="button" ${releaseDisabled ? `disabled title="${releaseTitle}"` : ''} onclick="openResultDelivery(${item.id}, true, 'Results')">Release Results</button>`}
                         <button class="btn btn-appointment" type="button" ${appointmentDisabled ? `disabled title="${appointmentTitle}"` : ''} onclick="openResultDelivery(${item.id}, false, 'Appointment')">Request appointment</button>
                     </div>
                 </div>
@@ -225,13 +231,34 @@ const assetScript = document.currentScript || document.querySelector('script[src
         if (button.disabled) return;
         button.disabled = true;
         try {
-            const response = await fetch(selectedDeliveryIsRelease ? releaseResultsUrl : emailResultsUrl, {
-                method: 'POST', headers: { 'Content-Type': 'application/json' },
+            const csrfToken = document.querySelector('meta[name="doctor-csrf"]')?.content;
+            if (!csrfToken) {
+                throw new Error('Your session security token is missing. Refresh the page and try again.');
+            }
+
+            const endpoint = selectedDeliveryIsRelease ? releaseResultsUrl : emailResultsUrl;
+            const response = await fetch(new URL(endpoint, document.baseURI), {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'RequestVerificationToken': csrfToken
+                },
                 body: JSON.stringify({ testRequestId: selectedDeliveryRequest,
                     note: document.getElementById('result-note').value,
                     delivery: selectedDelivery })
             });
-            const data = await response.json();
+            const responseText = await response.text();
+            let data;
+            try {
+                data = responseText ? JSON.parse(responseText) : {};
+            } catch {
+                data = {};
+            }
+            if (response.redirected) {
+                throw new Error('Your session may have expired. Sign in again, then retry.');
+            }
             if (!response.ok) throw new Error(data.message || 'Unable to send results.');
             document.getElementById('result-delivery-dialog').close();
             message.textContent = data.message;

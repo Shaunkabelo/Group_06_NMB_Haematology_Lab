@@ -33,7 +33,9 @@ public sealed class DoctorWorkflowRepository(IConfiguration configuration) : IDo
             CONCAT(u.Name, ' ', u.Surname) AS PatientName, u.SA_ID_Number AS SaIdNumber, u.Email,
             COALESCE(NULLIF(LTRIM(RTRIM(CONCAT(du.Name, ' ', du.Surname))), ''), 'Not recorded') AS DoctorName,
             r.RequestDate AS CreatedAt, r.Status,
-            CAST(CASE WHEN EXISTS (SELECT 1 FROM dbo.DoctorEmailQueue aq
+            CAST(CASE WHEN EXISTS (SELECT 1 FROM dbo.DoctorEmailDelivery sent
+                WHERE sent.TestRequestID = r.TestRequestID AND sent.Kind = 'AppointmentEmail')
+                OR EXISTS (SELECT 1 FROM dbo.DoctorEmailQueue aq
                 WHERE aq.TestRequestID = r.TestRequestID AND aq.Kind = 'AppointmentEmail') THEN 1 ELSE 0 END AS BIT) AS AppointmentRequested,
             r.Urgency,
             CASE WHEN r.DoctorID = @DoctorID THEN r.ClinicalNotes ELSE NULL END AS ClinicalNotes,
@@ -86,9 +88,13 @@ public sealed class DoctorWorkflowRepository(IConfiguration configuration) : IDo
 
     private const string ResultSelect = """
         SELECT r.TestRequestID, r.RequestDate, r.Status AS RequestStatus, r.Urgency, r.ReleaseDate,
-            CAST(CASE WHEN EXISTS (SELECT 1 FROM dbo.DoctorEmailQueue aq
+            CAST(CASE WHEN EXISTS (SELECT 1 FROM dbo.DoctorEmailDelivery sent
+                WHERE sent.TestRequestID = r.TestRequestID AND sent.Kind = 'AppointmentEmail')
+                OR EXISTS (SELECT 1 FROM dbo.DoctorEmailQueue aq
                 WHERE aq.TestRequestID = r.TestRequestID AND aq.Kind = 'AppointmentEmail') THEN 1 ELSE 0 END AS BIT) AS AppointmentRequested,
-            CAST(CASE WHEN EXISTS (SELECT 1 FROM dbo.DoctorEmailQueue rq
+            CAST(CASE WHEN EXISTS (SELECT 1 FROM dbo.DoctorEmailDelivery sent
+                WHERE sent.TestRequestID = r.TestRequestID AND sent.Kind = 'ResultEmail')
+                OR EXISTS (SELECT 1 FROM dbo.DoctorEmailQueue rq
                 WHERE rq.TestRequestID = r.TestRequestID AND rq.Kind = 'ResultEmail' AND rq.SentAt IS NOT NULL) THEN 1 ELSE 0 END AS BIT) AS ResultsEmailed,
             CONCAT(u.Name, ' ', u.Surname) AS PatientName, p.PatientID AS PatientId,
             u.SA_ID_Number AS PatientSaId,
@@ -99,6 +105,12 @@ public sealed class DoctorWorkflowRepository(IConfiguration configuration) : IDo
                 OR v.VerificationDateTime IS NULL OR res.CaptureDateTime IS NULL
                 OR v.VerificationDateTime < res.CaptureDateTime OR v.VerifiedByLabTechnicianID = res.CapturedByLabTechnicianID)
                 THEN 'Pending re-verification' ELSE v.Status END AS VerificationStatus, v.VerificationDateTime,
+            CASE WHEN r.Status IN ('Completed', 'Released by doctor')
+                AND rt.Status = 'Verified' AND v.Status = 'Verified'
+                AND v.VerificationDateTime IS NOT NULL AND res.CaptureDateTime IS NOT NULL
+                AND v.VerificationDateTime >= res.CaptureDateTime
+                AND v.VerifiedByLabTechnicianID <> res.CapturedByLabTechnicianID
+                THEN 'Reviewed' ELSE 'Not reviewed' END AS ReviewStatus,
             tt.UnitOfMeasurement, tt.NormalRangeMin, tt.NormalRangeMax
         FROM dbo.TestRequest r INNER JOIN dbo.Patient p ON p.PatientID = r.PatientID
         INNER JOIN dbo.[User] u ON u.UserID = p.UserID
@@ -222,7 +234,7 @@ public sealed class DoctorWorkflowRepository(IConfiguration configuration) : IDo
                  OR res.CaptureDateTime IS NULL OR v.VerificationDateTime < res.CaptureDateTime))
         """;
 
-    public async Task<bool> Release(int doctorId, int requestId, string note, string notification)
+    public async Task<bool> Release(int doctorId, int requestId, string note)
     {
         using var db = Connection();
         await db.OpenAsync();
@@ -234,12 +246,11 @@ public sealed class DoctorWorkflowRepository(IConfiguration configuration) : IDo
             WHERE TestRequestID = @requestId AND DoctorID = @doctorId AND Status = 'Completed'
             """, new { doctorId, requestId, note }, tx);
         if (changed != 1) return false;
-        await Queue(db, tx, notification, "Release", requestId);
         tx.Commit();
         return true;
     }
 
-    public async Task<bool> EmailResults(int doctorId, int requestId, string notification, bool appointmentRequest)
+    public async Task<bool> EmailResults(int doctorId, int requestId, bool appointmentRequest)
     {
         using var db = Connection();
         await db.OpenAsync();
@@ -248,12 +259,21 @@ public sealed class DoctorWorkflowRepository(IConfiguration configuration) : IDo
             ? Ready
             : Ready + " AND r.Status = 'Released by doctor'";
         if (await db.ExecuteScalarAsync<int>(eligibleRequest, new { doctorId, requestId }, tx) != 1) return false;
-        // Avoid duplicate clicks queuing the same request repeatedly while delivery is pending.
-        var kind = appointmentRequest ? "AppointmentEmail" : "ResultEmail";
-        if (await db.ExecuteScalarAsync<int>("SELECT COUNT(*) FROM dbo.DoctorEmailQueue WHERE TestRequestID = @requestId AND Kind = @kind AND SentAt IS NULL", new { requestId, kind }, tx) == 0)
-            await Queue(db, tx, notification, kind, requestId);
+        if (appointmentRequest && await db.ExecuteScalarAsync<int>("""
+            SELECT COUNT(*) FROM dbo.DoctorEmailDelivery WITH (UPDLOCK, HOLDLOCK)
+            WHERE TestRequestID = @requestId AND Kind = N'AppointmentEmail'
+            """, new { requestId }, tx) > 0) return false;
         tx.Commit();
         return true;
+    }
+
+    public async Task RecordDirectEmail(int doctorId, int requestId, string kind)
+    {
+        using var db = Connection();
+        await db.ExecuteAsync("""
+            INSERT dbo.DoctorEmailDelivery(TestRequestID, DoctorID, Kind, SentAt)
+            VALUES (@requestId, @doctorId, @kind, SYSUTCDATETIME())
+            """, new { doctorId, requestId, kind });
     }
 
     public async Task<DoctorEmailJob?> ClaimEmail()
@@ -274,9 +294,16 @@ public sealed class DoctorWorkflowRepository(IConfiguration configuration) : IDo
         await db.ExecuteAsync("""
             UPDATE dbo.DoctorEmailQueue SET SentAt = CASE WHEN @delivered = 1 THEN SYSUTCDATETIME() ELSE NULL END,
                 Payload = CASE WHEN @delivered = 1 THEN NULL ELSE Payload END,
-                LockedUntil = NULL, LeaseId = NULL, NextAttemptAt = DATEADD(MINUTE, 5, SYSUTCDATETIME())
+                LockedUntil = NULL, LeaseId = NULL,
+                NextAttemptAt = DATEADD(SECOND, CASE
+                    WHEN @delivered = 1 THEN 0
+                    WHEN @Attempts <= 1 THEN 15
+                    WHEN @Attempts = 2 THEN 30
+                    WHEN @Attempts = 3 THEN 60
+                    WHEN @Attempts = 4 THEN 120
+                    ELSE 300 END, SYSUTCDATETIME())
             WHERE Id = @Id AND LeaseId = @LeaseId
-            """, new { job.Id, job.LeaseId, delivered });
+            """, new { job.Id, job.LeaseId, delivered, job.Attempts });
     }
 
     public async Task<(string Email, string Name, string Reason)?> CancellationRecipient(int requestId)

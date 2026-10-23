@@ -27,17 +27,19 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
         private readonly IDoctorWorkflowRepository _workflow;
         private readonly IAuthenticationRepository _authentication;
         private readonly DoctorEmailProtector _emailProtector;
+        private readonly IDoctorEmailSender _doctorEmailSender;
         private readonly IConfiguration _configuration;
 
 		public DoctorController(
 			IDoctorRepository doctorRepository,
             IDoctorWorkflowRepository workflow, IAuthenticationRepository authentication,
-            DoctorEmailProtector emailProtector, IConfiguration configuration)
+            DoctorEmailProtector emailProtector, IDoctorEmailSender doctorEmailSender, IConfiguration configuration)
 		{
 			_doctorRepository = doctorRepository;
             _workflow = workflow;
             _authentication = authentication;
             _emailProtector = emailProtector;
+            _doctorEmailSender = doctorEmailSender;
             _configuration = configuration;
 		}
 		// ============================================================

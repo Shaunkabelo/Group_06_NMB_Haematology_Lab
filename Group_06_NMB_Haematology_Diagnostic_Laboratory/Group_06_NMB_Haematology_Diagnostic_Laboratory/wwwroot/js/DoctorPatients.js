@@ -1,4 +1,13 @@
-const assetScript = document.currentScript;
+const assetScript = document.currentScript || document.querySelector('script[src*="DoctorPatients.js"]');
+
+function getPatientSaIdNumber(patient) {
+    return patient?.saIdNumber
+        ?? patient?.SaIdNumber
+        ?? patient?.sa_ID_Number
+        ?? patient?.SA_ID_Number
+        ?? '';
+}
+
 async function viewPatientFromTable(button) {
 
         const saIdNumber =
@@ -34,10 +43,9 @@ async function viewPatientFromTable(button) {
             // GET COMPLETE PATIENT
             // ==============================================
 
-            const response =
-                await fetch(
-                    `${doctorUrls.getPatient}?saIdNumber=${encodeURIComponent(saIdNumber)}`
-                );
+            const patientUrl = new URL(doctorUrls.getPatient, document.baseURI);
+            patientUrl.searchParams.set('saIdNumber', saIdNumber);
+            const response = await fetch(patientUrl, { credentials: 'same-origin' });
 
 
             if (!response.ok) {
@@ -276,7 +284,9 @@ async function viewPatientFromTable(button) {
         try {
 
             const response =
-                await fetch(doctorUrls.getPatients);
+                await fetch(new URL(doctorUrls.getPatients, document.baseURI), {
+                    credentials: 'same-origin'
+                });
 
             if (!response.ok) {
 
@@ -312,6 +322,7 @@ async function viewPatientFromTable(button) {
 
 
             patients.forEach(patient => {
+                const saIdNumber = getPatientSaIdNumber(patient);
 
                 // ==============================================
                 // CREATE PATIENT TABLE ROW
@@ -328,7 +339,7 @@ async function viewPatientFromTable(button) {
 
                     <td data-label="ID Number">
                         ${escapeHtml(
-                            patient.saIdNumber || 'N/A'
+                            saIdNumber || 'N/A'
                         )}
                     </td>
 
@@ -377,8 +388,9 @@ async function viewPatientFromTable(button) {
                         <button
                             type="button"
                             class="btn btn-primary patient-view-btn"
+                            ${saIdNumber ? '' : 'disabled title="Patient ID number is unavailable"'}
                             data-sa-id="${escapeHtml(
-                                patient.saIdNumber || ''
+                                saIdNumber
                             )}"
                             onclick="viewPatientFromTable(this)">
 
@@ -482,10 +494,9 @@ async function viewPatientFromTable(button) {
 
         try {
 
-            const response =
-                await fetch(
-                    `${doctorUrls.getPatient}?saIdNumber=${encodeURIComponent(saIdNumber)}`
-                );
+        const patientUrl = new URL(doctorUrls.getPatient, document.baseURI);
+        patientUrl.searchParams.set('saIdNumber', saIdNumber);
+        const response = await fetch(patientUrl, { credentials: 'same-origin' });
 
 
             if (!response.ok) {
@@ -573,7 +584,7 @@ async function viewPatientFromTable(button) {
         document.getElementById(
             'selected-patient-id'
         ).textContent =
-            patient.saIdNumber || 'N/A';
+            getPatientSaIdNumber(patient) || 'N/A';
 
 
         document.getElementById(
@@ -2198,9 +2209,11 @@ async function viewPatientFromTable(button) {
         const createRequestUrl =
             assetScript.dataset.createrequestUrl;
 
-        window.location.href = patientSaId
-            ? `${createRequestUrl}?saIdNumber=${encodeURIComponent(patientSaId)}`
-            : createRequestUrl;
+        const requestUrl = new URL(createRequestUrl, document.baseURI);
+        if (patientSaId) {
+            requestUrl.searchParams.set('saIdNumber', patientSaId);
+        }
+        window.location.href = requestUrl.toString();
 
     }
 

@@ -16,9 +16,8 @@ public partial class DoctorController
     private static object RequestView(DoctorRequestRecord r) => new
     {
         r.Id, r.PatientId, r.PatientName, r.SaIdNumber, r.CreatedAt,
-        status = r.Status.Equals("Released by doctor", StringComparison.OrdinalIgnoreCase) && r.AppointmentRequested
-            ? "Appointment"
-            : r.Status.Equals("Sample(s) received", StringComparison.OrdinalIgnoreCase) ? "Samples Received" : r.Status,
+        status = r.Status.Equals("Sample(s) received", StringComparison.OrdinalIgnoreCase)
+            ? "Samples Received" : r.Status,
         r.Urgency,
         r.ClinicalNotes, r.CancellationReason, r.CancelledBy, r.CancelledDate,
         r.ReleaseDate, r.DoctorReleaseNote, r.ConsentGranted,
@@ -86,20 +85,53 @@ public partial class DoctorController
         var body = input.Delivery == "Results"
             ? input.Note.Trim()
             : $"Laboratory request #{request.Id}\n\n{input.Note.Trim()}\n\nPlease contact your doctor to arrange a discussion of your results.";
-        var notification = _emailProtector.Protect(new DoctorEmail(request.Email, subject, body,
-            doctorId.Value, AttachResults: input.Delivery == "Results"));
         var saved = release
-            ? await _workflow.Release(doctorId.Value, request.Id, input.Note.Trim(), notification)
-            : await _workflow.EmailResults(doctorId.Value, request.Id, notification, input.Delivery == "Appointment");
+            ? await _workflow.Release(doctorId.Value, request.Id, input.Note.Trim())
+            : await _workflow.EmailResults(doctorId.Value, request.Id, input.Delivery == "Appointment");
         if (!saved) return Conflict(new { message = release
             ? "Release requires a completed request with every test independently verified. It may already be released."
             : input.Delivery == "Appointment"
                 ? "An appointment invitation requires a completed request with every test independently verified."
                 : "Email requires a released request with verified results." });
+
+        byte[]? attachment = null;
+        if (input.Delivery == "Results")
+        {
+            var results = (await _workflow.Results(doctorId.Value, request.Id)).ToList();
+            if (results.Count == 0 || results.Any(r => r.VerificationStatus != "Verified"))
+                return Conflict(new { message = release
+                    ? "Results were released, but the verified report could not be prepared."
+                    : "The verified report could not be prepared for email." });
+            attachment = DoctorRequestsPdfReport.BuildResults(request, results);
+        }
+
+        try
+        {
+            await _doctorEmailSender.Send(new DoctorEmail(request.Email, subject, body,
+                doctorId.Value, AttachResults: input.Delivery == "Results"), attachment, HttpContext.RequestAborted);
+        }
+        catch (Exception)
+        {
+            return StatusCode(StatusCodes.Status502BadGateway, new { message = release
+                ? "Results were released, but the email could not be sent. Use Email results to retry after checking SMTP settings."
+                : "The email could not be sent. Check the SMTP settings and try again." });
+        }
+
+        try
+        {
+            await _workflow.RecordDirectEmail(doctorId.Value, request.Id,
+                input.Delivery == "Appointment" ? "AppointmentEmail" : "ResultEmail");
+        }
+        catch (Exception)
+        {
+            return StatusCode(StatusCodes.Status500InternalServerError, new { message =
+                "The email was sent, but its delivery status could not be saved. Check the Results page before retrying." });
+        }
+
         return Ok(new { success = true, message = release
-            ? "Results released. Patient email queued for delivery."
+            ? "Results released and email sent."
             : input.Delivery == "Appointment"
-                ? "Appointment invitation queued for delivery."
-                : "Patient email queued for delivery." });
+                ? "Appointment invitation sent."
+                : "Patient email sent." });
     }
 }

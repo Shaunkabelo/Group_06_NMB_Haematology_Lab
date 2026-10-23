@@ -175,11 +175,20 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
 		// PATIENT
 		// ============================================================
 
-		public async Task<IEnumerable<Patient>> GetPatientsAsync()
+		public async Task<IEnumerable<DoctorPatientListDto>> GetPatientsAsync()
 		{
-			return await _db.GetData<Patient, dynamic>(
-				"dbo.spPatient_GetAll",
-				new { }
+			return await _db.GetData<DoctorPatientListDto, dynamic>(
+				"""
+				SELECT p.PatientID AS PatientId,
+				       u.SA_ID_Number AS SaIdNumber,
+				       u.HomeAddress AS Address
+				FROM dbo.Patient AS p
+				INNER JOIN dbo.[User] AS u ON u.UserID = p.UserID
+				WHERE u.IsActive = 1 AND u.Role = N'Patient'
+				ORDER BY u.Surname, u.Name, p.PatientID;
+				""",
+				new { },
+				commandType: CommandType.Text
 			);
 		}
 

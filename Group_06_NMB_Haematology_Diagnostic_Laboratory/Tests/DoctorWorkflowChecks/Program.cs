@@ -148,14 +148,15 @@ var workflow = Proxy<IDoctorWorkflowRepository>.Create((name, a) => name switch
     "Patient" => Task.FromResult<PatientDetailsDto?>(new PatientDetailsDto { PatientId = 7, Email = "patient@example.com" }),
     "Create" => state.Create((int)a[0]!, (CreateTestRequestModel)a[1]!, (string)a[2]!),
     "Register" => state.Register((PatientRegistrationViewModel)a[0]!, (string)a[1]!, (string)a[2]!, (string)a[3]!),
-    "Release" => state.Release((int)a[0]!, (string)a[3]!),
+    "Release" => state.Release((int)a[0]!, string.Empty),
     "EmailResults" => Task.FromResult(true),
+    "RecordDirectEmail" => Task.CompletedTask,
     _ => throw new NotSupportedException(name)
 });
 var doctors = Proxy<IDoctorRepository>.Create((name, a) => name switch
 {
     "GetDoctorIdByUserIdAsync" => Task.FromResult<int?>((int)a[0]! == 42 ? 3 : null),
-    "GetPatientsAsync" => Task.FromResult<IEnumerable<Patient>>(Array.Empty<Patient>()),
+    "GetPatientsAsync" => Task.FromResult<IEnumerable<DoctorPatientListDto>>(Array.Empty<DoctorPatientListDto>()),
     "CancelTestRequestAsync" => state.Cancel((int)a[0]!, (int)a[1]!, (string)a[2]!, (string)a[3]!),
     _ => throw new NotSupportedException(name)
 });
@@ -173,6 +174,8 @@ builder.Configuration["AccountSecurity:PublicBaseUrl"] = "https://example.test";
 builder.Services.AddSingleton(workflow).AddSingleton(doctors).AddSingleton(auth);
 builder.Services.AddSingleton<IDataProtectionProvider>(new EphemeralDataProtectionProvider());
 builder.Services.AddSingleton<DoctorEmailProtector>();
+var directEmailSender = new RecordingSender();
+builder.Services.AddSingleton<IDoctorEmailSender>(directEmailSender);
 builder.Services.AddControllersWithViews().AddApplicationPart(typeof(DoctorController).Assembly);
 builder.Services.AddAuthentication("Test").AddScheme<AuthenticationSchemeOptions, TestAuthentication>("Test", _ => { });
 builder.Services.AddRateLimiter(options => options.AddPolicy("account", _ =>
@@ -245,10 +248,11 @@ state.Request.DoctorId = 3; state.Ready = false;
 Check((await client.PostAsJsonAsync("/Doctor/ReleaseResults", delivery)).StatusCode == HttpStatusCode.Conflict, "Release failure is reported without pretending success");
 state.Ready = true;
 Check((await client.PostAsJsonAsync("/Doctor/ReleaseResults", delivery)).IsSuccessStatusCode, "Completed verified request can be released");
-Check(!protector.Read(state.Notification).AttachResults, "Appointment email excludes result attachment");
+Check(directEmailSender.SentEmail is { AttachResults: false }, "Appointment email is sent directly without a result attachment");
 delivery.Delivery = "Results";
-Check((await client.PostAsJsonAsync("/Doctor/ReleaseResults", delivery)).IsSuccessStatusCode && protector.Read(state.Notification).AttachResults,
-    "Results email includes a PDF attachment instruction");
+Check((await client.PostAsJsonAsync("/Doctor/ReleaseResults", delivery)).IsSuccessStatusCode &&
+    directEmailSender.SentEmail is { AttachResults: true } && directEmailSender.Attachment is { Length: > 0 },
+    "Results email is sent directly with its verified PDF attachment");
 delivery.Note = " ";
 Check((await client.PostAsJsonAsync("/Doctor/ReleaseResults", delivery)).StatusCode == HttpStatusCode.BadRequest, "Release requires a patient note");
 Check((await client.GetAsync("/Doctor/GetDoctorAlerts?startDate=2026-10-14&endDate=2026-10-18")).IsSuccessStatusCode &&
@@ -372,8 +376,10 @@ sealed class RecordingSender : IDoctorEmailSender
 {
     public bool Fail { get; set; }
     public byte[]? Attachment { get; private set; }
+    public DoctorEmail? SentEmail { get; private set; }
     public Task Send(DoctorEmail email, byte[]? pdf = null, CancellationToken cancellationToken = default)
     {
+        SentEmail = email;
         Attachment = pdf;
         return Fail ? Task.FromException(new InvalidOperationException("Simulated SMTP failure")) : Task.CompletedTask;
     }
