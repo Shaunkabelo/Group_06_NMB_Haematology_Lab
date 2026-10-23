@@ -60,6 +60,15 @@ const assetScript = document.currentScript ||
         "sample-color-gold"
     ];
 
+    const sampleColorValues = {
+        "sample-color-lavender": "#8e6bbf",
+        "sample-color-blue": "#2878c8",
+        "sample-color-red": "#d9485f",
+        "sample-color-green": "#258f6b",
+        "sample-color-gray": "#68727d",
+        "sample-color-gold": "#b8860b"
+    };
+
     function getSampleColorClass(sampleTypeName) {
 
         const sampleType =
@@ -1716,8 +1725,15 @@ const assetScript = document.currentScript ||
                     );
 
 
-                sample.className =
-                    `vial-chip ${getSampleColorClass(test.sampleTypeName)}`;
+                const sampleColorClass = getSampleColorClass(test.sampleTypeName);
+                sample.className = `vial-chip ${sampleColorClass}`;
+
+                // Apply the color inline so shared/published CSS cannot wash it out.
+                sample.style.setProperty(
+                    "background-color",
+                    sampleColorValues[sampleColorClass],
+                    "important"
+                );
 
 
                 sample.textContent =
