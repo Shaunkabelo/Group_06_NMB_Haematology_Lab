@@ -80,7 +80,114 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
                 })
             });
         }
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SubmitDecision(
+    int testResultId,
+    string? decision,
+    string? notes)
+        {
+            decision = decision?.Trim();
+            notes = notes?.Trim();
 
+            if (!ModelState.IsValid ||
+                testResultId <= 0 ||
+                (decision != "Verify" && decision != "Return"))
+            {
+                TempData["Error"] = "Select a valid verification decision.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            if (decision == "Return" && string.IsNullOrWhiteSpace(notes))
+            {
+                TempData["Error"] = "Provide a reason for returning the result.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            var labTechnicianId =
+                await _currentTech.GetLabTechnicianIdAsync();
+
+            try
+            {
+                // Confirm this result is available for this technician to review.
+                var awaiting =
+                    await _repo.GetAwaitingVerificationAsync(labTechnicianId);
+
+                if (!awaiting.Any(x => x.TestResultId == testResultId))
+                {
+                    TempData["Error"] =
+                        "This result is no longer available for you to review.";
+
+                    return RedirectToAction(nameof(Index));
+                }
+
+                await _repo.SubmitDecisionAsync(
+                    testResultId,
+                    labTechnicianId,
+                    decision,
+                    string.IsNullOrWhiteSpace(notes) ? null : notes);
+
+                TempData["Success"] = decision == "Verify"
+                    ? "Result verified successfully."
+                    : "Result returned for correction.";
+            }
+            catch (SqlException ex)
+            {
+                TempData["Error"] = ex.Number switch
+                {
+                    50040 => "The test result could not be found.",
+                    50041 => "You cannot verify a result you captured yourself.",
+                    50042 => "Select a valid verification decision.",
+                    50043 => "You are not assigned to this test type.",
+                    _ => "An error occurred while submitting your decision."
+                };
+            }
+
+            return RedirectToAction(nameof(Index));
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetResubmitModalData(int testResultId)
+        {
+            var labTechnicianId =
+                await _currentTech.GetLabTechnicianIdAsync();
+
+            var returned =
+                await _repo.GetReturnedForReviewAsync(labTechnicianId);
+
+            var item =
+                returned.FirstOrDefault(x => x.TestResultId == testResultId);
+
+            if (item == null)
+            {
+                return NotFound();
+            }
+
+            var history =
+                await _repo.GetVerificationHistoryAsync(testResultId);
+
+            return Json(new
+            {
+                testResultId,
+                item.RequestNumber,
+                item.TestName,
+                item.ResultValue,
+                item.UnitOfMeasurement,
+                item.NormalRangeMin,
+                item.NormalRangeMax,
+                item.ReturnedByName,
+                item.ReviewerNote,
+                history = history.Select(h => new
+                {
+                    h.Status,
+                    h.Notes,
+                    h.ResultValue,
+                    h.EventType,
+                    byName = h.ByName,
+                    eventDate = h.EventDate.ToString("dd MMM yyyy HH:mm:ss")
+                })
+            });
+        }
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ResubmitResult(
