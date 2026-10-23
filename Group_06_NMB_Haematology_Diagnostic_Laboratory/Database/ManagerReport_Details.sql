@@ -10,6 +10,7 @@ BEGIN
     SET NOCOUNT ON;
 
     SELECT
+        testType.TestTypeID,
         COALESCE(category.CategoryName, N'Uncategorised') AS CategoryName,
         testType.TestName,
         labTest.CompletionDateTime

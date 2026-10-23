@@ -15,7 +15,7 @@
             <div class="mb-3">
                 <label for="reportType" class="form-label">Report</label>
                 <select id="reportType" name="reportType" class="form-select" required>
-                    <option value="tests" selected="@(ViewBag.ReportType == "tests")">Tests performed by category</option>
+                    <option value="tests" selected="@(ViewBag.ReportType == "tests")">Laboratory test activity</option>
                     <option value="orders" selected="@(ViewBag.ReportType == "orders")">Stock orders</option>
                     <option value="stock" selected="@(ViewBag.ReportType == "stock")">Current consumable stock</option>
                 </select>
@@ -61,7 +61,7 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("stockFilters").hidden = !stock;
     document.querySelector('[name="lowStockOnly"]').disabled = !stock;
     document.getElementById("reportDescription").textContent = {
-      tests: "Each completed test is listed under its category. Uses completion dates; both selected dates are included.",
+      tests: "Shows completed tests by category, daily activity and estimated configured consumable usage. Uses completion dates; both selected dates are included.",
       orders: "Orders placed in the selected period, grouped into a chronological list with supplier and current receipt status.",
       stock: "Current quantities and reorder levels by supplier. This is a snapshot of stock now; date ranges do not apply."
     }[type.value];

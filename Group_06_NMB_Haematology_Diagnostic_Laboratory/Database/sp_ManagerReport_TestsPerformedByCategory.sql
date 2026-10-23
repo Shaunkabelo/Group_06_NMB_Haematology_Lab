@@ -29,7 +29,8 @@ AS
 BEGIN
     SET NOCOUNT ON;
 
-    SELECT COALESCE(category.CategoryName, N'Uncategorised') AS CategoryName,
+    SELECT testType.TestTypeID,
+           COALESCE(category.CategoryName, N'Uncategorised') AS CategoryName,
            testType.TestName, labTest.CompletionDateTime
     FROM dbo.LabTest AS labTest
     INNER JOIN dbo.TestRequestTestType AS requestTestType

@@ -1326,10 +1326,13 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
                     .ThenBy(row => row.TestName, StringComparer.OrdinalIgnoreCase)
                     .ThenBy(row => row.CompletionDateTime)
                     .ToList();
-                title = "Tests Performed by Category";
+                var testTypes = (await _repository.GetTestTypes("All")).ToList();
+                var dailyVolumes = TestReportInsights.DailyVolumes(tests);
+                var consumableUsage = TestReportInsights.EstimatedConsumableUsage(tests, testTypes);
+                title = "Laboratory Test Activity Report";
                 criteria = $"Completion dates: {Date(startDate)} - {Date(endDate)} (inclusive).";
                 summary = tests.Count == 0 ? "No completed tests were found for the selected date range."
-                    : $"Completed tests: {tests.Count:N0}. Categories: {tests.Select(test => test.CategoryName).Distinct(StringComparer.OrdinalIgnoreCase).Count():N0}.";
+                    : $"Completed tests: {tests.Count:N0}. Categories: {tests.Select(test => test.CategoryName).Distinct(StringComparer.OrdinalIgnoreCase).Count():N0}. Active reporting dates: {dailyVolumes.Count:N0}. Estimated configured consumable units: {consumableUsage.Sum(item => item.EstimatedUnitsUsed):N0}.";
                 headings = new[] { "Test category", "Test type", "Completed on" };
                 rows = tests.Select(test => new[]
                 {
@@ -1337,6 +1340,8 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
                     test.TestName,
                     Date(test.CompletionDateTime)
                 }).ToList();
+                ViewBag.DailyVolumes = dailyVolumes;
+                ViewBag.ConsumableUsage = consumableUsage;
             }
             else if (reportType == "orders")
             {
@@ -1411,8 +1416,9 @@ namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Controllers
                 return RedirectToAction(nameof(ManagerReports), new { startDate = startDate.ToString("yyyy-MM-dd"), endDate = endDate.ToString("yyyy-MM-dd") });
             }
 
+            var testTypes = await _repository.GetTestTypes("All");
             var pdf = TestsPerformedPdf.Generate(tests, startDate.Date, endDate.Date, DateTimeOffset.UtcNow,
-                CurrentReportGenerator());
+                CurrentReportGenerator(), testTypes);
             return File(pdf, "application/pdf");
         }
 

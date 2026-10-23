@@ -7,6 +7,10 @@
     var startDate = ViewBag.StartDate as DateTime?;
     var endDate = ViewBag.EndDate as DateTime?;
     var isTestsReport = string.Equals(ViewBag.ReportType as string, "tests", StringComparison.OrdinalIgnoreCase);
+    var dailyVolumes = ViewBag.DailyVolumes as IEnumerable<Group_06_NMB_Haematology_Diagnostic_Laboratory.Services.TestReportInsights.DailyVolume>
+        ?? Enumerable.Empty<Group_06_NMB_Haematology_Diagnostic_Laboratory.Services.TestReportInsights.DailyVolume>();
+    var consumableUsage = ViewBag.ConsumableUsage as IEnumerable<Group_06_NMB_Haematology_Diagnostic_Laboratory.Services.TestReportInsights.ConsumableUsage>
+        ?? Enumerable.Empty<Group_06_NMB_Haematology_Diagnostic_Laboratory.Services.TestReportInsights.ConsumableUsage>();
 }
 
 <div class="page-body report-page">
@@ -47,6 +51,23 @@
             {
                 @if (isTestsReport)
                 {
+                    <section class="mb-4">
+                        <h4 class="h5 mb-2">Tests completed per date</h4>
+                        @if (dailyVolumes.Any())
+                        {
+                            <div class="table-wrap">
+                                <table>
+                                    <thead><tr><th>Completion date</th><th>Tests completed</th></tr></thead>
+                                    <tbody>
+                                    @foreach (var day in dailyVolumes)
+                                    {
+                                        <tr><td>@day.Date.ToString("dd MMM yyyy")</td><td>@day.TestsCompleted.ToString("N0")</td></tr>
+                                    }
+                                    </tbody>
+                                </table>
+                            </div>
+                        }
+                    </section>
                     @foreach (var category in Model.GroupBy(row => row.ElementAtOrDefault(0) ?? "Uncategorised"))
                     {
                         <section class="mb-4">
@@ -59,6 +80,28 @@
                             </ol>
                         </section>
                     }
+                    <section>
+                        <h4 class="h5 mb-1">Estimated consumables used</h4>
+                        <p class="text-muted small">Estimate based on the consumable quantity currently configured for each completed test type. This is not a stock-transaction audit.</p>
+                        @if (consumableUsage.Any())
+                        {
+                            <div class="table-wrap">
+                                <table>
+                                    <thead><tr><th>Consumable</th><th>Estimated units used</th><th>Tests contributing</th></tr></thead>
+                                    <tbody>
+                                    @foreach (var item in consumableUsage)
+                                    {
+                                        <tr><td>@item.ConsumableName</td><td>@item.EstimatedUnitsUsed.ToString("N0")</td><td>@item.TestsContributing.ToString("N0")</td></tr>
+                                    }
+                                    </tbody>
+                                </table>
+                            </div>
+                        }
+                        else
+                        {
+                            <p class="mb-0">No configured consumable requirements were available for the completed tests.</p>
+                        }
+                    </section>
                 }
                 else
                 {
