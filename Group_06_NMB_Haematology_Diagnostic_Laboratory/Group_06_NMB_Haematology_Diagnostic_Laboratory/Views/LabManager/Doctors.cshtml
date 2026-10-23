@@ -279,6 +279,21 @@
                    name="DoctorId"
                    value="0" />
 
+            <!-- HPCSA NUMBER -->
+
+            <div class="form-group">
+
+                <label class="form-label">
+                    HPCSA Number
+                </label>
+
+                <input id="HpcsaNumber"
+                       class="form-control"
+                       name="HpcsaNumber" maxlength="20"
+                       required />
+
+            </div>
+
 
             <!-- FIRST NAME -->
 
@@ -382,22 +397,6 @@
 
 
             <partial name="_StructuredAddressFields" view-data='new ViewDataDictionary(ViewData) { { "AddressPrefix", "doctorAddress" } }' />
-
-
-            <!-- HPCSA NUMBER -->
-
-            <div class="form-group">
-
-                <label class="form-label">
-                    HPCSA Number
-                </label>
-
-                <input id="HpcsaNumber"
-                       class="form-control"
-                       name="HpcsaNumber" maxlength="20"
-                       required />
-
-            </div>
 
 
             <!-- BUTTONS -->

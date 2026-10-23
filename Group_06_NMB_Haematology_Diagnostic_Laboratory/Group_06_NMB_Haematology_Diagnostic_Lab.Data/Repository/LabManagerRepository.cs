@@ -82,8 +82,8 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
             await PopulateStructuredAddresses(doctorList.Select(doctor => doctor.User));
 
             return doctorList
-                .OrderBy(doctor => doctor.User?.Surname ?? string.Empty, StringComparer.OrdinalIgnoreCase)
-                .ThenBy(doctor => doctor.User?.Name ?? string.Empty, StringComparer.OrdinalIgnoreCase);
+                .OrderBy(doctor => doctor.User?.Name ?? string.Empty, StringComparer.OrdinalIgnoreCase)
+                .ThenBy(doctor => doctor.User?.Surname ?? string.Empty, StringComparer.OrdinalIgnoreCase);
         }
         // -------------- CREATE/ADD DOCTORS ----------------
         public async Task CreateDoctor(Doctor doctor, string temporaryPassword)
@@ -217,8 +217,8 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
             await PopulateStructuredAddresses(technicianList.Select(technician => technician.User));
 
             return technicianList
-                .OrderBy(technician => technician.User?.Surname ?? string.Empty, StringComparer.OrdinalIgnoreCase)
-                .ThenBy(technician => technician.User?.Name ?? string.Empty, StringComparer.OrdinalIgnoreCase);
+                .OrderBy(technician => technician.User?.Name ?? string.Empty, StringComparer.OrdinalIgnoreCase)
+                .ThenBy(technician => technician.User?.Surname ?? string.Empty, StringComparer.OrdinalIgnoreCase);
         }
 
         // ----------------SELECT TECH BY ID [For Delete & Update]------------------
@@ -371,8 +371,8 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
             await PopulateStructuredAddresses(managerList.Select(manager => manager.User));
 
             return managerList
-                .OrderBy(manager => manager.User?.Surname ?? string.Empty, StringComparer.OrdinalIgnoreCase)
-                .ThenBy(manager => manager.User?.Name ?? string.Empty, StringComparer.OrdinalIgnoreCase);
+                .OrderBy(manager => manager.User?.Name ?? string.Empty, StringComparer.OrdinalIgnoreCase)
+                .ThenBy(manager => manager.User?.Surname ?? string.Empty, StringComparer.OrdinalIgnoreCase);
         }
 
         // ------------------------- GET MANAGER BY ID -------------------------

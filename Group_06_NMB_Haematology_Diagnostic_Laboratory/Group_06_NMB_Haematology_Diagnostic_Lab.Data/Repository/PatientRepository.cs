@@ -915,11 +915,11 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository
         public async Task<AddressLookupManagementViewModel> GetAddressLookups()
         {
             var provinces = await _db.LoadData<AddressLookupProvince, object>(
-                "SELECT ProvinceID, ProvinceName, IsActive FROM dbo.Province ORDER BY ProvinceName;", new { });
+                "SELECT ProvinceID, ProvinceName, IsActive FROM dbo.Province ORDER BY ProvinceName ASC;", new { });
             var towns = await _db.LoadData<AddressLookupTownCity, object>(
-                "SELECT t.TownCityID, t.ProvinceID, p.ProvinceName, t.TownCityName, t.IsActive FROM dbo.TownCity t INNER JOIN dbo.Province p ON p.ProvinceID = t.ProvinceID ORDER BY p.ProvinceName, t.TownCityName;", new { });
+                "SELECT t.TownCityID, t.ProvinceID, p.ProvinceName, t.TownCityName, t.IsActive FROM dbo.TownCity t INNER JOIN dbo.Province p ON p.ProvinceID = t.ProvinceID ORDER BY t.TownCityName ASC, p.ProvinceName ASC;", new { });
             var suburbs = await _db.LoadData<AddressLookupSuburb, object>(
-                "SELECT s.SuburbID, s.TownCityID, p.ProvinceName, t.TownCityName, s.SuburbName, s.AreaCode, s.IsActive FROM dbo.Suburb s INNER JOIN dbo.TownCity t ON t.TownCityID = s.TownCityID INNER JOIN dbo.Province p ON p.ProvinceID = t.ProvinceID ORDER BY p.ProvinceName, t.TownCityName, s.SuburbName;", new { });
+                "SELECT s.SuburbID, s.TownCityID, p.ProvinceName, t.TownCityName, s.SuburbName, s.AreaCode, s.IsActive FROM dbo.Suburb s INNER JOIN dbo.TownCity t ON t.TownCityID = s.TownCityID INNER JOIN dbo.Province p ON p.ProvinceID = t.ProvinceID ORDER BY s.SuburbName ASC, t.TownCityName ASC, p.ProvinceName ASC;", new { });
 
             return new AddressLookupManagementViewModel
             {

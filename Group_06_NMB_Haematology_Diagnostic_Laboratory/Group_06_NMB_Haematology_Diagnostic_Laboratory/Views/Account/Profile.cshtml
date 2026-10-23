@@ -20,6 +20,10 @@
 }
 <div class="shared-profile">
 <p class="subtitle">Manage your personal details, email address and password.</p>
+@if (TempData["ProfileMessage"] is string profileMessage)
+{
+    <p class="notice" role="status">@profileMessage</p>
+}
 <div class="profile-grid">
     <section class="profile-card">
         <header><h2>Personal details</h2><span class="badge">Active @Model.Role</span></header>
@@ -77,7 +81,7 @@
             </div>
             <label for="emailPassword">Current password (only when changing email)</label>
             <div class="password-field"><input id="emailPassword" name="currentPassword" type="password" maxlength="128" autocomplete="off" readonly data-manual-password-entry /><button type="button" data-password-toggle="emailPassword" aria-label="Show password" aria-pressed="false"></button></div>
-            <p class="hint">After saving, sign in again so your account details are refreshed on all devices.</p>
+            <p class="hint">Saving keeps you signed in on this device. Other signed-in devices may need to sign in again.</p>
             <button class="primary" type="submit">Save personal details</button>
         </form>
     </section>

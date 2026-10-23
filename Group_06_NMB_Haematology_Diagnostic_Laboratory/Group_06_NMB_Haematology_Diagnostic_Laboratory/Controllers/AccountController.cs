@@ -271,12 +271,77 @@ public class AccountController(IAuthenticationRepository repository, PasswordRes
         {
             try
             {
-                if (await repository.UpdateProfileWithAddress(user.UserId, user.SecurityStamp, name!, surname!, email!,
-                    cellphone, addressLine1!, addressLine2, suburbId!.Value))
+                var existingAddress = await repository.GetUserAddress(user.UserId);
+                var normalizedAddressLine2 = string.IsNullOrWhiteSpace(addressLine2) ? null : addressLine2;
+                var updatedFields = new List<string>();
+
+                if (!string.Equals(user.Name, name, StringComparison.Ordinal))
+                    updatedFields.Add("First name");
+                if (!string.Equals(user.Surname, surname, StringComparison.Ordinal))
+                    updatedFields.Add("Surname");
+                if (!string.Equals(user.Email, email, StringComparison.OrdinalIgnoreCase))
+                    updatedFields.Add("Email address");
+                if (!string.Equals(user.Cellphone ?? string.Empty, cellphone ?? string.Empty, StringComparison.Ordinal))
+                    updatedFields.Add("Cellphone number");
+                if (existingAddress == null ||
+                    !string.Equals(existingAddress.AddressLine1, addressLine1, StringComparison.Ordinal) ||
+                    !string.Equals(existingAddress.AddressLine2, normalizedAddressLine2, StringComparison.Ordinal) ||
+                    existingAddress.SuburbId != suburbId)
+                    updatedFields.Add("Residential address");
+
+                if (updatedFields.Count == 0)
                 {
-                    await HttpContext.SignOutAsync();
-                    TempData["AccountMessage"] = "Your profile was saved. Sign in again using " + email + ".";
-                    return RedirectToAction(nameof(Login));
+                    TempData["ProfileMessage"] = "No profile changes were made.";
+                    return RedirectToAction(nameof(Profile));
+                }
+
+                if (await repository.UpdateProfileWithAddress(user.UserId, user.SecurityStamp, name!, surname!, email!,
+                    cellphone, addressLine1!, normalizedAddressLine2, suburbId!.Value))
+                {
+                    var updatedState = await repository.GetState(user.UserId);
+                    if (updatedState == null)
+                    {
+                        return Challenge();
+                    }
+
+                    var refreshedClaims = new List<Claim>
+                    {
+                        new(ClaimTypes.NameIdentifier, user.UserId.ToString()),
+                        new(ClaimTypes.Name, $"{name} {surname}".Trim()),
+                        new(ClaimTypes.Email, email!),
+                        new(ClaimTypes.Role, updatedState.Role),
+                        new("MustChangePassword", updatedState.MustChangePassword.ToString()),
+                        new("SecurityStamp", updatedState.SecurityStamp.ToString())
+                    };
+
+                    // The user's role cannot change through profile editing. Retain
+                    // their existing role-specific identifier claim while renewing
+                    // the security stamp in the authentication cookie.
+                    foreach (var claimType in new[] { "PatientID", "AdminID" })
+                    {
+                        var existingClaim = User.FindFirst(claimType);
+                        if (existingClaim != null)
+                        {
+                            refreshedClaims.Add(new Claim(claimType, existingClaim.Value));
+                        }
+                    }
+
+                    var currentTicket = await HttpContext.AuthenticateAsync(
+                        CookieAuthenticationDefaults.AuthenticationScheme);
+                    var properties = currentTicket.Properties ?? new AuthenticationProperties
+                    {
+                        IsPersistent = false,
+                        ExpiresUtc = DateTimeOffset.UtcNow.AddHours(8)
+                    };
+
+                    await HttpContext.SignInAsync(
+                        CookieAuthenticationDefaults.AuthenticationScheme,
+                        new ClaimsPrincipal(new ClaimsIdentity(refreshedClaims,
+                            CookieAuthenticationDefaults.AuthenticationScheme)),
+                        properties);
+
+                    TempData["ProfileMessage"] = FormatProfileUpdateMessage(updatedFields);
+                    return RedirectToAction(nameof(Profile));
                 }
                 ModelState.AddModelError("", "Your account changed while editing. Reload this page and try again.");
             }
@@ -303,6 +368,12 @@ public class AccountController(IAuthenticationRepository repository, PasswordRes
     }
     private static bool ValidEmail(string? email) =>
         !string.IsNullOrWhiteSpace(email) && email.Trim().Length <= 150 && new EmailAddressAttribute().IsValid(email.Trim());
+
+    private static string FormatProfileUpdateMessage(IReadOnlyList<string> updatedFields) =>
+        updatedFields.Count == 1
+            ? $"{updatedFields[0]} updated."
+            : $"{string.Join(", ", updatedFields.Take(updatedFields.Count - 1))} and {updatedFields[^1]} updated.";
+
     private static bool ValidToken(string? token) => token is { Length: 64 } && token.All(Uri.IsHexDigit);
     private static string TokenHash(string token) => Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(token)));
 }
