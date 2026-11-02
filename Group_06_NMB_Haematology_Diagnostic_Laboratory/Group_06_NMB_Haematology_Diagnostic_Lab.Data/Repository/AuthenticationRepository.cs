@@ -1,0 +1,75 @@
+using Group_06_NMB_Haematology_Diagnostic_Lab.Data.DataAccess;
+using Group_06_NMB_Haematology_Diagnostic_Lab.Data.Models;
+namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Repository;
+
+public class AuthenticationRepository(ISqlDataAccess db) : IAuthenticationRepository
+{
+    public async Task<User?> GetActiveUserByEmail(string email) =>
+        (await db.GetData<User, object>("sp_Auth_GetActiveUserByEmail", new { Email = email.Trim() })).FirstOrDefault();
+
+    public async Task<User?> GetActiveUserById(int userId) =>
+        (await db.GetData<User, object>("sp_Auth_GetUserById", new { UserID = userId })).FirstOrDefault();
+
+    public async Task<string?> GetActiveAdministratorEmail() =>
+        (await db.LoadData<string, object>(
+            "SELECT TOP (1) Email FROM dbo.[User] WHERE Role = @Role AND IsActive = 1 ORDER BY UserID",
+            new { Role = "Admin" })).FirstOrDefault();
+
+    public async Task<bool> UpdateProfile(int userId, Guid securityStamp, string name, string surname, string email, string? cellphone, string? homeAddress) =>
+        (await db.GetData<bool, object>("sp_Auth_UpdateProfile", new {
+            UserID = userId, SecurityStamp = securityStamp, Name = name, Surname = surname,
+            Email = email, Cellphone = cellphone, HomeAddress = homeAddress })).Single();
+
+    public async Task<bool> UpdateProfileWithAddress(int userId, Guid securityStamp, string name, string surname, string email,
+        string? cellphone, string addressLine1, string? addressLine2, int suburbId) =>
+        (await db.GetData<bool, object>("sp_Auth_UpdateProfileWithAddress", new {
+            UserID = userId, SecurityStamp = securityStamp, Name = name, Surname = surname, Email = email,
+            Cellphone = cellphone, AddressLine1 = addressLine1, AddressLine2 = addressLine2, SuburbID = suburbId })).Single();
+
+    public Task<IEnumerable<Province>> GetProvinces() => db.GetData<Province, object>("sp_Address_GetProvinces", new { });
+    public Task<IEnumerable<TownCity>> GetTownCities(int provinceId) =>
+        db.GetData<TownCity, object>("sp_Address_GetTownCitiesByProvince", new { ProvinceID = provinceId });
+    public Task<IEnumerable<Suburb>> GetSuburbs(int townCityId) =>
+        db.GetData<Suburb, object>("sp_Address_GetSuburbsByTownCity", new { TownCityID = townCityId });
+    public async Task<UserAddress?> GetUserAddress(int userId) =>
+        (await db.GetData<UserAddress, object>("sp_Address_GetAllUserAddresses", new { }))
+            .FirstOrDefault(address => address.UserId == userId);
+
+    public Task RecordLogin(int userId) =>
+        db.SaveData("sp_Auth_RecordLogin", new { UserID = userId });
+
+    public async Task<AuthenticationState?> GetState(int userId) =>
+        (await db.GetData<AuthenticationState, object>("sp_Auth_GetState", new { UserID = userId })).FirstOrDefault();
+
+    public async Task<bool> CreateReset(int userId, string tokenHash) =>
+        (await db.GetData<bool, object>("sp_Auth_CreateReset", new { UserID = userId, TokenHash = tokenHash })).Single();
+
+    public async Task<bool> ResetPassword(string tokenHash, string passwordHash, string passwordSalt) =>
+        (await db.GetData<bool, object>("sp_Auth_ResetPassword", new { TokenHash = tokenHash, PasswordHash = passwordHash, PasswordSalt = passwordSalt })).Single();
+
+    public async Task<bool> ChangePassword(int userId, string oldHash, string passwordHash, string passwordSalt) =>
+        (await db.GetData<bool, object>("sp_Auth_ChangePassword", new { UserID = userId, OldHash = oldHash, PasswordHash = passwordHash, PasswordSalt = passwordSalt })).Single();
+
+    public async Task<int?> GetPatientIdByUserId(int userId)
+    {
+        var results = await db.GetData<int, object>(
+            "sp_Auth_GetPatientIdByUserId",
+            new { UserID = userId });
+
+        return results.Select(id => (int?)id).FirstOrDefault();
+    }
+
+    public async Task<int?> GetAdminIdByUserId(int userId)
+    {
+        return await db.QueryFirstOrDefaultAsync<int?>(
+            """
+            SELECT a.AdminID
+            FROM dbo.Admin AS a
+            INNER JOIN dbo.[User] AS u ON u.UserID = a.UserID
+            WHERE a.UserID = @UserID
+              AND u.IsActive = 1
+              AND u.[Role] = 'Admin';
+            """,
+            new { UserID = userId });
+    }
+}

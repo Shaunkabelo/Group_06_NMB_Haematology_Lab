@@ -1,0 +1,732 @@
+@using Group_06_NMB_Haematology_Diagnostic_Lab.Data.Models
+@model IEnumerable<LabTechnician>
+
+@{
+    Layout = "~/Views/Shared/_LabManager_Layout.cshtml";
+    var testTypes = ViewBag.TestTypes as IEnumerable<TestType> ?? Enumerable.Empty<TestType>();
+    var technicianTestTypes = ViewBag.TechnicianTestTypes as Dictionary<int, HashSet<int>>
+        ?? new Dictionary<int, HashSet<int>>();
+}
+
+<div class="page-body">
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success">@TempData["Success"]</div>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger">@TempData["Error"]</div>
+    }
+
+
+    <!-- ========================================================= -->
+    <!-- PAGE HEADER -->
+    <!-- ========================================================= -->
+
+    <div class="section-header">
+
+        <div>
+            <h2>Technicians</h2>
+            
+        </div>
+
+        <div style="display:flex; gap:10px; align-items:center;">
+
+            <input type="search" class="form-control" style="width:220px;" data-staff-search="#techniciansTable"
+                   placeholder="Search technicians" aria-label="Search technicians" autocomplete="off" />
+
+            <!-- FILTER -->
+            <form asp-controller="LabManager"
+                  asp-action="Technicians"
+                  method="get">
+
+                <select id="filterSelect"
+                        name="filter"
+                        class="form-select @(ViewBag.Filter == "Active" ? "filter-active" : ViewBag.Filter == "Inactive" ? "filter-inactive" : "filter-all")"
+                        onchange="this.form.submit()">
+
+                    @if (ViewBag.Filter == "Active")
+                    {
+                        <option value="Active" selected>Active</option>
+                    }
+                    else
+                    {
+                        <option value="Active">Active</option>
+                    }
+
+                    @if (ViewBag.Filter == "Inactive")
+                    {
+                        <option value="Inactive" selected>Inactive</option>
+                    }
+                    else
+                    {
+                        <option value="Inactive">Inactive</option>
+                    }
+
+                    @if (ViewBag.Filter == "All")
+                    {
+                        <option value="All" selected>All</option>
+                    }
+                    else
+                    {
+                        <option value="All">All</option>
+                    }
+
+                </select>
+
+            </form>
+
+            <!-- ADD TECHNICIAN -->
+            <button class="btn btn-primary"
+                    onclick="openCreateTechnician()"
+                    data-bs-toggle="offcanvas"
+                    data-bs-target="#technicianPanel">
+
+                Add Technician
+
+            </button>
+
+        </div>
+
+    </div>
+
+
+    <!-- ========================================================= -->
+    <!-- TECHNICIANS TABLE -->
+    <!-- ========================================================= -->
+
+    <div class="table-wrap">
+
+        <table id="techniciansTable">
+
+            <thead>
+
+                <tr>
+                    <th>Name</th>
+                    <th>Surname</th>
+                    <th>Email</th>
+                    <th>Cellphone</th>
+                    <th>SA ID</th>
+                    <th>Assigned Test Types</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+
+            </thead>
+
+            <tbody>
+
+                @foreach (var technician in Model)
+                {
+                    var assignedIds = technicianTestTypes.TryGetValue(technician.LabTechnicianId, out var ids)
+                    ? ids
+                    : new HashSet<int>();
+                    var assignedTestTypes = testTypes
+                        .Where(testType => assignedIds.Contains(testType.TestTypeId))
+                        .OrderBy(testType => testType.TestCategory?.CategoryName)
+                        .ThenBy(testType => testType.TestName)
+                        .ToList();
+                    var primaryAssignedTestType = assignedTestTypes.FirstOrDefault();
+                    var additionalAssignedTestTypes = assignedTestTypes.Skip(1).ToList();
+                    <tr class="staff-summary-row" tabindex="0" role="button"
+                        data-details-target="technician-details-@technician.LabTechnicianId" aria-expanded="false"
+                        aria-controls="technician-details-@technician.LabTechnicianId" title="Show technician details">
+
+                        <td>@technician.User.Name</td>
+
+                        <td>@technician.User.Surname</td>
+
+                        <td>@technician.User.Email</td>
+
+                        <td>@technician.User.Cellphone</td>
+
+                        <td>@technician.User.SaIdNumber</td>
+
+                        <td>
+                            @if (primaryAssignedTestType is not null)
+                            {
+                                <span class="assignment-summary">
+                                    <span>@primaryAssignedTestType.TestName</span>
+                                    @if (additionalAssignedTestTypes.Any())
+                                    {
+                                        <span class="assignment-more">+@additionalAssignedTestTypes.Count</span>
+                                    }
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="text-muted">None assigned</span>
+                            }
+                        </td>
+
+                        <td>
+
+                            @if (technician.User.IsActive)
+                            {
+                                <span class="status-active">
+                                    Active
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="status-inactive">
+                                    Inactive
+                                </span>
+                            }
+
+                        </td>
+
+                        <td class="td-actions">
+
+                            <!-- ================= EDIT ================= -->
+
+                            <button type="button"
+                                    class="btn btn-edit btn-sm"
+                                    data-bs-toggle="offcanvas"
+                                    data-bs-target="#technicianPanel"
+                                    onclick="openEditTechnician(this)"
+                                    data-id="@technician.LabTechnicianId"
+                                    data-name="@technician.User.Name"
+                                    data-surname="@technician.User.Surname"
+                                    data-email="@technician.User.Email"
+                                    data-cellphone="@technician.User.Cellphone"
+                                    data-dob="@technician.User.DateOfBirth?.ToString("yyyy-MM-dd")"
+                                    data-said="@technician.User.SaIdNumber"
+                                    data-address-line1="@technician.User.StructuredAddress?.AddressLine1"
+                                    data-address-line2="@technician.User.StructuredAddress?.AddressLine2"
+                                    data-province-id="@technician.User.StructuredAddress?.ProvinceId"
+                                    data-town-city-id="@technician.User.StructuredAddress?.TownCityId"
+                                    data-suburb-id="@technician.User.StructuredAddress?.SuburbId"
+                                    data-employee="@technician.EmployeeNumber"
+                                    data-assigned="@string.Join(",", assignedIds)">
+
+                                Edit
+
+                            </button>
+
+                            <!-- ================= ACTIVE TECHNICIAN ================= -->
+                            @if (technician.User.IsActive)
+                            {
+                                <button type="button" class="btn btn-secondary btn-sm"
+                                        data-bs-toggle="offcanvas" data-bs-target="#technicianAssignmentsPanel"
+                                        onclick="openTechnicianAssignments(this)"
+                                        data-id="@technician.LabTechnicianId"
+                                        data-name="@technician.User.Name @technician.User.Surname"
+                                        data-assigned="@string.Join(",", assignedIds)">Assign Tests</button>
+                                <form asp-action="DeleteTechnician"
+                                      asp-controller="LabManager"
+                                      method="post"
+                                      style="display:inline;">
+
+                                    <input type="hidden"
+                                           name="id"
+                                           value="@technician.LabTechnicianId" />
+
+                                    <input type="hidden"
+                                           name="filter"
+                                           value="@ViewBag.Filter" />
+
+                                    <button type="submit"
+                                            class="btn btn-delete btn-sm"
+                                            onclick="return confirm('Are you sure you want to deactivate this technician?');">
+
+                                        Deactivate
+
+                                    </button>
+
+                                </form>
+                            }
+
+
+                            <!-- ================= INACTIVE TECHNICIAN ================= -->
+                            @if (!technician.User.IsActive)
+                            {
+                                <form asp-action="ReactivateTechnician"
+                                      asp-controller="LabManager"
+                                      method="post"
+                                      style="display:inline;">
+
+                                    <input type="hidden"
+                                           name="id"
+                                           value="@technician.LabTechnicianId" />
+
+                                    <input type="hidden"
+                                           name="filter"
+                                           value="@ViewBag.Filter" />
+
+                                    <button type="submit"
+                                            class="btn btn-activate btn-sm"
+                                            onclick="return confirm('Are you sure you want to reactivate this technician?');">
+
+                                        Reactivate
+
+                                    </button>
+
+                                </form>
+                            }
+
+                        </td>
+
+                    </tr>
+                    <tr id="technician-details-@technician.LabTechnicianId" class="staff-detail-row" hidden>
+                        <td colspan="8" class="staff-detail-cell">
+                            <div class="staff-detail-content">
+                                <section>
+                                    <h6>Technician details</h6>
+                                    <dl>
+                                        <dt>Employee number</dt><dd>@technician.EmployeeNumber</dd>
+                                        <dt>Date of birth</dt><dd>@(technician.User.DateOfBirth?.ToString("dd MMM yyyy") ?? "Not captured")</dd>
+                                    </dl>
+                                </section>
+                                @if (additionalAssignedTestTypes.Any())
+                                {
+                                    <section>
+                                        <h6>Additional assigned test types</h6>
+                                        <ul class="staff-detail-list">
+                                            @foreach (var testType in additionalAssignedTestTypes)
+                                            {
+                                                <li>@testType.TestName <span class="text-muted">(@(testType.TestCategory?.CategoryName ?? "Uncategorised"))</span></li>
+                                            }
+                                        </ul>
+                                    </section>
+                                }
+                                <section>
+                                    <h6>Residential address</h6>
+                                    @if (technician.User.StructuredAddress is { } address)
+                                    {
+                                        <dl>
+                                            <dt>Address</dt><dd>@address.AddressLine1 @if (!string.IsNullOrWhiteSpace(address.AddressLine2)) { <br />@address.AddressLine2 }</dd>
+                                            <dt>Area</dt><dd>@address.SuburbName, @address.TownCityName, @address.ProvinceName</dd>
+                                            <dt>Area code</dt><dd>@address.AreaCode</dd>
+                                        </dl>
+                                    }
+                                    else { <p class="text-muted mb-0">No structured address captured yet.</p> }
+                                </section>
+                            </div>
+                        </td>
+                    </tr>
+                }
+
+            </tbody>
+
+        </table>
+
+    </div>
+    <p class="text-muted mt-3" data-staff-search-empty hidden>No technicians match your search.</p>
+
+
+</div>
+
+<!-- ========================================================= -->
+<!-- ADD / EDIT TECHNICIAN PANEL -->
+<!-- ========================================================= -->
+
+<div class="offcanvas offcanvas-end"
+     tabindex="-1"
+     id="technicianPanel"
+     style="width:600px;">
+
+
+    <div class="offcanvas-header">
+
+        <h4 id="technicianPanelTitle">
+            Add Technician
+        </h4>
+
+        <button type="button"
+                class="btn-close"
+                data-bs-dismiss="offcanvas">
+        </button>
+
+    </div>
+
+
+    <div class="offcanvas-body">
+
+        <form id="technicianForm" data-staff-validation
+              asp-controller="LabManager"
+              asp-action="CreateTechnician"
+              method="post">
+
+            <input type="hidden"
+                   id="LabTechnicianId"
+                   name="LabTechnicianId"
+                   value="0" />
+
+
+            <!-- FIRST NAME -->
+
+            <div class="form-group">
+
+                <label class="form-label">
+                    First Name
+                </label>
+
+                <input id="TechnicianName"
+                       class="form-control"
+                       name="User.Name" maxlength="100"
+                       required />
+
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Employee Number</label>
+                <input id="TechnicianEmployeeNumber"
+                       class="form-control"
+                       name="EmployeeNumber" maxlength="50"
+                       required />
+            </div>
+
+
+            <!-- SURNAME -->
+
+            <div class="form-group">
+
+                <label class="form-label">
+                    Surname
+                </label>
+
+                <input id="TechnicianSurname"
+                       class="form-control"
+                       name="User.Surname" maxlength="100"
+                       required />
+
+            </div>
+
+
+            <!-- EMAIL -->
+
+            <div class="form-group">
+
+                <label class="form-label">
+                    Email
+                </label>
+
+                <input id="TechnicianEmail"
+                       type="email"
+                       class="form-control"
+                       name="User.Email" maxlength="150"
+                       required />
+
+            </div>
+
+
+            <!-- CELLPHONE + DOB -->
+
+            <div class="form-row">
+
+                <div class="form-group">
+
+                    <label class="form-label">
+                        Cellphone
+                    </label>
+
+                    <input id="TechnicianCellphone"
+                           class="form-control"
+                           name="User.Cellphone" required inputmode="numeric" data-digits="10" pattern="[0-9]{10}" maxlength="10" />
+
+                </div>
+
+
+                <div class="form-group">
+
+                    <label class="form-label">
+                        Date of Birth
+                    </label>
+
+                    <input id="TechnicianDateOfBirth"
+                           type="date"
+                           class="form-control"
+                           name="User.DateOfBirth" max="@DateTime.Today.ToString("yyyy-MM-dd")" required />
+
+                </div>
+
+            </div>
+
+
+            <!-- SA ID -->
+
+            <div class="form-group">
+
+                <label class="form-label">
+                    SA ID
+                </label>
+
+                <input id="TechnicianSaIdNumber"
+                       class="form-control"
+                       name="User.SaIdNumber" required inputmode="numeric" data-digits="13" pattern="[0-9]{13}" maxlength="13" />
+
+                <small id="idValidation"
+                       style="color:red;font-weight:bold;">
+                </small>
+
+            </div>
+
+
+            <partial name="_StructuredAddressFields" view-data='new ViewDataDictionary(ViewData) { { "AddressPrefix", "technicianAddress" } }' />
+
+            <div id="testTypeAssignmentSection" class="form-group border-top pt-4 mt-4">
+                <h6 class="mb-1">Test Types</h6>
+                <small class="text-muted d-block mb-3">
+                    Select at least one test type. The same test type can be assigned to multiple technicians.
+                </small>
+                @foreach (var category in testTypes.GroupBy(t => t.TestCategory?.CategoryName ?? "Uncategorised").OrderBy(g => g.Key))
+                {
+                    <fieldset class="border rounded p-3 mb-3">
+                        <legend class="float-none w-auto px-2 fs-6">@category.Key</legend>
+                        @foreach (var testType in category.OrderBy(t => t.TestName))
+                        {
+                            <div class="form-check mb-2">
+                                <input class="form-check-input technician-test-type" type="checkbox" name="testTypeIds"
+                                       value="@testType.TestTypeId" id="technician-test-@testType.TestTypeId" />
+                                <label class="form-check-label" for="technician-test-@testType.TestTypeId">@testType.TestName</label>
+                            </div>
+                        }
+                    </fieldset>
+                }
+            </div>
+
+
+            <!-- BUTTONS -->
+
+            <button id="technicianSubmitButton"
+                    type="submit"
+                    class="btn btn-primary">
+
+                Save Technician
+
+            </button>
+
+            <button type="button"
+                    class="btn btn-secondary"
+                    data-bs-dismiss="offcanvas">
+
+                Cancel
+
+            </button>
+
+        </form>
+
+    </div>
+
+
+</div>
+
+<!-- ========================================================= -->
+<!-- JAVASCRIPT -->
+<!-- ========================================================= -->
+
+<div class="offcanvas offcanvas-end" id="technicianAssignmentsPanel" tabindex="-1"
+     aria-labelledby="technicianAssignmentsTitle" style="width:min(600px,100vw)">
+    <div class="offcanvas-header">
+        <h4 id="technicianAssignmentsTitle">Assign tests</h4>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+    <div class="offcanvas-body">
+        <p id="technicianAssignmentName" class="fw-semibold"></p>
+        <p class="text-muted">Choose one or more test types. Each test can be assigned to multiple technicians.</p>
+        <label for="technicianAssignmentSearch" class="form-label">Search test types or categories</label>
+        <input id="technicianAssignmentSearch" type="search" class="form-control mb-3" autocomplete="off" />
+        <form asp-controller="LabManager" asp-action="UpdateTechnicianTestTypes" method="post" id="technicianAssignmentForm">
+            <input type="hidden" name="technicianId" id="assignmentTechnicianId" />
+            <input type="hidden" name="filter" value="@ViewBag.Filter" />
+            <div id="technicianAssignmentChoices">
+                @foreach (var category in testTypes.GroupBy(t => t.TestCategory?.CategoryName ?? "Uncategorised").OrderBy(g => g.Key))
+                {
+                    <fieldset class="border rounded p-3 mb-3">
+                        <legend class="float-none w-auto px-2 fs-6">@category.Key</legend>
+                        @foreach (var testType in category.OrderBy(t => t.TestName))
+                        {
+                            <div class="form-check mb-2">
+                                <input class="form-check-input assignment-test-choice" type="checkbox" name="testTypeIds"
+                                       value="@testType.TestTypeId" id="assignment-test-@testType.TestTypeId" />
+                                <label class="form-check-label" for="assignment-test-@testType.TestTypeId">@testType.TestName</label>
+                            </div>
+                        }
+                    </fieldset>
+                }
+
+            </div>
+            <p id="assignmentSearchEmpty" class="text-muted" hidden>No matching test types.</p>
+            <button type="submit" class="btn btn-primary">Save assignments</button>
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="offcanvas">Cancel</button>
+        </form>
+    </div>
+</div>
+<script>
+
+    // =========================================================
+    // CREATE TECHNICIAN
+    // =========================================================
+
+    function openCreateTechnician()
+    {
+        setInitialTestAssignments(true);
+        document.getElementById("technicianPanelTitle").innerText =
+            "Add Technician";
+
+        document.getElementById("technicianSubmitButton").innerText =
+            "Save Technician";
+
+        document.getElementById("technicianForm").action =
+            '@Url.Action("CreateTechnician", "LabManager")';
+
+        document.getElementById("technicianForm").reset();
+        structuredAddress.reset("technicianAddress");
+
+        document.getElementById("LabTechnicianId").value = "0";
+        document.querySelectorAll(".technician-test-type").forEach(checkbox => checkbox.checked = false);
+
+        document.getElementById("idValidation").innerText = "";
+    }
+
+
+    // =========================================================
+    // EDIT TECHNICIAN
+    // =========================================================
+
+    function openEditTechnician(button)
+    {
+        setInitialTestAssignments(false);
+        document.getElementById("technicianPanelTitle").innerText =
+            "Edit Technician";
+
+        document.getElementById("technicianSubmitButton").innerText =
+            "Update Technician";
+
+        document.getElementById("technicianForm").action =
+            '@Url.Action("EditTechnician", "LabManager")';
+
+
+        document.getElementById("LabTechnicianId").value =
+            button.dataset.id;
+
+        document.getElementById("TechnicianName").value =
+            button.dataset.name;
+
+        document.getElementById("TechnicianSurname").value =
+            button.dataset.surname;
+
+        document.getElementById("TechnicianEmail").value =
+            button.dataset.email;
+
+        document.getElementById("TechnicianCellphone").value =
+            button.dataset.cellphone;
+
+        document.getElementById("TechnicianDateOfBirth").value =
+            button.dataset.dob;
+
+        document.getElementById("TechnicianSaIdNumber").value =
+            button.dataset.said;
+
+        structuredAddress.set("technicianAddress", {
+            line1: button.dataset.addressLine1,
+            line2: button.dataset.addressLine2,
+            provinceId: button.dataset.provinceId,
+            townCityId: button.dataset.townCityId,
+            suburbId: button.dataset.suburbId
+        });
+
+        document.getElementById("TechnicianEmployeeNumber").value =
+            button.dataset.employee;
+
+        const assignedIds = (button.dataset.assigned || "")
+            .split(",")
+            .filter(id => id)
+            .map(id => Number(id));
+        document.querySelectorAll(".technician-test-type").forEach(checkbox => {
+            checkbox.checked = assignedIds.includes(Number(checkbox.value));
+        });
+
+        document.getElementById("idValidation").innerText = "";
+    }
+
+
+    // =========================================================
+    // SA ID / DOB VALIDATION
+    // =========================================================
+
+    function validateSouthAfricanId(idInputId, dobInputId)
+    {
+        const id =
+            document.getElementById(idInputId).value;
+
+        const dob =
+            document.getElementById(dobInputId).value;
+
+
+        if (id.length !== 13 || dob === "")
+        {
+            document.getElementById("idValidation").innerText = "";
+
+            return true;
+        }
+
+
+        const parts = dob.split("-");
+
+
+        const expected =
+            parts[0].substring(2) +
+            parts[1] +
+            parts[2];
+
+
+        if (id.substring(0, 6) !== expected)
+        {
+            document.getElementById("idValidation").innerText =
+                "SA ID Number does not match the Date of Birth.";
+
+            return false;
+        }
+
+
+        document.getElementById("idValidation").innerText = "";
+
+        return true;
+    }
+
+    function setInitialTestAssignments(creating) {
+        const section = document.getElementById("testTypeAssignmentSection");
+        section.hidden = !creating;
+        section.querySelectorAll("input").forEach(input => input.disabled = !creating);
+    }
+    function filterTechnicianAssignments() {
+        const query = document.getElementById("technicianAssignmentSearch").value.trim().toLowerCase();
+        let visible = 0;
+        document.querySelectorAll("#technicianAssignmentChoices fieldset").forEach(group => {
+            const category = group.querySelector("legend").textContent.toLowerCase();
+            let matches = 0;
+            group.querySelectorAll(".form-check").forEach(row => {
+                const show = (category + " " + row.textContent.toLowerCase()).includes(query);
+                row.hidden = !show;
+                if (show) matches++;
+            });
+            group.hidden = matches === 0;
+            visible += matches;
+        });
+        document.getElementById("assignmentSearchEmpty").hidden = visible > 0;
+    }
+    function openTechnicianAssignments(button) {
+        document.getElementById("assignmentTechnicianId").value = button.dataset.id;
+        document.getElementById("technicianAssignmentName").textContent = button.dataset.name;
+        const selected = (button.dataset.assigned || "").split(",");
+        document.querySelectorAll(".assignment-test-choice").forEach(input => input.checked = selected.includes(input.value));
+        document.getElementById("technicianAssignmentSearch").value = "";
+        filterTechnicianAssignments();
+    }
+    document.getElementById("technicianAssignmentSearch").addEventListener("input", filterTechnicianAssignments);
+    document.getElementById("technicianAssignmentForm").addEventListener("submit", event => {
+        if (!document.querySelector(".assignment-test-choice:checked")) {
+            event.preventDefault();
+            alert("Assign at least one test type.");
+        }
+    });
+</script>
+<script src="~/js/structured-address.js" asp-append-version="true"></script>
+<script src="~/js/staff-details.js" asp-append-version="true"></script>
+<script src="~/js/staff-search.js" asp-append-version="true"></script>
+
+
+

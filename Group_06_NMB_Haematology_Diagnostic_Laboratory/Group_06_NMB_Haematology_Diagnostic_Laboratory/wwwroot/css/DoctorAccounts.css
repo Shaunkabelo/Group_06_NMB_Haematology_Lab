@@ -1,0 +1,164 @@
+.doctor-account-page {
+    width: 100%;
+    max-width: 1120px;
+    margin-inline: auto;
+}
+
+.doctor-account-page .account-panel {
+    width: 100%;
+    max-width: 900px;
+    margin-bottom: 22px;
+    padding: 0;
+    overflow: hidden;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    background: #fff;
+    box-shadow: 0 8px 24px rgb(15 23 42 / 5%);
+}
+
+.doctor-account-page .card-header {
+    min-height: 58px;
+    padding: 16px 22px;
+    background: #fbfdff;
+}
+
+.doctor-account-page .card-title {
+    color: #17324d;
+    font-size: 1rem;
+    font-weight: 700;
+}
+
+.doctor-account-page .card-body {
+    padding: 22px;
+}
+
+.doctor-account-page .profile-summary {
+    gap: 16px;
+    margin: 0 0 24px;
+    padding: 0 0 20px;
+    border-bottom: 1px solid #e8edf3;
+}
+
+.doctor-account-page .profile-avatar {
+    width: 64px;
+    height: 64px;
+    flex: 0 0 64px;
+    border: 1px solid #bce9df;
+    border-radius: 16px;
+    background: linear-gradient(145deg, #e4faf4, #c8f0e7);
+    color: #087568;
+    font-size: 1rem;
+    letter-spacing: .04em;
+}
+
+.doctor-account-page .profile-summary h2 {
+    color: #17324d;
+    font-size: 1.2rem;
+    font-weight: 700;
+    overflow-wrap: anywhere;
+}
+
+.doctor-account-page .profile-summary p {
+    color: #64748b;
+    font-size: .9rem;
+}
+
+.doctor-account-page .account-form {
+    gap: 16px;
+}
+
+.doctor-account-page .profile-form-grid,
+.doctor-account-page .profile-readonly-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px 20px;
+    margin-bottom: 4px;
+}
+
+.doctor-account-page .profile-info-item {
+    min-width: 0;
+    border-color: #e2e8f0;
+    border-radius: 10px;
+    padding: 14px 16px;
+    background: #f8fafc;
+}
+
+.doctor-account-page .profile-info-item strong {
+    display: block;
+    overflow-wrap: anywhere;
+}
+
+.doctor-account-page .preference-list {
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.doctor-account-page .preference-row {
+    min-width: 0;
+    margin: 0;
+    padding: 15px 16px;
+    border-radius: 10px;
+}
+
+.doctor-account-page .preference-row > span {
+    min-width: 0;
+}
+
+.doctor-account-page .preference-row small {
+    max-width: 58ch;
+}
+
+.doctor-account-page .password-field {
+    align-items: stretch;
+    gap: 8px;
+}
+
+.doctor-account-page .password-field .btn {
+    min-width: 68px;
+}
+
+.doctor-account-page .btn-row {
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 4px;
+}
+
+.doctor-account-page .auth-message {
+    overflow-wrap: anywhere;
+}
+
+@media (max-width: 760px) {
+    .doctor-account-page .account-panel {
+        max-width: none;
+    }
+
+    .doctor-account-page .profile-form-grid,
+    .doctor-account-page .profile-readonly-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+@media (max-width: 480px) {
+    .doctor-account-page {
+        padding: 16px 12px;
+    }
+
+    .doctor-account-page .card-header,
+    .doctor-account-page .card-body {
+        padding: 16px;
+    }
+
+    .doctor-account-page .profile-avatar {
+        width: 52px;
+        height: 52px;
+        flex-basis: 52px;
+        border-radius: 13px;
+    }
+
+    .doctor-account-page .btn-row > .btn {
+        flex: 1 1 auto;
+    }
+
+    .doctor-account-page .password-field {
+        grid-template-columns: minmax(0, 1fr) auto;
+    }
+}

@@ -1,3 +1,12 @@
-﻿@{
-    Layout = "_Layout";
+@{
+    var currentController = ViewContext.RouteData.Values["controller"]?.ToString() ?? string.Empty;
+    Layout = currentController switch
+    {
+        "Doctor" => "_LayoutDoctor",
+        var tech when tech.StartsWith("Tech", StringComparison.OrdinalIgnoreCase) => "_LayoutTechnician",
+        "Patient" => "_LayoutPatient",
+        "Admin" => "_LayoutAdmin",
+        "LabManager" => "_LayoutLabManager",
+        _ => "_Layout"
+    };
 }

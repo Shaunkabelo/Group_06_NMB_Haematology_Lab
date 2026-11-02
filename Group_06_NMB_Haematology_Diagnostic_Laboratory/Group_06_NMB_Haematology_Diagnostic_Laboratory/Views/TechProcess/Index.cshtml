@@ -1,0 +1,363 @@
+﻿@{
+    Layout = "_TechLayout";
+}
+@model TechProcessIndexModel
+@{
+    ViewData["Title"] = "Process Tests";
+}
+
+<div class="topbar">
+    <h1 class="page-title">Process Tests</h1>
+</div>
+
+<div class="page-body">
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success">@TempData["Success"]</div>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger">@TempData["Error"]</div>
+    }
+
+    <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab(this,'tab-available')">📥 Available Requests (@Model.AvailableRequests.Count)</button>
+        <button class="tab-btn" onclick="switchTab(this,'tab-mine')">🔬 My Active Tests (@Model.MyActiveRequests.Count)</button>
+    </div>
+
+    <!-- AVAILABLE REQUESTS TAB -->
+    <div id="tab-available" class="tab-panel active">
+        <div class="card">
+            <div class="card-header">
+                <span class="card-title">Requests Available — Expand to Select Individual Tests</span>
+                <span class="form-hint"></span>
+            </div>
+            <div style="padding:10px 16px">
+                <select class="form-control"
+                        style="width:200px"
+                        aria-label="Filter available requests by urgency"
+                        onchange="filterUrgency(this,'process-available-table')">
+                    <option value="">All Requests</option>
+                    <option value="STAT">STAT only</option>
+                    <option value="Urgent">Urgent only</option>
+                    <option value="Routine">Routine only</option>
+                </select>
+            </div>
+            <div class="table-wrap">
+                <table id="process-available-table">
+                    <thead>
+                        <tr>
+                            <th style="width:170px">Request No.</th>
+                            <th>Patient</th>
+                            <th>Doctor</th>
+                            <th>Urgency</th>
+                            <th>Tests Pending</th>
+                            <th>Overall Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var req in Model.AvailableRequests)
+                        {
+                            var subId = $"proc-{req.TestRequestId}";
+                            var urgencyBadge = req.Urgency switch { "STAT" => "red", "Urgent" => "amber", _ => "gray" };
+
+                            <tr class="req-row"
+                                data-urgency="@req.Urgency"
+                                onclick="toggleReqRow('@subId',this)">
+                                <td class="td-bold"><span class="expand-icon">▶</span>@req.RequestNumber</td>
+                                <td>@req.PatientName<small class="td-muted" style="display:block">DOB: @req.PatientDOB?.ToString("yyyy-MM-dd")</small></td>
+                                <td>@req.DoctorName</td>
+                                <td><span class="badge @urgencyBadge">@req.Urgency</span></td>
+                                <td><span class="badge gray">@req.PendingCount test@(req.PendingCount == 1 ? "" : "s")</span></td>
+                                <td><span class="badge blue">@req.RequestStatus</span></td>
+                            </tr>
+                            <tr class="tests-subrow" id="@subId">
+                                <td colspan="6">
+                                    <table class="sub-tests-table">
+                                        <thead>
+                                            <tr>
+                                                <th style="padding-left:36px">Test</th>
+                                                <th>Category</th>
+                                                <th>TAT</th>
+                                                <th>Expected Done By</th>
+                                                <th>Test Status</th>
+                                                <th>Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach (var t in req.Tests)
+                                            {
+                                                <tr>
+                                                    <td style="padding-left:36px">@t.TestName</td>
+                                                    <td><span class="badge teal">@t.CategoryName</span></td>
+                                                    <td>@t.TurnaroundTimeMinutes min</td>
+                                                    <td>@t.ExpectedDoneBy?.ToString("HH:mm")</td>
+                                                    <td>
+                                                        @if (t.TestStatus == "Submitted")
+                                                        {
+                                                            <span class="badge blue">Available</span>
+                                                        }
+                                                        else
+                                                        {
+                                                            <span class="badge amber">In Progress — @t.TakenByName</span>
+                                                        }
+                                                    </td>
+                                                    <td>
+                                                        @if (t.TestStatus == "Submitted")
+                                                        {
+                                                            <button type="button" class="btn btn-primary btn-sm" onclick="event.stopPropagation();openSelectModal(@t.TestRequestTestTypeId)">Select</button>
+                                                        }
+                                                        else
+                                                        {
+                                                            <span style="font-size:11px;color:#7A8CA0">Taken</span>
+                                                        }
+                                                    </td>
+                                                </tr>
+                                            }
+                                        </tbody>
+                                    </table>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- MY ACTIVE TESTS TAB -->
+    <div id="tab-mine" class="tab-panel">
+        <div class="card">
+            <div class="card-header">
+                <span class="card-title">My In-Progress Tests — Grouped by Request</span>
+                <a asp-controller="TechResults" asp-action="Index" class="card-link">Capture results →</a>
+            </div>
+            <div style="padding:10px 16px">
+                <select class="form-control"
+                        style="width:200px"
+                        aria-label="Filter active tests by urgency"
+                        onchange="filterUrgency(this,'process-active-table')">
+                    <option value="">All Active Tests</option>
+                    <option value="STAT">STAT only</option>
+                    <option value="Urgent">Urgent only</option>
+                    <option value="Routine">Routine only</option>
+                </select>
+            </div>
+            <div class="table-wrap">
+                <table id="process-active-table">
+                    <thead>
+                        <tr>
+                            <th style="width:170px">Request No.</th>
+                            <th>Patient</th>
+                            <th>Doctor</th>
+                            <th>Urgency</th>
+                            <th>Due</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var req in Model.MyActiveRequests)
+                        {
+                            var subId = $"mine-{req.TestRequestId}";
+                            var urgencyBadge = req.Urgency switch { "STAT" => "red", "Urgent" => "amber", _ => "gray" };
+                            var rowClass = req.AnyOverdue ? "req-row overdue-row" : "req-row";
+
+                            <tr class="@rowClass"
+                                data-urgency="@req.Urgency"
+                                onclick="toggleReqRow('@subId',this)">
+                                <td class="td-bold"><span class="expand-icon">▶</span>@req.RequestNumber</td>
+                                <td>@req.PatientName</td>
+                                <td>@req.DoctorName</td>
+                                <td><span class="badge @urgencyBadge">@req.Urgency</span></td>
+                                <td>
+                                    @{
+                                        var earliestDue = req.Tests.Where(t => t.ExpectedDoneBy.HasValue).OrderBy(t => t.ExpectedDoneBy).FirstOrDefault()?.ExpectedDoneBy;
+                                    }
+                                    @if (req.AnyOverdue)
+                                    {
+                                        <span style="color:#FF4757;font-weight:600">⚠️ @earliestDue?.ToString("HH:mm")</span>
+                                    }
+                                    else
+                                    {
+                                        @earliestDue?.ToString("HH:mm")
+                                    }
+                                </td>
+                                <td>
+                                    @if (req.AnyOverdue)
+                                    {
+                                        <span class="badge red">⚠️ Overdue</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge amber">In Progress</span>
+                                    }
+                                </td>
+                            </tr>
+                            <tr class="tests-subrow" id="@subId">
+                                <td colspan="6">
+                                    <table class="sub-tests-table">
+                                        <thead>
+                                            <tr>
+                                                <th style="padding-left:36px">Test</th>
+                                                <th>Started</th>
+                                                <th>Expected Done</th>
+                                                <th>Test Status</th>
+                                                <th>Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach (var t in req.Tests)
+                                            {
+                                                <tr>
+                                                    <td style="padding-left:36px">@t.TestName</td>
+                                                    <td>@t.StartDateTime?.ToString("HH:mm")</td>
+                                                    <td style="@(t.IsOverdue ? "color:#FF4757;font-weight:600" : "")">
+                                                        @t.ExpectedDoneBy?.ToString("HH:mm") @(t.IsOverdue ? "⚠️ OVERDUE" : "")
+                                                    </td>
+                                                    <td><span class="badge amber">In Progress</span></td>
+                                                    <td>
+                                                        <a asp-controller="TechResults" asp-action="Index" class="btn btn-primary btn-sm">Capture</a>
+                                                    </td>
+                                                </tr>
+                                            }
+                                        </tbody>
+                                    </table>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <!-- Select Test Modal -->
+    <div id="select-modal-overlay" style="display:none;position:fixed;inset:0;background:rgba(11,25,41,0.5);z-index:1000;align-items:center;justify-content:center">
+        <div style="background:#fff;border-radius:12px;max-width:560px;width:92%;max-height:85vh;overflow-y:auto;padding:0">
+            <div style="padding:16px 20px;border-bottom:1px solid #EAEEF2;display:flex;justify-content:space-between;align-items:center">
+                <strong id="modal-title">Confirm Test Selection</strong>
+                <button type="button" onclick="closeSelectModal()" style="background:none;border:none;font-size:20px;cursor:pointer;color:#7A8CA0">×</button>
+            </div>
+            <div id="modal-body" style="padding:20px">Loading...</div>
+            <form id="modal-start-form" asp-controller="TechProcess" asp-action="StartTest" method="post">
+                <input type="hidden" name="testRequestTestTypeId" id="modal-trtt-id" />
+                <div style="padding:16px 20px;border-top:1px solid #EAEEF2;display:flex;justify-content:flex-end;gap:10px">
+                    <button type="button" class="btn btn-secondary" onclick="closeSelectModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="modal-confirm-btn">✔ Confirm &amp; Start Test</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+            function filterUrgency(select, tableId) {
+            const table = document.getElementById(tableId);
+            if (!table) return;
+
+            const selected = select.value.trim().toLowerCase();
+
+            Array.from(table.tBodies).forEach(tbody => {
+                Array.from(tbody.rows).forEach(row => {
+                    if (!row.hasAttribute('data-urgency')) return;
+
+                    const urgency =
+                        (row.dataset.urgency || '').trim().toLowerCase();
+
+                    const show = selected === '' || urgency === selected;
+
+                    if (show) {
+                        row.style.removeProperty('display');
+                    } else {
+                        row.style.setProperty('display', 'none', 'important');
+                    }
+
+                    const details = row.nextElementSibling;
+
+                    if (details &&
+                        details.classList.contains('tests-subrow')) {
+                        if (show) {
+                            details.style.removeProperty('display');
+                        } else {
+                            details.style.setProperty(
+                                'display', 'none', 'important'
+                            );
+                        }
+                    }
+                });
+            });
+        }
+        function toggleReqRow(subId, rowEl) {
+            const sub = document.getElementById(subId);
+            if (!sub) return;
+            const isOpen = sub.classList.contains('open');
+            sub.classList.toggle('open', !isOpen);
+            rowEl.classList.toggle('expanded', !isOpen);
+        }
+            
+            async function openSelectModal(testRequestTestTypeId) {
+            document.getElementById('select-modal-overlay').style.display = 'flex';
+            document.getElementById('modal-body').innerHTML = 'Loading...';
+            document.getElementById('modal-trtt-id').value = testRequestTestTypeId;
+
+                    const res = await fetch(
+            '@Url.Action("GetTestModalData", "TechProcess")?testRequestTestTypeId=' +
+            encodeURIComponent(testRequestTestTypeId)
+        );
+            if (!res.ok) {
+                document.getElementById('modal-body').innerHTML = '<p style="color:#FF4757">Could not load test details.</p>';
+                return;
+            }
+            const d = await res.json();
+
+            const consumablesHtml = d.consumables.length
+                ? d.consumables.map(c => `
+        <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #F0F2F5;font-size:13px">
+            <span>${c.consumableName} (need ${c.quantityRequired})</span>
+            <span style="font-weight:600;color:${c.insufficientStock ? '#FF4757' : '#1E9B54'}">
+                ${c.quantityOnHand} in stock ${c.insufficientStock ? '⚠️ LOW' : ''}
+            </span>
+        </div>`).join('')
+                : '<p style="font-size:12px;color:#7A8CA0;margin:0">No consumables tracked for this test.</p>';
+
+            const anyInsufficient = d.consumables.some(c => c.insufficientStock);
+
+            document.getElementById('modal-title').textContent = d.requestNumber + ' — ' + d.testName;
+            document.getElementById('modal-body').innerHTML = `
+        <div style="background:#F5F7FA;border-radius:8px;padding:12px;margin-bottom:14px;display:flex;flex-wrap:wrap;gap:16px">
+            <div><div class="form-label">Patient</div><div style="font-weight:700">${d.patientName} (${d.patientAge} yrs)</div></div>
+            <div><div class="form-label">Doctor</div><div style="font-weight:700">${d.doctorName}</div></div>
+            <div><div class="form-label">Urgency</div><div style="font-weight:700">${d.urgency}</div></div>
+            <div><div class="form-label">Category</div><div style="font-weight:700">${d.categoryName}</div></div>
+            <div><div class="form-label">Sample Type</div><div style="font-weight:700">${d.sampleTypeName}</div></div>
+            <div><div class="form-label">Barcode</div><div style="font-weight:700">${d.barcodeNumber ?? '—'}</div></div>
+            <div><div class="form-label">Sample Received</div><div style="font-weight:700">${d.sampleReceivedAt ?? '—'}</div></div>
+            <div><div class="form-label">Expected Completion</div><div style="font-weight:700">${d.expectedCompletionTime ?? '—'}</div></div>
+        </div>
+
+        <div class="form-label">Patient Medical Info</div>
+        <div style="background:#F5F7FA;border-radius:8px;padding:10px;margin-bottom:14px;font-size:13px">
+            <strong>Conditions:</strong> ${d.conditions.length ? d.conditions.join(', ') : 'None recorded'}<br />
+            <strong>Allergies:</strong> ${d.allergies.length ? d.allergies.join(', ') : 'None recorded'}<br />
+            <strong>Medication:</strong> ${d.medications.length ? d.medications.join(', ') : 'None recorded'}
+        </div>
+
+                ${d.clinicalNotes ? `<div class="form-label">Doctor's Notes</div>
+        <div style="font-style:italic;font-size:13px;margin-bottom:14px">"${d.clinicalNotes}"</div>` : ''}
+
+        <div class="form-label">Consumables to Be Deducted</div>
+        <div style="background:#F5F7FA;border-radius:8px;padding:10px 12px;margin-bottom:4px">
+            ${consumablesHtml}
+        </div>
+                ${anyInsufficient ? '<p style="color:#FF4757;font-size:12px;font-weight:600">⚠️ One or more consumables are below the required amount — starting may fail.</p>' : ''}
+            `;
+        }
+
+        function closeSelectModal() {
+            document.getElementById('select-modal-overlay').style.display = 'none';
+        }
+    </script>
+        
+    
+}

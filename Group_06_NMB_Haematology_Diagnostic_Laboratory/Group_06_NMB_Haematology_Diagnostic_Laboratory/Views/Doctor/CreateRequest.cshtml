@@ -1,0 +1,507 @@
+@{
+    ViewData["Title"] = "Create Test Request";
+    Layout = "~/Views/Shared/_LayoutDoctor.cshtml";
+}
+
+<div class="page-body create-request-page">
+
+    <!-- ========================================================= -->
+    <!-- PAGE HEADER -->
+    <!-- ========================================================= -->
+
+    <div class="section-header">
+        <div class="section-title">
+            Create Test Request
+        </div>
+
+        <div class="section-sub">
+            Select a patient by SA ID number, review their medical details,
+            and assign samples for each requested test.
+        </div>
+    </div>
+
+
+    <section class="grid-2">
+
+        <!-- ===================================================== -->
+        <!-- LEFT SIDE -->
+        <!-- ===================================================== -->
+
+        <div class="card">
+
+            <div class="card-header">
+                <span class="card-title">
+                    Request Details
+                </span>
+            </div>
+
+
+            <div class="card-body">
+
+                <!-- ================================================= -->
+                <!-- PATIENT + URGENCY -->
+                <!-- ================================================= -->
+
+                <div class="form-row">
+
+                    <div class="form-group">
+
+                        <label class="form-label"
+                               for="patient-select">
+
+                            Enter Patient SA ID Number
+
+                        </label>
+
+                        <input id="patient-select"
+                               class="form-control"
+                               type="text"
+                               inputmode="numeric"
+                               maxlength="13"
+                               pattern="[0-9]*"
+                               autocomplete="off"
+                               placeholder="Enter patient SA ID" />
+
+                    </div>
+
+
+                    <div class="form-group">
+
+                        <label class="form-label"
+                               for="urgency-select">
+
+                            Urgency
+
+                        </label>
+
+                        <select id="urgency-select"
+                                class="form-control">
+
+                            <option value="Routine">
+                                Routine
+                            </option>
+
+                            <option value="Urgent">
+                                Urgent
+                            </option>
+
+                            <option value="STAT">
+                                STAT
+                            </option>
+
+                        </select>
+
+                    </div>
+
+                </div>
+
+
+                <!-- ================================================= -->
+                <!-- PATIENT INFORMATION -->
+                <!-- ================================================= -->
+
+                <div id="patient-info-panel"
+                     class="patient-info-panel"
+                     style="display:none;">
+
+                    <div class="info-section">
+
+                        <h4>
+                            Patient Information
+                        </h4>
+
+
+                        <div class="info-grid">
+
+                            <div class="info-item">
+
+                                <label>
+                                    SA ID Number
+                                </label>
+
+                                <span id="patient-sa-id">
+                                    N/A
+                                </span>
+
+                            </div>
+
+
+                            <div class="info-item">
+
+                                <label>
+                                    Name
+                                </label>
+
+                                <span id="patient-name">
+                                    N/A
+                                </span>
+
+                            </div>
+
+
+                            <div class="info-item">
+
+                                <label>
+                                    Date of Birth
+                                </label>
+
+                                <span id="patient-dob">
+                                    N/A
+                                </span>
+
+                            </div>
+
+
+                            <div class="info-item">
+
+                                <label>
+                                    Cellphone
+                                </label>
+
+                                <span id="patient-cellphone">
+                                    N/A
+                                </span>
+
+                            </div>
+
+
+                            <div class="info-item">
+
+                                <label>
+                                    Email
+                                </label>
+
+                                <span id="patient-email">
+                                    N/A
+                                </span>
+
+                            </div>
+
+
+                            <div class="info-item">
+
+                                <label>
+                                    Address
+                                </label>
+
+                                <span id="patient-address">
+                                    N/A
+                                </span>
+
+                            </div>
+
+                        </div>
+
+
+                        <!-- ================================================= -->
+                        <!-- MEDICAL CONDITIONS -->
+                        <!-- ================================================= -->
+
+                        <div class="info-section-box">
+
+                            <label class="section-label">
+                                Known Medical Conditions
+                            </label>
+
+                            <div id="patient-conditions"
+                                 class="info-text">
+
+                                None recorded
+
+                            </div>
+
+                        </div>
+
+
+                        <!-- ================================================= -->
+                        <!-- ALLERGIES -->
+                        <!-- ================================================= -->
+
+                        <div class="info-section-box">
+
+                            <label class="section-label">
+                                Allergies
+                            </label>
+
+                            <div id="patient-allergies"
+                                 class="info-text">
+
+                                None recorded
+
+                            </div>
+
+                        </div>
+
+
+                        <!-- ================================================= -->
+                        <!-- MEDICATION -->
+                        <!-- ================================================= -->
+
+                        <div class="info-section-box">
+
+                            <label class="section-label">
+                                Current Medications
+                            </label>
+
+                            <div id="patient-medication"
+                                 class="info-text">
+
+                                None recorded
+
+                            </div>
+
+                        </div>
+
+
+                        <div class="patient-extra-grid">
+
+                            <div class="info-section">
+
+                                <h4>
+                                    Test Request History
+                                </h4>
+
+                                <div id="patient-request-history"
+                                     class="patient-history-list">
+                                    No request history recorded.
+                                </div>
+
+                            </div>
+
+
+                            <div class="info-section">
+
+                                <h4>
+                                    Results Available with Patient Consent
+                                </h4>
+
+                                <div id="patient-consent-results"
+                                     class="patient-history-list">
+                                    No consented results available.
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <!-- ================================================= -->
+                <!-- CLINICAL NOTES -->
+                <!-- ================================================= -->
+
+                <div class="form-group">
+
+                    <label class="form-label"
+                           for="clinical-notes">
+
+                        Clinical Notes
+
+                    </label>
+
+                    <textarea id="clinical-notes"
+                              maxlength="2000"
+                              class="form-control"
+                              rows="4"
+                              placeholder="Enter relevant clinical context"></textarea>
+
+                </div>
+
+
+                <!-- ================================================= -->
+                <!-- TEST SELECTION -->
+                <!-- ================================================= -->
+
+                <div class="form-group">
+
+                    <label class="form-label">
+                        Requested Test Types
+                    </label>
+
+
+                    <div class="form-row test-selection-row">
+
+                        <!-- TEST CATEGORY -->
+
+                        <div class="form-group">
+
+                            <label class="form-label"
+                                   for="test-category-select">
+
+                                Test Category
+
+                            </label>
+
+                            <select id="test-category-select"
+                                    class="form-control">
+
+                                <option value="">
+                                    -- Select Category --
+                                </option>
+
+                            </select>
+
+                        </div>
+
+
+                        <!-- TEST -->
+
+                        <div class="form-group">
+
+                            <label class="form-label"
+                                   for="test-select">
+
+                                Test
+
+                            </label>
+
+                            <select id="test-select"
+                                    class="form-control"
+                                    disabled>
+
+                                <option value="">
+                                    -- Select a category first --
+                                </option>
+
+                            </select>
+
+                        </div>
+
+
+                        <!-- ADD TEST -->
+
+                        <button class="btn btn-primary add-test-button"
+                                type="button"
+                                id="add-test-button">
+
+                            Add Test
+
+                        </button>
+
+                    </div>
+
+
+                    <small class="form-hint">
+
+                        Select a category, choose a test,
+                        and add it to the request.
+                        Each selected test requires a sample barcode.
+
+                    </small>
+
+                </div>
+
+
+                <!-- ================================================= -->
+                <!-- BUTTONS -->
+                <!-- ================================================= -->
+
+                <div class="form-row">
+
+                    <button class="btn btn-primary"
+                            type="button"
+                            id="back-button">
+
+                        Back to Requests
+
+                    </button>
+
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- ===================================================== -->
+        <!-- RIGHT SIDE -->
+        <!-- ===================================================== -->
+
+        <div class="card">
+
+            <div class="card-header">
+
+                <span class="card-title">
+                    Selected Tests & Samples
+                </span>
+
+            </div>
+
+
+            <div class="card-body sample-summary-card">
+
+                <div class="summary-help">
+
+                    For every selected test,
+                    enter the barcode from the sample tube used.
+
+                </div>
+
+
+                <div id="selected-tests-list"
+                     class="selected-tests-list">
+
+                    <div class="summary-empty">
+
+                        No tests selected.
+                        Choose a test type to build the sample list.
+
+                    </div>
+
+                </div>
+
+
+                <div class="selected-tests-actions">
+
+                    <button class="btn btn-primary"
+                            type="button"
+                            id="submit-request-button">
+
+                        Submit Request
+
+                    </button>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </section>
+
+</div>
+
+<div id="patient-not-found-modal"
+     class="patient-not-found-modal"
+     role="dialog"
+     aria-modal="true"
+     aria-labelledby="patient-not-found-title">
+    <div class="patient-not-found-dialog">
+        <div class="modal-header">
+            <span id="patient-not-found-title" class="modal-title">Patient not found</span>
+            <button class="modal-close" type="button" onclick="closePatientNotFoundModal()" aria-label="Close">&times;</button>
+        </div>
+        <div class="modal-body">
+            <p id="patient-not-found-message">This patient does not exist in the system.</p>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" type="button" onclick="closePatientNotFoundModal()">Close</button>
+            <a class="btn btn-primary" href="@Url.Action("RegisterPatient", "Doctor")">Register Patient</a>
+        </div>
+    </div>
+</div>
+
+
+
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/DoctorCreateRequest.css" asp-append-version="true" />
+}
+
+@section Scripts {
+    <script src="~/js/DoctorCreateRequest.js" asp-append-version="true" data-getpatients-url="@Url.Action("GetPatients", "Doctor")" data-getpatient-url="@Url.Action("GetPatient", "Doctor")" data-gettestcategories-url="@Url.Action("GetTestCategories", "Doctor")" data-gettestsbycategory-url="@Url.Action("GetTestsByCategory", "Doctor")" data-createtestrequest-url="@Url.Action("CreateTestRequest", "Doctor")" data-requests-url="@Url.Action("Requests", "Doctor")"></script>
+}

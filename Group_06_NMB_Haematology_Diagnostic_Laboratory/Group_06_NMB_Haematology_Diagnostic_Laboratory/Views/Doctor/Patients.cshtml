@@ -1,0 +1,488 @@
+@{
+    ViewData["Title"] = "Patient Records";
+    Layout = "~/Views/Shared/_LayoutDoctor.cshtml";
+}
+
+<div class="page-body">
+
+    <div class="section-header">
+        <div class="section-title">Patient Records</div>
+        <div class="section-sub">
+            Register new patients and maintain medical details used during test requests.
+        </div>
+    </div>
+
+    <section class="page-stack">
+
+        <!-- ============================================================
+             PATIENT INFORMATION
+        ============================================================= -->
+
+        <div class="card">
+
+            <div class="card-header">
+                <span class="card-title">Patient Information</span>
+            </div>
+
+            <div class="card-body">
+
+                <div class="form-group">
+
+                    <label class="form-label"
+                           for="doc-pat-id">
+                        Search Patient by SA ID
+                    </label>
+
+                    <input id="doc-pat-id"
+                           class="form-control"
+                           type="text"
+                           inputmode="numeric"
+                           maxlength="13"
+                           pattern="[0-9]*"
+                           autocomplete="off"
+                           placeholder="Enter patient SA ID" />
+
+                </div>
+
+
+                <!-- Selected Patient -->
+
+                <div id="selected-patient-summary"
+                     class="patient-info-panel"
+                     style="display:none; margin-bottom:18px;">
+
+                    <div class="info-section">
+
+                        <h4>Selected Patient</h4>
+
+                        <div class="info-grid">
+
+                            <div class="info-item">
+                                <label>Name</label>
+                                <span id="selected-patient-name"></span>
+                            </div>
+
+                            <div class="info-item">
+                                <label>ID Number</label>
+                                <span id="selected-patient-id"></span>
+                            </div>
+
+                            <div class="info-item">
+                                <label>Date of Birth</label>
+                                <span id="selected-patient-dob"></span>
+                            </div>
+
+                            <div class="info-item">
+                                <label>Address</label>
+                                <span id="selected-patient-address"></span>
+                            </div>
+
+                            <div class="info-item">
+                                <label>Contact Number</label>
+                                <span id="selected-patient-contact"></span>
+                            </div>
+
+                            <div class="info-item">
+                                <label>Email</label>
+                                <span id="selected-patient-email"></span>
+                            </div>
+
+                            <div class="info-item">
+                                <label>Medical Conditions</label>
+                                <span id="selected-patient-conditions">None recorded</span>
+                            </div>
+
+                            <div class="info-item">
+                                <label>Allergies</label>
+                                <span id="selected-patient-allergies">None recorded</span>
+                            </div>
+
+                            <div class="info-item">
+                                <label>Medication</label>
+                                <span id="selected-patient-medication">None recorded</span>
+                            </div>
+
+                        </div>
+
+                        <div class="patient-extra-grid">
+
+                            <div class="info-section">
+
+                                <h4>Test Request History</h4>
+
+                                <div id="selected-patient-request-history"
+                                     class="patient-history-list">
+                                    No request history recorded.
+                                </div>
+
+                            </div>
+
+
+                            <div class="info-section">
+
+                                <h4>Results Available with Patient Consent</h4>
+
+                                <div id="selected-patient-consent-results"
+                                     class="patient-history-list">
+                                    No consented results available.
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <!-- ====================================================
+                     MEDICAL CONDITIONS
+                ===================================================== -->
+
+                <div class="form-group">
+
+                    <label class="form-label">
+                        Known Medical Conditions
+                    </label>
+
+                    <div class="form-row"
+                         style="gap:10px; align-items:flex-end;">
+
+                        <div class="form-group"
+                             style="flex:2; margin-bottom:0;">
+
+                            <label class="form-label">
+                                Category
+                            </label>
+
+                            <select id="doc-pat-condition-category"
+                                    class="form-control">
+
+                                <option value="">
+                                    -- Select Category --
+                                </option>
+
+                            </select>
+
+                        </div>
+
+
+                        <div class="form-group"
+                             style="flex:3; margin-bottom:0;">
+
+                            <label class="form-label">
+                                Condition
+                            </label>
+
+                            <select id="doc-pat-condition-name"
+                                    class="form-control"
+                                    disabled>
+
+                                <option value="">
+                                    -- Select Condition --
+                                </option>
+
+                            </select>
+
+                        </div>
+
+
+                        <div class="form-group"
+                             style="flex:1; margin-bottom:0;">
+
+                            <button class="btn btn-primary"
+                                    type="button"
+                                    onclick="addPatientCondition()">
+
+                                Add Condition
+
+                            </button>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="pills-container"
+                         id="condition-pills"
+                         style="margin-top:10px;">
+                    </div>
+
+                </div>
+
+
+                <!-- ====================================================
+                     ALLERGIES
+                ===================================================== -->
+
+                <div class="form-row">
+
+                    <div class="form-group">
+
+                        <label class="form-label">
+                            Allergies
+                        </label>
+
+                        <div class="form-row"
+                             style="gap:10px; align-items:flex-end;">
+
+                            <div class="form-group"
+                                 style="flex:2; margin-bottom:0;">
+
+                                <label class="form-label">
+                                    Category
+                                </label>
+
+                                <select id="doc-pat-allergy-category"
+                                        class="form-control">
+
+                                    <option value="">
+                                        -- Select Category --
+                                    </option>
+
+                                </select>
+
+                            </div>
+
+
+                            <div class="form-group"
+                                 style="flex:3; margin-bottom:0;">
+
+                                <label class="form-label">
+                                    Allergy
+                                </label>
+
+                                <select id="doc-pat-allergy-name"
+                                        class="form-control"
+                                        disabled>
+
+                                    <option value="">
+                                        -- Select Allergy --
+                                    </option>
+
+                                </select>
+
+                            </div>
+
+
+                            <div class="form-group"
+                                 style="flex:1; margin-bottom:0;">
+
+                                <button class="btn btn-primary"
+                                        type="button"
+                                        onclick="addPatientAllergy()">
+
+                                    Add Allergy
+
+                                </button>
+
+                            </div>
+
+                        </div>
+
+
+                        <div class="pills-container"
+                             id="allergies-pills"
+                             style="margin-top:10px;">
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <!-- ====================================================
+                     MEDICATION
+                ===================================================== -->
+
+                <div class="form-group">
+
+                    <label class="form-label">
+                        Current Medication
+                    </label>
+
+                    <div class="form-row"
+                         style="gap:10px; align-items:flex-end;">
+
+                        <div class="form-group"
+                             style="flex:2; margin-bottom:0;">
+
+                            <label class="form-label">
+                                Category
+                            </label>
+
+                            <select id="doc-pat-medication-category"
+                                    class="form-control">
+
+                                <option value="">
+                                    -- Select Category --
+                                </option>
+
+                            </select>
+
+                        </div>
+
+
+                        <div class="form-group"
+                             style="flex:3; margin-bottom:0;">
+
+                            <label class="form-label">
+                                Medication
+                            </label>
+
+                            <select id="doc-pat-medication-name"
+                                    class="form-control"
+                                    disabled>
+
+                                <option value="">
+                                    -- Select Medication --
+                                </option>
+
+                            </select>
+
+                        </div>
+
+
+                        <div class="form-group"
+                             style="flex:1; margin-bottom:0;">
+
+                            <button class="btn btn-primary"
+                                    type="button"
+                                    onclick="addPatientMedication()">
+
+                                Add Medication
+
+                            </button>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="pills-container"
+                         id="medication-pills"
+                         style="margin-top:10px;">
+                    </div>
+
+                </div>
+
+
+                <div style="display:flex; justify-content:flex-end; gap:10px; flex-wrap:wrap; margin-top: 10px;">
+
+                    <button class="btn btn-primary"
+                            type="button"
+                            onclick="refreshPatientData()">
+
+                        Refresh Patient Data
+
+                    </button>
+
+                    <button class="btn btn-primary"
+                            type="button"
+                            onclick="openCreateRequest()">
+
+                        + New Test Request
+
+                    </button>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- ============================================================
+             EXISTING PATIENTS
+        ============================================================= -->
+
+        <div class="card"
+             style="margin-top:20px;">
+
+            <div class="card-header">
+
+                <span class="card-title">
+                    My Patients
+                </span>
+
+            </div>
+
+
+            <div class="table-wrap">
+
+                <table class="doctor-patients-table">
+
+                    <thead>
+
+                        <tr>
+
+                            <th>ID Number</th>
+
+                            <th>Physical Address</th>
+
+                            <th>Conditions</th>
+
+                            <th>Allergies</th>
+
+                            <th>Medication</th>
+
+                            <th>Action</th>
+
+                        </tr>
+
+                    </thead>
+
+
+                    <tbody id="doctor-patients-tbody">
+
+                        <tr>
+
+                            <td colspan="6">
+                                Loading patients...
+                            </td>
+
+                        </tr>
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </div>
+
+    </section>
+    ```
+
+</div>
+
+<div id="patient-not-found-modal"
+     role="dialog"
+     aria-modal="true"
+     aria-labelledby="patient-not-found-title"
+     style="display:none; position:fixed; inset:0; z-index:1000; align-items:center; justify-content:center; padding:16px; background:rgba(11,25,41,.55);">
+    <div class="modal modal-sm">
+        <div class="modal-header">
+            <span id="patient-not-found-title" class="modal-title">Patient not found</span>
+            <button class="modal-close" type="button" onclick="closePatientNotFoundModal()" aria-label="Close">&times;</button>
+        </div>
+        <div class="modal-body">
+            <p id="patient-not-found-message">This patient does not exist in the system.</p>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" type="button" onclick="closePatientNotFoundModal()">Close</button>
+            <a class="btn btn-primary" asp-controller="Doctor" asp-action="RegisterPatient">Register Patient</a>
+        </div>
+    </div>
+</div>
+
+
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/DoctorPatients.css" asp-append-version="true" />
+}
+
+@section Scripts {
+    <script src="~/js/DoctorPatients.js" asp-append-version="true" data-getpatients-url="@Url.Action("GetPatients", "Doctor")" data-getpatient-url="@Url.Action("GetPatient", "Doctor")" data-getconditioncategories-url="@Url.Action("GetConditionCategories", "Doctor")" data-getconditionsbycategory-url="@Url.Action("GetConditionsByCategory", "Doctor")" data-addpatientcondition-url="@Url.Action("AddPatientCondition", "Doctor")" data-deletepatientcondition-url="@Url.Action("DeletePatientCondition", "Doctor")" data-getallergycategories-url="@Url.Action("GetAllergyCategories", "Doctor")" data-getallergiesbycategory-url="@Url.Action("GetAllergiesByCategory", "Doctor")" data-addpatientallergy-url="@Url.Action("AddPatientAllergy", "Doctor")" data-deletepatientallergy-url="@Url.Action("DeletePatientAllergy", "Doctor")" data-getmedicationcategories-url="@Url.Action("GetMedicationCategories", "Doctor")" data-getmedicationsbycategory-url="@Url.Action("GetMedicationsByCategory", "Doctor")" data-addpatientmedication-url="@Url.Action("AddPatientMedication", "Doctor")" data-deletepatientmedication-url="@Url.Action("DeletePatientMedication", "Doctor")" data-createrequest-url="@Url.Action("CreateRequest", "Doctor")"></script>
+}

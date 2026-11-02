@@ -1,0 +1,102 @@
+@model Group_06_NMB_Haematology_Diagnostic_Lab.Data.Models.CategoryManagementViewModel
+@{
+    ViewData["Title"] = "Manage Categories";
+}
+
+<style>
+    .category-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:18px; }
+    .category-list { list-style:none; padding:0; margin:0; }
+    .category-row { display:flex; align-items:center; gap:10px; padding:11px 0; border-bottom:1px solid var(--border); }
+    .category-row:last-child { border-bottom:0; }
+    .category-name { flex:1; font-weight:600; }
+    .category-actions { display:flex; gap:6px; }
+    @@media (max-width:1100px) { .category-grid { grid-template-columns:1fr; } }
+</style>
+
+<div class="page-body">
+    <div class="section-header">
+        <div>
+            <div class="section-title">Reference Categories</div>
+            <div class="section-sub">Manage the categories used by allergies, medications, and medical conditions.</div>
+        </div>
+    </div>
+
+    <div class="category-grid">
+        @foreach (var group in new[]
+        {
+            new { Type = "allergy", Title = "Allergy Categories", Icon = "⚠️", Items = Model.AllergyCategories },
+            new { Type = "medication", Title = "Medication Categories", Icon = "💊", Items = Model.MedicationCategories },
+            new { Type = "condition", Title = "Medical Condition Categories", Icon = "🩺", Items = Model.MedicalConditionCategories }
+        })
+        {
+            <section class="card">
+                <div class="card-header">
+                    <span class="card-title">@group.Icon @group.Title</span>
+                    <button class="btn btn-amber btn-sm" type="button" onclick="openCategoryModal('@group.Type')">+ Add</button>
+                </div>
+                <div class="card-body">
+                    <ul class="category-list">
+                        @foreach (var category in group.Items)
+                        {
+                            <li class="category-row">
+                                <span class="category-name"><span>@category.CategoryName</span> @if (!category.IsActive) { <span class="badge badge-gray">Deactivated</span> }<small style="display:block;color:var(--muted);font-weight:400;margin-top:3px;">@(string.IsNullOrWhiteSpace(category.Description) ? "No description" : category.Description)</small></span>
+                                <span class="category-actions">
+                                    <button class="btn btn-secondary btn-sm" type="button" data-name="@category.CategoryName" data-description="@category.Description" onclick="openCategoryModal('@group.Type', this.dataset.name, this.dataset.description)">Edit</button>
+                                    <button class="btn btn-secondary btn-sm" type="button" data-name="@category.CategoryName" data-next-active="@(category.IsActive ? "false" : "true")" onclick="setCategoryStatus('@group.Type', this.dataset.name, this)">@(category.IsActive ? "Deactivate" : "Activate")</button>
+                                </span>
+                            </li>
+                        }
+                    </ul>
+                </div>
+            </section>
+        }
+    </div>
+</div>
+
+<div id="category-modal" class="modal-overlay">
+    <div class="modal">
+        <div class="modal-header"><span class="modal-title">Add Category</span><button class="modal-close" type="button" onclick="closeCategoryModal()">&#x2715;</button></div>
+        <div class="modal-body">
+            <div class="form-group"><label class="form-label">Category Name *</label><input id="category-name" class="form-control" maxlength="100" /></div>
+            <div class="form-group"><label class="form-label">Description</label><textarea id="category-description" class="form-control" rows="4" maxlength="500" placeholder="Describe this category"></textarea></div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" type="button" onclick="closeCategoryModal()">Cancel</button>
+            <button class="btn btn-amber" type="button" onclick="saveCategory()">Save Category</button>
+        </div>
+    </div>
+</div>
+@Html.AntiForgeryToken()
+<div id="toast"></div>
+
+@section Scripts {
+<script>
+    let categoryType = '';
+    let originalCategoryName = '';
+    const token = () => document.querySelector('input[name="__RequestVerificationToken"]').value;
+    function openCategoryModal(type, name = '', description = '') { categoryType = type; originalCategoryName = name; document.getElementById('category-name').value = name; document.getElementById('category-description').value = description; document.querySelector('#category-modal .modal-title').textContent = name ? 'Edit Category' : 'Add Category'; document.getElementById('category-modal').classList.add('open'); }
+    function closeCategoryModal() { document.getElementById('category-modal').classList.remove('open'); }
+    async function saveCategory() { const categoryName = document.getElementById('category-name').value.trim(); const description = document.getElementById('category-description').value.trim(); if (!categoryName) { toast('Enter a category name.'); return; } try { const data = new URLSearchParams({ categoryType, originalCategoryName, categoryName, description, __RequestVerificationToken: token() }); const response = await fetch('@Url.Action("SaveCategory", "Admin")', { method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded; charset=UTF-8'}, body:data }); const result = await response.json().catch(() => ({})); if (!response.ok) { toast(result.message || 'Unable to save category.'); return; } toast(result.message); window.location.reload(); } catch { toast('Unable to reach the server to save the category.'); } }
+    async function setCategoryStatus(type, categoryName, button) {
+        const isActive = button.dataset.nextActive === 'true';
+        const action = isActive ? 'Activate' : 'Deactivate';
+        if (button.disabled || !confirm(`${action} the category "${categoryName}"? Existing records will be kept.`)) return;
+        button.disabled = true;
+        try {
+            const data = new URLSearchParams({ categoryType: type, categoryName, isActive, __RequestVerificationToken: token() });
+            const response = await fetch('@Url.Action("SetCategoryStatus", "Admin")', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
+                body: data
+            });
+            const result = await response.json().catch(() => ({}));
+            if (!response.ok) throw new Error(result.message || 'Unable to update category status.');
+            toast(result.message);
+            window.location.reload();
+        } catch (error) {
+            toast(error.message || 'Unable to reach the server to update category status.');
+            button.disabled = false;
+        }
+    }
+</script>
+}

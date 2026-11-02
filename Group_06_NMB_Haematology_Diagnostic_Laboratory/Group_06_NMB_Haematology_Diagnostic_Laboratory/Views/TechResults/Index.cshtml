@@ -1,0 +1,280 @@
+﻿@{
+    Layout = "_TechLayout";
+}
+@model TechResultsIndexModel
+@{
+    ViewData["Title"] = "Capture Results";
+}
+
+<div class="topbar">
+    <h1 class="page-title">Capture Results</h1>
+</div>
+
+<div class="page-body">
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success">@TempData["Success"]</div>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger">@TempData["Error"]</div>
+    }
+
+    <!-- Tests awaiting capture -->
+    <section>
+        <div class="card">
+            <div class="card-header">
+                <span class="card-title">🧪 Tests Awaiting Results</span>
+                <span class="badge amber">@Model.TestsAwaitingResults.Count pending</span>
+            </div>
+            <div style="padding:10px 16px">
+                <select class="form-control"
+                        style="width:200px"
+                        aria-label="Filter results awaiting capture by urgency"
+                        onchange="filterUrgency(this,'capture-results-table')">
+                    <option value="">All Tests</option>
+                    <option value="STAT">STAT only</option>
+                    <option value="Urgent">Urgent only</option>
+                    <option value="Routine">Routine only</option>
+                </select>
+            </div>
+            <div class="table-wrap">
+                <table id="capture-results-table">
+                    <thead>
+                        <tr>
+                            <th style="width:170px">Request No.</th>
+                            <th>Patient</th>
+                            <th>Test</th>
+                            <th>Urgency</th>
+                            <th>Due</th>
+                            <th style="width:100px">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var t in Model.TestsAwaitingResults)
+                        {
+                            var urgencyBadge = t.Urgency switch { "STAT" => "red", "Urgent" => "amber", _ => "gray" };
+                            var isSelected = Model.SelectedTest?.LabTestId == t.LabTestId;
+                            var rowStyle = isSelected ? "background:rgba(0,201,167,0.06)" : "";
+
+                            <tr style="@rowStyle" data-urgency="@t.Urgency">
+                                <td class="td-bold">@t.RequestNumber</td>
+                                <td>@t.PatientName</td>
+                                <td>@t.TestName</td>
+                                <td><span class="badge @urgencyBadge">@t.Urgency</span></td>
+                                <td>
+                                    @if (t.IsOverdue)
+                                    {
+                                        <span style="color:#FF4757;font-weight:600">⚠️ Overdue</span>
+                                    }
+                                    else
+                                    {
+                                        @t.ExpectedDoneBy?.ToString("HH:mm")
+                                    }
+                                </td>
+                                <td>
+                                    <a asp-controller="TechResults" asp-action="Index" asp-route-labTestId="@t.LabTestId"
+                                       class="btn btn-sm @(isSelected ? "btn-secondary" : "btn-primary")">
+                                        @(isSelected ? "Selected" : "Capture")
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                        @if (!Model.TestsAwaitingResults.Any())
+                        {
+                            <tr><td colspan="6" style="text-align:center;color:#7A8CA0;padding:20px">No tests currently awaiting results.</td></tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    @if (Model.SelectedTest != null)
+    {
+        var t = Model.SelectedTest;
+        var detailUrgencyBadge = t.Urgency switch { "STAT" => "red", "Urgent" => "amber", _ => "gray" };
+
+        <section>
+            <div class="grid-2">
+
+                <!-- Left: Result entry -->
+                <div>
+                    <div class="card" style="margin-bottom:16px">
+                        <div class="card-body">
+                            <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px">
+                                <div>
+                                    <div style="font-size:16px;font-weight:700">@t.TestName</div>
+                                    <div style="font-size:12px;color:#7A8CA0;margin-top:2px">@t.RequestNumber · @t.PatientName</div>
+                                </div>
+                                <div style="text-align:right">
+                                    <span class="badge @detailUrgencyBadge">@t.Urgency</span>
+                                    <div style="font-size:11px;margin-top:4px">
+                                        @if (t.IsOverdue)
+                                        {
+                                            <span style="color:#FF4757;font-weight:600">⚠️ Overdue</span>
+                                        }
+                                        else
+                                        {
+                                            @:Due @t.ExpectedDoneBy?.ToString("HH:mm")
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <form asp-controller="TechResults" asp-action="CaptureResult" method="post">
+                        <input type="hidden" name="labTestId" value="@t.LabTestId" />
+
+                        <div class="card" style="margin-bottom:16px">
+                            <div class="card-header"><span class="card-title">📊 Result Value</span></div>
+                            <div class="table-wrap">
+                                <table class="result-table">
+                                    <thead>
+                                        <tr><th>Parameter</th><th>Value</th><th>Unit</th><th>Normal Range</th></tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td>@t.TestName</td>
+                                            <td style="width:140px">
+                                                <input class="form-control"
+                                                       type="text"
+                                                       inputmode="decimal"
+                                                       name="resultValue"
+                                                       pattern="-?[0-9]+([.,][0-9]{1,4})?"
+                                                       required />
+                                            </td>
+                                            <td>@t.UnitOfMeasurement</td>
+                                            <td>
+                                                @if (t.NormalRangeMin.HasValue && t.NormalRangeMax.HasValue)
+                                                {
+                                                    @($"{t.NormalRangeMin} – {t.NormalRangeMax}")
+                                                }
+                                                else
+                                                {
+                                                    @:—
+                                                }
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <div class="card" style="margin-bottom:16px">
+                            <div class="card-header"><span class="card-title">📝 Notes</span></div>
+                            <div class="card-body">
+                                <textarea class="form-control" name="notes" rows="3"
+                                      ></textarea>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary">✔ Submit Results for Verification</button>
+                    </form>
+                </div>
+
+                <!-- Right: Patient info -->
+                <div style="display:flex;flex-direction:column;gap:16px">
+
+                    <div class="card">
+                        <div class="card-header"><span class="card-title">🏥 Patient Medical Info</span></div>
+                        <div class="card-body">
+                            <div class="patient-info-box">
+                                <strong>Patient:</strong> @t.PatientName (@t.PatientAge yrs) &nbsp;|&nbsp; DOB: @t.PatientDOB?.ToString("yyyy-MM-dd")<br />
+                                <strong>Conditions:</strong> @(Model.Conditions.Any() ? string.Join(", ", Model.Conditions) : "None recorded")<br />
+                                <strong>Allergies:</strong> @(Model.Allergies.Any() ? string.Join(", ", Model.Allergies) : "None recorded")<br />
+                                <strong>Current Medication:</strong> @(Model.Medications.Any() ? string.Join(", ", Model.Medications) : "None recorded")
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header"><span class="card-title">🩺 Doctor's Clinical Notes</span></div>
+                        <div class="card-body">
+                            <div class="patient-info-box" style="font-style:italic">
+                                "@(string.IsNullOrWhiteSpace(t.ClinicalNotes) ? "No clinical notes provided." : t.ClinicalNotes)"
+                            </div>
+                            <div style="margin-top:8px;font-size:12px;color:#7A8CA0">— @t.DoctorName &nbsp;·&nbsp; @t.RequestDate.ToString("dd MMM yyyy")</div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header"><span class="card-title">📜 Previous Results (Same Test)</span></div>
+                        <div class="card-body">
+                            @if (!Model.PreviousResults.Any())
+                            {
+                                <p style="font-size:12px;color:#7A8CA0;margin:0">No previous results for this test.</p>
+                            }
+                            else
+                            {
+                                <table style="font-size:12px;width:100%">
+                                    <thead><tr><th>Date</th><th>Result</th><th>Flag</th></tr></thead>
+                                    <tbody>
+                                        @foreach (var pr in Model.PreviousResults)
+                                        {
+                                            <tr>
+                                                <td>@pr.CaptureDateTime.ToString("dd MMM yyyy")</td>
+                                                <td>@(pr.ResultValue?.ToString() ?? pr.ResultText)</td>
+                                                <td>
+                                                    @if (pr.IsAbnormal)
+                                                    {
+                                                        <span class="badge red">Abnormal</span>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="badge teal">Normal</span>
+                                                    }
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            }
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </section>
+    }
+    else
+    {
+        <div style="text-align:center;padding:40px 20px;color:#7A8CA0">
+            <div style="font-size:36px;margin-bottom:8px">🧪</div>
+            <div style="font-size:14px">Click "Capture" on a test above to begin</div>
+        </div>
+    }
+
+</div>
+@section Scripts {
+    <script>
+        function filterUrgency(select, tableId) {
+            const table = document.getElementById(tableId);
+            if (!table) return;
+
+            const selected = select.value.trim().toLowerCase();
+
+            Array.from(table.tBodies).forEach(tbody => {
+                Array.from(tbody.rows).forEach(row => {
+                    if (!row.hasAttribute('data-urgency')) return;
+
+                    const urgency =
+                        (row.dataset.urgency || '').trim().toLowerCase();
+
+                    const show =
+                        selected === '' || urgency === selected;
+
+                    if (show) {
+                        row.style.removeProperty('display');
+                    } else {
+                        row.style.setProperty(
+                            'display', 'none', 'important'
+                        );
+                    }
+                });
+            });
+        }
+    </script>
+}

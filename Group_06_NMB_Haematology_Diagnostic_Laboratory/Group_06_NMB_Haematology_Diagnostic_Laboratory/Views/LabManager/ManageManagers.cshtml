@@ -1,0 +1,573 @@
+@using Group_06_NMB_Haematology_Diagnostic_Lab.Data.Models
+@model IEnumerable<LabManager>
+
+@{
+    Layout = "~/Views/Shared/_LabManager_Layout.cshtml";
+}
+
+<div class="page-body">
+
+    
+    <!-- ========================================================= -->
+    <!-- PAGE HEADER -->
+    <!-- ========================================================= -->
+
+    <div class="section-header">
+
+        <div>
+            <h2>Lab Managers</h2>
+            
+        </div>
+       
+        <div style="display:flex; gap:10px; align-items:center;">
+
+            <input type="search" class="form-control" style="width:220px;" data-staff-search="#managersTable"
+                   placeholder="Search lab managers" aria-label="Search lab managers" autocomplete="off" />
+
+            <form asp-controller="LabManager"
+                  asp-action="ManageManagers"
+                  method="get">
+                <select id="filterSelect"
+                        name="filter"
+                        class="form-select @(ViewBag.Filter == "Active" ? "filter-active" : ViewBag.Filter == "Inactive" ? "filter-inactive" : "filter-all")"
+                        onchange="this.form.submit()">
+
+                    @if (ViewBag.Filter == "Active")
+                    {
+                        <option value="Active" selected>Active</option>
+                    }
+                    else
+                    {
+                        <option value="Active">Active</option>
+                    }
+
+                    @if (ViewBag.Filter == "Inactive")
+                    {
+                        <option value="Inactive" selected>Inactive</option>
+                    }
+                    else
+                    {
+                        <option value="Inactive">Inactive</option>
+                    }
+
+                    @if (ViewBag.Filter == "All")
+                    {
+                        <option value="All" selected>All</option>
+                    }
+                    else
+                    {
+                        <option value="All">All</option>
+                    }
+
+                </select>
+
+            </form>
+            <button class="btn btn-primary"
+                    onclick="openCreateManager()"
+                    data-bs-toggle="offcanvas"
+                    data-bs-target="#managerPanel">
+
+                Add Lab Manager
+
+            </button>
+
+        </div>
+
+        
+
+    </div>
+
+
+    
+
+    <!-- ========================================================= -->
+    <!-- MANAGERS TABLE -->
+    <!-- ========================================================= -->
+
+    <div class="table-wrap">
+
+        <table id="managersTable">
+
+            <thead>
+
+                <tr>
+
+                    <th>Name</th>
+                    <th>Surname</th>
+                    <th>Email</th>
+                    <th>Cellphone</th>
+                    <th>SA ID</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+
+                </tr>
+
+            </thead>
+
+            <tbody>
+
+                @foreach (var manager in Model)
+                {
+                    <tr class="staff-summary-row" tabindex="0" role="button"
+                        data-details-target="manager-details-@manager.LabManagerId" aria-expanded="false"
+                        aria-controls="manager-details-@manager.LabManagerId" title="Show lab manager details">
+
+                        <td>@manager.User.Name</td>
+
+                        <td>@manager.User.Surname</td>
+
+                        <td>@manager.User.Email</td>
+
+                        <td>@manager.User.Cellphone</td>
+
+                        <td>@manager.User.SaIdNumber</td>
+
+                        <td>
+                            @if (manager.User.IsActive)
+                            {
+                                <span class="status-active">
+                                    Active
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="status-inactive">
+                                    Inactive
+                                </span>
+                            }
+                        </td>
+
+                        <td class="td-actions">
+
+                            @if (manager.User.IsActive)
+                            {
+                                <!-- EDIT -->
+
+                                <button type="button"
+                                        class="btn btn-edit btn-sm"
+                                        data-bs-toggle="offcanvas"
+                                        data-bs-target="#managerPanel"
+                                        onclick="openEditManager(this)"
+                                        data-id="@manager.LabManagerId"
+                                        data-name="@manager.User.Name"
+                                        data-surname="@manager.User.Surname"
+                                        data-email="@manager.User.Email"
+                                        data-cellphone="@manager.User.Cellphone"
+                                        data-dob="@manager.User.DateOfBirth?.ToString("yyyy-MM-dd")"
+                                        data-said="@manager.User.SaIdNumber"
+                                        data-address-line1="@manager.User.StructuredAddress?.AddressLine1"
+                                        data-address-line2="@manager.User.StructuredAddress?.AddressLine2"
+                                        data-province-id="@manager.User.StructuredAddress?.ProvinceId"
+                                        data-town-city-id="@manager.User.StructuredAddress?.TownCityId"
+                                        data-suburb-id="@manager.User.StructuredAddress?.SuburbId">
+
+                                    Edit
+
+                                </button>
+
+
+                                <!-- DELETE / DEACTIVATE -->
+
+                                <form asp-action="DeleteManager"
+                                      asp-controller="LabManager"
+                                      method="post"
+                                      style="display:inline;">
+
+                                    <input type="hidden"
+                                           name="id"
+                                           value="@manager.LabManagerId" />
+
+                                    <input type="hidden"
+                                           name="filter"
+                                           value="@ViewBag.Filter" />
+
+                                    <button type="submit"
+                                            class="btn btn-delete btn-sm"
+                                            onclick="return confirm('Are you sure you want to deactivate this Lab Manager?');">
+
+                                        Deactivate
+
+                                    </button>
+
+                                </form>
+                            }
+                            else
+                            {
+                                <!-- REACTIVATE -->
+
+                                <form asp-action="ReactivateManager"
+                                      asp-controller="LabManager"
+                                      method="post"
+                                      style="display:inline;">
+
+                                    <input type="hidden"
+                                           name="id"
+                                           value="@manager.LabManagerId" />
+
+                                    <input type="hidden"
+                                           name="filter"
+                                           value="@ViewBag.Filter" />
+
+                                    <button type="submit"
+                                            class="btn btn-activate btn-sm"
+                                            onclick="return confirm('Are you sure you want to reactivate this Lab Manager?');">
+
+                                        Reactivate
+
+                                    </button>
+
+                                </form>
+                            }
+
+                        </td>
+
+                    </tr>
+                    <tr id="manager-details-@manager.LabManagerId" class="staff-detail-row" hidden>
+                        <td colspan="7" class="staff-detail-cell">
+                            <div class="staff-detail-content">
+                                <section>
+                                    <h6>Lab manager details</h6>
+                                    <dl>
+                                        <dt>Date of birth</dt><dd>@(manager.User.DateOfBirth?.ToString("dd MMM yyyy") ?? "Not captured")</dd>
+                                    </dl>
+                                </section>
+                                <section>
+                                    <h6>Residential address</h6>
+                                    @if (manager.User.StructuredAddress is { } address)
+                                    {
+                                        <dl>
+                                            <dt>Address</dt><dd>@address.AddressLine1 @if (!string.IsNullOrWhiteSpace(address.AddressLine2)) { <br />@address.AddressLine2 }</dd>
+                                            <dt>Area</dt><dd>@address.SuburbName, @address.TownCityName, @address.ProvinceName</dd>
+                                            <dt>Area code</dt><dd>@address.AreaCode</dd>
+                                        </dl>
+                                    }
+                                    else { <p class="text-muted mb-0">No structured address captured yet.</p> }
+                                </section>
+                            </div>
+                        </td>
+                    </tr>
+                }
+
+            </tbody>
+
+        </table>
+
+    </div>
+    <p class="text-muted mt-3" data-staff-search-empty hidden>No lab managers match your search.</p>
+    
+
+</div>
+
+<!-- ========================================================= -->
+<!-- ADD / EDIT LAB MANAGER PANEL -->
+<!-- ========================================================= -->
+
+<div class="offcanvas offcanvas-end"
+     tabindex="-1"
+     id="managerPanel"
+     style="width:600px;">
+
+    
+    <div class="offcanvas-header">
+
+        <h4 id="managerPanelTitle">
+            Add Lab Manager
+        </h4>
+
+        <button type="button"
+                class="btn-close"
+                data-bs-dismiss="offcanvas">
+        </button>
+
+    </div>
+
+
+    <div class="offcanvas-body">
+
+        <form id="managerForm" data-staff-validation
+              asp-controller="LabManager"
+              asp-action="CreateManager"
+              method="post">
+
+
+            <input type="hidden"
+                   id="LabManagerId"
+                   name="LabManagerId"
+                   value="0" />
+
+
+            <!-- FIRST NAME -->
+
+            <div class="form-group">
+
+                <label class="form-label">
+                    First Name
+                </label>
+
+                <input id="Name"
+                       class="form-control"
+                       name="User.Name" maxlength="100"
+                       required />
+
+            </div>
+
+
+            <!-- SURNAME -->
+
+            <div class="form-group">
+
+                <label class="form-label">
+                    Surname
+                </label>
+
+                <input id="Surname"
+                       class="form-control"
+                       name="User.Surname" maxlength="100"
+                       required />
+
+            </div>
+
+
+            <!-- EMAIL -->
+
+            <div class="form-group">
+
+                <label class="form-label">
+                    Email
+                </label>
+
+                <input id="Email"
+                       type="email"
+                       class="form-control"
+                       name="User.Email" maxlength="150"
+                       required />
+
+            </div>
+
+
+            <!-- CELLPHONE + DOB -->
+
+            <div class="form-row">
+
+                <div class="form-group">
+
+                    <label class="form-label">
+                        Cellphone
+                    </label>
+
+                    <input id="Cellphone"
+                           class="form-control"
+                           name="User.Cellphone" required inputmode="numeric" data-digits="10" pattern="[0-9]{10}" maxlength="10" />
+
+                </div>
+
+
+                <div class="form-group">
+
+                    <label class="form-label">
+                        Date of Birth
+                    </label>
+
+                    <input id="ManagerDateOfBirth"
+                           type="date"
+                           class="form-control"
+                           name="User.DateOfBirth" max="@DateTime.Today.ToString("yyyy-MM-dd")" required />
+
+                </div>
+
+            </div>
+
+
+            <!-- SA ID -->
+
+            <div class="form-group">
+
+                <label class="form-label">
+                    SA ID
+                </label>
+
+                <input id="ManagerSaIdNumber"
+                       class="form-control"
+                       name="User.SaIdNumber" required inputmode="numeric" data-digits="13" pattern="[0-9]{13}" maxlength="13" />
+
+                <small id="idValidation"
+                       style="color:red;font-weight:bold;">
+                </small>
+
+            </div>
+
+
+            <partial name="_StructuredAddressFields" view-data='new ViewDataDictionary(ViewData) { { "AddressPrefix", "managerAddress" } }' />
+
+
+            <!-- SUBMIT -->
+
+            <button id="managerSubmitButton"
+                    type="submit"
+                    class="btn btn-primary">
+
+                Save Lab Manager
+
+            </button>
+
+
+            <!-- CANCEL -->
+
+            <button type="button"
+                    class="btn btn-secondary"
+                    data-bs-dismiss="offcanvas">
+
+                Cancel
+
+            </button>
+
+        </form>
+
+    </div>
+    
+
+</div>
+
+<!-- ========================================================= -->
+<!-- JAVASCRIPT -->
+<!-- ========================================================= -->
+
+<script>
+
+    // =========================================================
+    // CREATE MANAGER
+    // =========================================================
+
+    function openCreateManager() {
+
+        document.getElementById("managerPanelTitle").innerText =
+            "Add Lab Manager";
+
+        document.getElementById("managerSubmitButton").innerText =
+            "Save Lab Manager";
+
+        document.getElementById("managerForm").action =
+            '@Url.Action("CreateManager", "LabManager")';
+
+        document.getElementById("managerForm").reset();
+        structuredAddress.reset("managerAddress");
+
+        document.getElementById("LabManagerId").value = "0";
+
+        clearValidation();
+    }
+
+
+    // =========================================================
+    // EDIT MANAGER
+    // =========================================================
+
+    function openEditManager(button) {
+
+        document.getElementById("managerPanelTitle").innerText =
+            "Edit Lab Manager";
+
+        document.getElementById("managerSubmitButton").innerText =
+            "Update Manager";
+
+        document.getElementById("managerForm").action =
+            '@Url.Action("EditManager", "LabManager")';
+
+        document.getElementById("LabManagerId").value =
+            button.dataset.id;
+
+        document.getElementById("Name").value =
+            button.dataset.name;
+
+        document.getElementById("Surname").value =
+            button.dataset.surname;
+
+        document.getElementById("Email").value =
+            button.dataset.email;
+
+        document.getElementById("Cellphone").value =
+            button.dataset.cellphone;
+
+        document.getElementById("ManagerDateOfBirth").value =
+            button.dataset.dob;
+
+        document.getElementById("ManagerSaIdNumber").value =
+            button.dataset.said;
+
+        structuredAddress.set("managerAddress", {
+            line1: button.dataset.addressLine1,
+            line2: button.dataset.addressLine2,
+            provinceId: button.dataset.provinceId,
+            townCityId: button.dataset.townCityId,
+            suburbId: button.dataset.suburbId
+        });
+
+        clearValidation();
+    }
+
+
+    // =========================================================
+    // SA ID / DATE OF BIRTH VALIDATION
+    // =========================================================
+
+    function validateSouthAfricanId(idInputId, dobInputId) {
+
+        const id =
+            document.getElementById(idInputId).value;
+
+        const dob =
+            document.getElementById(dobInputId).value;
+
+
+        if (id.length !== 13 || dob === "") {
+
+            clearValidation();
+
+            return true;
+        }
+
+
+        const parts = dob.split("-");
+
+
+        const expected =
+            parts[0].substring(2) +
+            parts[1] +
+            parts[2];
+
+
+        if (id.substring(0, 6) !== expected) {
+
+            showValidation(
+                "SA ID Number does not match the Date of Birth."
+            );
+
+            return false;
+        }
+
+
+        clearValidation();
+
+        return true;
+    }
+
+
+    function showValidation(message) {
+
+        document.getElementById("idValidation").innerText =
+            message;
+    }
+
+
+    function clearValidation() {
+
+        document.getElementById("idValidation").innerText =
+            "";
+    }
+
+</script>
+<script src="~/js/structured-address.js" asp-append-version="true"></script>
+<script src="~/js/staff-details.js" asp-append-version="true"></script>
+<script src="~/js/staff-search.js" asp-append-version="true"></script>
+
+

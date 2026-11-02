@@ -1,0 +1,17 @@
+.report-actions {
+        margin-top: 20px;
+    }
+
+    .report-status {
+        margin-top: 15px;
+        font-size: 14px;
+        min-height: 20px;
+    }
+
+        .report-status.success {
+            color: green;
+        }
+
+        .report-status.error {
+            color: red;
+        }

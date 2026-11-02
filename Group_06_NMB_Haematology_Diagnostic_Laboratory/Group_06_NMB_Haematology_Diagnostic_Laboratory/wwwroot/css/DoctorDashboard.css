@@ -1,0 +1,127 @@
+.doctor-dashboard-page {
+    width: 100%;
+    max-width: 1600px;
+    margin-inline: auto;
+}
+
+.doctor-dashboard-page .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 16px;
+}
+
+.doctor-dashboard-page .stat-card {
+    min-width: 0;
+    min-height: 160px;
+    padding: 18px;
+    border: 1px solid #e3e8f0;
+    border-left-width: 4px;
+    border-radius: 12px;
+    background: #fff;
+    color: #203449;
+}
+
+.doctor-dashboard-page .stat-icon {
+    display: grid;
+    width: 42px;
+    height: 42px;
+    flex: 0 0 42px;
+    place-items: center;
+    margin-bottom: 4px;
+    border-radius: 11px;
+}
+
+.doctor-dashboard-page .stat-icon svg {
+    display: block;
+    width: 24px;
+    height: 24px;
+}
+
+.doctor-dashboard-page .stat-card.teal .stat-icon {
+    background: #e4f6f2;
+    color: #008d77;
+}
+
+.doctor-dashboard-page .stat-card.blue .stat-icon {
+    background: #eaf3fb;
+    color: #287bb8;
+}
+
+.doctor-dashboard-page .stat-card.red .stat-icon {
+    background: #fff0f1;
+    color: #d93648;
+}
+
+.doctor-dashboard-page .stat-card.amber .stat-icon {
+    background: #fff5e4;
+    color: #a96800;
+}
+
+.doctor-dashboard-page .stat-card .stat-label {
+    color: #526579;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.doctor-dashboard-page .stat-card .stat-value {
+    color: #172b40;
+    font-size: 26px;
+    line-height: 1.2;
+    font-variant-numeric: tabular-nums;
+}
+
+.doctor-dashboard-page .stat-card .stat-sub {
+    color: #718196;
+    line-height: 1.45;
+}
+
+.doctor-dashboard-page .grid-2 {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: stretch;
+    gap: 18px;
+}
+
+.doctor-dashboard-page .grid-2 > .card {
+    min-width: 0;
+}
+
+.doctor-dashboard-page .list-row {
+    min-width: 0;
+    gap: 14px;
+}
+
+.doctor-dashboard-page .list-row > span:first-child {
+    min-width: 0;
+}
+
+.doctor-dashboard-page .list-row small {
+    overflow-wrap: anywhere;
+}
+
+@media (max-width: 1100px) {
+    .doctor-dashboard-page .stats-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 760px) {
+    .doctor-dashboard-page .grid-2 {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+@media (max-width: 520px) {
+    .doctor-dashboard-page {
+        padding: 16px 12px;
+    }
+
+    .doctor-dashboard-page .stats-grid {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 12px;
+    }
+
+    .doctor-dashboard-page .stat-card {
+        min-height: 0;
+    }
+}

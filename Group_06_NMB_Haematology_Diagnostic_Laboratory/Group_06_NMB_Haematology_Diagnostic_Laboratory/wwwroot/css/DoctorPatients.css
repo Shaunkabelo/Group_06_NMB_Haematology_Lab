@@ -1,0 +1,96 @@
+.patient-info-panel {
+            background: #f9fbfd;
+            border: 1px solid #e5ecf4;
+            border-radius: 14px;
+            padding: 18px;
+        }
+
+        .patient-info-panel .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 14px 18px;
+            margin-top: 8px;
+        }
+
+        .patient-info-panel .info-item {
+            display: grid;
+            gap: 6px;
+            background: #ffffff;
+            border: 1px solid #edf2f7;
+            border-radius: 10px;
+            padding: 10px 12px;
+        }
+
+        .patient-info-panel .info-item label,
+        .patient-info-panel .info-section h4 {
+            margin: 0;
+            color: #5f6f84;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.03em;
+            text-transform: uppercase;
+        }
+
+        .patient-info-panel .info-item span {
+            color: #1d2d3d;
+            font-size: 14px;
+            line-height: 1.5;
+            word-break: break-word;
+        }
+
+        .patient-extra-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 16px;
+            margin-top: 20px;
+        }
+
+        .patient-extra-grid .info-section {
+            background: #ffffff;
+            border: 1px solid #edf2f7;
+            border-radius: 12px;
+            padding: 14px 16px;
+        }
+
+        .patient-history-list {
+            display: grid;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .history-item {
+            background: #f5f8fb;
+            border: 1px solid #e6edf5;
+            border-radius: 10px;
+            padding: 12px;
+        }
+
+        .history-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+
+        .history-header strong {
+            font-size: 14px;
+            color: #1d2d3d;
+        }
+
+        .history-meta {
+            color: #627287;
+            font-size: 12px;
+            line-height: 1.5;
+        }
+
+        @media (max-width: 700px) {
+            .patient-info-panel {
+                padding: 14px;
+            }
+
+            .patient-info-panel .info-grid,
+            .patient-extra-grid {
+                grid-template-columns: 1fr;
+            }
+        }

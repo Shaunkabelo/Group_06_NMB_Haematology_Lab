@@ -1,0 +1,70 @@
+﻿@{
+    Layout = "_TechLayout";
+}
+@{
+    ViewData["Title"] = "Reports";
+}
+
+<div class="topbar">
+    <h1 class="page-title">Reports</h1>
+</div>
+
+<div class="page-body">
+
+    <div class="card" style="max-width:700px">
+        <div class="card-header"><span class="card-title">📄 Tests Completed Report</span></div>
+        <div class="card-body">
+            <p style="font-size:13px;color:#7A8CA0;margin-top:0">
+                Generates a PDF of tests you personally completed within the selected date range, grouped by category.
+            </p>
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">From *</label>
+                    <input class="form-control" type="date" id="fromDate" required />
+                </div>
+                <div class="form-group">
+                    <label class="form-label">To *</label>
+                    <input class="form-control" type="date" id="toDate" required value="@DateTime.Today.ToString("yyyy-MM-dd")" />
+                </div>
+            </div>
+            <button type="button" class="btn btn-primary" onclick="generateReport()">📄 Generate Report</button>
+            <div id="report-error" class="alert alert-danger" style="display:none;margin-top:12px"></div>
+        </div>
+    </div>
+
+    <div id="report-preview-section" style="display:none;margin-top:20px;max-width:900px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+            <span class="form-label" style="margin:0;font-weight:600">Report Preview</span>
+            <a id="download-link" class="btn btn-sm btn-success" download>⬇ Download PDF</a>
+        </div>
+        <iframe id="report-iframe" style="width:100%;height:800px;border:1px solid #E3E8F0;border-radius:8px"></iframe>
+    </div>
+
+</div>
+
+@section Scripts {
+    <script>
+        function generateReport() {
+            const fromDate = document.getElementById('fromDate').value;
+            const toDate = document.getElementById('toDate').value;
+            const errorBox = document.getElementById('report-error');
+
+            if (!fromDate || !toDate) {
+                errorBox.textContent = 'Please select both dates.';
+                errorBox.style.display = 'block';
+                return;
+            }
+            if (fromDate > toDate) {
+                errorBox.textContent = "The 'From' date must be before the 'To' date.";
+                errorBox.style.display = 'block';
+                return;
+            }
+            errorBox.style.display = 'none';
+
+            const url = '@Url.Action("TestsCompleted", "TechReports")' + '?fromDate=' + fromDate + '&toDate=' + toDate;
+            document.getElementById('report-iframe').src = url;
+            document.getElementById('download-link').href = url;
+            document.getElementById('report-preview-section').style.display = 'block';
+        }
+    </script>
+}

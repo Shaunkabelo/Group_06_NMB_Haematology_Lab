@@ -1,0 +1,13 @@
+@using System.Security.Claims
+@{
+    ViewData["Title"] = "My account";
+    Layout = "~/Views/Shared/_UserAccountLayout.cshtml";
+}
+<section class="profile-card welcome-account">
+    <header><h2>Welcome, @User.Identity?.Name</h2><span class="badge">@User.FindFirstValue(ClaimTypes.Role)</span></header>
+    <div class="card-body">
+        <p>You are signed in. You can manage your personal details and account security here.</p>
+        <p class="subtitle">Your role's workspace is not available yet. Contact your laboratory administrator if you need assistance.</p>
+        <a class="primary link-button" asp-controller="Account" asp-action="Profile">Manage my profile</a>
+    </div>
+</section>

@@ -1,0 +1,137 @@
+@{
+    ViewData["Title"] = "Medical Conditions";
+    var conditionCategories = ViewBag.ConditionCategories as IEnumerable<string> ?? Enumerable.Empty<string>();
+    var medicalConditions = ViewBag.MedicalConditions as IEnumerable<Group_06_NMB_Haematology_Diagnostic_Lab.Data.Models.MedicalConditionWithPatientCount> ?? Enumerable.Empty<Group_06_NMB_Haematology_Diagnostic_Lab.Data.Models.MedicalConditionWithPatientCount>();
+}
+<div class="main">
+    @* <div class="topbar">
+    <div class="topbar-title">Medical Conditions</div>
+    <div class="topbar-search"><span>&#128269;</span><input type="text" placeholder="Search reference data…" /></div>
+    <button class="btn btn-amber" style="font-size:13px;padding:7px 14px;text-decoration:none;" onclick="openAddCondition()">+ Add Condition</button>
+    <button class="btn-notif">&#128276; <span class="notif-dot">2</span></button>
+    <div class="avatar avatar-md admin-avatar">SA</div>
+  </div> *@
+    <div class="page-body">
+        <div class="section-header">
+     
+            <!--<div class="section-title">Medical Conditions</div>-->
+            <div class="section-sub">Manage categorised chronic conditions referenced across the system</div>
+            <button class="btn btn" style="font-size:13px;padding:7px 14px;text-decoration:none;" onclick="openAddCondition()">+ Add Condition</button>
+        </div>
+   
+    </div>
+    <div class="card">
+        <div class="tbl-top">
+            <div class="admin-filter-row">
+                <div class="tbl-search">&#128269;  <input type="text" placeholder="Search conditions…" oninput="filterTable('cond-tbl',this.value)" /></div>
+                <select id="condition-category-filter" class="form-control compact-select" onchange="filterByCategory(this.value)">
+                    <option value="All">All categories</option>
+                    @foreach (var category in conditionCategories)
+                    {
+                        <option value="@category">@category</option>
+                    }
+                </select>
+            </div>
+            <span class="badge badge-gray">@medicalConditions.Count() entries</span>
+        </div>
+        <div style="overflow-x:auto;">
+            <table id="cond-tbl">
+                <thead><tr><th>Condition Name</th><th>Category</th><th>Description</th><th>Patients</th><th>Status</th><th>Actions</th></tr></thead>
+                <tbody>
+                    @foreach (var condition in medicalConditions.OrderBy(item => item.ConditionName.Trim(), StringComparer.CurrentCultureIgnoreCase))
+                    {
+                        <tr data-is-active="@condition.IsActive.ToString().ToLowerInvariant()">
+                            <td><strong>@condition.ConditionName</strong></td>
+                            <td><span class="pill-c">@condition.Category</span></td>
+                            <td class="td-muted">@condition.Description</td>
+                            <td>@condition.TotalPatients</td>
+                            <td><span class="badge @(condition.IsActive ? "badge-green" : "badge-gray")">@(condition.IsActive ? "Active" : "Inactive")</span></td>
+                            <td><div style="display:flex;gap:6px;"><button class="btn btn-secondary btn-sm" onclick="editCondition(this)">Edit</button><button class="btn btn-secondary btn-sm" onclick="toggleConditionStatus(this)">@(condition.IsActive ? "Deactivate" : "Activate")</button></div></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+</div>
+<div id="modal-add" class="modal-overlay bottom-sheet-modal">
+    <div class="modal">
+        <div class="modal-header"><span class="modal-title">Add Medical Condition</span><button class="modal-close" onclick="closeModal('modal-add')">&#x2715;</button></div>
+        <div class="modal-body">
+            <div class="form-row">
+                <div class="form-group"><label class="form-label">Condition Name *</label><input id="inp-name" class="form-control" type="text" placeholder="e.g. Iron Deficiency Anaemia" /></div>
+                <div class="form-group">
+                    <label class="form-label">Category *</label>
+                    <select id="inp-category" class="form-control">
+                        @foreach (var category in conditionCategories)
+                        {
+                            <option value="@category">@category</option>
+                        }
+                    </select>
+                </div>
+            </div>
+            <div class="form-group"><label class="form-label">Description</label><textarea id="inp-desc" class="form-control" rows="3" placeholder="Brief clinical description…"></textarea></div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeModal('modal-add')">Cancel</button>
+            <button class="btn btn-amber" onclick="saveCond()">Save Condition</button>
+        </div>
+    </div>
+</div>
+<div id="toast"></div>
+@Html.AntiForgeryToken()
+@section Scripts {
+    <script>
+        function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2800);}
+        function openModal(id){document.getElementById(id).classList.add('open');}
+        function closeModal(id){document.getElementById(id).classList.remove('open');}
+        document.addEventListener('click',e=>{if(e.target.classList.contains('modal-overlay'))e.target.classList.remove('open');});
+        let currentCategory = 'All';
+        let currentSearch = '';
+        function filterTable(tableId,q){currentSearch = q.trim().toLowerCase();applyFilters();}
+        function filterByCategory(category){currentCategory = category.trim() || 'All';applyFilters();}
+        function applyFilters(){const key=currentCategory.trim().toLowerCase();const search=currentSearch.toLowerCase();document.querySelectorAll('#cond-tbl tbody tr').forEach(r=>{const rowCat=r.cells[1].textContent.trim().toLowerCase();const rowText=r.textContent.toLowerCase();const categoryMatch = !key || key==='all' ? true : rowCat === key;const searchMatch = !search ? true : rowText.includes(search);r.style.display = (categoryMatch && searchMatch) ? '' : 'none';});}
+        function sortTableByName(tableId){const tbody=document.querySelector('#'+tableId+' tbody');if(!tbody)return;const rows=Array.from(tbody.querySelectorAll('tr'));rows.sort((a,b)=>{const aName=a.cells[0].textContent.trim();const bName=b.cells[0].textContent.trim();return aName.localeCompare(bName, undefined, { sensitivity: "base" });});rows.forEach(r=>tbody.appendChild(r));}
+        function updateEntryCount(delta){const countEl=document.querySelector('.tbl-top .badge-gray');if(!countEl)return;const current=parseInt(countEl.textContent.match(/\d+/)?.[0]||0,10);countEl.textContent=`${current+delta} entries`;}
+        function ensureCategoryOption(category){const filter=document.getElementById('condition-category-filter');const input=document.getElementById('inp-category');if(filter&&!Array.from(filter.options).some(o=>o.value.toLowerCase()===category.toLowerCase())){const option=document.createElement('option');option.value=category;option.textContent=`${category} (0)`;filter.appendChild(option);}if(input&&!Array.from(input.options).some(o=>o.value.toLowerCase()===category.toLowerCase())){const option=document.createElement('option');option.value=category;option.textContent=category;input.appendChild(option);}}
+        function updateCategoryCounts(category){const select=document.getElementById('condition-category-filter');if(!select)return;ensureCategoryOption(category);Array.from(select.options).forEach(option=>{const match=option.textContent.trim().match(/^(.*)\((\d+)\)$/);if(!match)return;let label=match[1].trim();let count=parseInt(match[2],10);if(option.value==='All')count++;if(option.value.toLowerCase()===category.toLowerCase())count++;option.textContent=`${label} (${count})`;});}
+        function escapeHtml(str){return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
+        let currentConditionEditRow = null;
+        function clearValidation(){document.querySelectorAll('#modal-add .form-control').forEach(i=>setFieldError(i,''));}
+        function openAddCondition(){currentConditionEditRow=null;clearValidation();document.getElementById('inp-name').value='';const categorySelect=document.getElementById('inp-category');categorySelect.selectedIndex=0;document.getElementById('inp-desc').value='';document.querySelector('#modal-add .modal-title').textContent='Add Medical Condition';document.querySelector('#modal-add .modal-footer .btn-amber').textContent='Save Condition';openModal('modal-add');}
+        function editCondition(btn){currentConditionEditRow=btn.closest('tr');if(!currentConditionEditRow)return;clearValidation();const cells=currentConditionEditRow.cells;const category=cells[1].textContent.trim();ensureCategoryOption(category);document.getElementById('inp-name').value=cells[0].textContent.trim();document.getElementById('inp-category').value=category;document.getElementById('inp-desc').value=cells[2].textContent.trim();document.querySelector('#modal-add .modal-title').textContent='Edit Medical Condition';document.querySelector('#modal-add .modal-footer .btn-amber').textContent='Update Condition';openModal('modal-add');}
+        async function toggleConditionStatus(button) {
+            const row = button.closest('tr');
+            if (!row) return;
+            const conditionName = row.cells[0].textContent.trim();
+            const activate = row.dataset.isActive !== 'true';
+            const action = activate ? 'Activate' : 'Deactivate';
+            if (!confirm(`${action} the condition ${conditionName}?`)) return;
+            const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+            const data = new URLSearchParams({conditionName, isActive: String(activate ? 1 : 0), __RequestVerificationToken: token});
+            button.disabled = true;
+            try {
+                const response = await fetch('@Url.Action("SetMedicalConditionStatus", "Admin")', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'},
+                    body: data
+                });
+                const result = await response.json().catch(() => ({}));
+                if (!response.ok) {
+                    toast(result.message || 'Unable to update condition status.');
+                    button.disabled = false;
+                    return;
+                }
+                toast(result.message);
+                window.location.reload();
+            } catch {
+                toast('Unable to reach the server.');
+                button.disabled = false;
+            }
+        }
+        function getSelectedConditionCategory(){return validateText('inp-category','Category',3,40,/^[A-Za-z0-9 /()'.,-]+$/);}
+        async function saveCond(){const name=validateText('inp-name','Condition name',3,150,/^[A-Za-z0-9 /()'.,-]+$/);const description=validateOptionalText('inp-desc','Description',500,/^[A-Za-z0-9 /()'.,;:-]+$/);const categoryResult=getSelectedConditionCategory();if(!name.ok||!description.ok||!categoryResult.ok)return;const category=categoryResult.value;if(hasDuplicateName('cond-tbl',name.value,currentConditionEditRow)){setFieldError(document.getElementById('inp-name'),'Condition name must be unique.');return;}const desc=description.value||'';const token=document.querySelector('input[name="__RequestVerificationToken"]').value;if(currentConditionEditRow){const oldConditionName=currentConditionEditRow.cells[0].textContent.trim();const response=await fetch('@Url.Action("UpdateMedicalCondition", "Admin")',{method:'POST',headers:{'Content-Type':'application/json','RequestVerificationToken':token},body:JSON.stringify({oldConditionName,conditionName:name.value,categoryName:category,categoryDescription:desc,medicalConditionDescription:desc})});const result=await response.json();if(!response.ok){toast(result.message||'Unable to update condition.');return;}currentConditionEditRow.cells[0].innerHTML=`<strong>${escapeHtml(name.value)}</strong>`;currentConditionEditRow.cells[1].innerHTML=`<span class="pill-c">${escapeHtml(category)}</span>`;currentConditionEditRow.cells[2].innerHTML=escapeHtml(desc);currentConditionEditRow=null;sortTableByName('cond-tbl');applyFilters();closeModal('modal-add');toast(result.message);}else{const data=new URLSearchParams({conditionName:name.value,categoryName:category,categoryDescription:desc,__RequestVerificationToken:token});const response=await fetch('@Url.Action("AddMedicalCondition", "Admin")',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded; charset=UTF-8'},body:data});const result=await response.json();if(!response.ok){toast(result.message||'Unable to add condition.');return;}toast(result.message);window.location.reload();}}
+        document.addEventListener('DOMContentLoaded',()=>{sortTableByName('cond-tbl');applyFilters();});
+    </script>
+}

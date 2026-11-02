@@ -1,0 +1,320 @@
+.modal-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 1000;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        background: rgba(11, 25, 41, 0.58);
+    }
+
+.results-toolbar {
+    margin-bottom: 18px;
+}
+
+.results-toolbar-body {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 16px;
+    padding: 16px 24px;
+}
+
+.results-search-field {
+    flex: 1 1 260px;
+    min-width: 0;
+}
+
+.results-search-field .form-label {
+    margin-bottom: 6px;
+}
+
+.results-refresh-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-left: auto;
+}
+
+.results-refresh-actions .btn-primary {
+    background: #00C9A7;
+}
+
+        .modal-overlay.is-open {
+            display: flex;
+        }
+
+    .modal-subtitle {
+        display: block;
+        margin-top: 4px;
+        color: #7A8CA0;
+        font-size: 12px;
+        line-height: 1.4;
+    }
+
+    .release-description {
+        margin: 0 0 18px;
+        color: #4A5563;
+        font-size: 13px;
+        line-height: 1.55;
+    }
+
+    .release-options {
+        display: grid;
+        gap: 10px;
+        margin: 0 0 18px;
+        padding: 0;
+        border: 0;
+    }
+
+        .release-options legend {
+            width: 100%;
+            margin-bottom: 8px;
+        }
+
+    .release-option {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        padding: 12px 14px;
+        border: 1px solid #E3E8F0;
+        border-radius: 8px;
+        background: #FFFFFF;
+        cursor: pointer;
+        transition: border-color 0.2s ease, background 0.2s ease;
+    }
+
+        .release-option:hover,
+        .release-option:has(input:checked) {
+            border-color: #00A98D;
+            background: #F2FCFA;
+        }
+
+        .release-option input {
+            margin-top: 3px;
+            accent-color: #00A98D;
+        }
+
+        .release-option strong,
+        .release-option small {
+            display: block;
+        }
+
+        .release-option strong {
+            color: #1A2A3A;
+            font-size: 13px;
+        }
+
+        .release-option small {
+            margin-top: 3px;
+            color: #7A8CA0;
+            font-size: 12px;
+            line-height: 1.4;
+        }
+
+    .form-label-hint {
+        color: #7A8CA0;
+        font-size: 11px;
+        font-weight: 400;
+    }
+
+    .result-card {
+        background: #FFFFFF;
+        border-radius: 12px;
+        box-shadow: 0 10px 28px rgba(15, 30, 60, 0.08);
+        margin-bottom: 12px;
+        overflow: hidden;
+    }
+
+    .result-card-header {
+        padding: 16px 18px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+    }
+
+        .result-card-header h2 {
+            margin: 0;
+            font-size: 17px;
+            font-weight: 700;
+        }
+
+    .result-card-summary {
+        min-width: 0;
+    }
+
+        .result-card-summary h2 {
+            overflow-wrap: anywhere;
+        }
+
+    .result-meta {
+        color: #7A8CA0;
+        font-size: 13px;
+        line-height: 1.6;
+    }
+
+    .result-card:not(.expanded) .result-meta {
+        display: none;
+    }
+
+    .result-card:not(.expanded) .result-warning,
+    .result-card:not(.expanded) .result-card-body,
+    .result-card:not(.expanded) .result-actions {
+        display: none;
+    }
+
+    .result-status {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+    }
+
+        .result-status .badge {
+            padding: 6px 10px;
+        }
+
+        .result-status .badge.appointment {
+            background: #efe7fb;
+            color: #6638a5;
+        }
+
+    .result-warning {
+        margin: 0 24px 18px;
+        padding: 14px 18px;
+        border-radius: 12px;
+        background: #FFF4E6;
+        color: #7A4E05;
+        border: 1px solid rgba(245, 166, 35, 0.24);
+        font-size: 14px;
+    }
+
+    .result-card-body {
+        padding: 0 24px 22px;
+    }
+
+    .result-item {
+        background: #FAFAFB;
+        border-radius: 14px;
+        padding: 18px 20px;
+        margin-bottom: 16px;
+    }
+
+        .result-item:last-child {
+            margin-bottom: 0;
+        }
+
+    .result-item-title {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 12px;
+    }
+
+        .result-item-title strong {
+            font-size: 16px;
+            font-weight: 700;
+        }
+
+    .result-item-details {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(140px, 1fr));
+        gap: 18px;
+        margin-bottom: 16px;
+    }
+
+    .result-item-detail {
+        font-size: 12px;
+        color: #4A5563;
+    }
+
+        .result-item-detail strong {
+            display: block;
+            margin-bottom: 6px;
+            color: #1A2A3A;
+        }
+
+    .result-note {
+        color: #4A5563;
+        font-size: 13px;
+        line-height: 1.6;
+    }
+
+    .result-actions {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+        gap: 10px;
+        margin: 14px 24px 20px;
+    }
+
+        .result-actions .btn {
+            min-width: 130px;
+        }
+
+        .result-actions .btn-primary {
+            background: #1D5BFF;
+        }
+
+        .result-actions .btn-secondary {
+            border-color: #E3E8F0;
+            color: #516174;
+        }
+
+        .result-actions .btn-appointment {
+            border: 1px solid #6638a5;
+            background: #6638a5;
+            color: #FFFFFF;
+        }
+
+        .result-actions .btn-appointment:hover:not(:disabled) {
+            border-color: #512b83;
+            background: #512b83;
+            color: #FFFFFF;
+        }
+
+        .result-actions .btn-appointment:disabled {
+            border-color: #9a78c7;
+            background: #9a78c7;
+            color: #FFFFFF;
+            opacity: 0.75;
+        }
+
+        .result-actions .btn-download-results {
+            border: 1px solid #9bd8bd;
+            background: #dff4e8;
+            color: #205c36;
+        }
+
+        .result-actions .btn-download-results:hover {
+            border-color: #73c49c;
+            background: #c9ecd8;
+            color: #174a2b;
+        }
+
+    .result-card-details[hidden] {
+        display: none;
+    }
+
+    .result-toggle {
+        min-width: 94px;
+    }
+
+    @media (max-width: 640px) {
+        .result-card-header {
+            align-items: flex-start;
+            flex-direction: column;
+        }
+
+        .result-status {
+            justify-content: flex-start;
+            width: 100%;
+        }
+
+        .result-toggle {
+            width: 100%;
+        }
+    }

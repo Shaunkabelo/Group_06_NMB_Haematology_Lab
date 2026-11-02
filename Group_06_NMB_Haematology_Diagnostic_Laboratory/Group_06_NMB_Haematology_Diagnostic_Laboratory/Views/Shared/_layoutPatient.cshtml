@@ -1,0 +1,57 @@
+@{
+    var currentAction = ViewContext.RouteData.Values["action"]?.ToString() ?? "";
+    var title = ViewData["Title"]?.ToString() ?? "NMB-HLabSys";
+    string IsActive(string action) => string.Equals(currentAction, action, StringComparison.OrdinalIgnoreCase) ? " active" : "";
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@title - NMB-HLabSys</title>
+    <base href="@Url.Content("~/")" />
+    <link rel="stylesheet" href="~/css/style.css" asp-append-version="true" />
+    <script src="~/js/PatientJavaScript.js"></script>
+
+    <link rel="stylesheet" href="~/css/shared-navigation.css" asp-append-version="true" />
+</head>
+<body>
+    <aside class="sidebar" id="shared-sidebar">
+        <partial name="_SidebarBrand" />
+        <nav class="nav-menu">
+            <a asp-controller="Patient" asp-action="Dashboard" class="nav-item@(IsActive("Dashboard"))"><span>⊞</span> Dashboard</a>
+            <div class="sidebar-section">My Health</div>
+            <a asp-controller="Patient" asp-action="Requests" class="nav-item@(IsActive("Requests"))"><span>📋</span> Test Requests & Results</a>
+            <a asp-controller="Patient" asp-action="MedicalHistory" class="nav-item@(IsActive("MedicalHistory"))"><span>🫀</span> Medical History</a>
+            <div class="sidebar-section">Account</div>
+            <a asp-controller="Patient" asp-action="Consent" class="nav-item@(IsActive("Consent"))"><span>🔐</span> Doctor Consent</a>
+            <a asp-controller="Patient" asp-action="Trends" class="nav-item@(IsActive("Trends"))"><span>📊</span> Track Results</a>
+            <a asp-controller="Patient" asp-action="Report" class="nav-item@(IsActive("Report"))"><span>📄</span> Reports</a>
+            <a asp-controller="Patient" asp-action="Update" class="nav-item@(IsActive("Update"))"><span>👤</span> My Profile</a>
+            <div class="sidebar-footer">
+                <div class="user-info">
+                    <strong id="sidebar-patient-name">@(ViewData["PatientDisplayName"] as string ?? "Patient")</strong>
+                    <small id="sidebar-user-role">Patient</small>
+                </div>
+            </div>
+        </nav>
+    </aside>
+    <main class="main-content">
+        <header class="topbar">
+
+            <h1 class="page-title">@title</h1>
+            <div class="topbar-actions">
+                <input type="search" class="form-control search-control" placeholder="Search..." oninput="handleSearch(this.value)" aria-label="Search this page">
+                <button class="btn" type="button" onclick="showNotifications()">🔔</button>
+                <form asp-controller="Account" asp-action="Logout" method="post">
+                    <button class="btn btn-secondary" type="submit">Logout</button>
+                </form>
+            </div>
+        </header>
+        @RenderBody()
+    </main>
+    <script src="~/js/script.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+    <script src="~/js/shared-navigation.js" asp-append-version="true"></script>
+</body>
+</html>

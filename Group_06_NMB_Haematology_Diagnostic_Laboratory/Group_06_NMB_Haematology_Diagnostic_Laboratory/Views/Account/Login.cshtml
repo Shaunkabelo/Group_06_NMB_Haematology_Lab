@@ -1,0 +1,22 @@
+@{
+    ViewData["Title"] = "Sign in";
+    Layout = "~/Views/Shared/_AccountLayout.cshtml";
+}
+<h2>Sign in</h2>
+<p class="muted">Use your registered email address and password to access the system.</p>
+@if (TempData["AccountMessage"] is string message) { <p class="notice" role="status">@message</p> }
+<form asp-action="Login" method="post">
+    <input type="hidden" name="returnUrl" value="@ViewData["ReturnUrl"]" />
+    <div asp-validation-summary="All" class="error" role="alert"></div>
+    <label for="email">Email address</label>
+    <input id="email" name="email" type="email" value="@ViewData["Email"]" maxlength="150" autocomplete="username" required autofocus />
+    <label for="password">Password</label>
+    <div class="password-field"><input id="password" name="password" type="password" maxlength="128" autocomplete="current-password" required /><button type="button" data-password-toggle="password" aria-label="Show password" aria-pressed="false"></button></div>
+    <div class="form-options"><label class="check"><input name="rememberMe" type="checkbox" value="true" /> Keep me signed in</label><a asp-action="ForgotPassword">Forgot password?</a></div>
+    <button class="primary" type="submit">Sign in <span aria-hidden="true">&rarr;</span></button>
+</form>
+<div class="patient-registration-link">
+    <span>New patient?</span>
+    <a asp-controller="Patient" asp-action="Register" class="register-button">Register</a>
+</div>
+<p class="login-support">Need help signing in? Email <a href="mailto:nmblabsystem@gmail.com">nmblabsystem@gmail.com</a>.</p>

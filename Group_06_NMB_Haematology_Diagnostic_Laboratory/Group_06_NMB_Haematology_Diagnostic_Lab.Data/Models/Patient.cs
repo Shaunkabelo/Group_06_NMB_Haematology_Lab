@@ -7,6 +7,8 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Models;
 
 public partial class Patient
 {
+    public readonly string Password;
+
     public int PatientId { get; set; }
 
     public int UserId { get; set; }

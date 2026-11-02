@@ -1,0 +1,36 @@
+@using System.Security.Claims
+@{
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="referrer" content="no-referrer" />
+    <title>@ViewData["Title"] - NMB-HLabSys</title>
+    <link rel="stylesheet" href="~/css/DoctorProfile.css" asp-append-version="true" />
+    @await RenderSectionAsync("Styles", required: false)
+</head>
+<body>
+    <aside class="account-sidebar">
+        <a class="profile-brand" asp-controller="Account" asp-action="Continue"><span>HL</span> NMB-HLabSys</a>
+        <small>WORKSPACE</small>
+        <a asp-controller="Account" asp-action="Continue">My workspace</a>
+        <div class="profile-sidebar-footer">
+            <a class="profile-nav-link @(ViewContext.RouteData.Values["action"]?.ToString() == "Profile" ? "active" : "")"
+               asp-controller="Account" asp-action="Profile"><span aria-hidden="true">&#128100;</span> My Profile</a>
+            <div class="sidebar-person"><strong>@User.Identity?.Name</strong><span>@User.FindFirstValue(ClaimTypes.Role)</span></div>
+        </div>
+    </aside>
+    <main class="profile-main">
+        <header class="profile-topbar">
+            <h1>@ViewData["Title"]</h1>
+            <form asp-controller="Account" asp-action="Logout" method="post"><button class="secondary" type="submit">Logout</button></form>
+        </header>
+        <div class="profile-body">@RenderBody()</div>
+    </main>
+    <script src="~/js/account.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

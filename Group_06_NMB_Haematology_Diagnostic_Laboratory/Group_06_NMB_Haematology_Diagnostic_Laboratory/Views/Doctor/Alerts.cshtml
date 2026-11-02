@@ -1,0 +1,63 @@
+@{
+    ViewData["Title"] = "Doctor Alerts";
+    Layout = "~/Views/Shared/_LayoutDoctor.cshtml";
+}
+
+<div class="page-body doctor-alerts-page">
+    <div class="section-header">
+        <div class="section-title alert-page-title">Results Alerts</div>
+        <div class="section-sub">Review all test results by urgency</div>
+    </div>
+
+    <section class="alerts-filter-panel">
+        <div class="alerts-filter-controls">
+            <div class="alerts-date-field">
+                <span class="date-icon">From</span>
+                <input id="alerts-start-date" class="alerts-date-input" type="date" aria-label="Alert start date" />
+            </div>
+            <div class="alerts-date-field">
+                <span class="date-icon">To</span>
+                <input id="alerts-end-date" class="alerts-date-input" type="date" aria-label="Alert end date" />
+            </div>
+            <button id="alerts-apply-btn" class="btn btn-primary" type="button" onclick="renderAlerts()">Apply</button>
+        </div>
+        <div id="alerts-range-note" class="alerts-range-note">Showing all results</div>
+    </section>
+
+    <section class="alerts-priority-grid">
+        <button class="priority-tile routine is-selected" type="button" data-alert-filter="all" aria-pressed="true"><div>All Results</div><strong id="alerts-total-count">0</strong></button>
+        <button class="priority-tile abnormal" type="button" data-alert-filter="abnormal" aria-pressed="false"><div>Abnormal</div><strong id="alerts-abnormal-count">0</strong></button>
+        <button class="priority-tile urgent" type="button" data-alert-filter="urgent" aria-pressed="false"><div>Urgent</div><strong id="alerts-urgent-count">0</strong></button>
+        <button class="priority-tile routine" type="button" data-alert-filter="routine" aria-pressed="false"><div>Routine</div><strong id="alerts-routine-count">0</strong></button>
+        <button class="priority-tile stat" type="button" data-alert-filter="stat" aria-pressed="false"><div>STAT</div><strong id="alerts-stat-count">0</strong></button>
+    </section>
+
+    <section id="alerts-empty-panel" class="alerts-empty-panel" hidden>
+        <div class="alerts-empty-icon">!</div>
+        <div id="alerts-empty-text" class="alerts-empty-text" role="status">No results were found for the selected period.</div>
+    </section>
+
+    <section id="alerts-table-panel" class="alerts-table-panel">
+        <div class="table-wrap" style="overflow-x:auto;">
+            <table class="alerts-table">
+                <thead>
+                    <tr><th>Date</th><th>Patient</th><th>Test</th><th>Flag</th></tr>
+                </thead>
+                <tbody id="alerts-tbody">
+                    <tr><td colspan="4">Loading results...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+</div>
+
+
+                                                              
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/DoctorAlerts.css" asp-append-version="true" />
+}
+
+@section Scripts {
+    <script src="~/js/DoctorAlerts.js" asp-append-version="true" data-getdoctoralerts-url="@Url.Action("GetDoctorAlerts", "Doctor")" data-requestdetails-url="@Url.Action("RequestDetails", "Doctor")"></script>
+}

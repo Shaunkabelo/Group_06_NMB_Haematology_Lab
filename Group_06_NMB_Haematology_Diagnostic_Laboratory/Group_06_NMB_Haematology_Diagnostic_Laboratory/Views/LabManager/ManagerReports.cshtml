@@ -1,0 +1,74 @@
+@{
+    
+    Layout = "~/Views/Shared/_LabManager_Layout.cshtml";
+    var startDate = (DateTime)ViewBag.ReportStart;
+    var endDate = (DateTime)ViewBag.ReportEnd;
+}
+<div class="page-body report-page">
+    <div class="section-header"><div><h2>Management Reports</h2><small>Choose a report and its criteria, preview the data, then download a print-ready PDF.</small></div></div>
+    @if (TempData["ReportError"] != null) {
+        <div class="alert alert-danger" role="alert">@TempData["ReportError"]</div>
+    }
+    <div class="report-card"><div class="report-card-content">
+        <p class="panel-kicker">PDF reports</p>
+        <form asp-action="DownloadReport" method="get" id="reportForm" target="_blank">
+            <div class="mb-3">
+                <label for="reportType" class="form-label">Report</label>
+                <select id="reportType" name="reportType" class="form-select" required>
+                    <option value="tests" selected="@(ViewBag.ReportType == "tests")">Laboratory test activity</option>
+                    <option value="orders" selected="@(ViewBag.ReportType == "orders")">Stock orders</option>
+                    <option value="stock" selected="@(ViewBag.ReportType == "stock")">Current consumable stock</option>
+                </select>
+            </div>
+            <p id="reportDescription" class="text-muted" aria-live="polite"></p>
+            <div id="reportDates" class="report-form mb-3">
+                <div><label for="startDate">From</label><input id="startDate" name="startDate" type="date" value="@startDate.ToString("yyyy-MM-dd")" required /></div>
+                <div><label for="endDate">To (inclusive)</label><input id="endDate" name="endDate" type="date" max="9999-12-30" value="@endDate.ToString("yyyy-MM-dd")" required /></div>
+            </div>
+            <div id="orderFilters" class="mb-3" hidden>
+                <label for="orderStatus" class="form-label">Order status</label>
+                <select id="orderStatus" name="orderStatus" class="form-select">
+                    @foreach (var status in new[] { "All", "Ordered", "Partially Received", "Received", "Cancelled" }) {
+                        <option value="@status" selected="@(ViewBag.OrderStatus == status)">@status</option>
+                    }
+                </select>
+            </div>
+            <div id="stockFilters" class="mb-3" hidden>
+                <label><input type="checkbox" name="lowStockOnly" value="true" checked="@(ViewBag.LowStockOnly == true)" /> Only consumables near or below reorder level (within 10%)</label>
+            </div>
+            <p id="reportDateError" class="text-danger" role="alert"></p>
+            <div class="d-flex gap-2 flex-wrap">
+                <button class="btn btn-secondary" type="submit" formmethod="get"
+                        formaction="@Url.Action("PreviewReport", "LabManager")" formtarget="_self">Preview report</button>
+                <button class="btn btn-primary" type="submit">Open PDF</button>
+            </div>
+        </form>
+    </div></div>
+</div>
+@section Scripts {
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+ const type = document.getElementById("reportType"), start = document.getElementById("startDate"), end = document.getElementById("endDate");
+ function check() {
+    const message = !end.disabled && start.value && end.value && end.value < start.value ? "End date must be on or after start date." : "";
+    end.setCustomValidity(message); document.getElementById("reportDateError").textContent = message;
+ }
+ function update() {
+    const stock = type.value === "stock";
+    document.getElementById("reportDates").hidden = stock; start.disabled = end.disabled = stock;
+    document.getElementById("orderFilters").hidden = type.value !== "orders";
+    document.getElementById("orderStatus").disabled = type.value !== "orders";
+    document.getElementById("stockFilters").hidden = !stock;
+    document.querySelector('[name="lowStockOnly"]').disabled = !stock;
+    document.getElementById("reportDescription").textContent = {
+      tests: "Shows completed tests by category, daily activity and estimated configured consumable usage. Uses completion dates; both selected dates are included.",
+      orders: "Orders placed in the selected period, grouped into a chronological list with supplier and current receipt status.",
+      stock: "Current quantities and reorder levels by supplier. This is a snapshot of stock now; date ranges do not apply."
+    }[type.value];
+    check();
+ }
+ type.addEventListener("change", update); start.addEventListener("change", check); end.addEventListener("change", check); update();
+
+});
+</script>
+}

@@ -1,0 +1,96 @@
+@inject Microsoft.AspNetCore.Antiforgery.IAntiforgery Antiforgery
+@{
+    var currentAction = ViewContext.RouteData.Values["action"]?.ToString() ?? "";
+    var title = ViewData["Title"]?.ToString() ?? "NMB-HLabSys";
+    string IsActive(string action) => string.Equals(currentAction, action, StringComparison.OrdinalIgnoreCase) ? " active" : "";
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta name="doctor-csrf" content="@Antiforgery.GetAndStoreTokens(Context).RequestToken" />
+    <script src="~/js/doctor-security.js" asp-append-version="true"></script>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@title - NMB-HLabSys</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/DoctorStyle.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/DoctorMessages.css" asp-append-version="true" />
+    <script src="~/js/doctor-history.js" asp-append-version="true"
+        data-history-url="@Url.Action("GetPatientHistory", "Doctor")"
+        data-details-url="@Url.Action("RequestDetails", "Doctor")"
+        data-pdf-url="@Url.Action("DownloadResultPdf", "Doctor")"></script>
+    @await RenderSectionAsync("Styles", required: false)
+    <link rel="stylesheet" href="~/css/shared-navigation.css" asp-append-version="true" />
+</head>
+<body>
+    <aside class="sidebar" id="shared-sidebar">
+        <partial name="_SidebarBrand" />
+        <nav class="nav-menu">
+            <div class="sidebar-section">Doctor</div>
+            <a asp-controller="Doctor" asp-action="Dashboard" class="nav-item@(IsActive("Dashboard"))">
+                <span class="nav-icon" aria-hidden="true">&#x1F3E0;</span>
+                Dashboard
+            </a>
+            <a asp-controller="Doctor" asp-action="Patients" class="nav-item@(IsActive("Patients"))">
+                <span class="nav-icon" aria-hidden="true">&#x1F465;</span>
+                Patients
+            </a>
+            <a asp-controller="Doctor" asp-action="Requests" class="nav-item@(IsActive("Requests"))">
+                <span class="nav-icon" aria-hidden="true">&#x1F4CB;</span>
+                Test Requests
+            </a>
+            <a asp-controller="Doctor" asp-action="Results" class="nav-item@(IsActive("Results"))">
+                <span class="nav-icon" aria-hidden="true">&#x1F4CB;</span>
+                Results
+            </a>
+            <a asp-controller="Doctor" asp-action="Alerts" class="nav-item@(IsActive("Alerts"))">
+                <span class="nav-icon" aria-hidden="true">&#x1F514;</span>
+                Alerts
+            </a>
+            <a asp-controller="Doctor" asp-action="Reports" class="nav-item@(IsActive("Reports"))">
+                <span class="nav-icon" aria-hidden="true">&#x1F4C4;</span>
+                Reports
+            </a>
+            <a asp-controller="Doctor" asp-action="RegisterPatient" class="nav-item@(IsActive("RegisterPatient"))">
+                <span class="nav-icon" aria-hidden="true">&#x2795;</span>
+                Register Patient
+            </a>
+            <div class="sidebar-footer">
+                <a asp-controller="Doctor" asp-action="Account" class="user-info user-info-link" aria-label="Open doctor account profile">
+                    <strong id="sidebar-user-name"><span class="nav-icon" aria-hidden="true">&#x1F464;</span> My profile</strong>
+                    <small id="sidebar-user-role">Doctor</small>
+                </a>
+            </div>
+        </nav>
+    </aside>
+    <main class="main-content">
+        <header class="topbar">
+
+            <h1 class="page-title">@title</h1>
+            <div class="topbar-actions">
+                <input type="search" class="form-control search-control" placeholder="Search..." oninput="handleSearch(this.value)" aria-label="Search this page">
+                <button class="btn notification-button" type="button" onclick="showNotifications()" aria-label="Show notifications"><span aria-hidden="true">&#x1F514;</span></button>
+                <form asp-controller="Account" asp-action="Logout" method="post" class="logout-form">
+                    @Html.AntiForgeryToken()
+                    <button class="btn btn-secondary" type="submit">Logout</button>
+                </form>
+            </div>
+        </header>
+        @RenderBody()
+    </main>
+    <div id="doctor-message-overlay" class="doctor-message-overlay" hidden>
+        <section class="doctor-message-dialog" role="alertdialog" aria-modal="true" aria-labelledby="doctor-message-title" aria-describedby="doctor-message-text" tabindex="-1">
+            <div class="doctor-message-icon" aria-hidden="true">✓</div>
+            <h2 id="doctor-message-title">Notification</h2>
+            <p id="doctor-message-text"></p>
+            <p id="doctor-message-signature" class="doctor-message-signature"></p>
+            <button id="doctor-message-close" class="btn btn-primary" type="button">Continue</button>
+        </section>
+    </div>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    <script src="~/js/DoctorMessages.js" asp-append-version="true" data-doctor-account-url="@Url.Action("GetDoctorAccount", "Doctor")"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+    <script src="~/js/shared-navigation.js" asp-append-version="true"></script>
+</body>
+</html>

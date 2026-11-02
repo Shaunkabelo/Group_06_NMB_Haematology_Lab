@@ -25,7 +25,7 @@ public partial class User
 
     public string SaIdNumber { get; set; }
 
-    public DateOnly? DateOfBirth { get; set; }
+    public DateTime? DateOfBirth { get; set; }
 
     public string Role { get; set; }
 

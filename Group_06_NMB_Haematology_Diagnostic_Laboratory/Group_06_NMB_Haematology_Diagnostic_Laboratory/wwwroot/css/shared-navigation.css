@@ -1,0 +1,147 @@
+/* Optional enhancement, isolated for easy reversal. */
+.main-content { min-width: 0; }
+.shared-heading { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.shared-heading h2 { margin: 0; }
+#shared-nav-toggle { flex-shrink: 0; }
+#shared-sidebar .shared-sidebar-brand {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 20px 16px 24px;
+    margin-bottom: 20px;
+    white-space: nowrap;
+}
+#shared-sidebar .shared-sidebar-brand .brand-icon {
+    flex: 0 0 28px;
+    width: 28px;
+    font-size: 24px;
+}
+#shared-sidebar .shared-sidebar-brand .nav-brand-label { font-size: 14px; }
+#shared-sidebar #shared-nav-toggle {
+    position: absolute;
+    right: 12px;
+    bottom: -16px;
+    z-index: 2;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    margin: 0;
+    padding: 0;
+    border: 1px solid #385365;
+    border-radius: 50%;
+    background: #183344;
+    color: #c2e9e2;
+    box-shadow: 0 3px 8px #0003;
+    transition: background .15s ease, border-color .15s ease;
+    cursor: pointer;
+}
+#shared-sidebar #shared-nav-toggle:hover { background: #245065; border-color: #75c9b0; }
+#shared-sidebar #shared-nav-toggle svg { display: block; }
+#shared-sidebar #shared-nav-toggle[aria-expanded="false"] svg { transform: rotate(180deg); }
+#shared-sidebar #shared-nav-toggle:focus-visible { outline: 2px solid #00c9a7; outline-offset: 2px; }
+#shared-sidebar #shared-nav-toggle[hidden] { display: none; }
+.shared-nav-tooltip {
+    position: fixed; z-index: 1090; pointer-events: none;
+    background: #0b1929; color: #fff; padding: 8px 12px;
+    border-radius: 6px; font-size: 14px; box-shadow: 0 3px 12px #0003;
+}
+.sidebar .nav-item:focus-visible { outline: 2px solid #00c9a7; outline-offset: -3px; }
+@media (min-width: 861px) {
+    html.shared-nav-collapsed { --sidebar: 88px; --sidebar-w: 88px; }
+    .shared-nav-collapsed #shared-sidebar { width: 88px; }
+    .shared-nav-collapsed #shared-sidebar ~ .main-content {
+        margin-left: 88px;
+        width: calc(100% - 88px);
+    }
+    .shared-nav-collapsed #shared-sidebar .nav-badge,
+    .shared-nav-collapsed #shared-sidebar .brand-badge { display: none; }
+    .shared-nav-collapsed #shared-sidebar .sidebar-brand:has(.brand-badge)::before {
+        content: '\1F9EC'; font-size: 24px;
+    }
+    .shared-nav-collapsed #shared-sidebar .shared-sidebar-brand { justify-content: center; padding: 20px 8px 24px; }
+    .shared-nav-collapsed #shared-sidebar a.user-info-link { display: block; text-align: center; }
+    .shared-nav-collapsed #shared-sidebar a.user-info-link strong { font-size: 0; }
+    .shared-nav-collapsed #shared-sidebar a.user-info-link .nav-icon { font-size: 20px; }
+    .shared-nav-collapsed #shared-sidebar a.user-info-link small { display: none; }
+    .shared-nav-collapsed .sidebar .nav-label,
+    .shared-nav-collapsed .sidebar .nav-brand-label,
+    .shared-nav-collapsed .sidebar .sidebar-section,
+    .shared-nav-collapsed .sidebar .user-info { display: none; }
+    .shared-nav-collapsed .sidebar .sidebar-brand { padding: 20px 0; text-align: center; }
+    .shared-nav-collapsed .sidebar .nav-item {
+        justify-content: center; gap: 0; padding: 12px 0;
+    }
+    .shared-nav-collapsed .sidebar .sidebar-footer { padding-left: 0; padding-right: 0; }
+}
+@media (max-width: 860px) {
+    #shared-sidebar .shared-sidebar-brand { margin-bottom: 0; padding-bottom: 16px; }
+    #shared-sidebar #shared-nav-toggle { display: none; }
+    .shared-nav-tooltip { display: none; }
+}
+
+/* Phone layout: keep navigation compact, preserve comfortable touch targets,
+   and let dense data tables scroll inside their own container. */
+@media (max-width: 600px) {
+    html { -webkit-text-size-adjust: 100%; }
+    body { min-width: 0; overflow-x: hidden; }
+    .sidebar,
+    #shared-sidebar {
+        position: sticky !important;
+        top: 0;
+        z-index: 1040;
+        width: 100% !important;
+        min-height: 0 !important;
+        max-height: none !important;
+    }
+    .sidebar .sidebar-brand,
+    #shared-sidebar .sidebar-brand,
+    #shared-sidebar .shared-sidebar-brand { display: none; }
+    .sidebar .nav-menu,
+    #shared-sidebar .nav-menu {
+        display: flex;
+        gap: 4px;
+        overflow-x: auto;
+        overscroll-behavior-x: contain;
+        padding: 8px 10px;
+        scrollbar-width: thin;
+        -webkit-overflow-scrolling: touch;
+    }
+    .sidebar .sidebar-section,
+    #shared-sidebar .sidebar-section,
+    .sidebar .nav-badge,
+    #shared-sidebar .nav-badge { display: none !important; }
+    .sidebar .nav-item,
+    #shared-sidebar .nav-item {
+        flex: 0 0 auto;
+        min-height: 44px;
+        padding: 11px 12px;
+        border-radius: 8px;
+        white-space: nowrap;
+    }
+    .sidebar .sidebar-footer,
+    #shared-sidebar .sidebar-footer,
+    .account-sidebar-footer { display: none !important; }
+    .main-content { width: 100% !important; margin-left: 0 !important; min-width: 0; }
+    .topbar { min-height: auto; padding: 12px 14px; gap: 10px; }
+    .topbar .page-title { font-size: clamp(1.2rem, 6vw, 1.6rem); }
+    .topbar-actions { width: 100%; gap: 8px; }
+    .topbar-actions input,
+    .topbar-actions .search-control { flex: 1 1 160px; min-width: 0; }
+    .page-body,
+    .content-wrapper,
+    .container { min-width: 0; }
+    .form-row,
+    .grid-2,
+    .grid-3,
+    .stats-grid { grid-template-columns: minmax(0, 1fr) !important; }
+    input:not([type="checkbox"]):not([type="radio"]), select, textarea { font-size: 16px; }
+    .btn, button, .modal-close { min-height: 44px; }
+    table { display: block; width: 100%; max-width: 100%; overflow-x: auto; white-space: nowrap; -webkit-overflow-scrolling: touch; }
+    .modal-overlay { padding: 12px; align-items: flex-end; }
+    .modal { width: 100% !important; max-width: none !important; max-height: calc(100dvh - 24px); border-radius: 16px 16px 10px 10px; }
+    .modal-body { max-height: calc(100dvh - 180px); overflow-y: auto; }
+    .modal-footer { position: sticky; bottom: 0; background: inherit; }
+}

@@ -1,8 +1,32 @@
 ﻿@{
-    ViewData["Title"] = "Home Page";
+    ViewData["Title"] = "NMB-HLabSys";
+    Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+<div class="landing-shell">
+    <nav class="landing-nav">
+        <a class="landing-brand" asp-controller="Home" asp-action="Index"><span class="brand-mark">HL</span> NMB-HLabSys</a>
+        <a class="landing-login" href="@Url.Action("Login", "Account")">Sign in <span aria-hidden="true">→</span></a>
+    </nav>
+
+    <main class="landing-content">
+        <div class="landing-copy">
+            <p class="auth-eyebrow">Nelson Mandela Bay Haematology Diagnostic Laboratory</p>
+            <h1>Secure laboratory information management.</h1>
+            <p class="landing-lede">NMB-HLabSys supports diagnostic services, laboratory operations and inventory management through one secure system.</p>
+            <a class="landing-cta" href="@Url.Action("Login", "Account")">Sign in to NMB-HLabSys <span aria-hidden="true">↗</span></a>
+        </div>
+        <div class="landing-visual" aria-hidden="true">
+            <div class="visual-line visual-line-one"></div>
+            <div class="visual-line visual-line-two"></div>
+            <div class="visual-label visual-label-one">DIAGNOSTICS</div>
+            <div class="visual-label visual-label-two">STAFF</div>
+            <div class="visual-label visual-label-three">INVENTORY</div>
+        </div>
+    </main>
+
+    <footer class="landing-footer">
+        <div><strong>NMB-HLabSys</strong><span>Laboratory information management system</span></div>
+        <div class="support-inline"><strong>Need help?</strong><a href="mailto:nmblabsystem@gmail.com">nmblabsystem@gmail.com</a></div>
+    </footer>
 </div>

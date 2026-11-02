@@ -1,0 +1,147 @@
+@using Group_06_NMB_Haematology_Diagnostic_Lab.Data.Models
+@model PatientRegistrationViewModel
+@{
+    ViewData["Title"] = "Patient Registration";
+    // Registration is public. The patient navigation is only for signed-in users.
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+<link rel="stylesheet" href="~/css/patient-registration.css" asp-append-version="true" />
+<section class="patient-registration">
+    <form asp-controller="Patient" asp-action="Register" method="post" id="patientRegistrationForm">
+        <div class="registration-body">
+            <p class="registration-intro">Capture personal details and create login credentials using email as username.</p>
+            @if (TempData["SuccessMessage"] != null)
+            {
+                <div class="alert alert-success" role="status">
+                    @TempData["SuccessMessage"]
+                    @if (TempData["PatientId"] != null)
+                    {
+                        <span>Patient ID: @TempData["PatientId"]</span>
+                    }
+                </div>
+            }
+            <div asp-validation-summary="ModelOnly" class="text-danger" role="alert"></div>
+            <div class="registration-grid">
+                <div class="registration-field">
+                    <label asp-for="Name">Name <span class="required-mark">*</span></label>
+
+                    <input asp-for="Name" data-person-name type="text" class="form-control" placeholder="e.g. Name"   />
+
+
+
+                    <span asp-validation-for="Name" class="text-danger"></span>
+                </div>
+                <div class="registration-field">
+                    <label asp-for="Surname">Surname <span class="required-mark">*</span></label>
+
+                    <input asp-for="Surname" data-person-name type="text" class="form-control" placeholder="e.g. Surname"   />
+
+
+
+                    <span asp-validation-for="Surname" class="text-danger"></span>
+                </div>
+                <div class="registration-field">
+                    <label asp-for="SaIdNumber">South African ID Number <span class="required-mark">*</span></label>
+
+                    <input asp-for="SaIdNumber" data-digits="13" data-sa-id inputmode="numeric" minlength="13" maxlength="13" pattern="[0-9]{13}" type="text" class="form-control" placeholder="13-digit SA ID"   />
+
+                    <small>Date of birth must match the first 6 digits.</small>
+
+                    <span asp-validation-for="SaIdNumber" class="text-danger"></span>
+                </div>
+                <div class="registration-field">
+                    <label asp-for="DateOfBirth">Date of Birth <span class="required-mark">*</span></label>
+
+                    <input asp-for="DateOfBirth" type="date" class="form-control" placeholder=""   />
+
+
+
+                    <span asp-validation-for="DateOfBirth" class="text-danger"></span>
+                </div>
+                <div class="registration-field">
+                    <label asp-for="Cellphone">Cellphone Number <span class="required-mark">*</span></label>
+
+                    <input asp-for="Cellphone" data-digits="10" inputmode="numeric" minlength="10" maxlength="10" pattern="[0-9]{10}" type="tel" class="form-control" placeholder="e.g. 0677419669"   />
+
+
+
+                    <span asp-validation-for="Cellphone" class="text-danger"></span>
+                </div>
+                <div class="registration-field">
+                    <label asp-for="Email">Email Address / Username <span class="required-mark">*</span></label>
+
+                    <input asp-for="Email" type="email" class="form-control" placeholder="patient@example.com" autocomplete="email" required aria-describedby="email-validation" />
+
+
+
+                    <span asp-validation-for="Email" id="email-validation" class="text-danger"></span>
+                </div>
+                <div class="registration-field registration-wide">
+                    <label asp-for="HomeAddress">Home Address <span class="required-mark">*</span></label>
+
+                    <input asp-for="HomeAddress" type="text" class="form-control" placeholder="Street address, suburb, city" data-address-autocomplete  />
+
+
+
+                    <span asp-validation-for="HomeAddress" class="text-danger"></span>
+                </div>
+                <div class="registration-field">
+                    <label asp-for="Password">Password <span class="required-mark">*</span></label>
+                    <div class="registration-password">
+                    <input asp-for="Password" type="password" class="form-control" placeholder="Create password"  autocomplete="new-password" />
+                        <button type="button" class="password-toggle" data-password-target="Password" aria-label="Show password" aria-pressed="false"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M12 5C7 5 3 9 1 12c2 3 6 7 11 7s9-4 11-7c-2-3-6-7-11-7zm0 11a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm0-2a2 2 0 1 0 0-4 2 2 0 0 0 0 4z"/></svg></button>
+                    </div>
+
+                    <small>Use 8+ characters, uppercase, number and special character.</small>
+                    <span asp-validation-for="Password" class="text-danger"></span>
+                </div>
+                <div class="registration-field">
+                    <label asp-for="ConfirmPassword">Confirm Password <span class="required-mark">*</span></label>
+                    <div class="registration-password">
+                    <input asp-for="ConfirmPassword" type="password" class="form-control" placeholder="Confirm password"  autocomplete="new-password" />
+                        <button type="button" class="password-toggle" data-password-target="ConfirmPassword" aria-label="Show confirm password" aria-pressed="false"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M12 5C7 5 3 9 1 12c2 3 6 7 11 7s9-4 11-7c-2-3-6-7-11-7zm0 11a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm0-2a2 2 0 1 0 0-4 2 2 0 0 0 0 4z"/></svg></button>
+                    </div>
+
+
+                    <span asp-validation-for="ConfirmPassword" class="text-danger"></span>
+                </div>
+            </div>
+        </div>
+        <div class="registration-footer">
+            <a asp-controller="Account" asp-action="Login" class="registration-cancel" id="registrationCancel">Cancel</a>
+            <button type="submit" class="registration-create" id="register-btn">Create Account</button>
+        </div>
+    </form>
+</section>
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script src="~/js/person-input-validation.js" asp-append-version="true"></script>
+    <script>
+        const idNumberInput = document.getElementById('SaIdNumber');
+        const dateOfBirthInput = document.getElementById('DateOfBirth');
+        function populateDateOfBirth() {
+            const id = idNumberInput.value;
+            dateOfBirthInput.value = window.patientInputValidation.validId(id)
+                ? window.patientInputValidation.birthDate(id) : '';
+            dateOfBirthInput.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+        idNumberInput.addEventListener('input', populateDateOfBirth);
+        populateDateOfBirth();
+        document.querySelectorAll('[data-password-target]').forEach(function (button) {
+            button.addEventListener('click', function () {
+                const input = document.getElementById(button.dataset.passwordTarget);
+                const show = input.type === 'password';
+                input.type = show ? 'text' : 'password';
+                button.setAttribute('aria-pressed', String(show));
+                button.setAttribute('aria-label', (show ? 'Hide ' : 'Show ') + (input.id === 'Password' ? 'password' : 'confirm password'));
+            });
+        });
+        document.getElementById('registrationCancel').addEventListener('click', function (event) {
+            if (window.parent !== window) {
+                event.preventDefault();
+                window.parent.postMessage({ type: 'close-patient-registration' }, window.location.origin);
+            }
+        });
+    </script>
+    <partial name="_AddressAutocompleteScripts" />
+}

@@ -1,0 +1,52 @@
+@{
+    ViewData["Title"] = "Request Details";
+    Layout = "~/Views/Shared/_LayoutDoctor.cshtml";
+}
+
+<div class="page-body">
+    <div class="section-header">
+        <div class="section-title">Request Details</div>
+        <div id="request-meta" class="section-sub"></div>
+    </div>
+
+    <div id="cancellation-panel"></div>
+
+    <div class="card">
+        <div class="card-header"><span class="card-title">Requested Tests</span></div>
+        <div class="card-body">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Test Type</th>
+                        <th>Sample Barcode</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody id="tests-list"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="card" style="margin-top: 1rem;">
+        <div class="card-header"><span class="card-title">Captured Results for this Request</span></div>
+        <div class="card-body">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Summary</th>
+                        <th>Verified</th>
+                        <th>Created</th>
+                    </tr>
+                </thead>
+                <tbody id="request-results-list"></tbody>
+            </table>
+        </div>
+        <div class="card-footer"><a class="btn btn-primary" asp-controller="Doctor" asp-action="Requests">Back to Requests</a></div>
+    </div>
+</div>
+
+
+
+@section Scripts {
+    <script src="~/js/DoctorRequestDetails.js" asp-append-version="true" data-getrequestdata-url="@Url.Action("GetRequestData", "Doctor")" data-request-id="@ViewData["RequestId"]"></script>
+}

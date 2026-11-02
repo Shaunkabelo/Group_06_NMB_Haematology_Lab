@@ -1,0 +1,47 @@
+@{
+    ViewData["Title"] = "Results";
+    Layout = "~/Views/Shared/_LayoutDoctor.cshtml";
+}
+
+<div class="page-body">
+    <div class="section-header">
+        <div class="section-title">Review and Release Results</div>
+        <div class="section-sub">Manage result cards, request patient appointments, and release completed reports.</div>
+    </div>
+
+    <div class="card results-toolbar">
+        <div class="card-body results-toolbar-body">
+            <div class="results-search-field">
+                <div class="form-label">Search</div>
+                <input id="results-search" class="form-control" type="search" placeholder="Search by patient name, patient ID, test type, or request ID..." oninput="renderResultCards()" />
+            </div>
+            <div class="results-refresh-actions">
+                <button class="btn btn-primary" type="button" onclick="renderResultCards(true)">Refresh</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="results-list"></div>
+</div>
+
+<div id="result-message" role="status" class="card-body"></div>
+<dialog id="result-delivery-dialog">
+    <form id="result-delivery-form">
+        <h2 id="result-delivery-title">Release results</h2>
+        <label for="result-note">Email message (editable)</label>
+        <textarea id="result-note" class="form-control" maxlength="2000" required rows="9" spellcheck="true"></textarea>
+        <p id="result-delivery-description">Release makes the verified results available to the patient. Only release after reviewing every result.</p>
+        <button type="button" class="btn btn-secondary" onclick="document.getElementById('result-delivery-dialog').close()">Cancel</button>
+        <button id="result-send" type="submit" class="btn btn-primary">Confirm</button>
+    </form>
+</dialog>
+
+
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/DoctorResults.css" asp-append-version="true" />
+}
+
+@section Scripts {
+    <script src="~/js/DoctorResults.js" asp-append-version="true" data-getdoctorresults-url="@Url.Action("GetDoctorResults", "Doctor")" data-downloadresultpdf-url="@Url.Action("DownloadResultPdf", "Doctor")" data-releaseresults-url="@Url.Action("ReleaseResults", "Doctor")" data-emailresults-url="@Url.Action("EmailResults", "Doctor")"></script>
+}
