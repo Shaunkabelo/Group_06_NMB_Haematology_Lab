@@ -8,12 +8,10 @@ namespace Group_06_NMB_Haematology_Diagnostic_Lab.Data.Models;
 public partial class Supplier
 {
     public int SupplierId { get; set; }
-
     public string SupplierName { get; set; }
-
     public string ContactPerson { get; set; }
-
     public string SupplierEmail { get; set; }
+    public bool IsActive { get; set; }
 
     public virtual ICollection<Consumable> Consumable { get; set; } = new List<Consumable>();
 

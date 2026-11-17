@@ -1,0 +1,405 @@
+@using Group_06_NMB_Haematology_Diagnostic_Lab.Data.Models
+@model IEnumerable<Supplier>
+
+@{
+    Layout = "~/Views/Shared/_LabManager_Layout.cshtml";
+}
+
+<div class="page-body">
+
+    <div class="section-header">
+
+        <div>
+            <h2>Suppliers</h2>
+            
+        </div>
+
+        <div style="display:flex; gap:10px; align-items:center;">
+
+            <!-- SEARCH -->
+
+            <input type="text"
+                   id="supplierSearch"
+                   class="form-control"
+                   placeholder="Search suppliers..."
+                   autocomplete="off"
+                   style="width:250px;" />
+
+            
+
+
+            <!-- FILTER -->
+
+            <form asp-controller="LabManager"
+                  asp-action="Suppliers"
+                  method="get">
+
+                <input type="hidden"
+                       name="search"
+                       value="@ViewBag.Search" />
+
+                <select id="filterSelect"
+                        name="filter"
+                        class="form-select @(ViewBag.Filter == "Active" ? "filter-active" : ViewBag.Filter == "Inactive" ? "filter-inactive" : "filter-all")"
+                        onchange="this.form.submit()">
+
+                    @if (ViewBag.Filter == "Active")
+                    {
+                        <option value="Active" selected>Active</option>
+                    }
+                    else
+                    {
+                        <option value="Active">Active</option>
+                    }
+
+                    @if (ViewBag.Filter == "Inactive")
+                    {
+                        <option value="Inactive" selected>Inactive</option>
+                    }
+                    else
+                    {
+                        <option value="Inactive">Inactive</option>
+                    }
+
+                    @if (ViewBag.Filter == "All")
+                    {
+                        <option value="All" selected>All</option>
+                    }
+                    else
+                    {
+                        <option value="All">All</option>
+                    }
+
+                </select>
+
+            </form>
+
+
+            <!-- ADD SUPPLIER -->
+
+            <button class="btn btn-primary"
+                    onclick="openCreateSupplier()"
+                    data-bs-toggle="offcanvas"
+                    data-bs-target="#supplierPanel">
+
+                Add Supplier
+
+            </button>
+
+        </div>
+
+    </div>
+
+
+    <!-- ========================================================= -->
+    <!-- SUPPLIER TABLE -->
+    <!-- ========================================================= -->
+
+    <div class="table-wrap">
+
+        <table id="supplierTable">
+
+            <thead>
+
+                <tr>
+
+                    <th>Supplier Name</th>
+                    <th>Contact Person</th>
+                    <th>Email</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+
+                </tr>
+
+            </thead>
+
+
+            <tbody>
+
+                @foreach (var supplier in Model)
+                {
+                    <tr>
+
+                        <td>
+                            @supplier.SupplierName
+                        </td>
+
+                        <td>
+                            @supplier.ContactPerson
+                        </td>
+
+                        <td>
+                            @supplier.SupplierEmail
+                        </td>
+
+                        <td>
+                            @(supplier.IsActive ? "Active" : "Inactive")
+                        </td>
+
+
+                        <td class="td-actions">
+
+                            <!-- EDIT -->
+
+                            <button type="button"
+                                    class="btn btn-edit btn-sm"
+                                    data-bs-toggle="offcanvas"
+                                    data-bs-target="#supplierPanel"
+                                    onclick="openEditSupplier(this)"
+                                    data-id="@supplier.SupplierId"
+                                    data-name="@supplier.SupplierName"
+                                    data-contact="@supplier.ContactPerson"
+                                    data-email="@supplier.SupplierEmail">
+
+                                Edit
+
+                            </button>
+
+
+                            @if (supplier.IsActive)
+                            {
+                                <form asp-action="DeleteSupplier"
+                                      asp-controller="LabManager"
+                                      method="post"
+                                      style="display:inline;">
+
+                                    <input type="hidden"
+                                           name="id"
+                                           value="@supplier.SupplierId" />
+
+                                    <input type="hidden"
+                                           name="filter"
+                                           value="@ViewBag.Filter" />
+
+                                    <input type="hidden"
+                                           name="search"
+                                           value="@ViewBag.Search" />
+
+                                    <button type="submit"
+                                            class="btn btn-delete btn-sm"
+                                            onclick="return confirm('Are you sure you want to deactivate this supplier?');">
+
+                                        Deactivate
+
+                                    </button>
+
+                                </form>
+                            }
+                            else
+                            {
+                                <form asp-action="ReactivateSupplier"
+                                      asp-controller="LabManager"
+                                      method="post"
+                                      style="display:inline;">
+
+                                    <input type="hidden"
+                                           name="id"
+                                           value="@supplier.SupplierId" />
+
+                                    <button type="submit"
+                                            class="btn btn-primary btn-sm"
+                                            onclick="return confirm('Are you sure you want to reactivate this supplier?');">
+
+                                        Reactivate
+
+                                    </button>
+
+                                </form>
+                            }
+
+                        </td>
+
+                    </tr>
+                }
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+
+    <!-- ========================================================= -->
+    <!-- ADD / EDIT SUPPLIER PANEL -->
+    <!-- ========================================================= -->
+
+    <div class="offcanvas offcanvas-end"
+         tabindex="-1"
+         id="supplierPanel"
+         style="width:600px;">
+
+        <div class="offcanvas-header">
+
+            <h4 id="supplierPanelTitle">
+                Add Supplier
+            </h4>
+
+            <button type="button"
+                    class="btn-close"
+                    data-bs-dismiss="offcanvas">
+            </button>
+
+        </div>
+
+
+        <div class="offcanvas-body">
+
+            <form id="supplierForm" data-staff-validation
+                  asp-controller="LabManager"
+                  asp-action="CreateSupplier"
+                  method="post">
+
+
+                <!-- Supplier ID -->
+
+                <input type="hidden"
+                       id="SupplierId"
+                       name="SupplierId"
+                       value="0" />
+
+
+                <!-- Supplier Name -->
+
+                <div class="form-group">
+
+                    <label class="form-label">
+                        Supplier Name
+                    </label>
+
+                    <input id="SupplierName"
+                           class="form-control"
+                           name="SupplierName"
+                           required />
+
+                </div>
+
+
+                <!-- Contact Person -->
+
+                <div class="form-group">
+
+                    <label class="form-label">
+                        Contact Person
+                    </label>
+
+                    <input id="ContactPerson"
+                           class="form-control"
+                           name="ContactPerson"
+                           required />
+
+                </div>
+
+
+                <!-- Supplier Email -->
+
+                <div class="form-group">
+
+                    <label class="form-label">
+                        Supplier Email
+                    </label>
+
+                    <input id="SupplierEmail"
+                           type="email"
+                           class="form-control"
+                           name="SupplierEmail"
+                           required />
+
+                </div>
+
+
+                <!-- BUTTONS -->
+
+                <button id="supplierSubmitButton"
+                        type="submit"
+                        class="btn btn-primary">
+
+                    Save Supplier
+
+                </button>
+
+
+                <button type="button"
+                        class="btn btn-secondary"
+                        data-bs-dismiss="offcanvas">
+
+                    Cancel
+
+                </button>
+
+            </form>
+
+        </div>
+
+    </div>
+
+</div>
+
+<script>
+    document.getElementById("supplierSearch").addEventListener("input", function () {
+
+        const searchValue = this.value.toLowerCase().trim();
+
+        const rows = document.querySelectorAll("#supplierTable tbody tr");
+
+        rows.forEach(function (row) {
+
+            const supplierName = row.cells[0].textContent.toLowerCase();
+            const contactPerson = row.cells[1].textContent.toLowerCase();
+            const email = row.cells[2].textContent.toLowerCase();
+
+            const matches =
+                supplierName.includes(searchValue) ||
+                contactPerson.includes(searchValue) ||
+                email.includes(searchValue);
+
+            row.style.display = matches ? "" : "none";
+
+        });
+
+    });
+
+     
+
+        function openCreateSupplier()
+    {
+        document.getElementById("supplierPanelTitle").innerText =
+            "Add Supplier";
+
+        document.getElementById("supplierSubmitButton").innerText =
+            "Save Supplier";
+
+        document.getElementById("supplierForm").action =
+            '@Url.Action("CreateSupplier", "LabManager")';
+
+        document.getElementById("supplierForm").reset();
+
+        document.getElementById("SupplierId").value = "0";
+    }
+
+
+    function openEditSupplier(button)
+    {
+        document.getElementById("supplierPanelTitle").innerText =
+            "Edit Supplier";
+
+        document.getElementById("supplierSubmitButton").innerText =
+            "Update Supplier";
+
+        document.getElementById("supplierForm").action =
+            '@Url.Action("EditSupplier", "LabManager")';
+
+
+        document.getElementById("SupplierId").value =
+            button.dataset.id;
+
+        document.getElementById("SupplierName").value =
+            button.dataset.name;
+
+        document.getElementById("ContactPerson").value =
+            button.dataset.contact;
+
+        document.getElementById("SupplierEmail").value =
+            button.dataset.email;
+    }
+</script>
+

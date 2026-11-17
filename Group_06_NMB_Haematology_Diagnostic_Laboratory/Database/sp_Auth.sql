@@ -23,7 +23,8 @@ BEGIN
         MustChangePassword,
         CreatedAt,
         UpdatedAt,
-        LastLoginDate
+        LastLoginDate,
+        SecurityStamp
     FROM dbo.[User]
     WHERE Email = @Email
       AND IsActive = 1;

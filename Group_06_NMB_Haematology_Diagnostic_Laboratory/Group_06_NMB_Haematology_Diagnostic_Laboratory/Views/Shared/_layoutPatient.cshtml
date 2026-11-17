@@ -13,12 +13,11 @@
     <link rel="stylesheet" href="~/css/style.css" asp-append-version="true" />
     <script src="~/js/PatientJavaScript.js"></script>
 
+    <link rel="stylesheet" href="~/css/shared-navigation.css" asp-append-version="true" />
 </head>
 <body>
-    <aside class="sidebar">
-        <div class="sidebar-brand">
-            <span class="brand-icon">🧬</span> NMB-HLabSys
-        </div>
+    <aside class="sidebar" id="shared-sidebar">
+        <partial name="_SidebarBrand" />
         <nav class="nav-menu">
             <a asp-controller="Patient" asp-action="Dashboard" class="nav-item@(IsActive("Dashboard"))"><span>⊞</span> Dashboard</a>
             <div class="sidebar-section">My Health</div>
@@ -39,6 +38,7 @@
     </aside>
     <main class="main-content">
         <header class="topbar">
+
             <h1 class="page-title">@title</h1>
             <div class="topbar-actions">
                 <input type="search" class="form-control search-control" placeholder="Search..." oninput="handleSearch(this.value)" aria-label="Search this page">
@@ -52,5 +52,6 @@
     </main>
     <script src="~/js/script.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
+    <script src="~/js/shared-navigation.js" asp-append-version="true"></script>
 </body>
 </html>

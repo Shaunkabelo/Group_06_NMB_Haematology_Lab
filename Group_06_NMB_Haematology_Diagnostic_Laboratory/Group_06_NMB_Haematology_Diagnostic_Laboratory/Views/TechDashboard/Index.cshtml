@@ -1,0 +1,301 @@
+﻿@{
+    Layout = "_TechLayout";
+}
+@model TechDashboardIndexModel
+@{
+    ViewData["Title"] = "My Dashboard";
+}
+
+<div class="topbar">
+    <h1 class="page-title">My Dashboard</h1>
+    <div class="topbar-actions">
+        <span style="font-size:12px;color:#7A8CA0">@DateTime.Now.ToString("ddd, dd MMM yyyy · HH:mm")</span>
+        <form asp-controller="Account" asp-action="Logout" method="post" style="display:inline">
+            <button type="submit" class="btn btn-secondary">🚪 Log out</button>
+        </form>
+    </div>
+</div>
+
+<div class="page-body">
+
+    <!-- Stat cards -->
+    <section>
+        <div class="stats-grid">
+
+            <a asp-controller="TechProcess" asp-action="Index" class="stat-card blue" style="text-decoration:none;color:inherit">
+                <span class="stat-emoji">📥</span>
+                <div class="stat-label">Requests Awaiting Selection</div>
+                <div class="stat-value">@Model.AvailableRequests.Count</div>
+                <div class="stat-sub">@Model.AvailableTestsCount individual tests available →</div>
+            </a>
+            <a asp-controller="TechProcess" asp-action="Index" class="stat-card amber" style="text-decoration:none;color:inherit">
+                <span class="stat-emoji">🔬</span>
+                <div class="stat-label">Tests In Progress</div>
+                <div class="stat-value">@Model.MyActiveTestsCount</div>
+                <div class="stat-sub">Across @Model.MyActiveRequests.Count request@(Model.MyActiveRequests.Count == 1 ? "" : "s") →</div>
+            </a>
+            <a asp-controller="TechProcess" asp-action="Index" class="stat-card red" style="text-decoration:none;color:inherit">
+                <span class="stat-emoji">⏰</span>
+                <div class="stat-label">Overdue Tests</div>
+                <div class="stat-value">@Model.OverdueTestsCount</div>
+                <div class="stat-sub">Past turnaround time →</div>
+            </a>
+            <a asp-controller="TechVerify" asp-action="Index" class="stat-card purple" style="text-decoration:none;color:inherit">
+                <span class="stat-emoji">✅</span>
+                <div class="stat-label">Awaiting Verification</div>
+                <div class="stat-value">@Model.PendingVerification.Count</div>
+                <div class="stat-sub">Ready for peer review →</div>
+            </a>
+            <a asp-controller="TechProcess" asp-action="Index" class="stat-card red" style="text-decoration:none;color:inherit">
+                <span class="stat-emoji">🚨</span>
+                <div class="stat-label">STAT Tests</div>
+                <div class="stat-value">@Model.StatActiveCount</div>
+                <div class="stat-sub">Currently in progress →</div>
+            </a>
+            <a asp-controller="TechVerify" asp-action="Index" class="stat-card amber" style="text-decoration:none;color:inherit">
+                <span class="stat-emoji">🔄</span>
+                <div class="stat-label">Awaiting My Review</div>
+                <div class="stat-value">@Model.AwaitingMyReviewCount</div>
+                <div class="stat-sub">Sent back to you →</div>
+            </a>
+        </div>
+    </section>
+
+    <section>
+        <div class="grid-2">
+
+            <!-- My Active Tests -->
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-title">🔬 My Active Tests</span>
+                    <a asp-controller="TechProcess" asp-action="Index" class="card-link">View all →</a>
+                </div>
+
+                <div style="display:flex;gap:10px;padding:10px 16px;flex-wrap:wrap;align-items:center;border-bottom:1px solid #EAEEF2">
+                    <select id="active-filter" class="form-control" style="width:200px" onchange="filterActiveTests()">
+                        <option value="">All Active Tests</option>
+                        <option value="urgency:STAT">STAT only</option>
+                        <option value="urgency:Urgent">Urgent only</option>
+                        <option value="urgency:Routine">Routine only</option>
+                        <option value="overdue">Overdue only</option>
+                        <option value="nearing">Nearing turnaround only</option>
+                    </select>
+                    <span id="active-filter-count" style="font-size:12px;color:#7A8CA0;margin-left:auto"></span>
+                </div>
+
+                <p style="font-size:12px;color:#7A8CA0;padding:8px 16px 0;margin:0"></p>
+                <div class="table-wrap">
+                    <table id="active-tests-table">
+                        <thead>
+                            <tr><th style="width:160px">Request</th><th>Patient</th><th>Urgency</th><th>Tests</th><th>Overall Status</th></tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var req in Model.MyActiveRequests)
+                            {
+                                var subId = $"dash-{req.TestRequestId}";
+                                var urgencyBadge = req.Urgency switch { "STAT" => "red", "Urgent" => "amber", _ => "gray" };
+                                var rowClass = req.AnyOverdue ? "req-row overdue-row" : "req-row";
+                                var hasNearing = req.Tests.Any(t => t.IsNearingDeadline) ? "1" : "0";
+                                var hasOverdue = req.AnyOverdue ? "1" : "0";
+
+                                <tr class="@rowClass active-filter-row"
+                                    data-urgency="@req.Urgency"
+                                    data-has-overdue="@hasOverdue"
+                                    data-has-nearing="@hasNearing"
+                                    onclick="toggleReqRow('@subId',this)">
+                                    <td class="td-bold"><span class="expand-icon">▶</span>@req.RequestNumber</td>
+                                    <td>@req.PatientName</td>
+                                    <td><span class="badge @urgencyBadge">@req.Urgency</span></td>
+                                    <td><span class="badge gray">@req.Tests.Count test@(req.Tests.Count == 1 ? "" : "s")</span></td>
+                                    <td>
+                                        @if (req.AnyOverdue)
+                                        {
+                                            <span class="badge red">⚠️ Overdue</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge amber">In Progress</span>
+                                        }
+                                    </td>
+                                </tr>
+                                <tr class="tests-subrow active-filter-subrow" id="@subId">
+                                    <td colspan="5">
+                                        <table class="sub-tests-table">
+                                            <thead><tr><th style="padding-left:36px">Test</th><th>Due</th><th>Test Status</th></tr></thead>
+                                            <tbody>
+                                                @foreach (var t in req.Tests)
+                                                {
+                                                    <tr>
+                                                        <td style="padding-left:36px">@t.TestName</td>
+                                                        <td style="@(t.IsOverdue ? "color:#FF4757;font-weight:600" : t.IsNearingDeadline ? "color:#F5A623;font-weight:600" : "")">
+                                                            @t.ExpectedDoneBy?.ToString("HH:mm") @(t.IsOverdue ? "⚠️" : t.IsNearingDeadline ? "⏳" : "")
+                                                        </td>
+                                                        <td><span class="badge amber">In Progress</span></td>
+                                                    </tr>
+                                                }
+                                            </tbody>
+                                        </table>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Right column -->
+            <div style="display:flex;flex-direction:column;gap:16px">
+
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-title">✅ Pending Verification</span>
+                        <a asp-controller="TechVerify" asp-action="Index" class="card-link">Go →</a>
+                    </div>
+                    <div class="list">
+                        @foreach (var v in Model.PendingVerification)
+                        {
+                            <a asp-controller="TechVerify" asp-action="Index" asp-route-verifyResultId="@v.TestResultId"
+                               class="list-row" style="text-decoration:none;color:inherit">
+                                <div>
+                                    <span class="td-bold">@v.RequestNumber · @v.TestName</span>
+                                    <small>Submitted by @v.PerformedByName · Ready since @v.CaptureDateTime.ToString("HH:mm")</small>
+                                </div>
+                                <span class="badge blue">Verify →</span>
+                            </a>
+                        }
+                        @if (!Model.PendingVerification.Any())
+                        {
+                            <p style="font-size:12px;color:#7A8CA0;padding:12px 16px">Nothing waiting for verification.</p>
+                        }
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header"><span class="card-title">📊 Today's Workload</span></div>
+                    <div class="card-body">
+                        <div class="workload-label"><span>Tests Completed</span><span>@Model.Workload.TestsCompletedToday / @Model.Workload.TestsStartedToday</span></div>
+                        <div class="progress-bar-wrap"><div class="progress-bar" style="width:@(Model.Workload.TestsCompletedPercent)%"></div></div>
+
+                        <div class="workload-label" style="margin-top:12px"><span>Urgent / STAT Handled</span><span>@Model.Workload.UrgentCompletedToday / @Model.Workload.UrgentStartedToday</span></div>
+                        <div class="progress-bar-wrap"><div class="progress-bar" style="width:@(Model.Workload.UrgentHandledPercent)%;background:#F5A623"></div></div>
+
+                        <div class="workload-label" style="margin-top:12px"><span>Verifications Done</span><span>@Model.Workload.VerificationsDoneToday / @Model.Workload.VerificationsProcessedToday</span></div>
+                        <div class="progress-bar-wrap"><div class="progress-bar" style="width:@(Model.Workload.VerificationsDonePercent)%;background:#7C3AED"></div></div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- Available Requests Queue -->
+    <section>
+        <div class="card">
+            <div class="card-header">
+                <span class="card-title">📥 Available Requests — Waiting to Be Selected</span>
+                <a asp-controller="TechProcess" asp-action="Index" class="card-link">Go to Process Tests →</a>
+            </div>
+            <p style="font-size:12px;color:#7A8CA0;padding:8px 16px 0;margin:0">
+                
+            </p>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr><th style="width:170px">Request No.</th><th>Patient</th><th>Doctor</th><th>Urgency</th><th>Tests</th><th>Overall Status</th></tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var req in Model.AvailableRequests)
+                        {
+                            var subId = $"q-{req.TestRequestId}";
+                            var urgencyBadge = req.Urgency switch { "STAT" => "red", "Urgent" => "amber", _ => "gray" };
+
+                            <tr class="req-row" onclick="toggleReqRow('@subId',this)">
+                                <td class="td-bold"><span class="expand-icon">▶</span>@req.RequestNumber</td>
+                                <td>@req.PatientName</td>
+                                <td>@req.DoctorName</td>
+                                <td><span class="badge @urgencyBadge">@req.Urgency</span></td>
+                                <td><span class="badge gray">@req.Tests.Count test@(req.Tests.Count == 1 ? "" : "s")</span></td>
+                                <td><span class="badge teal">@req.RequestStatus</span></td>
+                            </tr>
+                            <tr class="tests-subrow" id="@subId">
+                                <td colspan="6">
+                                    <table class="sub-tests-table">
+                                        <thead><tr><th style="padding-left:36px">Test</th><th>Category</th><th>Expected Done By</th><th>Test Status</th></tr></thead>
+                                        <tbody>
+                                            @foreach (var t in req.Tests)
+                                            {
+                                                <tr>
+                                                    <td style="padding-left:36px">@t.TestName</td>
+                                                    <td><span class="badge teal">@t.CategoryName</span></td>
+                                                    <td>@t.ExpectedDoneBy?.ToString("HH:mm")</td>
+                                                    <td>
+                                                        @if (t.TestStatus == "Submitted")
+                                                        {
+                                                            <span class="badge blue">Available</span>
+                                                        }
+                                                        else
+                                                        {
+                                                            <span class="badge amber">In Progress — @t.TakenByName</span>
+                                                        }
+                                                    </td>
+                                                </tr>
+                                            }
+                                        </tbody>
+                                    </table>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+</div>
+
+@section Scripts {
+    <script>
+        function toggleReqRow(subId, rowEl) {
+            const sub = document.getElementById(subId);
+            if (!sub) return;
+            const isOpen = sub.classList.contains('open');
+            sub.classList.toggle('open', !isOpen);
+            rowEl.classList.toggle('expanded', !isOpen);
+        }
+                function filterActiveTests() {
+            const selected = document.getElementById('active-filter').value;
+            const [mode, value] = selected.split(':');
+
+            const rows = document.querySelectorAll('#active-tests-table .active-filter-row');
+            let visibleCount = 0;
+
+            rows.forEach(row => {
+                const rowUrgency = row.dataset.urgency;
+                const hasOverdue = row.dataset.hasOverdue === '1';
+                const hasNearing = row.dataset.hasNearing === '1';
+
+                let show = true;
+                if (mode === 'urgency' && rowUrgency !== value) show = false;
+                if (mode === 'overdue' && !hasOverdue) show = false;
+                if (mode === 'nearing' && !hasNearing) show = false;
+
+                row.style.display = show ? '' : 'none';
+
+                const subrow = row.nextElementSibling;
+                if (subrow && subrow.classList.contains('active-filter-subrow')) {
+                    if (!show) {
+                        subrow.classList.remove('open');
+                        subrow.style.display = 'none';
+                    } else {
+                        subrow.style.display = '';
+                    }
+                }
+
+                if (show) visibleCount++;
+            });
+
+            document.getElementById('active-filter-count').textContent =
+                visibleCount + ' of ' + rows.length + ' shown';
+        }
+    </script>
+}

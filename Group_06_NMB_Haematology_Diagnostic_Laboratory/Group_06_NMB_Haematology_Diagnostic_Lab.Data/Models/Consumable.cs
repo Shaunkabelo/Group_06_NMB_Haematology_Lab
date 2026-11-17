@@ -17,11 +17,13 @@ public partial class Consumable
 
     public int QuantityOnHand { get; set; }
 
+    public bool IsActive { get; set; }
+
+    public virtual Supplier Supplier { get; set; }
+
     public virtual ICollection<ConsumableTransaction> ConsumableTransaction { get; set; } = new List<ConsumableTransaction>();
 
     public virtual ICollection<StockOrderItem> StockOrderItem { get; set; } = new List<StockOrderItem>();
-
-    public virtual Supplier Supplier { get; set; }
 
     public virtual ICollection<TestTypeConsumable> TestTypeConsumable { get; set; } = new List<TestTypeConsumable>();
 }

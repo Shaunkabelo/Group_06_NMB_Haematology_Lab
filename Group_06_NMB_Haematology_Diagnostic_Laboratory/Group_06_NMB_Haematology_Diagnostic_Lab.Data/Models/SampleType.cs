@@ -10,6 +10,7 @@ public partial class SampleType
     public int SampleTypeId { get; set; }
 
     public string SampleTypeName { get; set; }
+    public bool IsActive { get; set; }
 
     public virtual ICollection<Sample> Sample { get; set; } = new List<Sample>();
 

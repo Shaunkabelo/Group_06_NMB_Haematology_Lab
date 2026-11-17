@@ -1,0 +1,88 @@
+using System.Globalization;
+using Group_06_NMB_Haematology_Diagnostic_Lab.Data.Models;
+using QuestPDF.Fluent;
+using QuestPDF.Helpers;
+using QuestPDF.Infrastructure;
+
+namespace Group_06_NMB_Haematology_Diagnostic_Laboratory.Services;
+
+public static class TestsPerformedPdf
+{
+    private static readonly CultureInfo Culture = CultureInfo.GetCultureInfo("en-ZA");
+    public static byte[] Generate(IEnumerable<TestsPerformedDetail> source, DateTime start,
+        DateTime end, DateTimeOffset generatedAt)
+    {
+        var rows = source.OrderBy(x => x.CategoryName, StringComparer.OrdinalIgnoreCase)
+            .ThenBy(x => x.TestName, StringComparer.OrdinalIgnoreCase)
+            .ThenBy(x => x.CompletionDateTime).ToList();
+        var total = rows.Count;
+        string Number(long value) => value.ToString("N0", Culture);
+        var timestamp = generatedAt.ToOffset(TimeSpan.FromHours(2)).ToString("dd MMM yyyy, HH:mm", Culture) + " SAST";
+        return Document.Create(document => document.Page(page =>
+        {
+            page.Size(PageSizes.A4);
+            page.Margin(36);
+            page.DefaultTextStyle(x => x.FontSize(10).FontColor(Colors.Grey.Darken4));
+            page.Header().PaddingBottom(14).Column(header =>
+            {
+                header.Item().Text("NMB Haematology Diagnostic Laboratory").FontSize(10).SemiBold();
+                header.Item().PaddingTop(5).Text("Tests Performed by Category").FontSize(20).Bold();
+                header.Item().PaddingTop(5).Text(
+                    $"Reporting period: {start.ToString("dd MMM yyyy", Culture)} – {end.ToString("dd MMM yyyy", Culture)} (inclusive)");
+                header.Item().Text($"Generated: {timestamp}").FontSize(9);
+            });
+            page.Content().Column(content =>
+            {
+                content.Spacing(12);
+                content.Item().ShowEntire().Background(Colors.Grey.Lighten4).Padding(12).Column(summary =>
+                {
+                    summary.Item().Text("Summary").FontSize(12).Bold();
+                    summary.Item().Text($"Total tests performed: {Number(total)}");
+                    summary.Item().Text($"Categories with completed tests: {Number(rows.Select(x => x.CategoryName).Distinct(StringComparer.OrdinalIgnoreCase).Count())}");
+                });
+                content.Item().ShowEntire().Column(criteria =>
+                {
+                    criteria.Item().Text("Scope and criteria").Bold();
+                    criteria.Item().Text("Lists every completed laboratory test using its recorded completion date. Historical tests remain included when a category is inactive.");
+                    criteria.Item().PaddingTop(4).Text("Rows are grouped by category, then ordered by test name and completion date.").FontSize(9);
+                });
+                if (rows.Count == 0)
+                {
+                    content.Item().ShowEntire().Border(1).BorderColor(Colors.Grey.Lighten2).Padding(16)
+                        .Text("No records found for the selected date range.");
+                }
+                else
+                {
+                    content.Item().Table(table =>
+                    {
+                        table.ColumnsDefinition(columns => { columns.RelativeColumn(2); columns.RelativeColumn(3); columns.RelativeColumn(2); });
+                        table.Header(header =>
+                        {
+                            header.Cell().Element(Heading).Text("Test category");
+                            header.Cell().Element(Heading).Text("Test type");
+                            header.Cell().Element(Heading).Text("Completed on");
+                        });
+                        foreach (var row in rows)
+                        {
+                            table.Cell().Element(Cell).Text(row.CategoryName);
+                            table.Cell().Element(Cell).Text(row.TestName);
+                            table.Cell().Element(Cell).Text(row.CompletionDateTime?.ToString("dd MMM yyyy", Culture) ?? "Not recorded");
+                        }
+                    });
+                    content.Item().ShowEntire().AlignRight().Text($"Grand total: {Number(total)} tests").Bold();
+                }
+            });
+            page.Footer().PaddingTop(12).BorderTop(1).BorderColor(Colors.Grey.Lighten2).PaddingTop(6).Row(footer =>
+            {
+                footer.RelativeItem().Text("NMB-HLabSys • Management report").FontSize(8);
+                footer.AutoItem().Text(text =>
+                {
+                    text.DefaultTextStyle(x => x.FontSize(8));
+                    text.Span("Page "); text.CurrentPageNumber(); text.Span(" of "); text.TotalPages();
+                });
+            });
+        })).GeneratePdf();
+    }
+    private static IContainer Heading(IContainer c) => c.Background(Colors.Grey.Lighten3).Padding(8).DefaultTextStyle(x => x.Bold());
+    private static IContainer Cell(IContainer c) => c.BorderBottom(0.5f).BorderColor(Colors.Grey.Lighten2).Padding(8);
+}
